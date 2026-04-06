@@ -5,16 +5,27 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { FileText, Clock, CheckCircle, XCircle, Plus, Bell } from "lucide-react";
 import { Link } from "react-router-dom";
+import {
+  getAdvisorPendingProposalsErrorMessage,
+  useAdvisorPendingProposals
+} from "@/hooks/use-advisor-pending-proposals";
 
-function StatCard({ title, value, icon: Icon, variant }: {
-  title: string; value: number; icon: React.ElementType;
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  variant
+}: {
+  title: string;
+  value: number;
+  icon: React.ElementType;
   variant?: "default" | "success" | "warning" | "destructive";
 }) {
   const colors = {
     default: "text-primary",
     success: "text-success",
     warning: "text-warning",
-    destructive: "text-destructive",
+    destructive: "text-destructive"
   };
   return (
     <Card className="animate-fade-in">
@@ -85,7 +96,7 @@ function ExecutiveDashboard() {
 }
 
 function AdvisorDashboard() {
-  const pending = mockProposals.filter((p) => p.status === "pending");
+  const { data: pending = [], isLoading, isError, error } = useAdvisorPendingProposals();
 
   return (
     <div className="space-y-6 animate-slide-up">
@@ -94,10 +105,8 @@ function AdvisorDashboard() {
         <p className="text-muted-foreground text-sm mt-1">Review and approve proposals</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-1 gap-4 max-w-sm">
         <StatCard title="Pending Reviews" value={pending.length} icon={Clock} variant="warning" />
-        <StatCard title="Total Proposals" value={mockProposals.length} icon={FileText} />
-        <StatCard title="Approved" value={mockProposals.filter(p => p.status === "approved").length} icon={CheckCircle} variant="success" />
       </div>
 
       <Card>
@@ -105,19 +114,32 @@ function AdvisorDashboard() {
           <CardTitle className="text-lg">Pending Approvals</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {pending.map((p) => (
-              <Link key={p.id} to={`/proposals/${p.id}`} className="block">
-                <div className="flex items-center justify-between p-3 rounded-lg hover:bg-accent transition-colors">
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading advisor queue...</p>
+          ) : isError ? (
+            <div className="space-y-2">
+              <p className="font-medium">Unable to load advisor queue</p>
+              <p className="text-sm text-muted-foreground">
+                {getAdvisorPendingProposalsErrorMessage(error)}
+              </p>
+            </div>
+          ) : pending.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No pending approvals right now.</p>
+          ) : (
+            <div className="space-y-3">
+              {pending.map((proposal) => (
+                <div key={proposal.id} className="flex items-center justify-between p-3 rounded-lg">
                   <div>
-                    <p className="text-sm font-medium">{p.title}</p>
-                    <p className="text-xs text-muted-foreground">{p.submittedBy} · {p.club}</p>
+                    <p className="text-sm font-medium">{proposal.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {proposal.location} · Event {proposal.eventDate}
+                    </p>
                   </div>
-                  <StatusBadge status={p.status} />
+                  <StatusBadge status={proposal.status} />
                 </div>
-              </Link>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -137,8 +159,18 @@ function AdminDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Total" value={mockProposals.length} icon={FileText} />
         <StatCard title="Pending" value={pending.length} icon={Clock} variant="warning" />
-        <StatCard title="Approved" value={mockProposals.filter(p => p.status === "approved").length} icon={CheckCircle} variant="success" />
-        <StatCard title="Rejected" value={mockProposals.filter(p => p.status === "rejected").length} icon={XCircle} variant="destructive" />
+        <StatCard
+          title="Approved"
+          value={mockProposals.filter((p) => p.status === "approved").length}
+          icon={CheckCircle}
+          variant="success"
+        />
+        <StatCard
+          title="Rejected"
+          value={mockProposals.filter((p) => p.status === "rejected").length}
+          icon={XCircle}
+          variant="destructive"
+        />
       </div>
 
       <Card>
