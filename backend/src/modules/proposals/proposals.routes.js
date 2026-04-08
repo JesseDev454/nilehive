@@ -17,9 +17,14 @@ function createProposalsRouter(options = {}) {
     requireRole("advisor"),
     controller.listPendingAdvisorProposals
   );
+  router.post(
+    "/:proposalId/advisor-decision",
+    auth,
+    requireRole("advisor"),
+    controller.submitAdvisorDecision
+  );
 
   return router;
 }
 
 module.exports = { createProposalsRouter };
-

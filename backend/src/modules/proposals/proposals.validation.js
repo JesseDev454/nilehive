@@ -52,5 +52,34 @@ function validateCreateProposalPayload(payload = {}) {
   };
 }
 
-module.exports = { validateCreateProposalPayload };
+function validateAdvisorDecisionPayload(payload = {}) {
+  const decision = normalizeString(payload.decision);
+  const remarks = normalizeString(payload.remarks);
+  const fieldErrors = [];
 
+  if (!decision) {
+    fieldErrors.push({ field: "decision", message: "decision is required" });
+  } else if (!["approve", "reject"].includes(decision)) {
+    fieldErrors.push({ field: "decision", message: 'decision must be "approve" or "reject"' });
+  }
+
+  if (payload.remarks !== undefined && typeof payload.remarks !== "string") {
+    fieldErrors.push({ field: "remarks", message: "remarks must be a string when provided" });
+  }
+
+  if (fieldErrors.length) {
+    throw new ApiError(400, "Invalid advisor decision payload", "VALIDATION_ERROR", {
+      fields: fieldErrors
+    });
+  }
+
+  return {
+    decision,
+    remarks: remarks || null
+  };
+}
+
+module.exports = {
+  validateCreateProposalPayload,
+  validateAdvisorDecisionPayload
+};

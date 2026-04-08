@@ -1,6 +1,9 @@
 const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
-const { validateCreateProposalPayload } = require("./proposals.validation");
+const {
+  validateAdvisorDecisionPayload,
+  validateCreateProposalPayload
+} = require("./proposals.validation");
 
 async function createProposal(options) {
   const { actor, payload, database = db } = options;
@@ -50,8 +53,48 @@ async function getPendingAdvisorProposals(options) {
   return database.listPendingProposalsByClubIds(clubIds);
 }
 
+async function submitAdvisorDecision(options) {
+  const { actor, proposalId, payload, database = db } = options;
+
+  if (!actor) {
+    throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
+  }
+
+  if (actor.role !== "advisor") {
+    throw new ApiError(403, "Only advisors can review proposals", "FORBIDDEN");
+  }
+
+  const validatedPayload = validateAdvisorDecisionPayload(payload);
+  const proposal = await database.getProposalById(proposalId);
+
+  if (!proposal) {
+    throw new ApiError(404, "Proposal not found", "PROPOSAL_NOT_FOUND");
+  }
+
+  const clubIds = await database.getAdvisorClubIds(actor.id);
+
+  if (!clubIds.includes(proposal.club_id)) {
+    throw new ApiError(403, "You do not have access to this proposal", "FORBIDDEN");
+  }
+
+  if (proposal.status !== "pending_advisor_review") {
+    throw new ApiError(
+      409,
+      "Proposal is not awaiting advisor review",
+      "INVALID_PROPOSAL_STATE"
+    );
+  }
+
+  return database.updateProposalAdvisorDecision(proposalId, {
+    status: validatedPayload.decision === "approve" ? "advisor_approved" : "advisor_rejected",
+    advisor_remarks: validatedPayload.remarks,
+    advisor_decided_at: new Date().toISOString(),
+    advisor_decided_by: actor.id
+  });
+}
+
 module.exports = {
   createProposal,
-  getPendingAdvisorProposals
+  getPendingAdvisorProposals,
+  submitAdvisorDecision
 };
-

@@ -2,7 +2,7 @@ const { createClient } = require("@supabase/supabase-js");
 const { getEnv } = require("./env");
 
 const proposalSelect =
-  "id, club_id, submitted_by, title, description, event_date, location, status, created_at, updated_at";
+  "id, club_id, submitted_by, title, description, event_date, location, status, advisor_remarks, advisor_decided_at, advisor_decided_by, created_at, updated_at";
 
 function createAdminClient() {
   const env = getEnv();
@@ -78,6 +78,20 @@ function createDatabase(options = {}) {
       return data;
     },
 
+    async getProposalById(proposalId) {
+      const { data, error } = await getClient()
+        .from("proposals")
+        .select(proposalSelect)
+        .eq("id", proposalId)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? null;
+    },
+
     async getAdvisorClubIds(advisorId) {
       const { data, error } = await getClient()
         .from("clubs")
@@ -108,6 +122,21 @@ function createDatabase(options = {}) {
       }
 
       return data;
+    },
+
+    async updateProposalAdvisorDecision(proposalId, proposalUpdate) {
+      const { data, error } = await getClient()
+        .from("proposals")
+        .update(proposalUpdate)
+        .eq("id", proposalId)
+        .select(proposalSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
     }
   };
 }
@@ -119,4 +148,3 @@ module.exports = {
   createDatabase,
   db
 };
-

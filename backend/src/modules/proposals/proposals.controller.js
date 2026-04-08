@@ -1,7 +1,8 @@
 const asyncHandler = require("../../shared/asyncHandler");
 const {
   createProposal,
-  getPendingAdvisorProposals
+  getPendingAdvisorProposals,
+  submitAdvisorDecision
 } = require("./proposals.service");
 
 function createProposalsController(options = {}) {
@@ -25,9 +26,19 @@ function createProposalsController(options = {}) {
       });
 
       res.status(200).json({ data: proposals });
+    }),
+
+    submitAdvisorDecision: asyncHandler(async (req, res) => {
+      const proposal = await submitAdvisorDecision({
+        actor: req.user,
+        proposalId: req.params.proposalId,
+        payload: req.body,
+        database
+      });
+
+      res.status(200).json({ data: proposal });
     })
   };
 }
 
 module.exports = { createProposalsController };
-
