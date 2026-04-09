@@ -106,6 +106,25 @@ function createDatabase(options = {}) {
       return data;
     },
 
+    async listAdminProposals(filters = {}) {
+      let query = getClient()
+        .from("proposals")
+        .select(proposalSelect)
+        .order("created_at", { ascending: false });
+
+      if (filters.status) {
+        query = query.eq("status", filters.status);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
     async getAdvisorClubIds(advisorId) {
       const { data, error } = await getClient()
         .from("clubs")

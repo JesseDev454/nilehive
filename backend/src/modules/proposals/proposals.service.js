@@ -36,11 +36,48 @@ function getCurrentStage(status) {
   return stages[status] ?? status;
 }
 
+function getStatusesForStage(stage) {
+  const stageStatuses = {
+    advisor_review: ["pending_advisor_review"],
+    admin_review: ["pending_admin_review"],
+    rejected: ["advisor_rejected"]
+  };
+
+  return stageStatuses[stage] ?? null;
+}
+
 function formatExecutiveProposal(proposal, latestApproval = null) {
   return {
     id: proposal.id,
     title: proposal.title,
     description: proposal.description,
+    event_date: proposal.event_date,
+    status: proposal.status,
+    current_stage: getCurrentStage(proposal.status),
+    submitted_at: proposal.created_at,
+    created_at: proposal.created_at,
+    updated_at: proposal.updated_at,
+    advisor_remarks: proposal.advisor_remarks,
+    advisor_decided_at: proposal.advisor_decided_at,
+    latest_approval: latestApproval
+      ? {
+          reviewer_id: latestApproval.reviewer_id,
+          reviewer_role: latestApproval.reviewer_role,
+          decision: latestApproval.decision,
+          remarks: latestApproval.remarks,
+          decided_at: latestApproval.decided_at
+        }
+      : null
+  };
+}
+
+function formatAdminProposal(proposal, latestApproval = null) {
+  return {
+    id: proposal.id,
+    title: proposal.title,
+    description: proposal.description,
+    club_id: proposal.club_id,
+    submitted_by: proposal.submitted_by,
     event_date: proposal.event_date,
     status: proposal.status,
     current_stage: getCurrentStage(proposal.status),
@@ -152,6 +189,57 @@ async function getExecutiveProposalDetail(options) {
   return formatExecutiveProposal(proposal, latestApproval);
 }
 
+async function listAdminProposals(options) {
+  const { actor, filters = {}, database = db } = options;
+
+  if (!actor) {
+    throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
+  }
+
+  if (actor.role !== "admin") {
+    throw new ApiError(403, "Only admins can view dashboard proposals", "FORBIDDEN");
+  }
+
+  const proposals = await database.listAdminProposals({
+    status: filters.status
+  });
+
+  const stageStatuses = filters.current_stage ? getStatusesForStage(filters.current_stage) : null;
+  const filteredProposals = stageStatuses
+    ? proposals.filter((proposal) => stageStatuses.includes(proposal.status))
+    : proposals;
+
+  const latestApprovalsByProposalId = await database.getLatestApprovalsByProposalIds(
+    filteredProposals.map((proposal) => proposal.id)
+  );
+
+  return filteredProposals.map((proposal) =>
+    formatAdminProposal(proposal, latestApprovalsByProposalId[proposal.id] ?? null)
+  );
+}
+
+async function getAdminProposalDetail(options) {
+  const { actor, proposalId, database = db } = options;
+
+  if (!actor) {
+    throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
+  }
+
+  if (actor.role !== "admin") {
+    throw new ApiError(403, "Only admins can view dashboard proposals", "FORBIDDEN");
+  }
+
+  const proposal = await database.getProposalById(proposalId);
+
+  if (!proposal) {
+    throw new ApiError(404, "Proposal not found", "PROPOSAL_NOT_FOUND");
+  }
+
+  const latestApproval = await database.getLatestApprovalByProposalId(proposalId);
+
+  return formatAdminProposal(proposal, latestApproval);
+}
+
 async function submitAdvisorDecision(options) {
   const { actor, proposalId, payload, database = db } = options;
 
@@ -202,6 +290,8 @@ async function submitAdvisorDecision(options) {
 
 module.exports = {
   createProposal,
+  listAdminProposals,
+  getAdminProposalDetail,
   getPendingAdvisorProposals,
   listExecutiveProposals,
   getExecutiveProposalDetail,
