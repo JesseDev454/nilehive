@@ -137,6 +137,24 @@ function createDatabase(options = {}) {
       }
 
       return data;
+    },
+
+    async applyAdvisorDecision(decisionInput) {
+      const { data, error } = await getClient().rpc("apply_advisor_decision", {
+        p_proposal_id: decisionInput.proposalId,
+        p_reviewer_id: decisionInput.reviewerId,
+        p_reviewer_role: decisionInput.reviewerRole,
+        p_decision: decisionInput.decision,
+        p_remarks: decisionInput.remarks,
+        p_decided_at: decisionInput.decidedAt,
+        p_next_status: decisionInput.nextStatus
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? null;
     }
   };
 }

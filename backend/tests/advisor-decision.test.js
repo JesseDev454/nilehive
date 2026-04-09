@@ -38,17 +38,35 @@ function createFakeDatabase() {
       }
     ],
     [
-      "proposal-approved",
+      "proposal-admin-review",
       {
-        id: "proposal-approved",
+        id: "proposal-admin-review",
         club_id: "club-1",
         submitted_by: "executive-1",
-        title: "Already Approved",
-        description: "Already reviewed.",
+        title: "Already Escalated",
+        description: "Already awaiting admin review.",
         event_date: "2026-05-21",
         location: "Auditorium",
-        status: "advisor_approved",
-        advisor_remarks: "Looks good",
+        status: "pending_admin_review",
+        advisor_remarks: "Ready for admin review",
+        advisor_decided_at: "2026-04-05T10:00:00.000Z",
+        advisor_decided_by: "advisor-1",
+        created_at: "2026-04-05T10:00:00.000Z",
+        updated_at: "2026-04-05T10:00:00.000Z"
+      }
+    ],
+    [
+      "proposal-rejected",
+      {
+        id: "proposal-rejected",
+        club_id: "club-1",
+        submitted_by: "executive-1",
+        title: "Rejected Proposal",
+        description: "Already rejected.",
+        event_date: "2026-05-22",
+        location: "Conference Room",
+        status: "advisor_rejected",
+        advisor_remarks: "Please revise budget.",
         advisor_decided_at: "2026-04-05T10:00:00.000Z",
         advisor_decided_by: "advisor-1",
         created_at: "2026-04-05T10:00:00.000Z",
@@ -63,7 +81,7 @@ function createFakeDatabase() {
         submitted_by: "executive-1",
         title: "Other Club Proposal",
         description: "Not assigned to this advisor.",
-        event_date: "2026-05-22",
+        event_date: "2026-05-23",
         location: "Conference Room",
         status: "pending_advisor_review",
         advisor_remarks: null,
@@ -74,6 +92,8 @@ function createFakeDatabase() {
       }
     ]
   ]);
+
+  const approvals = [];
 
   const tokens = {
     "advisor-token": {
@@ -87,6 +107,7 @@ function createFakeDatabase() {
   };
 
   return {
+    approvals,
     async getUserByAccessToken(accessToken) {
       return tokens[accessToken] ?? null;
     },
@@ -103,15 +124,32 @@ function createFakeDatabase() {
 
       return [];
     },
-    async updateProposalAdvisorDecision(proposalId, updates) {
-      const proposal = proposals.get(proposalId);
+    async applyAdvisorDecision(decisionInput) {
+      const proposal = proposals.get(decisionInput.proposalId);
+
+      if (!proposal || proposal.status !== "pending_advisor_review") {
+        return null;
+      }
+
+      approvals.push({
+        proposal_id: decisionInput.proposalId,
+        reviewer_id: decisionInput.reviewerId,
+        reviewer_role: decisionInput.reviewerRole,
+        decision: decisionInput.decision,
+        remarks: decisionInput.remarks,
+        decided_at: decisionInput.decidedAt
+      });
+
       const updatedProposal = {
         ...proposal,
-        ...updates,
-        updated_at: "2026-04-06T10:00:00.000Z"
+        status: decisionInput.nextStatus,
+        advisor_remarks: decisionInput.remarks,
+        advisor_decided_at: decisionInput.decidedAt,
+        advisor_decided_by: decisionInput.reviewerId,
+        updated_at: decisionInput.decidedAt
       };
 
-      proposals.set(proposalId, updatedProposal);
+      proposals.set(decisionInput.proposalId, updatedProposal);
       return updatedProposal;
     }
   };
@@ -162,7 +200,7 @@ async function postAdvisorDecision(baseUrl, proposalId, token, body) {
   return { response, payload };
 }
 
-test("advisor can approve a pending proposal", async (t) => {
+test("advisor approval creates approval history and moves proposal to admin review", async (t) => {
   const database = createFakeDatabase();
   const server = await createTestServer(database);
   t.after(() => server.close());
@@ -173,17 +211,21 @@ test("advisor can approve a pending proposal", async (t) => {
     "advisor-token",
     {
       decision: "approve",
-      remarks: "Ready for the next stage."
+      remarks: "Ready for admin review."
     }
   );
 
   assert.equal(response.status, 200);
-  assert.equal(payload.data.status, "advisor_approved");
-  assert.equal(payload.data.advisor_remarks, "Ready for the next stage.");
-  assert.equal(payload.data.advisor_decided_by, "advisor-1");
+  assert.equal(payload.data.status, "pending_admin_review");
+  assert.equal(payload.data.advisor_remarks, "Ready for admin review.");
+  assert.equal(database.approvals.length, 1);
+  assert.equal(database.approvals[0].proposal_id, "proposal-pending");
+  assert.equal(database.approvals[0].reviewer_id, "advisor-1");
+  assert.equal(database.approvals[0].reviewer_role, "advisor");
+  assert.equal(database.approvals[0].decision, "approve");
 });
 
-test("advisor can reject a pending proposal", async (t) => {
+test("advisor rejection creates approval history and moves proposal to rejected state", async (t) => {
   const database = createFakeDatabase();
   const server = await createTestServer(database);
   t.after(() => server.close());
@@ -194,13 +236,15 @@ test("advisor can reject a pending proposal", async (t) => {
     "advisor-token",
     {
       decision: "reject",
-      remarks: "Please revise the schedule."
+      remarks: "Please revise the event schedule."
     }
   );
 
   assert.equal(response.status, 200);
   assert.equal(payload.data.status, "advisor_rejected");
-  assert.equal(payload.data.advisor_remarks, "Please revise the schedule.");
+  assert.equal(database.approvals.length, 1);
+  assert.equal(database.approvals[0].decision, "reject");
+  assert.equal(database.approvals[0].remarks, "Please revise the event schedule.");
 });
 
 test("wrong role is blocked from advisor decisions", async (t) => {
@@ -219,6 +263,7 @@ test("wrong role is blocked from advisor decisions", async (t) => {
 
   assert.equal(response.status, 403);
   assert.equal(payload.error.code, "FORBIDDEN");
+  assert.equal(database.approvals.length, 0);
 });
 
 test("missing token is blocked from advisor decisions", async (t) => {
@@ -237,16 +282,17 @@ test("missing token is blocked from advisor decisions", async (t) => {
 
   assert.equal(response.status, 401);
   assert.equal(payload.error.code, "AUTH_REQUIRED");
+  assert.equal(database.approvals.length, 0);
 });
 
-test("invalid proposal state is blocked from duplicate advisor actions", async (t) => {
+test("duplicate or late transitions fail cleanly without new approval history", async (t) => {
   const database = createFakeDatabase();
   const server = await createTestServer(database);
   t.after(() => server.close());
 
   const { response, payload } = await postAdvisorDecision(
     server.baseUrl,
-    "proposal-approved",
+    "proposal-admin-review",
     "advisor-token",
     {
       decision: "reject"
@@ -255,6 +301,26 @@ test("invalid proposal state is blocked from duplicate advisor actions", async (
 
   assert.equal(response.status, 409);
   assert.equal(payload.error.code, "INVALID_PROPOSAL_STATE");
+  assert.equal(database.approvals.length, 0);
+});
+
+test("invalid transition attempts from rejected proposals fail cleanly", async (t) => {
+  const database = createFakeDatabase();
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const { response, payload } = await postAdvisorDecision(
+    server.baseUrl,
+    "proposal-rejected",
+    "advisor-token",
+    {
+      decision: "approve"
+    }
+  );
+
+  assert.equal(response.status, 409);
+  assert.equal(payload.error.code, "INVALID_PROPOSAL_STATE");
+  assert.equal(database.approvals.length, 0);
 });
 
 test("invalid decision input is blocked", async (t) => {
@@ -273,6 +339,7 @@ test("invalid decision input is blocked", async (t) => {
 
   assert.equal(response.status, 400);
   assert.equal(payload.error.code, "VALIDATION_ERROR");
+  assert.equal(database.approvals.length, 0);
 });
 
 test("advisor cannot act on a proposal outside assigned clubs", async (t) => {
@@ -291,4 +358,5 @@ test("advisor cannot act on a proposal outside assigned clubs", async (t) => {
 
   assert.equal(response.status, 403);
   assert.equal(payload.error.code, "FORBIDDEN");
+  assert.equal(database.approvals.length, 0);
 });

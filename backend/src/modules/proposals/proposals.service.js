@@ -5,6 +5,27 @@ const {
   validateCreateProposalPayload
 } = require("./proposals.validation");
 
+const ADVISOR_DECISION_TRANSITIONS = Object.freeze({
+  pending_advisor_review: Object.freeze({
+    approve: "pending_admin_review",
+    reject: "advisor_rejected"
+  })
+});
+
+function getNextProposalStatus(currentStatus, decision) {
+  const allowedTransitions = ADVISOR_DECISION_TRANSITIONS[currentStatus];
+
+  if (!allowedTransitions || !allowedTransitions[decision]) {
+    throw new ApiError(
+      409,
+      "Proposal is not awaiting advisor review",
+      "INVALID_PROPOSAL_STATE"
+    );
+  }
+
+  return allowedTransitions[decision];
+}
+
 async function createProposal(options) {
   const { actor, payload, database = db } = options;
 
@@ -77,7 +98,20 @@ async function submitAdvisorDecision(options) {
     throw new ApiError(403, "You do not have access to this proposal", "FORBIDDEN");
   }
 
-  if (proposal.status !== "pending_advisor_review") {
+  const decidedAt = new Date().toISOString();
+  const nextStatus = getNextProposalStatus(proposal.status, validatedPayload.decision);
+
+  const updatedProposal = await database.applyAdvisorDecision({
+    proposalId,
+    reviewerId: actor.id,
+    reviewerRole: actor.role,
+    decision: validatedPayload.decision,
+    remarks: validatedPayload.remarks,
+    decidedAt,
+    nextStatus
+  });
+
+  if (!updatedProposal) {
     throw new ApiError(
       409,
       "Proposal is not awaiting advisor review",
@@ -85,12 +119,7 @@ async function submitAdvisorDecision(options) {
     );
   }
 
-  return database.updateProposalAdvisorDecision(proposalId, {
-    status: validatedPayload.decision === "approve" ? "advisor_approved" : "advisor_rejected",
-    advisor_remarks: validatedPayload.remarks,
-    advisor_decided_at: new Date().toISOString(),
-    advisor_decided_by: actor.id
-  });
+  return updatedProposal;
 }
 
 module.exports = {
