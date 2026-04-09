@@ -15,6 +15,12 @@ function createFakeDatabase() {
       full_name: "Amina Executive",
       role: "executive",
       club_id: "club-1"
+    },
+    "admin-1": {
+      id: "admin-1",
+      full_name: "Ada Admin",
+      role: "admin",
+      club_id: null
     }
   };
 
@@ -94,6 +100,7 @@ function createFakeDatabase() {
   ]);
 
   const approvals = [];
+  const notifications = [];
 
   const tokens = {
     "advisor-token": {
@@ -108,6 +115,7 @@ function createFakeDatabase() {
 
   return {
     approvals,
+    notifications,
     async getUserByAccessToken(accessToken) {
       return tokens[accessToken] ?? null;
     },
@@ -123,6 +131,9 @@ function createFakeDatabase() {
       }
 
       return [];
+    },
+    async getAdminProfileIds() {
+      return ["admin-1"];
     },
     async applyAdvisorDecision(decisionInput) {
       const proposal = proposals.get(decisionInput.proposalId);
@@ -151,6 +162,10 @@ function createFakeDatabase() {
 
       proposals.set(decisionInput.proposalId, updatedProposal);
       return updatedProposal;
+    },
+    async createNotifications(createdNotifications) {
+      notifications.push(...createdNotifications);
+      return createdNotifications;
     }
   };
 }
@@ -223,6 +238,14 @@ test("advisor approval creates approval history and moves proposal to admin revi
   assert.equal(database.approvals[0].reviewer_id, "advisor-1");
   assert.equal(database.approvals[0].reviewer_role, "advisor");
   assert.equal(database.approvals[0].decision, "approve");
+  assert.equal(database.notifications.length, 2);
+  assert.deepEqual(
+    database.notifications.map((notification) => [notification.user_id, notification.type]),
+    [
+      ["executive-1", "advisor_approved"],
+      ["admin-1", "pending_admin_review"]
+    ]
+  );
 });
 
 test("advisor rejection creates approval history and moves proposal to rejected state", async (t) => {
@@ -245,6 +268,9 @@ test("advisor rejection creates approval history and moves proposal to rejected 
   assert.equal(database.approvals.length, 1);
   assert.equal(database.approvals[0].decision, "reject");
   assert.equal(database.approvals[0].remarks, "Please revise the event schedule.");
+  assert.equal(database.notifications.length, 1);
+  assert.equal(database.notifications[0].user_id, "executive-1");
+  assert.equal(database.notifications[0].type, "advisor_rejected");
 });
 
 test("wrong role is blocked from advisor decisions", async (t) => {
@@ -264,6 +290,7 @@ test("wrong role is blocked from advisor decisions", async (t) => {
   assert.equal(response.status, 403);
   assert.equal(payload.error.code, "FORBIDDEN");
   assert.equal(database.approvals.length, 0);
+  assert.equal(database.notifications.length, 0);
 });
 
 test("missing token is blocked from advisor decisions", async (t) => {
@@ -283,6 +310,7 @@ test("missing token is blocked from advisor decisions", async (t) => {
   assert.equal(response.status, 401);
   assert.equal(payload.error.code, "AUTH_REQUIRED");
   assert.equal(database.approvals.length, 0);
+  assert.equal(database.notifications.length, 0);
 });
 
 test("duplicate or late transitions fail cleanly without new approval history", async (t) => {
@@ -302,6 +330,7 @@ test("duplicate or late transitions fail cleanly without new approval history", 
   assert.equal(response.status, 409);
   assert.equal(payload.error.code, "INVALID_PROPOSAL_STATE");
   assert.equal(database.approvals.length, 0);
+  assert.equal(database.notifications.length, 0);
 });
 
 test("invalid transition attempts from rejected proposals fail cleanly", async (t) => {
@@ -321,6 +350,7 @@ test("invalid transition attempts from rejected proposals fail cleanly", async (
   assert.equal(response.status, 409);
   assert.equal(payload.error.code, "INVALID_PROPOSAL_STATE");
   assert.equal(database.approvals.length, 0);
+  assert.equal(database.notifications.length, 0);
 });
 
 test("invalid decision input is blocked", async (t) => {
@@ -340,6 +370,7 @@ test("invalid decision input is blocked", async (t) => {
   assert.equal(response.status, 400);
   assert.equal(payload.error.code, "VALIDATION_ERROR");
   assert.equal(database.approvals.length, 0);
+  assert.equal(database.notifications.length, 0);
 });
 
 test("advisor cannot act on a proposal outside assigned clubs", async (t) => {
@@ -359,4 +390,5 @@ test("advisor cannot act on a proposal outside assigned clubs", async (t) => {
   assert.equal(response.status, 403);
   assert.equal(payload.error.code, "FORBIDDEN");
   assert.equal(database.approvals.length, 0);
+  assert.equal(database.notifications.length, 0);
 });

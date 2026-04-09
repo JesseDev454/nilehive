@@ -17,6 +17,7 @@ function runMiddleware(middleware, req = {}) {
 
 test("createProposal stores the expected Week 1 proposal record", async () => {
   let insertedProposal;
+  let createdNotifications = [];
   const fakeDatabase = {
     async createProposal(proposal) {
       insertedProposal = proposal;
@@ -26,6 +27,14 @@ test("createProposal stores the expected Week 1 proposal record", async () => {
         created_at: "2026-04-05T10:00:00.000Z",
         updated_at: "2026-04-05T10:00:00.000Z"
       };
+    },
+    async getAdvisorProfileIdsByClubId(clubId) {
+      assert.equal(clubId, "club-1");
+      return ["advisor-1"];
+    },
+    async createNotifications(notifications) {
+      createdNotifications = notifications;
+      return notifications;
     }
   };
 
@@ -48,6 +57,10 @@ test("createProposal stores the expected Week 1 proposal record", async () => {
   assert.equal(insertedProposal.submitted_by, "exec-1");
   assert.equal(insertedProposal.status, "pending_advisor_review");
   assert.equal(proposal.title, "Leadership Summit");
+  assert.equal(createdNotifications.length, 1);
+  assert.equal(createdNotifications[0].user_id, "advisor-1");
+  assert.equal(createdNotifications[0].proposal_id, "proposal-1");
+  assert.equal(createdNotifications[0].type, "proposal_submitted");
 });
 
 test("requireRole blocks non-executives from executive routes", async () => {
@@ -79,4 +92,3 @@ test("auth middleware rejects invalid access tokens", async () => {
   assert.equal(error.statusCode, 401);
   assert.equal(error.code, "INVALID_TOKEN");
 });
-

@@ -12,6 +12,13 @@ const ADVISOR_DECISION_TRANSITIONS = Object.freeze({
   })
 });
 
+const NOTIFICATION_TYPES = Object.freeze({
+  proposalSubmitted: "proposal_submitted",
+  advisorApproved: "advisor_approved",
+  advisorRejected: "advisor_rejected",
+  pendingAdminReview: "pending_admin_review"
+});
+
 function getNextProposalStatus(currentStatus, decision) {
   const allowedTransitions = ADVISOR_DECISION_TRANSITIONS[currentStatus];
 
@@ -44,6 +51,38 @@ function getStatusesForStage(stage) {
   };
 
   return stageStatuses[stage] ?? null;
+}
+
+function buildNotificationMessage(type, proposal, remarks = null) {
+  const remarksSuffix = remarks ? ` Remarks: ${remarks}` : "";
+
+  const messages = {
+    [NOTIFICATION_TYPES.proposalSubmitted]: `New proposal "${proposal.title}" was submitted and is awaiting your review.`,
+    [NOTIFICATION_TYPES.advisorApproved]: `Your proposal "${proposal.title}" was approved by the advisor.${remarksSuffix}`,
+    [NOTIFICATION_TYPES.advisorRejected]: `Your proposal "${proposal.title}" was rejected by the advisor.${remarksSuffix}`,
+    [NOTIFICATION_TYPES.pendingAdminReview]: `Proposal "${proposal.title}" is now awaiting admin review.`
+  };
+
+  return messages[type];
+}
+
+async function createNotificationBatch(database, notifications) {
+  const uniqueNotifications = notifications.filter(
+    (notification, index, allNotifications) =>
+      notification.user_id &&
+      allNotifications.findIndex(
+        (candidate) =>
+          candidate.user_id === notification.user_id &&
+          candidate.proposal_id === notification.proposal_id &&
+          candidate.type === notification.type
+      ) === index
+  );
+
+  if (!uniqueNotifications.length) {
+    return [];
+  }
+
+  return database.createNotifications(uniqueNotifications);
 }
 
 function formatExecutiveProposal(proposal, latestApproval = null) {
@@ -115,7 +154,7 @@ async function createProposal(options) {
 
   const validatedPayload = validateCreateProposalPayload(payload);
 
-  return database.createProposal({
+  const proposal = await database.createProposal({
     club_id: actor.clubId,
     submitted_by: actor.id,
     title: validatedPayload.title,
@@ -124,6 +163,21 @@ async function createProposal(options) {
     location: validatedPayload.location,
     status: "pending_advisor_review"
   });
+
+  const advisorIds = await database.getAdvisorProfileIdsByClubId(actor.clubId);
+
+  await createNotificationBatch(
+    database,
+    advisorIds.map((advisorId) => ({
+      user_id: advisorId,
+      proposal_id: proposal.id,
+      type: NOTIFICATION_TYPES.proposalSubmitted,
+      message: buildNotificationMessage(NOTIFICATION_TYPES.proposalSubmitted, proposal),
+      delivery_status: "stored"
+    }))
+  );
+
+  return proposal;
 }
 
 async function getPendingAdvisorProposals(options) {
@@ -284,6 +338,44 @@ async function submitAdvisorDecision(options) {
       "INVALID_PROPOSAL_STATE"
     );
   }
+
+  const notifications = [
+    {
+      user_id: updatedProposal.submitted_by,
+      proposal_id: updatedProposal.id,
+      type:
+        validatedPayload.decision === "approve"
+          ? NOTIFICATION_TYPES.advisorApproved
+          : NOTIFICATION_TYPES.advisorRejected,
+      message: buildNotificationMessage(
+        validatedPayload.decision === "approve"
+          ? NOTIFICATION_TYPES.advisorApproved
+          : NOTIFICATION_TYPES.advisorRejected,
+        updatedProposal,
+        validatedPayload.remarks
+      ),
+      delivery_status: "stored"
+    }
+  ];
+
+  if (nextStatus === "pending_admin_review") {
+    const adminIds = await database.getAdminProfileIds();
+
+    notifications.push(
+      ...adminIds.map((adminId) => ({
+        user_id: adminId,
+        proposal_id: updatedProposal.id,
+        type: NOTIFICATION_TYPES.pendingAdminReview,
+        message: buildNotificationMessage(
+          NOTIFICATION_TYPES.pendingAdminReview,
+          updatedProposal
+        ),
+        delivery_status: "stored"
+      }))
+    );
+  }
+
+  await createNotificationBatch(database, notifications);
 
   return updatedProposal;
 }

@@ -3,6 +3,8 @@ const { getEnv } = require("./env");
 
 const proposalSelect =
   "id, club_id, submitted_by, title, description, event_date, location, status, advisor_remarks, advisor_decided_at, advisor_decided_by, created_at, updated_at";
+const notificationSelect =
+  "id, user_id, proposal_id, type, message, delivery_status, created_at";
 
 function createAdminClient() {
   const env = getEnv();
@@ -138,6 +140,33 @@ function createDatabase(options = {}) {
       return data.map((club) => club.id);
     },
 
+    async getAdvisorProfileIdsByClubId(clubId) {
+      const { data, error } = await getClient()
+        .from("clubs")
+        .select("advisor_id")
+        .eq("id", clubId)
+        .not("advisor_id", "is", null);
+
+      if (error) {
+        throw error;
+      }
+
+      return data.map((club) => club.advisor_id);
+    },
+
+    async getAdminProfileIds() {
+      const { data, error } = await getClient()
+        .from("profiles")
+        .select("id")
+        .eq("role", "admin");
+
+      if (error) {
+        throw error;
+      }
+
+      return data.map((profile) => profile.id);
+    },
+
     async listPendingProposalsByClubIds(clubIds) {
       if (!clubIds.length) {
         return [];
@@ -228,6 +257,37 @@ function createDatabase(options = {}) {
 
         return latestByProposal;
       }, {});
+    },
+
+    async createNotifications(notifications) {
+      if (!notifications.length) {
+        return [];
+      }
+
+      const { data, error } = await getClient()
+        .from("notifications")
+        .insert(notifications)
+        .select(notificationSelect);
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async listNotificationsByUserId(userId) {
+      const { data, error } = await getClient()
+        .from("notifications")
+        .select(notificationSelect)
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
     }
   };
 }
