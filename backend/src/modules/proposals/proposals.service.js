@@ -26,6 +26,41 @@ function getNextProposalStatus(currentStatus, decision) {
   return allowedTransitions[decision];
 }
 
+function getCurrentStage(status) {
+  const stages = {
+    pending_advisor_review: "advisor_review",
+    pending_admin_review: "admin_review",
+    advisor_rejected: "rejected"
+  };
+
+  return stages[status] ?? status;
+}
+
+function formatExecutiveProposal(proposal, latestApproval = null) {
+  return {
+    id: proposal.id,
+    title: proposal.title,
+    description: proposal.description,
+    event_date: proposal.event_date,
+    status: proposal.status,
+    current_stage: getCurrentStage(proposal.status),
+    submitted_at: proposal.created_at,
+    created_at: proposal.created_at,
+    updated_at: proposal.updated_at,
+    advisor_remarks: proposal.advisor_remarks,
+    advisor_decided_at: proposal.advisor_decided_at,
+    latest_approval: latestApproval
+      ? {
+          reviewer_id: latestApproval.reviewer_id,
+          reviewer_role: latestApproval.reviewer_role,
+          decision: latestApproval.decision,
+          remarks: latestApproval.remarks,
+          decided_at: latestApproval.decided_at
+        }
+      : null
+  };
+}
+
 async function createProposal(options) {
   const { actor, payload, database = db } = options;
 
@@ -72,6 +107,49 @@ async function getPendingAdvisorProposals(options) {
   }
 
   return database.listPendingProposalsByClubIds(clubIds);
+}
+
+async function listExecutiveProposals(options) {
+  const { actor, database = db } = options;
+
+  if (!actor) {
+    throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
+  }
+
+  if (actor.role !== "executive") {
+    throw new ApiError(403, "Only executives can view their proposals", "FORBIDDEN");
+  }
+
+  const proposals = await database.listExecutiveProposals(actor.id);
+  const latestApprovalsByProposalId = await database.getLatestApprovalsByProposalIds(
+    proposals.map((proposal) => proposal.id)
+  );
+
+  return proposals.map((proposal) =>
+    formatExecutiveProposal(proposal, latestApprovalsByProposalId[proposal.id] ?? null)
+  );
+}
+
+async function getExecutiveProposalDetail(options) {
+  const { actor, proposalId, database = db } = options;
+
+  if (!actor) {
+    throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
+  }
+
+  if (actor.role !== "executive") {
+    throw new ApiError(403, "Only executives can view their proposals", "FORBIDDEN");
+  }
+
+  const proposal = await database.getProposalById(proposalId);
+
+  if (!proposal || proposal.submitted_by !== actor.id) {
+    throw new ApiError(404, "Proposal not found", "PROPOSAL_NOT_FOUND");
+  }
+
+  const latestApproval = await database.getLatestApprovalByProposalId(proposalId);
+
+  return formatExecutiveProposal(proposal, latestApproval);
 }
 
 async function submitAdvisorDecision(options) {
@@ -125,5 +203,7 @@ async function submitAdvisorDecision(options) {
 module.exports = {
   createProposal,
   getPendingAdvisorProposals,
+  listExecutiveProposals,
+  getExecutiveProposalDetail,
   submitAdvisorDecision
 };

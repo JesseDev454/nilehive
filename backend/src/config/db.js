@@ -92,6 +92,20 @@ function createDatabase(options = {}) {
       return data ?? null;
     },
 
+    async listExecutiveProposals(submittedBy) {
+      const { data, error } = await getClient()
+        .from("proposals")
+        .select(proposalSelect)
+        .eq("submitted_by", submittedBy)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
     async getAdvisorClubIds(advisorId) {
       const { data, error } = await getClient()
         .from("clubs")
@@ -155,6 +169,46 @@ function createDatabase(options = {}) {
       }
 
       return data ?? null;
+    },
+
+    async getLatestApprovalByProposalId(proposalId) {
+      const { data, error } = await getClient()
+        .from("approvals")
+        .select("proposal_id, reviewer_id, reviewer_role, decision, remarks, decided_at")
+        .eq("proposal_id", proposalId)
+        .order("decided_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? null;
+    },
+
+    async getLatestApprovalsByProposalIds(proposalIds) {
+      if (!proposalIds.length) {
+        return {};
+      }
+
+      const { data, error } = await getClient()
+        .from("approvals")
+        .select("proposal_id, reviewer_id, reviewer_role, decision, remarks, decided_at")
+        .in("proposal_id", proposalIds)
+        .order("decided_at", { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      return data.reduce((latestByProposal, approval) => {
+        if (!latestByProposal[approval.proposal_id]) {
+          latestByProposal[approval.proposal_id] = approval;
+        }
+
+        return latestByProposal;
+      }, {});
     }
   };
 }

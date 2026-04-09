@@ -11,6 +11,8 @@ function createProposalsRouter(options = {}) {
   const controller = createProposalsController({ database });
 
   router.post("/", auth, requireRole("executive"), controller.createProposal);
+  router.get("/", auth, requireRole("executive"), controller.listExecutiveProposals);
+  router.get("/:proposalId", auth, requireRole("executive"), controller.getExecutiveProposalDetail);
   router.get(
     "/pending-advisor",
     auth,

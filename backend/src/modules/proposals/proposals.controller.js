@@ -1,7 +1,9 @@
 const asyncHandler = require("../../shared/asyncHandler");
 const {
   createProposal,
+  getExecutiveProposalDetail,
   getPendingAdvisorProposals,
+  listExecutiveProposals,
   submitAdvisorDecision
 } = require("./proposals.service");
 
@@ -17,6 +19,25 @@ function createProposalsController(options = {}) {
       });
 
       res.status(201).json({ data: proposal });
+    }),
+
+    listExecutiveProposals: asyncHandler(async (req, res) => {
+      const proposals = await listExecutiveProposals({
+        actor: req.user,
+        database
+      });
+
+      res.status(200).json({ data: proposals });
+    }),
+
+    getExecutiveProposalDetail: asyncHandler(async (req, res) => {
+      const proposal = await getExecutiveProposalDetail({
+        actor: req.user,
+        proposalId: req.params.proposalId,
+        database
+      });
+
+      res.status(200).json({ data: proposal });
     }),
 
     listPendingAdvisorProposals: asyncHandler(async (req, res) => {
