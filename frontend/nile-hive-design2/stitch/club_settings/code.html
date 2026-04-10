@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Club Settings | Nile Operations</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed": "#d8e2ff",
+                        "inverse-on-surface": "#eef1f4",
+                        "outline": "#75777f",
+                        "on-tertiary": "#ffffff",
+                        "on-surface": "#181c1e",
+                        "on-primary-container": "#778bb5",
+                        "surface-container": "#ebeef1",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#d7dadd",
+                        "surface-bright": "#f7fafd",
+                        "secondary-fixed-dim": "#adc7ff",
+                        "on-tertiary-container": "#299e5c",
+                        "on-primary-fixed-variant": "#32476c",
+                        "on-secondary-fixed-variant": "#004493",
+                        "inverse-primary": "#b2c7f4",
+                        "surface-container-highest": "#e0e3e6",
+                        "surface-container-low": "#f1f4f7",
+                        "on-primary-fixed": "#011b3f",
+                        "surface": "#f7fafd",
+                        "primary-container": "#0b2347",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed": "#00210e",
+                        "surface-container-high": "#e5e8eb",
+                        "tertiary-fixed": "#8af9ae",
+                        "error-container": "#ffdad6",
+                        "secondary": "#0d5bbc",
+                        "on-background": "#181c1e",
+                        "tertiary": "#001105",
+                        "on-tertiary-fixed-variant": "#00522a",
+                        "primary-fixed-dim": "#b2c7f4",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "error": "#ba1a1a",
+                        "on-surface-variant": "#44474e",
+                        "tertiary-fixed-dim": "#6edc94",
+                        "primary": "#000d27",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#001a41",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#4a5e86",
+                        "tertiary-container": "#002a13",
+                        "secondary-container": "#629afe",
+                        "background": "#f7fafd",
+                        "primary-fixed": "#d7e2ff",
+                        "on-secondary-container": "#00316d",
+                        "outline-variant": "#c4c6cf",
+                        "surface-variant": "#e0e3e6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .tonal-transition {
+            background: linear-gradient(135deg, #000d27 0%, #0b2347 100%);
+        }
+        .glass-header {
+            background: rgba(247, 250, 253, 0.8);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+</head>
+<body class="bg-background font-body text-on-surface antialiased">
+<!-- SideNavBar (Authority: JSON & Design System) -->
+<aside class="h-screen w-64 fixed left-0 top-0 hidden lg:flex flex-col bg-[#000d27] shadow-2xl shadow-[#000d27]/40 z-50">
+<div class="p-6 flex flex-col gap-1">
+<div class="text-lg font-black text-white uppercase tracking-widest font-headline">Executive Portal</div>
+<div class="text-[10px] text-on-primary-container font-medium uppercase tracking-tighter">Academic Operations</div>
+</div>
+<nav class="flex flex-col p-4 gap-2 flex-grow overflow-y-auto">
+<div class="text-slate-400 hover:text-white hover:bg-white/5 font-['Manrope'] text-sm font-medium flex items-center gap-3 px-4 py-3 cursor-pointer active:opacity-80 hover:translate-x-1 transition-transform">
+<span class="material-symbols-outlined">shield_person</span>
+<span>Admin</span>
+</div>
+<div class="text-slate-400 hover:text-white hover:bg-white/5 font-['Manrope'] text-sm font-medium flex items-center gap-3 px-4 py-3 cursor-pointer active:opacity-80 hover:translate-x-1 transition-transform">
+<span class="material-symbols-outlined">account_balance</span>
+<span>President</span>
+</div>
+<div class="text-slate-400 hover:text-white hover:bg-white/5 font-['Manrope'] text-sm font-medium flex items-center gap-3 px-4 py-3 cursor-pointer active:opacity-80 hover:translate-x-1 transition-transform">
+<span class="material-symbols-outlined">groups</span>
+<span>Executive</span>
+</div>
+<div class="text-slate-400 hover:text-white hover:bg-white/5 font-['Manrope'] text-sm font-medium flex items-center gap-3 px-4 py-3 cursor-pointer active:opacity-80 hover:translate-x-1 transition-transform">
+<span class="material-symbols-outlined">person</span>
+<span>Student</span>
+</div>
+<!-- Active Navigation Logic: Clubs Active -->
+<div class="bg-[#0d5bbc] text-white rounded-lg shadow-inner font-['Manrope'] text-sm font-medium flex items-center gap-3 px-4 py-3 cursor-pointer active:opacity-80 hover:translate-x-1 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">diversity_3</span>
+<span>Clubs</span>
+</div>
+<div class="text-slate-400 hover:text-white hover:bg-white/5 font-['Manrope'] text-sm font-medium flex items-center gap-3 px-4 py-3 cursor-pointer active:opacity-80 hover:translate-x-1 transition-transform">
+<span class="material-symbols-outlined">event</span>
+<span>Events</span>
+</div>
+</nav>
+<div class="p-4 flex flex-col gap-2 mb-6">
+<button class="bg-[#0d5bbc] text-white rounded-xl py-3 px-4 font-headline font-bold text-sm shadow-lg shadow-secondary/20 flex items-center justify-center gap-2 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-sm">add</span>
+                New Initiative
+            </button>
+<div class="h-[1px] bg-white/10 my-2 mx-4"></div>
+<div class="text-slate-400 hover:text-white hover:bg-white/5 font-['Manrope'] text-sm font-medium flex items-center gap-3 px-4 py-3 cursor-pointer">
+<span class="material-symbols-outlined">help</span>
+<span>Help Center</span>
+</div>
+<div class="text-slate-400 hover:text-white hover:bg-white/5 font-['Manrope'] text-sm font-medium flex items-center gap-3 px-4 py-3 cursor-pointer">
+<span class="material-symbols-outlined text-error">logout</span>
+<span>Logout</span>
+</div>
+</div>
+</aside>
+<!-- TopNavBar (Authority: JSON & Design System) -->
+<header class="fixed top-0 w-full z-40 bg-slate-50/80 backdrop-blur-xl border-b border-slate-200/50 flex justify-between items-center px-6 h-16 lg:pl-72">
+<div class="flex items-center gap-4">
+<span class="text-xl font-bold tracking-tighter text-[#000d27] font-headline">Nile Operations</span>
+<div class="hidden md:flex items-center gap-6 ml-8">
+<span class="text-slate-500 hover:text-[#000d27] transition-colors font-['Manrope'] font-semibold tracking-tight text-sm">Dashboard</span>
+<span class="text-slate-500 hover:text-[#000d27] transition-colors font-['Manrope'] font-semibold tracking-tight text-sm">Calendar</span>
+<span class="text-[#0d5bbc] border-b-2 border-[#F5B942] pb-1 font-['Manrope'] font-semibold tracking-tight text-sm">Directory</span>
+<span class="text-slate-500 hover:text-[#000d27] transition-colors font-['Manrope'] font-semibold tracking-tight text-sm">Reports</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-slate-100 rounded-full transition-all active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant">notifications</span>
+</button>
+<button class="p-2 hover:bg-slate-100 rounded-full transition-all active:scale-95">
+<span class="material-symbols-outlined text-on-surface-variant">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border-2 border-secondary-container">
+<img alt="User profile avatar" class="w-full h-full object-cover" data-alt="portrait of a confident university administrator in a professional suit with blurred library background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoIQhl3N-G5OuVSergNSmnQWuka68_8sJKnDIgfvuagIWHml_6-IH9oBtrK6Y69ds8QhPFgy_aNi5lmoyNBC9rvK7uedl5ok5VK7TWL_Rk5SvnWjJmmra4gS5us7Q8XsiiT9vpMzAgnGX9E5kYejMh-begkvA1ObME28jinLbRUyu5p3d4FFDdFRzbcEm8FKBPw_u4aKuWoVquPvzVjv0sLnb7xQj86KuGu2MN43vsiTjLArPsaNpPlyQB6OKOYs-T-jkQ26dzRreb"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="lg:ml-64 pt-24 pb-12 px-6 lg:px-12 max-w-[1400px]">
+<!-- Hero Branding Section (The Editorial Scale) -->
+<header class="mb-12 flex flex-col md:flex-row justify-between items-end gap-6">
+<div class="max-w-2xl">
+<div class="flex items-center gap-3 mb-4">
+<span class="bg-tertiary-fixed text-on-tertiary-fixed px-3 py-1 rounded-full text-xs font-bold font-label flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-on-tertiary-fixed animate-pulse"></span>
+                        ACTIVE STATUS
+                    </span>
+<span class="text-on-surface-variant font-label text-sm uppercase tracking-widest">Nile Tech Society</span>
+</div>
+<h1 class="text-primary text-4xl md:text-5xl font-headline font-extrabold tracking-tight leading-tight">
+                    Club Settings &amp; <span class="text-secondary">Identity Profile</span>
+</h1>
+<p class="text-on-surface-variant text-lg mt-4 font-body leading-relaxed max-w-xl">
+                    Configure your club's presence across the university platform. Updates here will reflect on the student explore page and administrative records.
+                </p>
+</div>
+<button class="bg-[#299e5c] hover:bg-[#00522a] text-white px-8 py-4 rounded-xl font-headline font-bold text-base flex items-center gap-3 transition-all shadow-xl shadow-tertiary/10 active:scale-95">
+<span class="material-symbols-outlined">save</span>
+                Save Changes
+            </button>
+</header>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Core Profile Details (Form) -->
+<section class="md:col-span-7 space-y-6">
+<div class="bg-surface-container-lowest rounded-[2rem] p-8 shadow-sm">
+<h3 class="text-xl font-headline font-bold text-primary mb-8 flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">edit_square</span>
+                        General Information
+                    </h3>
+<div class="grid grid-cols-1 gap-6">
+<div class="space-y-2">
+<label class="block text-sm font-label font-bold text-on-surface ml-1">Club Name</label>
+<input class="w-full bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-secondary/20 font-body text-primary transition-all" type="text" value="Nile Tech Society"/>
+</div>
+<div class="space-y-2">
+<label class="block text-sm font-label font-bold text-on-surface ml-1">Description</label>
+<textarea class="w-full bg-surface-container-low border-none rounded-xl px-4 py-3 focus:ring-2 focus:ring-secondary/20 font-body text-primary transition-all" rows="4">The Nile Tech Society is a community dedicated to exploring emerging technologies, fostering software engineering excellence, and bridge the gap between academic theory and industry practice through workshops and hackathons.</textarea>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="block text-sm font-label font-bold text-on-surface ml-1">Contact Email</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-3 text-slate-400 text-lg">mail</span>
+<input class="w-full bg-surface-container-low border-none rounded-xl pl-11 pr-4 py-3 focus:ring-2 focus:ring-secondary/20 font-body text-primary" type="email" value="tech.society@nileuniversity.edu.ng"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="block text-sm font-label font-bold text-on-surface ml-1">WhatsApp Link</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-3 text-slate-400 text-lg">link</span>
+<input class="w-full bg-surface-container-low border-none rounded-xl pl-11 pr-4 py-3 focus:ring-2 focus:ring-secondary/20 font-body text-primary" type="text" value="https://chat.whatsapp.com/Gj8..."/>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-[2rem] p-8 shadow-sm">
+<h3 class="text-xl font-headline font-bold text-primary mb-8 flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">supervisor_account</span>
+                        Academic Advisor
+                    </h3>
+<div class="flex items-center gap-6 p-4 bg-surface-container rounded-2xl">
+<div class="w-16 h-16 rounded-full overflow-hidden border-4 border-white shadow-sm">
+<img alt="Advisor portrait" class="w-full h-full object-cover" data-alt="middle-aged female professor with glasses and a friendly expression in a formal academic setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0njdxJHyxnkAh0jbPWUJ8fY1T5cW3IxK-GadVbfQahJ1XkRD1RSXBZDdlMB73GjN9iXAYuR6cz4QPnnIET3z9UNwFay-aPX6hVef-RTvNx-56rS_ZJ2ig_w3U7jN8ufCEoLtOCTYOO5cPLVJua5BIo2OdbFc_WjBeaeTV0anVSyQRIpSIEP9XKHaIFfxI9_Lkjmu3QvFxlupgsscH56nIPrjOcG7LUKjFBWwgnEOXNv-nuTUDYxg4P9S64dzRRiLJAB9oLv-PQLgO"/>
+</div>
+<div class="flex-grow">
+<p class="font-headline font-bold text-primary">Dr. Sarah Thompson</p>
+<p class="text-sm text-on-surface-variant">Faculty of Information Technology</p>
+</div>
+<button class="text-secondary font-label font-bold text-sm hover:underline">Change Advisor</button>
+</div>
+</div>
+</section>
+<!-- Media & Personnel Sidebars -->
+<aside class="md:col-span-5 space-y-6">
+<!-- Logo Upload Section -->
+<div class="bg-surface-container-lowest rounded-[2rem] p-8 shadow-sm">
+<h3 class="text-xl font-headline font-bold text-primary mb-6">Club Branding</h3>
+<div class="flex flex-col items-center">
+<div class="relative group cursor-pointer w-40 h-40 mb-6">
+<div class="absolute inset-0 bg-[#000d27] rounded-[2.5rem] flex items-center justify-center overflow-hidden shadow-2xl shadow-primary/20">
+<span class="text-white text-5xl font-headline font-black">NTS</span>
+<div class="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white">
+<span class="material-symbols-outlined text-3xl">upload</span>
+<span class="text-[10px] font-bold uppercase tracking-widest mt-1">Update Logo</span>
+</div>
+</div>
+</div>
+<p class="text-xs text-on-surface-variant text-center px-4">Recommendation: High resolution PNG or SVG with transparent background.</p>
+</div>
+</div>
+<!-- Executive Team List -->
+<div class="bg-surface-container-lowest rounded-[2rem] p-8 shadow-sm">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-xl font-headline font-bold text-primary">Executive Team</h3>
+<button class="text-secondary p-1 hover:bg-secondary/10 rounded-lg transition-colors">
+<span class="material-symbols-outlined">person_add</span>
+</button>
+</div>
+<div class="space-y-4">
+<!-- Exec Member -->
+<div class="flex items-center gap-4 p-3 hover:bg-surface-container-low rounded-2xl transition-all cursor-default group">
+<img alt="Exec 1" class="w-12 h-12 rounded-full object-cover" data-alt="portrait of a young african man smiling in a casual university outfit" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDV5wJLS4CDm8VcGeV4IhMV--G-97Uv4Hg9w93zcL1-VH4EDA-hMBAUUrYBr2-_aXjNG6YQUisDnAvm8EbWgz8LP9yVN6AHekShKHVJjoHX5yetEqM3jZgdVY6HAdBnHYj51XwCTOONbLqtn61mE8jkqbXGc2BmqWvdfuLeq1auY9jQcT34dEBLOH_MCAdWKzDt8cEohtdh5CTRJ1ZTIgXxHpxkXzvVoLDwu-qqKVJBXkat815nw31RFNIap2q8qIPhRnOsEmZyucj7"/>
+<div class="flex-grow">
+<p class="text-sm font-headline font-bold text-primary">Ibrahim Musa</p>
+<p class="text-[11px] font-label font-bold text-on-surface-variant uppercase tracking-wider">President</p>
+</div>
+<span class="material-symbols-outlined text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">drag_indicator</span>
+</div>
+<!-- Exec Member -->
+<div class="flex items-center gap-4 p-3 hover:bg-surface-container-low rounded-2xl transition-all cursor-default group">
+<img alt="Exec 2" class="w-12 h-12 rounded-full object-cover" data-alt="portrait of a young woman smiling with a modern office background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAeYhL0NeHDKC_evcQH_z4P8CUlRwW8kUq2bgoOD0y9ACC_rMQh0LF_ArQHHeLLpriVcDlYm6uz3nEvbvtybIQH04wZrSbK_ijFAa8KUSSCbMNNocdpPHeYrVWF6d7F-Qm4KGFoPxMDWNBKM0Biqlf6BSl88kIpFGVe1DOjZujkjboYSc9q54g8myFq8C3Req8eK6AEt4Ffvc9nGmmcOJ__CCqv-0kXII23MwKdIPwa5IX2-prZ43aXRRGfNa5owNM42DocYIc_8bP"/>
+<div class="flex-grow">
+<p class="text-sm font-headline font-bold text-primary">Amina Bello</p>
+<p class="text-[11px] font-label font-bold text-on-surface-variant uppercase tracking-wider">Vice President</p>
+</div>
+<span class="material-symbols-outlined text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">drag_indicator</span>
+</div>
+<!-- Exec Member -->
+<div class="flex items-center gap-4 p-3 hover:bg-surface-container-low rounded-2xl transition-all cursor-default group">
+<img alt="Exec 3" class="w-12 h-12 rounded-full object-cover" data-alt="portrait of a male student with short hair and glasses" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAmd46cG6feoa3-5ALnu3KH_GkUU4Wvu0fkY26uSav_0DESDgE0Jc8t7QN8x6pJ3RoKVC-U3Yz0SpbzxIqv5kZ3nvBduUrNDaZ5UmmPIBPpD3D0jd16_vjSYC5uRA4HUlJxmPnIT81KXdaNMWPeJaIrzN5vpwN19epC9KaSAhYYpwOupp6rlWeiogWpXez5ZHnyW4foEznZ_z-23sFRmhOj1cDFmVhgbt9CDC6Ng-Eu8_tszIsgGe_4kJVxnsU1CuyvDWGuJ0BH8DtI"/>
+<div class="flex-grow">
+<p class="text-sm font-headline font-bold text-primary">Daniel Okoro</p>
+<p class="text-[11px] font-label font-bold text-on-surface-variant uppercase tracking-wider">Tech Lead</p>
+</div>
+<span class="material-symbols-outlined text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">drag_indicator</span>
+</div>
+</div>
+<button class="w-full mt-6 py-3 border-2 border-dashed border-outline-variant rounded-2xl text-on-surface-variant font-label text-xs font-bold hover:bg-slate-50 transition-colors uppercase tracking-widest">
+                        Manage All Roles
+                    </button>
+</div>
+</aside>
+</div>
+<!-- Footer Section -->
+<footer class="mt-16 pt-8 border-t border-slate-200 flex flex-col md:flex-row justify-between items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="text-primary font-headline font-black text-xl">NILE</span>
+<span class="text-on-surface-variant font-body text-xs">© 2024 Nile University Operations Portal</span>
+</div>
+<div class="flex gap-8">
+<a class="text-xs font-label font-bold text-on-surface-variant hover:text-primary transition-colors uppercase tracking-widest" href="#">Privacy Policy</a>
+<a class="text-xs font-label font-bold text-on-surface-variant hover:text-primary transition-colors uppercase tracking-widest" href="#">Help &amp; Support</a>
+<a class="text-xs font-label font-bold text-on-surface-variant hover:text-primary transition-colors uppercase tracking-widest" href="#">Data Ethics</a>
+</div>
+</footer>
+</main>
+<!-- BottomNavBar (Authority: JSON & Design System) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-3 pb-safe lg:hidden bg-white/90 backdrop-blur-md shadow-[0_-4px_20px_rgba(11,35,71,0.08)] rounded-t-3xl border-t border-slate-100">
+<div class="flex flex-col items-center justify-center text-slate-400 font-['Inter'] text-[10px] font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined">grid_view</span>
+<span>Home</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-[#0d5bbc]/10 text-[#0d5bbc] rounded-2xl px-4 py-1 font-['Inter'] text-[10px] font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">groups</span>
+<span>Clubs</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 font-['Inter'] text-[10px] font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined">notifications</span>
+<span>Alerts</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 font-['Inter'] text-[10px] font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined">account_circle</span>
+<span>Profile</span>
+</div>
+</nav>
+<!-- Contextual FAB (Suppressed on Settings/Profile per hierarchy rules, but included if deemed essential for 'Quick Actions') -->
+<!-- Suppression rule applied: No FAB on Settings/Profile Screens -->
+</body></html>
