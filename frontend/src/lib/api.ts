@@ -12,6 +12,36 @@ export interface CreateProposalPayload {
   description: string;
   event_date: string;
   location: string;
+  club_id?: string;
+  aim_objectives: string;
+  proposed_activity: string;
+  event_time?: string | null;
+  number_of_participants: number;
+  budget_estimate?: number | null;
+  budget_line_items: BudgetLineItem[];
+  responsible_members: ResponsibleMember[];
+}
+
+export interface BudgetLineItem {
+  item: string;
+  quantity: number;
+  description: string;
+  amount: number;
+}
+
+export interface ResponsibleMember {
+  name: string;
+  student_id: string;
+  phone_number: string;
+  position: string;
+}
+
+export interface ClubRecord {
+  id: string;
+  name: string;
+  code: string | null;
+  advisor_id: string | null;
+  created_at: string;
 }
 
 export interface ProposalRecord {
@@ -22,6 +52,13 @@ export interface ProposalRecord {
   description: string;
   event_date: string;
   location?: string;
+  aim_objectives?: string | null;
+  proposed_activity?: string | null;
+  event_time?: string | null;
+  number_of_participants?: number | null;
+  budget_estimate?: number | null;
+  budget_line_items?: BudgetLineItem[];
+  responsible_members?: ResponsibleMember[];
   status: string;
   current_stage?: string;
   submitted_at?: string;
@@ -121,6 +158,15 @@ export async function createProposal(payload: CreateProposalPayload, token?: str
     method: "POST",
     token,
     body: payload
+  });
+
+  return response.data;
+}
+
+export async function getClubs(token?: string) {
+  const response = await request<ApiEnvelope<ClubRecord[]>>("/api/v1/clubs", {
+    method: "GET",
+    token
   });
 
   return response.data;

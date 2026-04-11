@@ -20,6 +20,14 @@ function getDateLabel(value?: string) {
   return value ? value.slice(0, 10) : "-";
 }
 
+function formatCurrency(value?: number | null) {
+  return new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    maximumFractionDigits: 0
+  }).format(value || 0);
+}
+
 function buildApprovalSteps(proposal: ProposalRecord) {
   const advisorStepStatus =
     proposal.status === "advisor_rejected"
@@ -139,6 +147,24 @@ export default function ProposalDetail() {
                       <span className="text-muted-foreground">Event Date</span>
                       <p className="font-medium mt-1">{getDateLabel(proposal.event_date)}</p>
                     </div>
+                    {proposal.event_time && (
+                      <div>
+                        <span className="text-muted-foreground">Event Time</span>
+                        <p className="font-medium mt-1">{proposal.event_time.slice(0, 5)}</p>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-muted-foreground">Venue</span>
+                      <p className="font-medium mt-1">{proposal.location ?? "-"}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Participants</span>
+                      <p className="font-medium mt-1">{proposal.number_of_participants ?? "-"}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Budget Estimate</span>
+                      <p className="font-medium mt-1">{formatCurrency(proposal.budget_estimate)}</p>
+                    </div>
                     <div>
                       <span className="text-muted-foreground">Current Stage</span>
                       <p className="font-medium mt-1">{proposal.current_stage ?? proposal.status}</p>
@@ -156,6 +182,67 @@ export default function ProposalDetail() {
                   </div>
                 </CardContent>
               </Card>
+
+              {(proposal.aim_objectives || proposal.proposed_activity) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Proposal Form 2.0 Context</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm">
+                    {proposal.proposed_activity && (
+                      <div>
+                        <span className="text-muted-foreground">Proposed Activity</span>
+                        <p className="mt-1">{proposal.proposed_activity}</p>
+                      </div>
+                    )}
+                    {proposal.aim_objectives && (
+                      <div>
+                        <span className="text-muted-foreground">Aim and Objectives</span>
+                        <p className="mt-1">{proposal.aim_objectives}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {!!proposal.budget_line_items?.length && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Budget Line Items</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm">
+                    {proposal.budget_line_items.map((item, index) => (
+                      <div key={`${item.item}-${index}`} className="rounded-xl bg-muted p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="font-medium">{item.item}</p>
+                          <p className="font-mono font-semibold">{formatCurrency(item.amount)}</p>
+                        </div>
+                        <p className="text-muted-foreground mt-1">{item.description}</p>
+                        <p className="text-xs text-muted-foreground mt-2">Quantity: {item.quantity}</p>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
+
+              {!!proposal.responsible_members?.length && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Responsible Club Members</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3 text-sm">
+                    {proposal.responsible_members.map((member, index) => (
+                      <div key={`${member.student_id}-${index}`} className="rounded-xl bg-muted p-3">
+                        <p className="font-medium">{member.name}</p>
+                        <p className="text-muted-foreground mt-1">
+                          {member.position} - {member.student_id}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">{member.phone_number}</p>
+                      </div>
+                    ))}
+                  </CardContent>
+                </Card>
+              )}
 
               {(proposal.advisor_remarks || proposal.latest_approval) && (
                 <Card>

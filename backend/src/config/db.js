@@ -2,9 +2,10 @@ const { createClient } = require("@supabase/supabase-js");
 const { getEnv } = require("./env");
 
 const proposalSelect =
-  "id, club_id, submitted_by, title, description, event_date, location, status, advisor_remarks, advisor_decided_at, advisor_decided_by, created_at, updated_at";
+  "id, club_id, submitted_by, title, description, event_date, location, aim_objectives, proposed_activity, event_time, number_of_participants, budget_estimate, budget_line_items, responsible_members, status, advisor_remarks, advisor_decided_at, advisor_decided_by, created_at, updated_at";
 const notificationSelect =
   "id, user_id, proposal_id, type, message, delivery_status, created_at";
+const clubSelect = "id, name, code, advisor_id, created_at";
 
 function createAdminClient() {
   const env = getEnv();
@@ -72,6 +73,29 @@ function createDatabase(options = {}) {
         .insert(proposal)
         .select(proposalSelect)
         .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async listClubs(filters = {}) {
+      let query = getClient()
+        .from("clubs")
+        .select(clubSelect)
+        .order("name", { ascending: true });
+
+      if (filters.ids?.length) {
+        query = query.in("id", filters.ids);
+      }
+
+      if (filters.advisorId) {
+        query = query.eq("advisor_id", filters.advisorId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         throw error;

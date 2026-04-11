@@ -2,6 +2,7 @@ const express = require("express");
 const ApiError = require("./shared/ApiError");
 const errorHandler = require("./middleware/errorHandler");
 const { createHealthRouter } = require("./modules/health/health.routes");
+const { createClubsRouter } = require("./modules/clubs/clubs.routes");
 const { createNotificationsRouter } = require("./modules/notifications/notifications.routes");
 const { createProposalsRouter } = require("./modules/proposals/proposals.routes");
 
@@ -32,6 +33,7 @@ function createApp(options = {}) {
   });
 
   app.use("/api/v1/health", createHealthRouter({ database }));
+  app.use("/api/v1/clubs", createClubsRouter({ database }));
   app.use("/api/v1/notifications", createNotificationsRouter({ database }));
   app.use("/api/v1/proposals", createProposalsRouter({ database }));
 

@@ -88,9 +88,18 @@ async function createNotificationBatch(database, notifications) {
 function formatExecutiveProposal(proposal, latestApproval = null) {
   return {
     id: proposal.id,
+    club_id: proposal.club_id,
     title: proposal.title,
     description: proposal.description,
     event_date: proposal.event_date,
+    location: proposal.location,
+    aim_objectives: proposal.aim_objectives,
+    proposed_activity: proposal.proposed_activity,
+    event_time: proposal.event_time,
+    number_of_participants: proposal.number_of_participants,
+    budget_estimate: proposal.budget_estimate,
+    budget_line_items: proposal.budget_line_items ?? [],
+    responsible_members: proposal.responsible_members ?? [],
     status: proposal.status,
     current_stage: getCurrentStage(proposal.status),
     submitted_at: proposal.created_at,
@@ -118,6 +127,14 @@ function formatAdminProposal(proposal, latestApproval = null) {
     club_id: proposal.club_id,
     submitted_by: proposal.submitted_by,
     event_date: proposal.event_date,
+    location: proposal.location,
+    aim_objectives: proposal.aim_objectives,
+    proposed_activity: proposal.proposed_activity,
+    event_time: proposal.event_time,
+    number_of_participants: proposal.number_of_participants,
+    budget_estimate: proposal.budget_estimate,
+    budget_line_items: proposal.budget_line_items ?? [],
+    responsible_members: proposal.responsible_members ?? [],
     status: proposal.status,
     current_stage: getCurrentStage(proposal.status),
     submitted_at: proposal.created_at,
@@ -153,18 +170,30 @@ async function createProposal(options) {
   }
 
   const validatedPayload = validateCreateProposalPayload(payload);
+  const clubId = validatedPayload.club_id || actor.clubId;
+
+  if (clubId !== actor.clubId) {
+    throw new ApiError(403, "Executives can only submit proposals for their assigned club", "FORBIDDEN");
+  }
 
   const proposal = await database.createProposal({
-    club_id: actor.clubId,
+    club_id: clubId,
     submitted_by: actor.id,
     title: validatedPayload.title,
     description: validatedPayload.description,
     event_date: validatedPayload.event_date,
     location: validatedPayload.location,
+    aim_objectives: validatedPayload.aim_objectives,
+    proposed_activity: validatedPayload.proposed_activity,
+    event_time: validatedPayload.event_time,
+    number_of_participants: validatedPayload.number_of_participants,
+    budget_estimate: validatedPayload.budget_estimate,
+    budget_line_items: validatedPayload.budget_line_items,
+    responsible_members: validatedPayload.responsible_members,
     status: "pending_advisor_review"
   });
 
-  const advisorIds = await database.getAdvisorProfileIdsByClubId(actor.clubId);
+  const advisorIds = await database.getAdvisorProfileIdsByClubId(clubId);
 
   await createNotificationBatch(
     database,

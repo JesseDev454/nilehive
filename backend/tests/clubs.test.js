@@ -1,0 +1,167 @@
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const { createApp } = require("../src/app");
+
+function createFakeDatabase() {
+  const profiles = {
+    "executive-1": {
+      id: "executive-1",
+      full_name: "Amina Executive",
+      role: "executive",
+      club_id: "club-1"
+    },
+    "advisor-1": {
+      id: "advisor-1",
+      full_name: "Daniel Advisor",
+      role: "advisor",
+      club_id: null
+    },
+    "admin-1": {
+      id: "admin-1",
+      full_name: "Club Services Admin",
+      role: "admin",
+      club_id: null
+    }
+  };
+
+  const clubs = [
+    {
+      id: "club-1",
+      name: "Nile Innovators Club",
+      code: "NIC",
+      advisor_id: "advisor-1",
+      created_at: "2026-04-05T10:00:00.000Z"
+    },
+    {
+      id: "club-2",
+      name: "Robotics Club",
+      code: "ROB",
+      advisor_id: null,
+      created_at: "2026-04-05T10:00:00.000Z"
+    }
+  ];
+
+  const tokens = {
+    "executive-token": {
+      id: "executive-1",
+      email: "executive@nilehive.test"
+    },
+    "advisor-token": {
+      id: "advisor-1",
+      email: "advisor@nilehive.test"
+    },
+    "admin-token": {
+      id: "admin-1",
+      email: "admin@nilehive.test"
+    }
+  };
+
+  return {
+    async getUserByAccessToken(accessToken) {
+      return tokens[accessToken] ?? null;
+    },
+    async getProfileById(profileId) {
+      return profiles[profileId] ?? null;
+    },
+    async listClubs(filters = {}) {
+      return clubs.filter((club) => {
+        if (filters.ids?.length && !filters.ids.includes(club.id)) {
+          return false;
+        }
+
+        if (filters.advisorId && club.advisor_id !== filters.advisorId) {
+          return false;
+        }
+
+        return true;
+      });
+    }
+  };
+}
+
+async function createTestServer(database) {
+  const app = createApp({ database });
+  const server = await new Promise((resolve) => {
+    const instance = app.listen(0, () => resolve(instance));
+  });
+
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+
+  return {
+    baseUrl,
+    close: () =>
+      new Promise((resolve, reject) => {
+        server.close((error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+
+          resolve();
+        });
+      })
+  };
+}
+
+async function getClubs(baseUrl, token = "") {
+  const headers = {};
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${baseUrl}/api/v1/clubs`, {
+    method: "GET",
+    headers
+  });
+  const payload = await response.json();
+
+  return { response, payload };
+}
+
+test("executive can fetch only their linked club for the proposal dropdown", async (t) => {
+  const database = createFakeDatabase();
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const { response, payload } = await getClubs(server.baseUrl, "executive-token");
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.length, 1);
+  assert.equal(payload.data[0].id, "club-1");
+});
+
+test("advisor can fetch clubs assigned to them", async (t) => {
+  const database = createFakeDatabase();
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const { response, payload } = await getClubs(server.baseUrl, "advisor-token");
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.length, 1);
+  assert.equal(payload.data[0].advisor_id, "advisor-1");
+});
+
+test("admin can fetch all clubs", async (t) => {
+  const database = createFakeDatabase();
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const { response, payload } = await getClubs(server.baseUrl, "admin-token");
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.length, 2);
+});
+
+test("missing-token access is blocked for clubs", async (t) => {
+  const database = createFakeDatabase();
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const { response, payload } = await getClubs(server.baseUrl);
+
+  assert.equal(response.status, 401);
+  assert.equal(payload.error.code, "AUTH_REQUIRED");
+});
