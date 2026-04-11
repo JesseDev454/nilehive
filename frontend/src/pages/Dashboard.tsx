@@ -5,8 +5,17 @@ import { useRole } from "@/contexts/RoleContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { ApiClientError, getAdminProposals, getExecutiveProposals, type ProposalRecord } from "@/lib/api";
-import { FileText, Clock, CheckCircle, XCircle, Plus, Bell } from "lucide-react";
+import {
+  ApiClientError,
+  getAdminProposals,
+  getExecutiveDashboard,
+  getPresidentDashboard,
+  type ApprovedEventRecord,
+  type DashboardActivity,
+  type DashboardProposalSummary,
+  type ProposalRecord
+} from "@/lib/api";
+import { Activity, CalendarDays, FileText, Clock, CheckCircle, XCircle, Plus, Bell, Users } from "lucide-react";
 import {
   getAdvisorPendingProposalsErrorMessage,
   useAdvisorPendingProposals
@@ -96,7 +105,13 @@ function ProposalListState({
   return <p className="text-sm text-muted-foreground">{emptyMessage || "No proposals found yet."}</p>;
 }
 
-function ProposalSummaryList({ proposals, showClub }: { proposals: ProposalRecord[]; showClub?: boolean }) {
+function ProposalSummaryList({
+  proposals,
+  showClub
+}: {
+  proposals: Array<ProposalRecord | DashboardProposalSummary>;
+  showClub?: boolean;
+}) {
   return (
     <div className="space-y-3">
       {proposals.slice(0, 4).map((proposal) => (
@@ -119,15 +134,54 @@ function ProposalSummaryList({ proposals, showClub }: { proposals: ProposalRecor
   );
 }
 
+function UpcomingEventsList({ events }: { events: ApprovedEventRecord[] }) {
+  return (
+    <div className="space-y-3">
+      {events.slice(0, 4).map((event) => (
+        <Link key={event.id} to={`/proposals/${event.proposal_id}`} className="block">
+          <div className="flex items-center justify-between p-3 rounded-lg hover:bg-accent transition-colors gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <CalendarDays className="h-4 w-4 text-success shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">{event.title}</p>
+                <p className="text-xs text-muted-foreground">
+                  {getDateLabel(event.event_date)} - {event.location || "Venue TBC"}
+                </p>
+              </div>
+            </div>
+            <StatusBadge status="approved" />
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+function RecentActivityList({ activity }: { activity: DashboardActivity[] }) {
+  return (
+    <div className="space-y-3">
+      {activity.slice(0, 5).map((item) => (
+        <Link key={item.id} to={`/proposals/${item.proposal_id}`} className="block">
+          <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
+            <Activity className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <p className="text-sm font-medium truncate">{item.title}</p>
+              <p className="text-xs text-muted-foreground mt-1">{item.message}</p>
+            </div>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
 function ExecutiveDashboard() {
-  const { data: proposals = [], isLoading, isError, error } = useQuery({
-    queryKey: ["executive-dashboard-proposals"],
-    queryFn: () => getExecutiveProposals(),
+  const { data: dashboard, isLoading, isError, error } = useQuery({
+    queryKey: ["executive-dashboard"],
+    queryFn: () => getExecutiveDashboard(),
     retry: false
   });
-  const pending = proposals.filter((proposal) => isPendingStatus(proposal.status)).length;
-  const approved = proposals.filter((proposal) => isApprovedStatus(proposal.status)).length;
-  const rejected = proposals.filter((proposal) => isRejectedStatus(proposal.status)).length;
+  const summary = dashboard?.summary;
 
   return (
     <div className="space-y-6 animate-slide-up">
@@ -145,26 +199,64 @@ function ExecutiveDashboard() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard title="Pending" value={pending} icon={Clock} variant="warning" />
-        <StatCard title="Approved" value={approved} icon={CheckCircle} variant="success" />
-        <StatCard title="Rejected" value={rejected} icon={XCircle} variant="destructive" />
+        <StatCard title="Pending" value={summary?.pending_proposals ?? 0} icon={Clock} variant="warning" />
+        <StatCard title="Approved" value={summary?.approved_proposals ?? 0} icon={CheckCircle} variant="success" />
+        <StatCard title="Rejected" value={summary?.rejected_proposals ?? 0} icon={XCircle} variant="destructive" />
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Recent Proposals</CardTitle>
-          <Button asChild variant="outline" size="sm">
-            <Link to="/proposals">View all</Link>
-          </Button>
-        </CardHeader>
-        <CardContent>
-          {isLoading || isError || proposals.length === 0 ? (
-            <ProposalListState isLoading={isLoading} isError={isError} error={error} />
-          ) : (
-            <ProposalSummaryList proposals={proposals} />
-          )}
-        </CardContent>
-      </Card>
+      {dashboard?.action_items?.length ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Action Focus</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {dashboard.action_items.map((item) => (
+              <div key={item.type} className="rounded-lg bg-muted p-3 text-sm">
+                {item.label}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg">Recent Proposals</CardTitle>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/proposals">View all</Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {isLoading || isError || !dashboard?.recent_proposals.length ? (
+              <ProposalListState isLoading={isLoading} isError={isError} error={error} />
+            ) : (
+              <ProposalSummaryList proposals={dashboard.recent_proposals} />
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg">Upcoming Approved Events</CardTitle>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/events">Calendar</Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            {isLoading || isError || !dashboard?.upcoming_events.length ? (
+              <ProposalListState
+                isLoading={isLoading}
+                isError={isError}
+                error={error}
+                emptyMessage="No approved events yet."
+              />
+            ) : (
+              <UpcomingEventsList events={dashboard.upcoming_events} />
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
@@ -274,25 +366,120 @@ function AdminDashboard() {
   );
 }
 
-function PresidentDashboardPlaceholder() {
+function PresidentDashboard() {
+  const { data: dashboard, isLoading, isError, error } = useQuery({
+    queryKey: ["president-dashboard"],
+    queryFn: () => getPresidentDashboard(),
+    retry: false
+  });
+  const summary = dashboard?.summary;
+
   return (
     <div className="space-y-6 animate-slide-up">
       <div>
         <h1 className="text-2xl font-bold">President Dashboard</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          President-specific backend routes are planned for a later stage.
+          {dashboard?.club?.name ? `${dashboard.club.name} control tower` : "Club oversight and performance view"}
         </p>
       </div>
-      <Card>
-        <CardContent className="p-12 text-center">
-          <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-          <p className="font-medium">Live president metrics are not wired yet.</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            Stage 2 is focused on the backend routes that already exist: executive proposals, advisor reviews,
-            admin proposal visibility, and notifications.
-          </p>
-        </CardContent>
-      </Card>
+
+      {isError ? (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <FileText className="h-12 w-12 text-destructive mx-auto mb-3" />
+            <p className="font-medium">Unable to load president dashboard</p>
+            <p className="text-sm text-muted-foreground mt-2">{getErrorMessage(error)}</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard title="Total Proposals" value={summary?.total_proposals ?? 0} icon={FileText} />
+            <StatCard title="Pending" value={summary?.pending_proposals ?? 0} icon={Clock} variant="warning" />
+            <StatCard title="Approved Events" value={summary?.upcoming_events ?? 0} icon={CalendarDays} variant="success" />
+            <StatCard title="Executives" value={summary?.executive_count ?? 0} icon={Users} />
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Pending Proposal Oversight</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoading || !dashboard?.pending_proposals.length ? (
+                  <ProposalListState
+                    isLoading={isLoading}
+                    isError={false}
+                    error={null}
+                    emptyMessage="No pending proposals for this club right now."
+                  />
+                ) : (
+                  <ProposalSummaryList proposals={dashboard.pending_proposals} />
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Upcoming Approved Events</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoading || !dashboard?.upcoming_events.length ? (
+                  <ProposalListState
+                    isLoading={isLoading}
+                    isError={false}
+                    error={null}
+                    emptyMessage="No approved events yet."
+                  />
+                ) : (
+                  <UpcomingEventsList events={dashboard.upcoming_events} />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Executive Team</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoading || !dashboard?.executive_team.length ? (
+                  <p className="text-sm text-muted-foreground">
+                    {isLoading ? "Loading executive team..." : "No executives are linked to this club yet."}
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {dashboard.executive_team.map((executive) => (
+                      <div key={executive.id} className="flex items-center justify-between rounded-lg bg-muted p-3">
+                        <div>
+                          <p className="text-sm font-medium">{executive.full_name || "Unnamed executive"}</p>
+                          <p className="text-xs text-muted-foreground capitalize">{executive.role}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Recent Activity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoading || !dashboard?.recent_activity.length ? (
+                  <p className="text-sm text-muted-foreground">
+                    {isLoading ? "Loading activity..." : "No proposal activity yet."}
+                  </p>
+                ) : (
+                  <RecentActivityList activity={dashboard.recent_activity} />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -302,6 +489,6 @@ export default function Dashboard() {
 
   if (role === "advisor") return <AdvisorDashboard />;
   if (role === "admin") return <AdminDashboard />;
-  if (role === "president") return <PresidentDashboardPlaceholder />;
+  if (role === "president") return <PresidentDashboard />;
   return <ExecutiveDashboard />;
 }

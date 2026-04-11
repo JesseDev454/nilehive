@@ -106,6 +106,20 @@ function createDatabase(options = {}) {
       return data;
     },
 
+    async getClubById(clubId) {
+      const { data, error } = await getClient()
+        .from("clubs")
+        .select(clubSelect)
+        .eq("id", clubId)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? null;
+    },
+
     async getProposalById(proposalId) {
       const { data, error } = await getClient()
         .from("proposals")
@@ -125,6 +139,20 @@ function createDatabase(options = {}) {
         .from("proposals")
         .select(proposalSelect)
         .eq("submitted_by", submittedBy)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async listProposalsByClubId(clubId) {
+      const { data, error } = await getClient()
+        .from("proposals")
+        .select(proposalSelect)
+        .eq("club_id", clubId)
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -229,6 +257,26 @@ function createDatabase(options = {}) {
       }
 
       return data.map((profile) => profile.id);
+    },
+
+    async listProfilesByClubId(clubId, filters = {}) {
+      let query = getClient()
+        .from("profiles")
+        .select("id, full_name, role, club_id, created_at")
+        .eq("club_id", clubId)
+        .order("full_name", { ascending: true });
+
+      if (filters.role) {
+        query = query.eq("role", filters.role);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
     },
 
     async listPendingProposalsByClubIds(clubIds) {

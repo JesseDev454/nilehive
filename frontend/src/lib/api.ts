@@ -116,6 +116,72 @@ export interface EventReminderRecord {
   created_at: string;
 }
 
+export interface DashboardSummary {
+  total_proposals: number;
+  pending_proposals: number;
+  approved_proposals: number;
+  rejected_proposals: number;
+  approval_rate: number;
+  upcoming_events?: number;
+  reminders?: number;
+  executive_count?: number;
+}
+
+export interface DashboardActionItem {
+  type: string;
+  label: string;
+}
+
+export interface DashboardProposalSummary {
+  id: string;
+  title: string;
+  club_id: string;
+  event_date: string;
+  event_time?: string | null;
+  location?: string | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DashboardActivity {
+  id: string;
+  proposal_id: string;
+  title: string;
+  status: string;
+  message: string;
+  created_at: string;
+}
+
+export interface ExecutiveDashboardRecord {
+  role: "executive";
+  club_id: string;
+  summary: DashboardSummary;
+  action_items: DashboardActionItem[];
+  recent_proposals: DashboardProposalSummary[];
+  upcoming_events: ApprovedEventRecord[];
+  reminders: EventReminderRecord[];
+  notifications: NotificationRecord[];
+}
+
+export interface PresidentDashboardRecord {
+  role: "president";
+  club: ClubRecord | null;
+  club_id: string;
+  summary: DashboardSummary;
+  recent_activity: DashboardActivity[];
+  pending_proposals: DashboardProposalSummary[];
+  upcoming_events: ApprovedEventRecord[];
+  executive_team: {
+    id: string;
+    full_name: string | null;
+    role: string;
+    club_id: string | null;
+    created_at: string;
+  }[];
+  notifications: NotificationRecord[];
+}
+
 interface ApiEnvelope<T> {
   data: T;
 }
@@ -334,6 +400,30 @@ export async function getEventReminders(token?: string) {
     method: "GET",
     token
   });
+
+  return response.data;
+}
+
+export async function getExecutiveDashboard(token?: string) {
+  const response = await request<ApiEnvelope<ExecutiveDashboardRecord>>(
+    "/api/v1/dashboard/executive",
+    {
+      method: "GET",
+      token
+    }
+  );
+
+  return response.data;
+}
+
+export async function getPresidentDashboard(token?: string) {
+  const response = await request<ApiEnvelope<PresidentDashboardRecord>>(
+    "/api/v1/dashboard/president",
+    {
+      method: "GET",
+      token
+    }
+  );
 
   return response.data;
 }
