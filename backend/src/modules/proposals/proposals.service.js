@@ -94,6 +94,14 @@ function buildNotificationMessage(type, proposal, remarks = null) {
   return messages[type];
 }
 
+function buildApprovedEventReminderMessage(proposal) {
+  return `Approved event "${proposal.proposed_activity || proposal.title}" is scheduled for ${proposal.event_date}.`;
+}
+
+function getApprovedEventReminderAt(proposal) {
+  return `${proposal.event_date}T09:00:00.000Z`;
+}
+
 async function createNotificationBatch(database, notifications) {
   const uniqueNotifications = notifications.filter(
     (notification, index, allNotifications) =>
@@ -111,6 +119,28 @@ async function createNotificationBatch(database, notifications) {
   }
 
   return database.createNotifications(uniqueNotifications);
+}
+
+async function createApprovedEventReminders(database, proposal, recipientIds) {
+  if (!database.createEventReminders || proposal.status !== "approved") {
+    return [];
+  }
+
+  const uniqueRecipientIds = [...new Set(recipientIds.filter(Boolean))];
+
+  if (!uniqueRecipientIds.length) {
+    return [];
+  }
+
+  return database.createEventReminders(
+    uniqueRecipientIds.map((recipientId) => ({
+      user_id: recipientId,
+      proposal_id: proposal.id,
+      message: buildApprovedEventReminderMessage(proposal),
+      remind_at: getApprovedEventReminderAt(proposal),
+      delivery_status: "stored"
+    }))
+  );
 }
 
 function formatExecutiveProposal(proposal, latestApproval = null) {
@@ -533,6 +563,10 @@ async function submitAdminDecision(options) {
       delivery_status: "stored"
     }))
   );
+
+  if (validatedPayload.decision === "approve") {
+    await createApprovedEventReminders(database, updatedProposal, recipientIds);
+  }
 
   return updatedProposal;
 }

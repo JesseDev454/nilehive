@@ -3,8 +3,10 @@ const ApiError = require("./shared/ApiError");
 const errorHandler = require("./middleware/errorHandler");
 const { createHealthRouter } = require("./modules/health/health.routes");
 const { createClubsRouter } = require("./modules/clubs/clubs.routes");
+const { createEventsRouter } = require("./modules/events/events.routes");
 const { createNotificationsRouter } = require("./modules/notifications/notifications.routes");
 const { createProposalsRouter } = require("./modules/proposals/proposals.routes");
+const { createRemindersRouter } = require("./modules/reminders/reminders.routes");
 
 function createApp(options = {}) {
   const { database } = options;
@@ -34,8 +36,10 @@ function createApp(options = {}) {
 
   app.use("/api/v1/health", createHealthRouter({ database }));
   app.use("/api/v1/clubs", createClubsRouter({ database }));
+  app.use("/api/v1/events", createEventsRouter({ database }));
   app.use("/api/v1/notifications", createNotificationsRouter({ database }));
   app.use("/api/v1/proposals", createProposalsRouter({ database }));
+  app.use("/api/v1/reminders", createRemindersRouter({ database }));
 
   app.use((req, res, next) => {
     next(new ApiError(404, "Route not found", "NOT_FOUND"));

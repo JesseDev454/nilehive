@@ -140,7 +140,9 @@ export default function ProposalDetail() {
         queryClient.invalidateQueries({ queryKey: ["proposal-detail", role, id] }),
         queryClient.invalidateQueries({ queryKey: ["proposals"] }),
         queryClient.invalidateQueries({ queryKey: ["admin-dashboard-proposals"] }),
-        queryClient.invalidateQueries({ queryKey: ["notifications"] })
+        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+        queryClient.invalidateQueries({ queryKey: ["approved-events"] }),
+        queryClient.invalidateQueries({ queryKey: ["event-reminders"] })
       ]);
       setAdminRemarks("");
     } catch (decisionError) {

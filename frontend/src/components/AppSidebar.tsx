@@ -1,4 +1,4 @@
-import { FileText, Home, Plus, Clock, Bell } from "lucide-react";
+import { CalendarDays, FileText, Home, Plus, Clock, Bell } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useRole } from "@/contexts/RoleContext";
 import {
@@ -15,23 +15,27 @@ export function AppSidebar() {
     { title: "Dashboard", url: "/", icon: Home },
     { title: "New Proposal", url: "/proposals/new", icon: Plus },
     { title: "My Proposals", url: "/proposals", icon: FileText },
+    { title: "Approved Events", url: "/events", icon: CalendarDays },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
 
   const advisorItems = [
     { title: "Dashboard", url: "/", icon: Home },
     { title: "Pending Approvals", url: "/approvals", icon: Clock },
+    { title: "Approved Events", url: "/events", icon: CalendarDays },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
 
   const adminItems = [
     { title: "Dashboard", url: "/", icon: Home },
     { title: "All Proposals", url: "/proposals", icon: FileText },
+    { title: "Approved Events", url: "/events", icon: CalendarDays },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
 
   const presidentItems = [
     { title: "Dashboard", url: "/", icon: Home },
+    { title: "Approved Events", url: "/events", icon: CalendarDays },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
 

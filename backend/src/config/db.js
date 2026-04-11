@@ -5,6 +5,8 @@ const proposalSelect =
   "id, club_id, submitted_by, title, description, event_date, location, aim_objectives, proposed_activity, event_time, number_of_participants, budget_estimate, budget_line_items, responsible_members, status, advisor_remarks, advisor_decided_at, advisor_decided_by, admin_remarks, admin_decided_at, admin_decided_by, created_at, updated_at";
 const notificationSelect =
   "id, user_id, proposal_id, type, message, delivery_status, created_at";
+const eventReminderSelect =
+  "id, user_id, proposal_id, message, remind_at, delivery_status, created_at";
 const clubSelect = "id, name, code, advisor_id, created_at";
 
 function createAdminClient() {
@@ -140,6 +142,30 @@ function createDatabase(options = {}) {
 
       if (filters.status) {
         query = query.eq("status", filters.status);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async listApprovedProposals(filters = {}) {
+      let query = getClient()
+        .from("proposals")
+        .select(proposalSelect)
+        .eq("status", "approved")
+        .order("event_date", { ascending: true });
+
+      if (filters.clubIds) {
+        if (!filters.clubIds.length) {
+          return [];
+        }
+
+        query = query.in("club_id", filters.clubIds);
       }
 
       const { data, error } = await query;
@@ -332,12 +358,43 @@ function createDatabase(options = {}) {
       return data;
     },
 
+    async createEventReminders(reminders) {
+      if (!reminders.length) {
+        return [];
+      }
+
+      const { data, error } = await getClient()
+        .from("event_reminders")
+        .upsert(reminders, { onConflict: "user_id,proposal_id" })
+        .select(eventReminderSelect);
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
     async listNotificationsByUserId(userId) {
       const { data, error } = await getClient()
         .from("notifications")
         .select(notificationSelect)
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async listEventRemindersByUserId(userId) {
+      const { data, error } = await getClient()
+        .from("event_reminders")
+        .select(eventReminderSelect)
+        .eq("user_id", userId)
+        .order("remind_at", { ascending: true });
 
       if (error) {
         throw error;

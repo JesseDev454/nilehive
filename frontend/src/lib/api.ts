@@ -87,6 +87,35 @@ export interface NotificationRecord {
   created_at: string;
 }
 
+export interface ApprovedEventRecord {
+  id: string;
+  proposal_id: string;
+  club_id: string;
+  title: string;
+  proposal_title: string;
+  description: string;
+  event_date: string;
+  event_time?: string | null;
+  location?: string | null;
+  number_of_participants?: number | null;
+  budget_estimate?: number | null;
+  status: string;
+  current_stage: string;
+  approved_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EventReminderRecord {
+  id: string;
+  user_id: string;
+  proposal_id: string;
+  message: string;
+  remind_at: string;
+  delivery_status: string;
+  created_at: string;
+}
+
 interface ApiEnvelope<T> {
   data: T;
 }
@@ -284,6 +313,24 @@ export async function submitAdminDecision(
 
 export async function getNotifications(token?: string) {
   const response = await request<ApiEnvelope<NotificationRecord[]>>("/api/v1/notifications", {
+    method: "GET",
+    token
+  });
+
+  return response.data;
+}
+
+export async function getApprovedEvents(token?: string) {
+  const response = await request<ApiEnvelope<ApprovedEventRecord[]>>("/api/v1/events/approved", {
+    method: "GET",
+    token
+  });
+
+  return response.data;
+}
+
+export async function getEventReminders(token?: string) {
+  const response = await request<ApiEnvelope<EventReminderRecord[]>>("/api/v1/reminders", {
     method: "GET",
     token
   });

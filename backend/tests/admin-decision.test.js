@@ -28,6 +28,7 @@ function createPendingAdminProposal(overrides = {}) {
 test("admin approval creates final approval state and notifications", async () => {
   let adminDecisionInput;
   let createdNotifications = [];
+  let createdReminders = [];
   const fakeDatabase = {
     async getProposalById(proposalId) {
       assert.equal(proposalId, "proposal-1");
@@ -53,6 +54,10 @@ test("admin approval creates final approval state and notifications", async () =
     async createNotifications(notifications) {
       createdNotifications = notifications;
       return notifications;
+    },
+    async createEventReminders(reminders) {
+      createdReminders = reminders;
+      return reminders;
     }
   };
 
@@ -79,10 +84,14 @@ test("admin approval creates final approval state and notifications", async () =
     createdNotifications.map((notification) => notification.user_id).sort(),
     ["advisor-1", "executive-1", "president-1"]
   );
+  assert.equal(createdReminders.length, 3);
+  assert.ok(createdReminders.every((reminder) => reminder.proposal_id === "proposal-1"));
+  assert.ok(createdReminders.every((reminder) => reminder.delivery_status === "stored"));
 });
 
 test("admin rejection creates final rejected state and notifications", async () => {
   let createdNotifications = [];
+  let createdReminders = [];
   const fakeDatabase = {
     async getProposalById() {
       return createPendingAdminProposal();
@@ -104,6 +113,10 @@ test("admin rejection creates final rejected state and notifications", async () 
     async createNotifications(notifications) {
       createdNotifications = notifications;
       return notifications;
+    },
+    async createEventReminders(reminders) {
+      createdReminders = reminders;
+      return reminders;
     }
   };
 
@@ -123,6 +136,7 @@ test("admin rejection creates final rejected state and notifications", async () 
   assert.equal(proposal.status, "admin_rejected");
   assert.equal(createdNotifications.length, 2);
   assert.ok(createdNotifications.every((notification) => notification.type === "admin_rejected"));
+  assert.equal(createdReminders.length, 0);
 });
 
 test("admin decision blocks invalid or duplicate transitions", async () => {
