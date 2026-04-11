@@ -1,102 +1,162 @@
 # NileHive Backend
 
-Week 1 backend foundation for the NileHive buildathon MVP.
+This is the Express backend for NileHive.
 
-## Week 1 scope
-
-This backend only supports the first working approval handoff:
-
-- an executive submits an event proposal
-- the proposal is stored in Postgres / Supabase
-- an advisor fetches proposals pending advisor review
-
-Everything else is intentionally deferred for later weeks.
-
-## Tech choices
-
-- Node.js + Express
-- Supabase-friendly PostgreSQL schema
-- Supabase Auth user IDs mapped into an app `profiles` table
-- Lean proposal payload only
-
-## Project structure
+Start from the root README first:
 
 ```text
-backend
-  package.json
-  .env.example
-  README.md
-  supabase/
-    migrations/
-    seed.sql
-  src/
-    app.js
-    server.js
-    config/
-    middleware/
-    modules/
-    shared/
-  tests/
+../README.md
 ```
 
-## Environment variables
+## Setup
 
-Copy `.env.example` to `.env` and fill in:
+Install dependencies:
 
-- `PORT`
-- `SUPABASE_URL`
-- `SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-
-The backend uses the Supabase service role key for server-side reads and writes. RLS policies are still included so the data model stays compatible with direct Supabase access later.
-
-## Local setup
-
-```bash
-cd backend
-npm install
-npm test
-npm run dev
+```powershell
+npm.cmd install
 ```
 
-Apply the SQL files in `supabase/migrations` to your Supabase project, then load `supabase/seed.sql` if you want local sample data.
+Create:
 
-## API surface
-
-### `GET /api/v1/health`
-
-Returns service health plus a database connectivity check.
-
-### `POST /api/v1/proposals`
-
-Requires an authenticated executive.
-
-Request body:
-
-```json
-{
-  "title": "Club Leadership Summit",
-  "description": "A one-day summit for executive handover and planning.",
-  "event_date": "2026-05-15",
-  "location": "Main Hall"
-}
+```text
+.env
 ```
 
-Server-side behavior:
+Use:
 
-- derives `submitted_by` from the authenticated user
-- derives `club_id` from the executive profile
-- stores status as `pending_advisor_review`
+```env
+PORT=4000
+SUPABASE_URL=https://your-project-ref.supabase.co
+SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+```
 
-### `GET /api/v1/proposals/pending-advisor`
+The service role key is backend-only. Do not expose it in the frontend.
 
-Requires an authenticated advisor.
+## Run
 
-Returns only pending proposals for clubs assigned to that advisor.
+```powershell
+npm.cmd run dev
+```
 
-## Week 1 notes
+Backend URL:
 
-- `profiles`, `clubs`, and `proposals` are implemented now.
-- `approvals`, `notifications`, and `event_summaries` are intentionally deferred.
-- The schema assumes one executive belongs to one club and one club has one advisor in Week 1.
+```text
+http://localhost:4000
+```
 
+## Test
+
+```powershell
+npm.cmd test
+```
+
+## Supabase Migrations
+
+Apply migrations in numeric order from:
+
+```text
+supabase/migrations/
+```
+
+Current migrations:
+
+```text
+0001_week1_schema.sql
+0002_week1_rls.sql
+0003_sprint_3_1_advisor_decision.sql
+0004_sprint_3_2_approval_history.sql
+0005_sprint_3_5_notifications.sql
+0006_proposal_form_2_0.sql
+0007_admin_final_verification.sql
+0008_approved_events_reminders.sql
+0009_task_delegation.sql
+```
+
+## Main Modules
+
+```text
+src/modules/clubs
+src/modules/dashboard
+src/modules/events
+src/modules/health
+src/modules/notifications
+src/modules/proposals
+src/modules/reminders
+src/modules/tasks
+```
+
+## Auth Model
+
+Supabase Auth is the identity provider.
+
+The app profile lives in:
+
+```text
+public.profiles
+```
+
+The backend maps:
+
+```text
+Supabase access token -> auth user -> profiles row -> app role and club scope
+```
+
+Current roles:
+
+```text
+executive
+advisor
+admin
+president
+```
+
+## API Overview
+
+Health:
+
+- `GET /api/v1/health`
+
+Clubs:
+
+- `GET /api/v1/clubs`
+
+Proposals:
+
+- `POST /api/v1/proposals`
+- `GET /api/v1/proposals`
+- `GET /api/v1/proposals/:proposalId`
+- `GET /api/v1/proposals/pending-advisor`
+- `GET /api/v1/proposals/advisor/:proposalId`
+- `POST /api/v1/proposals/:proposalId/advisor-decision`
+- `GET /api/v1/proposals/admin`
+- `GET /api/v1/proposals/admin/:proposalId`
+- `POST /api/v1/proposals/admin/:proposalId/decision`
+
+Notifications:
+
+- `GET /api/v1/notifications`
+
+Events/reminders:
+
+- `GET /api/v1/events/approved`
+- `GET /api/v1/reminders`
+
+Dashboards:
+
+- `GET /api/v1/dashboard/executive`
+- `GET /api/v1/dashboard/president`
+
+Tasks:
+
+- `GET /api/v1/tasks`
+- `POST /api/v1/tasks`
+- `GET /api/v1/tasks/:taskId`
+- `POST /api/v1/tasks/:taskId/status`
+
+## Notes
+
+- Keep route logic inside the relevant module.
+- Keep validation explicit.
+- Avoid adding new abstractions unless the current module pattern genuinely needs it.
+- Add tests when adding backend behavior.
