@@ -8,6 +8,10 @@ const notificationSelect =
 const eventReminderSelect =
   "id, user_id, proposal_id, message, remind_at, delivery_status, created_at";
 const clubSelect = "id, name, code, advisor_id, created_at";
+const taskSelect =
+  "id, club_id, assigned_by, assigned_to, title, description, priority, status, due_date, created_at, updated_at";
+const taskStatusHistorySelect =
+  "id, task_id, changed_by, old_status, new_status, remarks, created_at";
 
 function createAdminClient() {
   const env = getEnv();
@@ -443,6 +447,104 @@ function createDatabase(options = {}) {
         .select(eventReminderSelect)
         .eq("user_id", userId)
         .order("remind_at", { ascending: true });
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async createTask(task) {
+      const { data, error } = await getClient()
+        .from("tasks")
+        .insert(task)
+        .select(taskSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async getTaskById(taskId) {
+      const { data, error } = await getClient()
+        .from("tasks")
+        .select(taskSelect)
+        .eq("id", taskId)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? null;
+    },
+
+    async listTasks(filters = {}) {
+      let query = getClient()
+        .from("tasks")
+        .select(taskSelect)
+        .order("created_at", { ascending: false });
+
+      if (filters.clubId) {
+        query = query.eq("club_id", filters.clubId);
+      }
+
+      if (filters.assignedTo) {
+        query = query.eq("assigned_to", filters.assignedTo);
+      }
+
+      if (filters.status) {
+        query = query.eq("status", filters.status);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async updateTaskStatus(taskId, update) {
+      const { data, error } = await getClient()
+        .from("tasks")
+        .update(update)
+        .eq("id", taskId)
+        .select(taskSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async createTaskStatusHistory(entry) {
+      const { data, error } = await getClient()
+        .from("task_status_history")
+        .insert(entry)
+        .select(taskStatusHistorySelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async listTaskStatusHistory(taskId) {
+      const { data, error } = await getClient()
+        .from("task_status_history")
+        .select(taskStatusHistorySelect)
+        .eq("task_id", taskId)
+        .order("created_at", { ascending: true });
 
       if (error) {
         throw error;

@@ -182,6 +182,39 @@ export interface PresidentDashboardRecord {
   notifications: NotificationRecord[];
 }
 
+export interface TaskStatusHistoryRecord {
+  id: string;
+  task_id: string;
+  changed_by: string;
+  old_status: string | null;
+  new_status: string;
+  remarks: string | null;
+  created_at: string;
+}
+
+export interface TaskRecord {
+  id: string;
+  club_id: string;
+  assigned_by: string;
+  assigned_to: string;
+  title: string;
+  description: string | null;
+  priority: "low" | "medium" | "high";
+  status: "pending" | "in_progress" | "completed" | "blocked";
+  due_date: string | null;
+  created_at: string;
+  updated_at: string;
+  status_history?: TaskStatusHistoryRecord[] | null;
+}
+
+export interface CreateTaskPayload {
+  assigned_to: string;
+  title: string;
+  description?: string | null;
+  priority?: "low" | "medium" | "high";
+  due_date?: string | null;
+}
+
 interface ApiEnvelope<T> {
   data: T;
 }
@@ -424,6 +457,49 @@ export async function getPresidentDashboard(token?: string) {
       token
     }
   );
+
+  return response.data;
+}
+
+export async function getTasks(filters: { status?: string } = {}, token?: string) {
+  const params = new URLSearchParams();
+
+  if (filters.status) {
+    params.set("status", filters.status);
+  }
+
+  const query = params.toString();
+  const response = await request<ApiEnvelope<TaskRecord[]>>(
+    `/api/v1/tasks${query ? `?${query}` : ""}`,
+    {
+      method: "GET",
+      token
+    }
+  );
+
+  return response.data;
+}
+
+export async function createTask(payload: CreateTaskPayload, token?: string) {
+  const response = await request<ApiEnvelope<TaskRecord>>("/api/v1/tasks", {
+    method: "POST",
+    token,
+    body: payload
+  });
+
+  return response.data;
+}
+
+export async function updateTaskStatus(
+  taskId: string,
+  payload: { status: TaskRecord["status"]; remarks?: string },
+  token?: string
+) {
+  const response = await request<ApiEnvelope<TaskRecord>>(`/api/v1/tasks/${taskId}/status`, {
+    method: "POST",
+    token,
+    body: payload
+  });
 
   return response.data;
 }

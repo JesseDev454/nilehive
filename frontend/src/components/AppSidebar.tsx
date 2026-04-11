@@ -1,4 +1,4 @@
-import { CalendarDays, FileText, Home, Plus, Clock, Bell } from "lucide-react";
+import { CalendarDays, ClipboardList, FileText, Home, Plus, Clock, Bell } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useRole } from "@/contexts/RoleContext";
 import {
@@ -15,6 +15,7 @@ export function AppSidebar() {
     { title: "Dashboard", url: "/", icon: Home },
     { title: "New Proposal", url: "/proposals/new", icon: Plus },
     { title: "My Proposals", url: "/proposals", icon: FileText },
+    { title: "My Tasks", url: "/tasks", icon: ClipboardList },
     { title: "Approved Events", url: "/events", icon: CalendarDays },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
@@ -35,6 +36,7 @@ export function AppSidebar() {
 
   const presidentItems = [
     { title: "Dashboard", url: "/", icon: Home },
+    { title: "Task Delegation", url: "/tasks", icon: ClipboardList },
     { title: "Approved Events", url: "/events", icon: CalendarDays },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];

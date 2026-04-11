@@ -18,6 +18,7 @@ import Analytics from "@/pages/Analytics";
 import EventCalendar from "@/pages/EventCalendar";
 import MediaArchive from "@/pages/MediaArchive";
 import Notifications from "@/pages/Notifications";
+import Tasks from "@/pages/Tasks";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -77,6 +78,7 @@ const App = () => (
                   <Route path="/approvals" element={<Approvals />} />
                   <Route path="/notifications" element={<Notifications />} />
                   <Route path="/events" element={<EventCalendar />} />
+                  <Route path="/tasks" element={<Tasks />} />
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/archive" element={<MediaArchive />} />
                 </Route>
