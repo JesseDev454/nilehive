@@ -12,11 +12,20 @@ const ADVISOR_DECISION_TRANSITIONS = Object.freeze({
   })
 });
 
+const ADMIN_DECISION_TRANSITIONS = Object.freeze({
+  pending_admin_review: Object.freeze({
+    approve: "approved",
+    reject: "admin_rejected"
+  })
+});
+
 const NOTIFICATION_TYPES = Object.freeze({
   proposalSubmitted: "proposal_submitted",
   advisorApproved: "advisor_approved",
   advisorRejected: "advisor_rejected",
-  pendingAdminReview: "pending_admin_review"
+  pendingAdminReview: "pending_admin_review",
+  adminApproved: "admin_approved",
+  adminRejected: "admin_rejected"
 });
 
 function getNextProposalStatus(currentStatus, decision) {
@@ -33,11 +42,27 @@ function getNextProposalStatus(currentStatus, decision) {
   return allowedTransitions[decision];
 }
 
+function getNextAdminProposalStatus(currentStatus, decision) {
+  const allowedTransitions = ADMIN_DECISION_TRANSITIONS[currentStatus];
+
+  if (!allowedTransitions || !allowedTransitions[decision]) {
+    throw new ApiError(
+      409,
+      "Proposal is not awaiting admin review",
+      "INVALID_PROPOSAL_STATE"
+    );
+  }
+
+  return allowedTransitions[decision];
+}
+
 function getCurrentStage(status) {
   const stages = {
     pending_advisor_review: "advisor_review",
     pending_admin_review: "admin_review",
-    advisor_rejected: "rejected"
+    advisor_rejected: "rejected",
+    admin_rejected: "rejected",
+    approved: "approved"
   };
 
   return stages[status] ?? status;
@@ -47,7 +72,8 @@ function getStatusesForStage(stage) {
   const stageStatuses = {
     advisor_review: ["pending_advisor_review"],
     admin_review: ["pending_admin_review"],
-    rejected: ["advisor_rejected"]
+    rejected: ["advisor_rejected", "admin_rejected"],
+    approved: ["approved"]
   };
 
   return stageStatuses[stage] ?? null;
@@ -60,7 +86,9 @@ function buildNotificationMessage(type, proposal, remarks = null) {
     [NOTIFICATION_TYPES.proposalSubmitted]: `New proposal "${proposal.title}" was submitted and is awaiting your review.`,
     [NOTIFICATION_TYPES.advisorApproved]: `Your proposal "${proposal.title}" was approved by the advisor.${remarksSuffix}`,
     [NOTIFICATION_TYPES.advisorRejected]: `Your proposal "${proposal.title}" was rejected by the advisor.${remarksSuffix}`,
-    [NOTIFICATION_TYPES.pendingAdminReview]: `Proposal "${proposal.title}" is now awaiting admin review.`
+    [NOTIFICATION_TYPES.pendingAdminReview]: `Proposal "${proposal.title}" is now awaiting admin review.`,
+    [NOTIFICATION_TYPES.adminApproved]: `Proposal "${proposal.title}" received final admin approval.${remarksSuffix}`,
+    [NOTIFICATION_TYPES.adminRejected]: `Proposal "${proposal.title}" was rejected during admin verification.${remarksSuffix}`
   };
 
   return messages[type];
@@ -107,6 +135,8 @@ function formatExecutiveProposal(proposal, latestApproval = null) {
     updated_at: proposal.updated_at,
     advisor_remarks: proposal.advisor_remarks,
     advisor_decided_at: proposal.advisor_decided_at,
+    admin_remarks: proposal.admin_remarks,
+    admin_decided_at: proposal.admin_decided_at,
     latest_approval: latestApproval
       ? {
           reviewer_id: latestApproval.reviewer_id,
@@ -142,6 +172,8 @@ function formatAdminProposal(proposal, latestApproval = null) {
     updated_at: proposal.updated_at,
     advisor_remarks: proposal.advisor_remarks,
     advisor_decided_at: proposal.advisor_decided_at,
+    admin_remarks: proposal.admin_remarks,
+    admin_decided_at: proposal.admin_decided_at,
     latest_approval: latestApproval
       ? {
           reviewer_id: latestApproval.reviewer_id,
@@ -152,6 +184,10 @@ function formatAdminProposal(proposal, latestApproval = null) {
         }
       : null
   };
+}
+
+function formatAdvisorProposal(proposal, latestApproval = null) {
+  return formatAdminProposal(proposal, latestApproval);
 }
 
 async function createProposal(options) {
@@ -270,6 +306,34 @@ async function getExecutiveProposalDetail(options) {
   const latestApproval = await database.getLatestApprovalByProposalId(proposalId);
 
   return formatExecutiveProposal(proposal, latestApproval);
+}
+
+async function getAdvisorProposalDetail(options) {
+  const { actor, proposalId, database = db } = options;
+
+  if (!actor) {
+    throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
+  }
+
+  if (actor.role !== "advisor") {
+    throw new ApiError(403, "Only advisors can view advisor proposal details", "FORBIDDEN");
+  }
+
+  const proposal = await database.getProposalById(proposalId);
+
+  if (!proposal) {
+    throw new ApiError(404, "Proposal not found", "PROPOSAL_NOT_FOUND");
+  }
+
+  const clubIds = await database.getAdvisorClubIds(actor.id);
+
+  if (!clubIds.includes(proposal.club_id)) {
+    throw new ApiError(404, "Proposal not found", "PROPOSAL_NOT_FOUND");
+  }
+
+  const latestApproval = await database.getLatestApprovalByProposalId(proposalId);
+
+  return formatAdvisorProposal(proposal, latestApproval);
 }
 
 async function listAdminProposals(options) {
@@ -409,12 +473,78 @@ async function submitAdvisorDecision(options) {
   return updatedProposal;
 }
 
+async function submitAdminDecision(options) {
+  const { actor, proposalId, payload, database = db } = options;
+
+  if (!actor) {
+    throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
+  }
+
+  if (actor.role !== "admin") {
+    throw new ApiError(403, "Only admins can verify proposals", "FORBIDDEN");
+  }
+
+  const validatedPayload = validateAdvisorDecisionPayload(payload);
+  const proposal = await database.getProposalById(proposalId);
+
+  if (!proposal) {
+    throw new ApiError(404, "Proposal not found", "PROPOSAL_NOT_FOUND");
+  }
+
+  const decidedAt = new Date().toISOString();
+  const nextStatus = getNextAdminProposalStatus(proposal.status, validatedPayload.decision);
+
+  const updatedProposal = await database.applyAdminDecision({
+    proposalId,
+    reviewerId: actor.id,
+    reviewerRole: actor.role,
+    decision: validatedPayload.decision,
+    remarks: validatedPayload.remarks,
+    decidedAt,
+    nextStatus
+  });
+
+  if (!updatedProposal) {
+    throw new ApiError(
+      409,
+      "Proposal is not awaiting admin review",
+      "INVALID_PROPOSAL_STATE"
+    );
+  }
+
+  const notificationType =
+    validatedPayload.decision === "approve"
+      ? NOTIFICATION_TYPES.adminApproved
+      : NOTIFICATION_TYPES.adminRejected;
+
+  const advisorIds = await database.getAdvisorProfileIdsByClubId(updatedProposal.club_id);
+  const presidentIds = database.getPresidentProfileIdsByClubId
+    ? await database.getPresidentProfileIdsByClubId(updatedProposal.club_id)
+    : [];
+  const recipientIds = [updatedProposal.submitted_by, ...advisorIds, ...presidentIds];
+
+  await createNotificationBatch(
+    database,
+    recipientIds.map((recipientId) => ({
+      user_id: recipientId,
+      proposal_id: updatedProposal.id,
+      type: notificationType,
+      message: buildNotificationMessage(notificationType, updatedProposal, validatedPayload.remarks),
+      delivery_status: "stored"
+    }))
+  );
+
+  return updatedProposal;
+}
+
 module.exports = {
   createProposal,
   listAdminProposals,
   getAdminProposalDetail,
+  getAdvisorProposalDetail,
   getPendingAdvisorProposals,
   listExecutiveProposals,
   getExecutiveProposalDetail,
-  submitAdvisorDecision
+  submitAdvisorDecision,
+  submitAdminDecision
 };

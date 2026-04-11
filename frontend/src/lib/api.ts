@@ -64,6 +64,8 @@ export interface ProposalRecord {
   submitted_at?: string;
   advisor_remarks?: string | null;
   advisor_decided_at?: string | null;
+  admin_remarks?: string | null;
+  admin_decided_at?: string | null;
   latest_approval?: {
     reviewer_id: string;
     reviewer_role: string;
@@ -219,6 +221,15 @@ export async function getExecutiveProposal(proposalId: string, token?: string) {
   return response.data;
 }
 
+export async function getAdvisorProposal(proposalId: string, token?: string) {
+  const response = await request<ApiEnvelope<ProposalRecord>>(`/api/v1/proposals/advisor/${proposalId}`, {
+    method: "GET",
+    token
+  });
+
+  return response.data;
+}
+
 export async function getAdminProposals(filters: { status?: string; current_stage?: string } = {}, token?: string) {
   const params = new URLSearchParams();
 
@@ -248,6 +259,23 @@ export async function getAdminProposal(proposalId: string, token?: string) {
     {
       method: "GET",
       token
+    }
+  );
+
+  return response.data;
+}
+
+export async function submitAdminDecision(
+  proposalId: string,
+  payload: { decision: "approve" | "reject"; remarks?: string },
+  token?: string
+) {
+  const response = await request<ApiEnvelope<ProposalRecord>>(
+    `/api/v1/proposals/admin/${proposalId}/decision`,
+    {
+      method: "POST",
+      token,
+      body: payload
     }
   );
 

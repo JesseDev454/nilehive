@@ -1,12 +1,22 @@
+import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Clock, FileText } from "lucide-react";
+import { toast } from "sonner";
 import { ApprovalStepper } from "@/components/ApprovalStepper";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { useRole } from "@/contexts/RoleContext";
-import { ApiClientError, getAdminProposal, getExecutiveProposal, type ProposalRecord } from "@/lib/api";
+import {
+  ApiClientError,
+  getAdminProposal,
+  getAdvisorProposal,
+  getExecutiveProposal,
+  submitAdminDecision,
+  type ProposalRecord
+} from "@/lib/api";
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -69,11 +79,24 @@ export default function ProposalDetail() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const { role } = useRole();
-  const isUnsupportedRole = role !== "executive" && role !== "admin";
+  const queryClient = useQueryClient();
+  const [adminRemarks, setAdminRemarks] = useState("");
+  const [adminDecision, setAdminDecision] = useState<"approve" | "reject" | null>(null);
+  const isUnsupportedRole = role !== "executive" && role !== "admin" && role !== "advisor";
 
   const { data: proposal, isLoading, isError, error } = useQuery({
     queryKey: ["proposal-detail", role, id],
-    queryFn: () => (role === "admin" ? getAdminProposal(id) : getExecutiveProposal(id)),
+    queryFn: () => {
+      if (role === "admin") {
+        return getAdminProposal(id);
+      }
+
+      if (role === "advisor") {
+        return getAdvisorProposal(id);
+      }
+
+      return getExecutiveProposal(id);
+    },
     enabled: !!id && !isUnsupportedRole,
     retry: false
   });
@@ -89,12 +112,44 @@ export default function ProposalDetail() {
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
             <p className="font-medium">Proposal detail is not available for this role yet.</p>
             <p className="text-sm text-muted-foreground mt-2">
-              Advisors can approve or reject proposals directly from the pending approvals queue.
+              This proposal detail route is currently available for executives, advisors, and admins.
             </p>
           </CardContent>
         </Card>
       </div>
     );
+  }
+
+  async function handleAdminDecision(decision: "approve" | "reject") {
+    if (!proposal) {
+      return;
+    }
+
+    setAdminDecision(decision);
+
+    try {
+      await submitAdminDecision(proposal.id, {
+        decision,
+        remarks: adminRemarks.trim() || undefined
+      });
+
+      toast.success(decision === "approve" ? "Proposal approved" : "Proposal rejected", {
+        description: "The final admin decision has been saved."
+      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["proposal-detail", role, id] }),
+        queryClient.invalidateQueries({ queryKey: ["proposals"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-dashboard-proposals"] }),
+        queryClient.invalidateQueries({ queryKey: ["notifications"] })
+      ]);
+      setAdminRemarks("");
+    } catch (decisionError) {
+      toast.error("Admin decision failed", {
+        description: getErrorMessage(decisionError)
+      });
+    } finally {
+      setAdminDecision(null);
+    }
   }
 
   return (
@@ -124,7 +179,7 @@ export default function ProposalDetail() {
             <div>
               <h1 className="text-2xl font-bold">{proposal.title}</h1>
               <p className="text-sm text-muted-foreground mt-1">
-                {role === "admin" ? `Club ${proposal.club_id ?? "-"}` : "Submitted proposal"} -{" "}
+                {role === "admin" || role === "advisor" ? `Club ${proposal.club_id ?? "-"}` : "Submitted proposal"} -{" "}
                 {getDateLabel(proposal.created_at)}
               </p>
             </div>
@@ -244,7 +299,40 @@ export default function ProposalDetail() {
                 </Card>
               )}
 
-              {(proposal.advisor_remarks || proposal.latest_approval) && (
+              {role === "admin" && proposal.status === "pending_admin_review" && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Final Admin Verification</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Textarea
+                      placeholder="Add admin verification remarks..."
+                      rows={3}
+                      value={adminRemarks}
+                      onChange={(event) => setAdminRemarks(event.target.value)}
+                    />
+                    <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+                      <Button
+                        className="bg-success hover:bg-success/90 text-success-foreground"
+                        disabled={adminDecision !== null}
+                        onClick={() => handleAdminDecision("approve")}
+                      >
+                        {adminDecision === "approve" ? "Approving..." : "Approve Final"}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                        disabled={adminDecision !== null}
+                        onClick={() => handleAdminDecision("reject")}
+                      >
+                        {adminDecision === "reject" ? "Rejecting..." : "Reject"}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {(proposal.advisor_remarks || proposal.admin_remarks || proposal.latest_approval) && (
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base">Latest Decision Context</CardTitle>
@@ -254,6 +342,12 @@ export default function ProposalDetail() {
                       <div>
                         <span className="text-muted-foreground">Advisor Remarks</span>
                         <p className="mt-1">{proposal.advisor_remarks}</p>
+                      </div>
+                    )}
+                    {proposal.admin_remarks && (
+                      <div>
+                        <span className="text-muted-foreground">Admin Remarks</span>
+                        <p className="mt-1">{proposal.admin_remarks}</p>
                       </div>
                     )}
                     {proposal.latest_approval && (

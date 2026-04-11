@@ -2,7 +2,7 @@ const { createClient } = require("@supabase/supabase-js");
 const { getEnv } = require("./env");
 
 const proposalSelect =
-  "id, club_id, submitted_by, title, description, event_date, location, aim_objectives, proposed_activity, event_time, number_of_participants, budget_estimate, budget_line_items, responsible_members, status, advisor_remarks, advisor_decided_at, advisor_decided_by, created_at, updated_at";
+  "id, club_id, submitted_by, title, description, event_date, location, aim_objectives, proposed_activity, event_time, number_of_participants, budget_estimate, budget_line_items, responsible_members, status, advisor_remarks, advisor_decided_at, advisor_decided_by, admin_remarks, admin_decided_at, admin_decided_by, created_at, updated_at";
 const notificationSelect =
   "id, user_id, proposal_id, type, message, delivery_status, created_at";
 const clubSelect = "id, name, code, advisor_id, created_at";
@@ -191,6 +191,20 @@ function createDatabase(options = {}) {
       return data.map((profile) => profile.id);
     },
 
+    async getPresidentProfileIdsByClubId(clubId) {
+      const { data, error } = await getClient()
+        .from("profiles")
+        .select("id")
+        .eq("role", "president")
+        .eq("club_id", clubId);
+
+      if (error) {
+        throw error;
+      }
+
+      return data.map((profile) => profile.id);
+    },
+
     async listPendingProposalsByClubIds(clubIds) {
       if (!clubIds.length) {
         return [];
@@ -227,6 +241,24 @@ function createDatabase(options = {}) {
 
     async applyAdvisorDecision(decisionInput) {
       const { data, error } = await getClient().rpc("apply_advisor_decision", {
+        p_proposal_id: decisionInput.proposalId,
+        p_reviewer_id: decisionInput.reviewerId,
+        p_reviewer_role: decisionInput.reviewerRole,
+        p_decision: decisionInput.decision,
+        p_remarks: decisionInput.remarks,
+        p_decided_at: decisionInput.decidedAt,
+        p_next_status: decisionInput.nextStatus
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? null;
+    },
+
+    async applyAdminDecision(decisionInput) {
+      const { data, error } = await getClient().rpc("apply_admin_decision", {
         p_proposal_id: decisionInput.proposalId,
         p_reviewer_id: decisionInput.reviewerId,
         p_reviewer_role: decisionInput.reviewerRole,

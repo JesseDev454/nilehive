@@ -12,7 +12,19 @@ function createProposalsRouter(options = {}) {
 
   router.post("/", auth, requireRole("executive"), controller.createProposal);
   router.get("/admin", auth, requireRole("admin"), controller.listAdminProposals);
+  router.post(
+    "/admin/:proposalId/decision",
+    auth,
+    requireRole("admin"),
+    controller.submitAdminDecision
+  );
   router.get("/admin/:proposalId", auth, requireRole("admin"), controller.getAdminProposalDetail);
+  router.get(
+    "/advisor/:proposalId",
+    auth,
+    requireRole("advisor"),
+    controller.getAdvisorProposalDetail
+  );
   router.get(
     "/pending-advisor",
     auth,

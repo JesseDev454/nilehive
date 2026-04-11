@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Clock } from "lucide-react";
+import { Link } from "react-router-dom";
 import {
   getAdvisorPendingProposalsErrorMessage,
   useAdvisorPendingProposals
@@ -88,7 +89,7 @@ export default function Approvals() {
                   <div>
                     <p className="font-medium">{proposal.title}</p>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                      {proposal.location} · Event {proposal.eventDate} · Submitted {proposal.submittedAt}
+                      {proposal.location} - Event {proposal.eventDate} - Submitted {proposal.submittedAt}
                     </p>
                   </div>
                   <StatusBadge status={proposal.status} />
@@ -106,6 +107,9 @@ export default function Approvals() {
                     }
                   />
                   <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+                    <Button asChild variant="outline">
+                      <Link to={`/proposals/${proposal.id}`}>View details</Link>
+                    </Button>
                     <Button
                       className="bg-success hover:bg-success/90 text-success-foreground"
                       disabled={decidingProposalId === proposal.id}
