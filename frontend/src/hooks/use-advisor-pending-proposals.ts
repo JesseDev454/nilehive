@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { ApiClientError, getPendingAdvisorProposals, type ProposalRecord } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 
 export interface AdvisorPendingProposal {
   id: string;
@@ -7,15 +8,7 @@ export interface AdvisorPendingProposal {
   location: string;
   eventDate: string;
   submittedAt: string;
-  status: "pending";
-}
-
-function getStoredAccessToken() {
-  return (
-    window.localStorage.getItem("nilehive_access_token")?.trim() ||
-    window.sessionStorage.getItem("nilehive_access_token")?.trim() ||
-    ""
-  );
+  status: string;
 }
 
 function toDateOnly(value: string) {
@@ -29,7 +22,7 @@ function mapProposal(record: ProposalRecord): AdvisorPendingProposal {
     location: record.location,
     eventDate: record.event_date,
     submittedAt: toDateOnly(record.created_at),
-    status: "pending"
+    status: record.status
   };
 }
 
@@ -46,22 +39,15 @@ export function getAdvisorPendingProposalsErrorMessage(error: unknown) {
 }
 
 export function useAdvisorPendingProposals(enabled = true) {
-  const accessToken = getStoredAccessToken();
+  const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["advisor-pending-proposals", accessToken],
+    queryKey: ["advisor-pending-proposals", user?.id],
     queryFn: async () => {
-      if (!accessToken) {
-        throw new ApiClientError("Missing advisor session", {
-          status: 401,
-          code: "AUTH_REQUIRED"
-        });
-      }
-
-      const proposals = await getPendingAdvisorProposals(accessToken);
+      const proposals = await getPendingAdvisorProposals();
       return proposals.map(mapProposal);
     },
-    enabled,
+    enabled: enabled && !!user,
     retry: false
   });
 }

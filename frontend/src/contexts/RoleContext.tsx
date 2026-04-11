@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 export type Role = "executive" | "advisor" | "admin" | "president";
 
@@ -15,7 +16,10 @@ const RoleContext = createContext<RoleContextType>({
 export const useRole = () => useContext(RoleContext);
 
 export const RoleProvider = ({ children }: { children: React.ReactNode }) => {
-  const [role, setRole] = useState<Role>("executive");
+  const { role: authenticatedRole } = useAuth();
+  const role = authenticatedRole ?? "executive";
+  const setRole = () => {};
+
   return (
     <RoleContext.Provider value={{ role, setRole }}>
       {children}

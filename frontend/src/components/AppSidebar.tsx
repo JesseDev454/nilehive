@@ -1,6 +1,4 @@
-import {
-  FileText, CheckCircle, BarChart3, Image, Home, Plus, Clock, Archive,
-} from "lucide-react";
+import { FileText, Home, Plus, Clock, Bell } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useRole } from "@/contexts/RoleContext";
 import {
@@ -17,24 +15,24 @@ export function AppSidebar() {
     { title: "Dashboard", url: "/", icon: Home },
     { title: "New Proposal", url: "/proposals/new", icon: Plus },
     { title: "My Proposals", url: "/proposals", icon: FileText },
+    { title: "Notifications", url: "/notifications", icon: Bell },
   ];
 
   const advisorItems = [
     { title: "Dashboard", url: "/", icon: Home },
     { title: "Pending Approvals", url: "/approvals", icon: Clock },
+    { title: "Notifications", url: "/notifications", icon: Bell },
   ];
 
   const adminItems = [
     { title: "Dashboard", url: "/", icon: Home },
-    { title: "Analytics", url: "/analytics", icon: BarChart3 },
     { title: "All Proposals", url: "/proposals", icon: FileText },
+    { title: "Notifications", url: "/notifications", icon: Bell },
   ];
 
   const presidentItems = [
     { title: "Dashboard", url: "/", icon: Home },
-    { title: "Pending Approvals", url: "/approvals", icon: Clock },
-    { title: "All Proposals", url: "/proposals", icon: FileText },
-    { title: "Analytics", url: "/analytics", icon: BarChart3 },
+    { title: "Notifications", url: "/notifications", icon: Bell },
   ];
 
   const itemsMap = {
@@ -87,26 +85,6 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/50">Resources</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink
-                    to="/archive"
-                    className="hover:bg-sidebar-accent/50"
-                    activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                  >
-                    <Archive className="mr-2 h-4 w-4" />
-                    {!collapsed && <span>Media Archive</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

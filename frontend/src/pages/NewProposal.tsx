@@ -12,14 +12,6 @@ import { cn } from "@/lib/utils";
 
 const steps = ["Details", "Description", "Schedule", "Review"];
 
-function getStoredAccessToken() {
-  return (
-    window.localStorage.getItem("nilehive_access_token")?.trim() ||
-    window.sessionStorage.getItem("nilehive_access_token")?.trim() ||
-    ""
-  );
-}
-
 function getSubmissionErrorMessage(error: unknown) {
   if (error instanceof ApiClientError) {
     const details = error.details as
@@ -59,16 +51,6 @@ export default function NewProposal() {
   const back = () => setStep((s) => Math.max(s - 1, 0));
 
   const submit = async () => {
-    const accessToken = getStoredAccessToken();
-
-    if (!accessToken) {
-      toast.error("Missing executive session", {
-        description:
-          "Store a valid executive access token in localStorage or sessionStorage as nilehive_access_token."
-      });
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -78,8 +60,7 @@ export default function NewProposal() {
           description: form.description,
           event_date: form.eventDate,
           location: form.location
-        },
-        accessToken
+        }
       );
 
       toast.success("Proposal submitted successfully!", {

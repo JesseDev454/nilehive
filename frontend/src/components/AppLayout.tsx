@@ -1,9 +1,12 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { RoleToggle } from "@/components/RoleToggle";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import { Outlet } from "react-router-dom";
 
 export function AppLayout() {
+  const { profile, signOut } = useAuth();
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -17,10 +20,15 @@ export function AppLayout() {
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-xs text-muted-foreground bg-warning/10 text-warning px-2 py-1 rounded-md hidden sm:inline">
-                Prototype Mode
+              <span className="text-xs text-muted-foreground bg-secondary/10 text-secondary px-2 py-1 rounded-md hidden sm:inline capitalize">
+                {profile?.role ?? "Loading"} Mode
               </span>
-              <RoleToggle />
+              <span className="text-xs text-muted-foreground hidden md:inline">
+                {profile?.full_name ?? "NileHive User"}
+              </span>
+              <Button variant="outline" size="sm" onClick={() => signOut()}>
+                Logout
+              </Button>
             </div>
           </header>
           <main className="flex-1 p-4 md:p-6 overflow-auto">
