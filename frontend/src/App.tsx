@@ -17,6 +17,7 @@ import Approvals from "@/pages/Approvals";
 import Analytics from "@/pages/Analytics";
 import EventCalendar from "@/pages/EventCalendar";
 import MediaArchive from "@/pages/MediaArchive";
+import Members from "@/pages/Members";
 import Notifications from "@/pages/Notifications";
 import Tasks from "@/pages/Tasks";
 import NotFound from "@/pages/NotFound";
@@ -78,6 +79,7 @@ const App = () => (
                   <Route path="/approvals" element={<Approvals />} />
                   <Route path="/notifications" element={<Notifications />} />
                   <Route path="/events" element={<EventCalendar />} />
+                  <Route path="/members" element={<Members />} />
                   <Route path="/tasks" element={<Tasks />} />
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/archive" element={<MediaArchive />} />

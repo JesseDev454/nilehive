@@ -71,6 +71,7 @@ Current migrations:
 0007_admin_final_verification.sql
 0008_approved_events_reminders.sql
 0009_task_delegation.sql
+0010_member_database.sql
 ```
 
 ## Main Modules
@@ -84,6 +85,7 @@ src/modules/notifications
 src/modules/proposals
 src/modules/reminders
 src/modules/tasks
+src/modules/members
 ```
 
 ## Auth Model
@@ -153,6 +155,12 @@ Tasks:
 - `POST /api/v1/tasks`
 - `GET /api/v1/tasks/:taskId`
 - `POST /api/v1/tasks/:taskId/status`
+
+Members:
+
+- `GET /api/v1/members`
+- `POST /api/v1/members`
+- `POST /api/v1/members/:memberId`
 
 ## Notes
 

@@ -73,6 +73,7 @@ Use `src/lib/api.ts` for backend communication. Avoid direct `fetch()` calls in 
 - `/approvals`
 - `/notifications`
 - `/events`
+- `/members`
 - `/tasks`
 - `/analytics`
 - `/archive`

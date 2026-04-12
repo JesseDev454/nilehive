@@ -12,6 +12,8 @@ const taskSelect =
   "id, club_id, assigned_by, assigned_to, title, description, priority, status, due_date, created_at, updated_at";
 const taskStatusHistorySelect =
   "id, task_id, changed_by, old_status, new_status, remarks, created_at";
+const clubMemberSelect =
+  "id, club_id, profile_id, full_name, student_id, email, phone_number, club_role, membership_status, created_at, updated_at";
 
 function createAdminClient() {
   const env = getEnv();
@@ -545,6 +547,76 @@ function createDatabase(options = {}) {
         .select(taskStatusHistorySelect)
         .eq("task_id", taskId)
         .order("created_at", { ascending: true });
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async createClubMember(member) {
+      const { data, error } = await getClient()
+        .from("club_members")
+        .insert(member)
+        .select(clubMemberSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async getClubMemberById(memberId) {
+      const { data, error } = await getClient()
+        .from("club_members")
+        .select(clubMemberSelect)
+        .eq("id", memberId)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? null;
+    },
+
+    async listClubMembers(filters = {}) {
+      let query = getClient()
+        .from("club_members")
+        .select(clubMemberSelect)
+        .order("full_name", { ascending: true });
+
+      if (filters.clubId) {
+        query = query.eq("club_id", filters.clubId);
+      }
+
+      if (filters.clubRoles?.length) {
+        query = query.in("club_role", filters.clubRoles);
+      }
+
+      if (filters.membershipStatus) {
+        query = query.eq("membership_status", filters.membershipStatus);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async updateClubMember(memberId, update) {
+      const { data, error } = await getClient()
+        .from("club_members")
+        .update(update)
+        .eq("id", memberId)
+        .select(clubMemberSelect)
+        .single();
 
       if (error) {
         throw error;

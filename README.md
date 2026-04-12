@@ -21,11 +21,12 @@ The app currently supports:
 - Executive, advisor, admin, and president dashboard foundations
 - President-to-executive task delegation
 - Executive task status updates
+- Club member database
+- Basic executive team management through member roles
 
 Planned but not fully implemented yet:
 
 - Student/member experience
-- Member database
 - Dues and payment tracking
 - Post-event reports
 - Media/report archive
@@ -147,6 +148,7 @@ Current migration order:
 0007_admin_final_verification.sql
 0008_approved_events_reminders.sql
 0009_task_delegation.sql
+0010_member_database.sql
 ```
 
 Apply them in the Supabase SQL Editor, one file at a time, in numeric order.
@@ -290,6 +292,9 @@ service OK and database reachable
 13. Login as executive.
 14. Open My Tasks.
 15. Update the task status.
+16. Login as president or admin.
+17. Open Members.
+18. Add a member and mark their club role as member, executive, or president.
 
 ## Backend API Summary
 
@@ -333,6 +338,12 @@ Tasks:
 - `POST /api/v1/tasks`
 - `GET /api/v1/tasks/:taskId`
 - `POST /api/v1/tasks/:taskId/status`
+
+Members:
+
+- `GET /api/v1/members`
+- `POST /api/v1/members`
+- `POST /api/v1/members/:memberId`
 
 ## Frontend Notes For Teammates
 

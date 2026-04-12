@@ -215,6 +215,31 @@ export interface CreateTaskPayload {
   due_date?: string | null;
 }
 
+export interface ClubMemberRecord {
+  id: string;
+  club_id: string;
+  profile_id: string | null;
+  full_name: string;
+  student_id: string;
+  email: string | null;
+  phone_number: string | null;
+  club_role: "member" | "executive" | "president";
+  membership_status: "active" | "inactive" | "alumni";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateClubMemberPayload {
+  club_id?: string | null;
+  profile_id?: string | null;
+  full_name: string;
+  student_id: string;
+  email?: string | null;
+  phone_number?: string | null;
+  club_role?: ClubMemberRecord["club_role"];
+  membership_status?: ClubMemberRecord["membership_status"];
+}
+
 interface ApiEnvelope<T> {
   data: T;
 }
@@ -496,6 +521,60 @@ export async function updateTaskStatus(
   token?: string
 ) {
   const response = await request<ApiEnvelope<TaskRecord>>(`/api/v1/tasks/${taskId}/status`, {
+    method: "POST",
+    token,
+    body: payload
+  });
+
+  return response.data;
+}
+
+export async function getClubMembers(
+  filters: { team?: "executive"; membership_status?: string; club_id?: string } = {},
+  token?: string
+) {
+  const params = new URLSearchParams();
+
+  if (filters.team) {
+    params.set("team", filters.team);
+  }
+
+  if (filters.membership_status) {
+    params.set("membership_status", filters.membership_status);
+  }
+
+  if (filters.club_id) {
+    params.set("club_id", filters.club_id);
+  }
+
+  const query = params.toString();
+  const response = await request<ApiEnvelope<ClubMemberRecord[]>>(
+    `/api/v1/members${query ? `?${query}` : ""}`,
+    {
+      method: "GET",
+      token
+    }
+  );
+
+  return response.data;
+}
+
+export async function createClubMember(payload: CreateClubMemberPayload, token?: string) {
+  const response = await request<ApiEnvelope<ClubMemberRecord>>("/api/v1/members", {
+    method: "POST",
+    token,
+    body: payload
+  });
+
+  return response.data;
+}
+
+export async function updateClubMember(
+  memberId: string,
+  payload: Partial<CreateClubMemberPayload>,
+  token?: string
+) {
+  const response = await request<ApiEnvelope<ClubMemberRecord>>(`/api/v1/members/${memberId}`, {
     method: "POST",
     token,
     body: payload
