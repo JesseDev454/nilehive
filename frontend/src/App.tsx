@@ -15,6 +15,7 @@ import Proposals from "@/pages/Proposals";
 import ProposalDetail from "@/pages/ProposalDetail";
 import Approvals from "@/pages/Approvals";
 import Analytics from "@/pages/Analytics";
+import Dues from "@/pages/Dues";
 import EventCalendar from "@/pages/EventCalendar";
 import MediaArchive from "@/pages/MediaArchive";
 import Members from "@/pages/Members";
@@ -80,6 +81,7 @@ const App = () => (
                   <Route path="/notifications" element={<Notifications />} />
                   <Route path="/events" element={<EventCalendar />} />
                   <Route path="/members" element={<Members />} />
+                  <Route path="/dues" element={<Dues />} />
                   <Route path="/tasks" element={<Tasks />} />
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/archive" element={<MediaArchive />} />

@@ -240,6 +240,47 @@ export interface CreateClubMemberPayload {
   membership_status?: ClubMemberRecord["membership_status"];
 }
 
+export interface DuePaymentRecord {
+  id: string;
+  club_id: string;
+  member_id: string;
+  amount: number;
+  academic_session: string;
+  payment_reference: string | null;
+  proof_url: string | null;
+  status: "unpaid" | "submitted" | "paid" | "rejected";
+  verified_by: string | null;
+  verified_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DuesSummary {
+  total_records: number;
+  paid: number;
+  unpaid: number;
+  submitted: number;
+  rejected: number;
+  expected_amount: number;
+  collected_amount: number;
+  collection_rate: number;
+}
+
+export interface DuesResponse {
+  summary: DuesSummary;
+  payments: DuePaymentRecord[];
+}
+
+export interface CreateDuePaymentPayload {
+  club_id?: string | null;
+  member_id: string;
+  amount: number;
+  academic_session: string;
+  payment_reference?: string | null;
+  proof_url?: string | null;
+  status?: DuePaymentRecord["status"];
+}
+
 interface ApiEnvelope<T> {
   data: T;
 }
@@ -575,6 +616,60 @@ export async function updateClubMember(
   token?: string
 ) {
   const response = await request<ApiEnvelope<ClubMemberRecord>>(`/api/v1/members/${memberId}`, {
+    method: "POST",
+    token,
+    body: payload
+  });
+
+  return response.data;
+}
+
+export async function getDuePayments(
+  filters: { status?: string; member_id?: string; club_id?: string } = {},
+  token?: string
+) {
+  const params = new URLSearchParams();
+
+  if (filters.status) {
+    params.set("status", filters.status);
+  }
+
+  if (filters.member_id) {
+    params.set("member_id", filters.member_id);
+  }
+
+  if (filters.club_id) {
+    params.set("club_id", filters.club_id);
+  }
+
+  const query = params.toString();
+  const response = await request<ApiEnvelope<DuesResponse>>(
+    `/api/v1/dues${query ? `?${query}` : ""}`,
+    {
+      method: "GET",
+      token
+    }
+  );
+
+  return response.data;
+}
+
+export async function createDuePayment(payload: CreateDuePaymentPayload, token?: string) {
+  const response = await request<ApiEnvelope<DuePaymentRecord>>("/api/v1/dues", {
+    method: "POST",
+    token,
+    body: payload
+  });
+
+  return response.data;
+}
+
+export async function updateDuePayment(
+  paymentId: string,
+  payload: Partial<CreateDuePaymentPayload>,
+  token?: string
+) {
+  const response = await request<ApiEnvelope<DuePaymentRecord>>(`/api/v1/dues/${paymentId}`, {
     method: "POST",
     token,
     body: payload

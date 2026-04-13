@@ -1,4 +1,4 @@
-import { CalendarDays, ClipboardList, FileText, Home, Plus, Clock, Bell, Users } from "lucide-react";
+import { CalendarDays, ClipboardList, CreditCard, FileText, Home, Plus, Clock, Bell, Users } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useRole } from "@/contexts/RoleContext";
 import {
@@ -17,6 +17,7 @@ export function AppSidebar() {
     { title: "My Proposals", url: "/proposals", icon: FileText },
     { title: "My Tasks", url: "/tasks", icon: ClipboardList },
     { title: "Members", url: "/members", icon: Users },
+    { title: "Dues", url: "/dues", icon: CreditCard },
     { title: "Approved Events", url: "/events", icon: CalendarDays },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
@@ -32,6 +33,7 @@ export function AppSidebar() {
     { title: "Dashboard", url: "/", icon: Home },
     { title: "All Proposals", url: "/proposals", icon: FileText },
     { title: "Members", url: "/members", icon: Users },
+    { title: "Dues", url: "/dues", icon: CreditCard },
     { title: "Approved Events", url: "/events", icon: CalendarDays },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
@@ -40,6 +42,7 @@ export function AppSidebar() {
     { title: "Dashboard", url: "/", icon: Home },
     { title: "Task Delegation", url: "/tasks", icon: ClipboardList },
     { title: "Members", url: "/members", icon: Users },
+    { title: "Dues", url: "/dues", icon: CreditCard },
     { title: "Approved Events", url: "/events", icon: CalendarDays },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
