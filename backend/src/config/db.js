@@ -16,6 +16,8 @@ const clubMemberSelect =
   "id, club_id, profile_id, full_name, student_id, email, phone_number, club_role, membership_status, created_at, updated_at";
 const duePaymentSelect =
   "id, club_id, member_id, amount, academic_session, payment_reference, proof_url, status, verified_by, verified_at, created_at, updated_at";
+const eventReportSelect =
+  "id, proposal_id, club_id, submitted_by, attendance_count, summary, challenges, outcomes, budget_used, media_urls, report_file_url, status, submitted_at, created_at, updated_at, proposals(id, title, proposed_activity, event_date, event_time, location, status)";
 
 function createAdminClient() {
   const env = getEnv();
@@ -689,6 +691,79 @@ function createDatabase(options = {}) {
         .eq("id", paymentId)
         .select(duePaymentSelect)
         .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async createEventReport(report) {
+      const { data, error } = await getClient()
+        .from("event_reports")
+        .insert(report)
+        .select(eventReportSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async getEventReportById(reportId) {
+      const { data, error } = await getClient()
+        .from("event_reports")
+        .select(eventReportSelect)
+        .eq("id", reportId)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? null;
+    },
+
+    async getEventReportByProposalId(proposalId) {
+      const { data, error } = await getClient()
+        .from("event_reports")
+        .select(eventReportSelect)
+        .eq("proposal_id", proposalId)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? null;
+    },
+
+    async listEventReports(filters = {}) {
+      let query = getClient()
+        .from("event_reports")
+        .select(eventReportSelect)
+        .order("submitted_at", { ascending: false });
+
+      if (filters.clubId) {
+        query = query.eq("club_id", filters.clubId);
+      }
+
+      if (filters.clubIds) {
+        if (!filters.clubIds.length) {
+          return [];
+        }
+
+        query = query.in("club_id", filters.clubIds);
+      }
+
+      if (filters.proposalId) {
+        query = query.eq("proposal_id", filters.proposalId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         throw error;

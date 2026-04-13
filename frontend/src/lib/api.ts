@@ -281,6 +281,44 @@ export interface CreateDuePaymentPayload {
   status?: DuePaymentRecord["status"];
 }
 
+export interface EventReportRecord {
+  id: string;
+  proposal_id: string;
+  club_id: string;
+  submitted_by: string;
+  attendance_count: number;
+  summary: string;
+  challenges: string | null;
+  outcomes: string | null;
+  budget_used: number | null;
+  media_urls: string[];
+  report_file_url: string | null;
+  status: "submitted";
+  submitted_at: string;
+  created_at: string;
+  updated_at: string;
+  proposal: {
+    id: string;
+    title: string;
+    proposed_activity: string | null;
+    event_date: string;
+    event_time: string | null;
+    location: string | null;
+    status: string;
+  } | null;
+}
+
+export interface CreateEventReportPayload {
+  proposal_id: string;
+  attendance_count: number;
+  summary: string;
+  challenges?: string | null;
+  outcomes?: string | null;
+  budget_used?: number | null;
+  media_urls?: string[];
+  report_file_url?: string | null;
+}
+
 interface ApiEnvelope<T> {
   data: T;
 }
@@ -670,6 +708,39 @@ export async function updateDuePayment(
   token?: string
 ) {
   const response = await request<ApiEnvelope<DuePaymentRecord>>(`/api/v1/dues/${paymentId}`, {
+    method: "POST",
+    token,
+    body: payload
+  });
+
+  return response.data;
+}
+
+export async function getEventReports(filters: { proposal_id?: string; club_id?: string } = {}, token?: string) {
+  const params = new URLSearchParams();
+
+  if (filters.proposal_id) {
+    params.set("proposal_id", filters.proposal_id);
+  }
+
+  if (filters.club_id) {
+    params.set("club_id", filters.club_id);
+  }
+
+  const query = params.toString();
+  const response = await request<ApiEnvelope<EventReportRecord[]>>(
+    `/api/v1/reports${query ? `?${query}` : ""}`,
+    {
+      method: "GET",
+      token
+    }
+  );
+
+  return response.data;
+}
+
+export async function createEventReport(payload: CreateEventReportPayload, token?: string) {
+  const response = await request<ApiEnvelope<EventReportRecord>>("/api/v1/reports", {
     method: "POST",
     token,
     body: payload

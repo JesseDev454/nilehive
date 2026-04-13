@@ -73,6 +73,7 @@ Current migrations:
 0009_task_delegation.sql
 0010_member_database.sql
 0011_dues_payment_tracking.sql
+0012_post_event_reports.sql
 ```
 
 ## Main Modules
@@ -86,6 +87,7 @@ src/modules/health
 src/modules/notifications
 src/modules/proposals
 src/modules/reminders
+src/modules/reports
 src/modules/tasks
 src/modules/members
 ```
@@ -169,6 +171,12 @@ Dues:
 - `GET /api/v1/dues`
 - `POST /api/v1/dues`
 - `POST /api/v1/dues/:paymentId`
+
+Reports:
+
+- `GET /api/v1/reports`
+- `POST /api/v1/reports`
+- `GET /api/v1/reports/:reportId`
 
 ## Notes
 

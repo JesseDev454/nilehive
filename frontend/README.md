@@ -79,4 +79,6 @@ Use `src/lib/api.ts` for backend communication. Avoid direct `fetch()` calls in 
 - `/analytics`
 - `/archive`
 
+`/archive` now uses the reports API for post-event report submission and archive visibility.
+
 Some pages are still placeholders or partially mocked where backend modules are not built yet.

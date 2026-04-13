@@ -10,6 +10,7 @@ const { createMembersRouter } = require("./modules/members/members.routes");
 const { createNotificationsRouter } = require("./modules/notifications/notifications.routes");
 const { createProposalsRouter } = require("./modules/proposals/proposals.routes");
 const { createRemindersRouter } = require("./modules/reminders/reminders.routes");
+const { createReportsRouter } = require("./modules/reports/reports.routes");
 const { createTasksRouter } = require("./modules/tasks/tasks.routes");
 
 function createApp(options = {}) {
@@ -47,6 +48,7 @@ function createApp(options = {}) {
   app.use("/api/v1/notifications", createNotificationsRouter({ database }));
   app.use("/api/v1/proposals", createProposalsRouter({ database }));
   app.use("/api/v1/reminders", createRemindersRouter({ database }));
+  app.use("/api/v1/reports", createReportsRouter({ database }));
   app.use("/api/v1/tasks", createTasksRouter({ database }));
 
   app.use((req, res, next) => {

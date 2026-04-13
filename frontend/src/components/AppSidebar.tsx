@@ -19,6 +19,7 @@ export function AppSidebar() {
     { title: "Members", url: "/members", icon: Users },
     { title: "Dues", url: "/dues", icon: CreditCard },
     { title: "Approved Events", url: "/events", icon: CalendarDays },
+    { title: "Reports Archive", url: "/archive", icon: FileText },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
 
@@ -26,6 +27,7 @@ export function AppSidebar() {
     { title: "Dashboard", url: "/", icon: Home },
     { title: "Pending Approvals", url: "/approvals", icon: Clock },
     { title: "Approved Events", url: "/events", icon: CalendarDays },
+    { title: "Reports Archive", url: "/archive", icon: FileText },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
 
@@ -35,6 +37,7 @@ export function AppSidebar() {
     { title: "Members", url: "/members", icon: Users },
     { title: "Dues", url: "/dues", icon: CreditCard },
     { title: "Approved Events", url: "/events", icon: CalendarDays },
+    { title: "Reports Archive", url: "/archive", icon: FileText },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
 
@@ -44,6 +47,7 @@ export function AppSidebar() {
     { title: "Members", url: "/members", icon: Users },
     { title: "Dues", url: "/dues", icon: CreditCard },
     { title: "Approved Events", url: "/events", icon: CalendarDays },
+    { title: "Reports Archive", url: "/archive", icon: FileText },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
 

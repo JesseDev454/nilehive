@@ -24,12 +24,12 @@ The app currently supports:
 - Club member database
 - Basic executive team management through member roles
 - Manual dues and payment tracking
+- Post-event report submission
+- Reports and media archive visibility
 
 Planned but not fully implemented yet:
 
 - Student/member experience
-- Post-event reports
-- Media/report archive
 - Announcements and feedback
 - Production onboarding/admin invite flow
 
@@ -150,6 +150,7 @@ Current migration order:
 0009_task_delegation.sql
 0010_member_database.sql
 0011_dues_payment_tracking.sql
+0012_post_event_reports.sql
 ```
 
 Apply them in the Supabase SQL Editor, one file at a time, in numeric order.
@@ -299,6 +300,11 @@ service OK and database reachable
 19. Open Dues.
 20. Create a dues record for a member.
 21. Mark the dues record as submitted or paid.
+22. Login as executive.
+23. Open Reports Archive.
+24. Submit a post-event report for an approved event.
+25. Login as admin, advisor, or president.
+26. Open Reports Archive and confirm the report is visible in the correct scope.
 
 ## Backend API Summary
 
@@ -354,6 +360,12 @@ Dues:
 - `GET /api/v1/dues`
 - `POST /api/v1/dues`
 - `POST /api/v1/dues/:paymentId`
+
+Reports:
+
+- `GET /api/v1/reports`
+- `POST /api/v1/reports`
+- `GET /api/v1/reports/:reportId`
 
 ## Frontend Notes For Teammates
 
