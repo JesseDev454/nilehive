@@ -72,6 +72,7 @@ Current migrations:
 0008_approved_events_reminders.sql
 0009_task_delegation.sql
 0010_member_database.sql
+0011_dues_payment_tracking.sql
 ```
 
 ## Main Modules
@@ -79,6 +80,7 @@ Current migrations:
 ```text
 src/modules/clubs
 src/modules/dashboard
+src/modules/dues
 src/modules/events
 src/modules/health
 src/modules/notifications
@@ -161,6 +163,12 @@ Members:
 - `GET /api/v1/members`
 - `POST /api/v1/members`
 - `POST /api/v1/members/:memberId`
+
+Dues:
+
+- `GET /api/v1/dues`
+- `POST /api/v1/dues`
+- `POST /api/v1/dues/:paymentId`
 
 ## Notes
 

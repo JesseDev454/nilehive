@@ -14,6 +14,8 @@ const taskStatusHistorySelect =
   "id, task_id, changed_by, old_status, new_status, remarks, created_at";
 const clubMemberSelect =
   "id, club_id, profile_id, full_name, student_id, email, phone_number, club_role, membership_status, created_at, updated_at";
+const duePaymentSelect =
+  "id, club_id, member_id, amount, academic_session, payment_reference, proof_url, status, verified_by, verified_at, created_at, updated_at";
 
 function createAdminClient() {
   const env = getEnv();
@@ -616,6 +618,76 @@ function createDatabase(options = {}) {
         .update(update)
         .eq("id", memberId)
         .select(clubMemberSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async createDuePayment(payment) {
+      const { data, error } = await getClient()
+        .from("due_payments")
+        .insert(payment)
+        .select(duePaymentSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async getDuePaymentById(paymentId) {
+      const { data, error } = await getClient()
+        .from("due_payments")
+        .select(duePaymentSelect)
+        .eq("id", paymentId)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? null;
+    },
+
+    async listDuePayments(filters = {}) {
+      let query = getClient()
+        .from("due_payments")
+        .select(duePaymentSelect)
+        .order("created_at", { ascending: false });
+
+      if (filters.clubId) {
+        query = query.eq("club_id", filters.clubId);
+      }
+
+      if (filters.status) {
+        query = query.eq("status", filters.status);
+      }
+
+      if (filters.memberId) {
+        query = query.eq("member_id", filters.memberId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async updateDuePayment(paymentId, update) {
+      const { data, error } = await getClient()
+        .from("due_payments")
+        .update(update)
+        .eq("id", paymentId)
+        .select(duePaymentSelect)
         .single();
 
       if (error) {

@@ -74,6 +74,7 @@ Use `src/lib/api.ts` for backend communication. Avoid direct `fetch()` calls in 
 - `/notifications`
 - `/events`
 - `/members`
+- `/dues`
 - `/tasks`
 - `/analytics`
 - `/archive`
