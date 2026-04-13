@@ -22,7 +22,16 @@ import { ApiClientError, createProposal, getClubs, type BudgetLineItem, type Res
 import { cn } from "@/lib/utils";
 
 const steps = ["Club Info", "Activity", "Budget", "Members", "Review"];
-const MAX_RESPONSIBLE_MEMBERS = 5;
+const DEFAULT_RESPONSIBLE_MEMBERS = 5;
+const MAX_EXTRA_RESPONSIBLE_MEMBERS = 5;
+const MAX_RESPONSIBLE_MEMBERS = DEFAULT_RESPONSIBLE_MEMBERS + MAX_EXTRA_RESPONSIBLE_MEMBERS;
+const RESPONSIBLE_MEMBER_LABELS = [
+  "Club President",
+  "Executive Secretary",
+  "Head of Events",
+  "Head of Talent",
+  "Social Media and Engagement Lead"
+];
 
 const PRESET_CLUB_NAMES = [
   "NILE GDG CLUB",
@@ -96,8 +105,8 @@ function getSubmissionErrorMessage(error: unknown) {
   if (error instanceof ApiClientError) {
     const details = error.details as
       | {
-          fields?: Array<{ message?: string }>;
-        }
+        fields?: Array<{ message?: string }>;
+      }
       | undefined;
 
     const fieldMessages = details?.fields?.map((field) => field.message).filter(Boolean);
@@ -218,6 +227,10 @@ export default function NewProposal() {
   });
   const [budgetItems, setBudgetItems] = useState<BudgetFormItem[]>([createBudgetItem()]);
   const [responsibleMembers, setResponsibleMembers] = useState<ResponsibleMemberForm[]>([
+    createResponsibleMember(),
+    createResponsibleMember(),
+    createResponsibleMember(),
+    createResponsibleMember(),
     createResponsibleMember()
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -291,8 +304,8 @@ export default function NewProposal() {
         form.eventTime && form.eventEndTime
           ? `Event time: ${formatTime12h(form.eventTime)} - ${formatTime12h(form.eventEndTime)}`
           : form.eventEndTime
-          ? `Event ends at: ${formatTime12h(form.eventEndTime)}`
-          : "";
+            ? `Event ends at: ${formatTime12h(form.eventEndTime)}`
+            : "";
       const dateSuffix =
         extraDates.length > 0 ? `Additional event dates: ${extraDates.join(", ")}` : "";
       const extras = [timeSuffix, dateSuffix].filter(Boolean).join("\n");
@@ -342,7 +355,7 @@ export default function NewProposal() {
           </p>
         </div>
         <div className="rounded-full bg-[#8af9ae]/35 px-4 py-2 text-xs font-bold text-[#00210e]">
-          Max {MAX_RESPONSIBLE_MEMBERS} responsible members
+          Max {DEFAULT_RESPONSIBLE_MEMBERS} fixed roles + {MAX_EXTRA_RESPONSIBLE_MEMBERS} extra members
         </div>
       </div>
 
@@ -522,11 +535,10 @@ export default function NewProposal() {
                         onValueChange={(val) => setForm({ ...form, eventEndTime: val })}
                       >
                         <SelectTrigger
-                          className={`rounded-xl bg-[#f1f4f7] ${
-                            durationValidationMessage
-                              ? "border-destructive focus-visible:ring-destructive text-destructive"
-                              : ""
-                          }`}
+                          className={`rounded-xl bg-[#f1f4f7] ${durationValidationMessage
+                            ? "border-destructive focus-visible:ring-destructive text-destructive"
+                            : ""
+                            }`}
                         >
                           <SelectValue placeholder="Select end time" />
                         </SelectTrigger>
@@ -542,11 +554,10 @@ export default function NewProposal() {
                     {form.eventTime && form.eventEndTime && (
                       <div className="pt-5 shrink-0">
                         <span
-                          className={`rounded-full px-3 py-1 text-xs font-bold ${
-                            durationValidationMessage
-                              ? "bg-destructive/10 text-destructive"
-                              : "bg-[#299e5c]/10 text-[#299e5c]"
-                          }`}
+                          className={`rounded-full px-3 py-1 text-xs font-bold ${durationValidationMessage
+                            ? "bg-destructive/10 text-destructive"
+                            : "bg-[#299e5c]/10 text-[#299e5c]"
+                            }`}
                         >
                           {formatDuration(form.eventTime, form.eventEndTime)}
                         </span>
@@ -700,40 +711,22 @@ export default function NewProposal() {
 
           {step === 3 && (
             <Card className="border-0 shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-lg">
                   <Users className="h-5 w-5 text-[#0d5bbc]" />
                   Section D: Responsible Club Members
                 </CardTitle>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={responsibleMembers.length >= MAX_RESPONSIBLE_MEMBERS}
-                  onClick={() => setResponsibleMembers([...responsibleMembers, createResponsibleMember()])}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Member
-                </Button>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Fill in the five required roles, then add up to {MAX_EXTRA_RESPONSIBLE_MEMBERS} extra members.
+                </p>
               </CardHeader>
               <CardContent className="space-y-4">
                 {responsibleMembers.map((member, index) => (
                   <div key={member.id} className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-[#ebeef1]">
-                    <div className="mb-4 flex items-center justify-between">
-                      <p className="font-bold text-[#000d27]">Responsible Member {index + 1}</p>
-                      <Button
-                        className="text-destructive hover:bg-destructive/10"
-                        disabled={responsibleMembers.length === 1}
-                        size="icon"
-                        type="button"
-                        variant="ghost"
-                        onClick={() =>
-                          setResponsibleMembers(
-                            responsibleMembers.filter((candidate) => candidate.id !== member.id)
-                          )
-                        }
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                    <div className="mb-4">
+                      <p className="font-bold text-[#000d27]">
+                        {RESPONSIBLE_MEMBER_LABELS[index] ?? `Responsible Member ${index + 1}`}
+                      </p>
                     </div>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div className="space-y-2">
@@ -804,6 +797,24 @@ export default function NewProposal() {
                     </div>
                   </div>
                 ))}
+                {responsibleMembers.length < MAX_RESPONSIBLE_MEMBERS && (
+                  <button
+                    type="button"
+                    className="w-full rounded-2xl bg-[#f8fbff] p-4 text-left shadow-sm ring-1 ring-dashed ring-[#cfd6df] transition hover:border-[#0d5bbc] hover:bg-[#eef5ff]"
+                    onClick={() => setResponsibleMembers([...responsibleMembers, createResponsibleMember()])}
+                  >
+                    <div className="mb-4">
+                      <p className="font-bold text-[#000d27]">Responsible Member</p>
+                    </div>
+                    <div className="flex items-center gap-2 rounded-2xl border border-dashed border-[#cfd6df] bg-[#ffffff] p-5 justify-center text-[#0d5bbc]">
+                      <Plus className="h-4 w-4" />
+                      <span className="font-semibold">Add Responsible Member</span>
+                    </div>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Add up to {MAX_EXTRA_RESPONSIBLE_MEMBERS} more responsible members.
+                    </p>
+                  </button>
+                )}
               </CardContent>
             </Card>
           )}
@@ -917,7 +928,9 @@ export default function NewProposal() {
                     <div className="space-y-3">
                       {toResponsibleMembers(responsibleMembers).map((member, i) => (
                         <div key={i} className="rounded-2xl bg-[#f1f4f7] p-4">
-                          <p className="font-bold text-[#000d27] mb-2">Member {i + 1}</p>
+                          <p className="font-bold text-[#000d27] mb-2">
+                            {RESPONSIBLE_MEMBER_LABELS[i] ?? `Responsible Member ${i + 1}`}
+                          </p>
                           <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
                             <span className="text-muted-foreground">Name</span>
                             <span className="font-medium">{member.name || "-"}</span>
