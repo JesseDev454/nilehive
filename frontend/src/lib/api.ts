@@ -319,6 +319,45 @@ export interface CreateEventReportPayload {
   report_file_url?: string | null;
 }
 
+export interface AnnouncementRecord {
+  id: string;
+  club_id: string | null;
+  created_by: string;
+  title: string;
+  message: string;
+  audience: "all" | "club";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateAnnouncementPayload {
+  title: string;
+  message: string;
+  audience?: AnnouncementRecord["audience"];
+  club_id?: string | null;
+}
+
+export interface FeedbackRecord {
+  id: string;
+  club_id: string;
+  proposal_id: string | null;
+  submitted_by: string;
+  category: "general" | "event" | "club";
+  rating: number | null;
+  comment: string;
+  status: "open" | "reviewed" | "archived";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateFeedbackPayload {
+  club_id?: string | null;
+  proposal_id?: string | null;
+  category?: FeedbackRecord["category"];
+  rating?: number | null;
+  comment: string;
+}
+
 interface ApiEnvelope<T> {
   data: T;
 }
@@ -741,6 +780,85 @@ export async function getEventReports(filters: { proposal_id?: string; club_id?:
 
 export async function createEventReport(payload: CreateEventReportPayload, token?: string) {
   const response = await request<ApiEnvelope<EventReportRecord>>("/api/v1/reports", {
+    method: "POST",
+    token,
+    body: payload
+  });
+
+  return response.data;
+}
+
+export async function getAnnouncements(
+  filters: { audience?: string; club_id?: string } = {},
+  token?: string
+) {
+  const params = new URLSearchParams();
+
+  if (filters.audience) {
+    params.set("audience", filters.audience);
+  }
+
+  if (filters.club_id) {
+    params.set("club_id", filters.club_id);
+  }
+
+  const query = params.toString();
+  const response = await request<ApiEnvelope<AnnouncementRecord[]>>(
+    `/api/v1/communications/announcements${query ? `?${query}` : ""}`,
+    {
+      method: "GET",
+      token
+    }
+  );
+
+  return response.data;
+}
+
+export async function createAnnouncement(payload: CreateAnnouncementPayload, token?: string) {
+  const response = await request<ApiEnvelope<AnnouncementRecord>>(
+    "/api/v1/communications/announcements",
+    {
+      method: "POST",
+      token,
+      body: payload
+    }
+  );
+
+  return response.data;
+}
+
+export async function getFeedback(
+  filters: { club_id?: string; proposal_id?: string; status?: string } = {},
+  token?: string
+) {
+  const params = new URLSearchParams();
+
+  if (filters.club_id) {
+    params.set("club_id", filters.club_id);
+  }
+
+  if (filters.proposal_id) {
+    params.set("proposal_id", filters.proposal_id);
+  }
+
+  if (filters.status) {
+    params.set("status", filters.status);
+  }
+
+  const query = params.toString();
+  const response = await request<ApiEnvelope<FeedbackRecord[]>>(
+    `/api/v1/communications/feedback${query ? `?${query}` : ""}`,
+    {
+      method: "GET",
+      token
+    }
+  );
+
+  return response.data;
+}
+
+export async function createFeedback(payload: CreateFeedbackPayload, token?: string) {
+  const response = await request<ApiEnvelope<FeedbackRecord>>("/api/v1/communications/feedback", {
     method: "POST",
     token,
     body: payload

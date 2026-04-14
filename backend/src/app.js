@@ -3,6 +3,7 @@ const ApiError = require("./shared/ApiError");
 const errorHandler = require("./middleware/errorHandler");
 const { createHealthRouter } = require("./modules/health/health.routes");
 const { createClubsRouter } = require("./modules/clubs/clubs.routes");
+const { createCommunicationsRouter } = require("./modules/communications/communications.routes");
 const { createDashboardRouter } = require("./modules/dashboard/dashboard.routes");
 const { createDuesRouter } = require("./modules/dues/dues.routes");
 const { createEventsRouter } = require("./modules/events/events.routes");
@@ -41,6 +42,7 @@ function createApp(options = {}) {
 
   app.use("/api/v1/health", createHealthRouter({ database }));
   app.use("/api/v1/clubs", createClubsRouter({ database }));
+  app.use("/api/v1/communications", createCommunicationsRouter({ database }));
   app.use("/api/v1/dashboard", createDashboardRouter({ database }));
   app.use("/api/v1/dues", createDuesRouter({ database }));
   app.use("/api/v1/events", createEventsRouter({ database }));
