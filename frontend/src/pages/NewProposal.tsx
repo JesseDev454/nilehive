@@ -804,6 +804,9 @@ export default function NewProposal() {
                     </div>
                   </div>
                 ))}
+                <p className="text-xs text-muted-foreground">
+                  Enter each member's actual name and position. Club roles vary, so these are not pre-filled.
+                </p>
               </CardContent>
             </Card>
           )}
@@ -917,7 +920,7 @@ export default function NewProposal() {
                     <div className="space-y-3">
                       {toResponsibleMembers(responsibleMembers).map((member, i) => (
                         <div key={i} className="rounded-2xl bg-[#f1f4f7] p-4">
-                          <p className="font-bold text-[#000d27] mb-2">Member {i + 1}</p>
+                          <p className="font-bold text-[#000d27] mb-2">Responsible Member {i + 1}</p>
                           <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
                             <span className="text-muted-foreground">Name</span>
                             <span className="font-medium">{member.name || "-"}</span>
