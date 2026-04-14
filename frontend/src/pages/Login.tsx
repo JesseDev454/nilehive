@@ -1,45 +1,55 @@
 import { FormEvent, useState } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowRight, Lock, Mail, Network, Sparkles } from "lucide-react";
+import { ArrowRight, Lock, Mail, Network, Sparkles, Badge } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/contexts/AuthContext";
+//NEW imports (only addition)
+import { NhStudentId } from "@/components/NhStudentId";
 
 const CAMPUS_IMAGE =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuBOcyl3fQGGd0BuSaw42oMg7F_dWb7g2BnM1yAu0MhjS0f_63-3dUn4MeLyFEL4vWMR7FdZzhUWAxPObtqy9hoZSC1V6Pu3JWi98dgdcT3YAgvcU3Hm-SaRBilgKGE0c0coHaHUFbtJJ7UORjiYf3IazHNbSUWlJBmk5hGsLMMNj9DTscApRXr4MG1WHLGBbTdiLlLJE25VWkNCUSA_nbUCnD2jBoKlpZ0L62tJvpgxGXjvNBOx3GA2iGXiiygLBYCUP4ORbboS9-M4";
 
 const STUDENT_AVATARS = [
   "https://lh3.googleusercontent.com/aida-public/AB6AXuAsPJsXtLpg7aXabPr4SK-LfpzwabRbFdTdmRGMJP-SDYM-fNhjQN3GK20iBHPbMo5uscc7HhSa_BX3bjGBNrkanMvSDS_4cQQXDqNju3ZeLHe262kdhJb49X0nLFIgCWE4lP8GNY5fZLZlZq8wFBp8EWnGBdi-esmXaJrgsgSviWcBw9fAnawMvO_5AA-bWcFSEDX_tIoMZdZRvtnGk-IMursZJNXdNQq_2OfiyhgIHioZnRPe4gLQB_CO0OGEwqRf7Qhx5OawczjG",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuCTBKfyBLfXu6Rl3U71wJyKQo9HgnqqCprBn93UcMQ6ZXor3nn5WZiLXs6YxcbUoLQttFVZpXf-Su6AQ0jpXUqpmUymgbUIJWQovXcIHNOALaQsISoZRYVHHs--Cxwo57NodWh7k81CJalq6WGZ-R3wcwGn8mFZgADSfjfdVsXlBhtNgxvujSX8bl54pFOLW4b3MetGrrGvH9S8v4XaAhA0IzsJ9GvP3_AAi2k3SCX1VWlVbUVjjuoGm5JOZxNGmVAyEgcahv8nqAw6",
+  "https://lh3.googleusercontent.com/aida-public/AB6AXuCTBKfyBLfXu6Rl3U71wJyKQo9HgnqqCprBn93UcMQ6ZXor3nn5WZiLXs6YxcbUoLQttFVZpXf-Su6AQ0jpXUqpmUymgbUIJWQovXcIHNOALaQsISoZRYVHHs--Cxwo57NodWh7k81CJalpa6WGZ-R3wcwGn8mFZgADSfjfdVsXlBhtNgxvujSX8bl54pFOLW4b3MetGrrGvH9S8v4XaAhA0IzsJ9GvP3_AAi2k3SCX1VWlVbUVjjuoGm5JOZxNGmVAyEgcahv8nqAw6",
   "https://lh3.googleusercontent.com/aida-public/AB6AXuBKCFuR5sxW97e1KKXOyzCinV_iIK5QM2BR5-vWKR8_HWks0m21Za8LGo3xs8gKhjNbAm-9Mw6lVmoRUAreDKOtjEdyzWD6UUyK5xX9zU09W1eygQLZlp7tFAlyC9zR5c0vHBQPUeUCCe7CxAAjUOo8Vz_w_8JRiTsRhnxUPj3A-PoIlepj_CY6wj_gFc1TyZQuOPiY4HMXR5FPgiHlsgzScsK12hP8u85YpKCij69BA5bRs-2sB5RxhJ39_iX4KDtGWlGwVHs4TxK_"
 ];
 
 export default function Login() {
   const { signIn, session, isLoading } = useAuth();
   const location = useLocation();
+
+  // OLD state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const redirectTo = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || "/";
+  // NEW states
+  const [loginMode, setLoginMode] = useState<"email" | "sid">("email");
+  const [studentId, setStudentId] = useState("");
+
+  const redirectTo =
+    (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || "/";
 
   if (!isLoading && session) {
     return <Navigate to={redirectTo} replace />;
   }
 
+  //handleSubmit signIn() call
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsSubmitting(true);
-
     try {
       await signIn(email, password);
       toast.success("Welcome back to NileHive");
     } catch (error) {
       toast.error("Login failed", {
-        description: error instanceof Error ? error.message : "Please check your credentials and try again."
+        description:
+          error instanceof Error ? error.message : "Please check your credentials and try again."
       });
     } finally {
       setIsSubmitting(false);
@@ -47,12 +57,15 @@ export default function Login() {
   }
 
   return (
+    // all outer layouts, bg blobs, left panel
     <main className="relative min-h-screen overflow-hidden bg-[#f7fafd] p-4 sm:p-6 flex items-center justify-center text-[#181c1e]">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,rgba(245,185,66,0.14),rgba(13,91,188,0.06)_38%,transparent_70%)]" />
       <div className="absolute -bottom-24 -right-24 h-96 w-96 rounded-full bg-[#8af9ae]/20 blur-[120px]" />
       <div className="absolute top-1/4 -left-20 h-80 w-80 rounded-full bg-[#629afe]/15 blur-[100px]" />
 
       <section className="relative z-10 grid w-full max-w-5xl overflow-hidden rounded-[2rem] bg-white shadow-[0_4px_30px_rgba(11,35,71,0.08)] md:grid-cols-12">
+
+        {/* UNCHANGED: entire left branding column */}
         <div className="relative hidden min-h-[680px] overflow-hidden bg-[#0b2347] p-12 md:col-span-7 md:flex md:flex-col md:justify-between">
           <img
             alt="Modern Nile University campus architecture"
@@ -61,14 +74,12 @@ export default function Login() {
           />
           <div className="absolute inset-0 bg-gradient-to-br from-[#000d27]/75 via-[#0b2347]/70 to-[#002a13]/70" />
           <div className="absolute -bottom-10 -left-10 h-64 w-64 rounded-full bg-[#629afe]/20 blur-[80px]" />
-
           <div className="relative z-10 flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0d5bbc] text-white shadow-lg">
               <Network className="h-5 w-5" />
             </div>
             <span className="font-extrabold tracking-tight text-white text-2xl">NileHive</span>
           </div>
-
           <div className="relative z-10 mt-auto">
             <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-white lg:text-5xl">
               Empowering Student <br />
@@ -97,14 +108,17 @@ export default function Login() {
           </div>
         </div>
 
+        {/* Form column */}
         <div className="md:col-span-5 flex flex-col justify-center p-8 sm:p-10 lg:p-16">
           <div className="mb-10">
+            {/* mobile logo */}
             <div className="mb-8 flex items-center gap-3 md:hidden">
               <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#0b2347] text-white">
                 <Network className="h-5 w-5" />
               </div>
               <span className="text-2xl font-extrabold tracking-tight text-[#000d27]">NileHive</span>
             </div>
+            {/* header */}
             <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#0d5bbc]">
               Club Services Platform
             </p>
@@ -115,25 +129,68 @@ export default function Login() {
           </div>
 
           <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="space-y-2">
-              <Label className="font-semibold text-[#181c1e]" htmlFor="email">
-                University Email
-              </Label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#75777f]" />
-                <Input
-                  className="h-13 rounded-2xl border-0 bg-[#f1f4f7] py-6 pl-12 font-medium focus-visible:ring-[#0d5bbc]/30"
-                  id="email"
-                  autoComplete="email"
-                  placeholder="name@nileuniversity.edu.ng"
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  required
-                />
-              </div>
+
+            {/*tab switcher*/}
+            <div className="flex rounded-2xl bg-[#f1f4f7] p-1 gap-1">
+              <button
+                type="button"
+                onClick={() => setLoginMode("email")}
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 px-3 text-sm font-semibold transition-all ${loginMode === "email"
+                  ? "bg-white text-[#0d5bbc] shadow-sm"
+                  : "text-[#44474e]"
+                  }`}
+              >
+                <Mail className="h-4 w-4" />
+                Email
+              </button>
+              <button
+                type="button"
+                onClick={() => setLoginMode("sid")}
+                className={`flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 px-3 text-sm font-semibold transition-all ${loginMode === "sid"
+                  ? "bg-white text-[#0d5bbc] shadow-sm"
+                  : "text-[#44474e]"
+                  }`}
+              >
+                <Badge className="h-4 w-4" />
+                Student ID
+              </button>
             </div>
 
+            {/*Email field */}
+            {loginMode === "email" && (
+              <div className="space-y-2">
+                <Label className="font-semibold text-[#181c1e]" htmlFor="email">
+                  University Email
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#75777f]" />
+                  <Input
+                    className="h-13 rounded-2xl border-0 bg-[#f1f4f7] py-6 pl-12 font-medium focus-visible:ring-[#0d5bbc]/30"
+                    id="email"
+                    autoComplete="email"
+                    placeholder="name@nileuniversity.edu.ng"
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    required={loginMode === "email"}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/*NEW: Student ID field*/}
+            {loginMode === "sid" && (
+              <div className="space-y-2">
+                <Label className="font-semibold text-[#181c1e]">Student ID</Label>
+                <NhStudentId
+                  value={studentId}
+                  onChange={setStudentId}
+                  required={loginMode === "sid"}
+                />
+              </div>
+            )}
+
+            {/*password field*/}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label className="font-semibold text-[#181c1e]" htmlFor="password">
@@ -158,6 +215,7 @@ export default function Login() {
               </div>
             </div>
 
+            {/* remember me*/}
             <div className="flex items-center gap-3">
               <Checkbox id="remember-me" />
               <Label className="text-sm font-medium text-[#44474e]" htmlFor="remember-me">
@@ -165,6 +223,7 @@ export default function Login() {
               </Label>
             </div>
 
+            {/* submit button */}
             <Button
               className="h-14 w-full rounded-2xl bg-[#0d5bbc] font-bold text-white shadow-lg shadow-[#0d5bbc]/20 hover:bg-[#000d27]"
               disabled={isSubmitting}
@@ -175,6 +234,7 @@ export default function Login() {
             </Button>
           </form>
 
+          {/* everything below form */}
           <div className="mt-8 rounded-2xl bg-[#f1f4f7] p-4 text-sm text-[#44474e]">
             New here?{" "}
             <Link className="font-bold text-[#0d5bbc] hover:underline" to="/signup">
@@ -195,6 +255,7 @@ export default function Login() {
         </div>
       </section>
 
+      {/* bottom pulse badge */}
       <div className="fixed bottom-8 left-8 hidden items-center gap-3 rounded-full bg-white/80 px-4 py-3 shadow-[0_4px_20px_rgba(11,35,71,0.08)] backdrop-blur-md lg:flex">
         <span className="relative flex h-3 w-3">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#8af9ae] opacity-75" />

@@ -1,209 +1,248 @@
 <!DOCTYPE html>
 
-<html class="light" lang="en"><head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>NileHive | Login</title>
-<!-- Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
-<!-- Icons -->
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-<!-- Scripts -->
-<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<script id="tailwind-config">
-      tailwind.config = {
-        darkMode: "class",
-        theme: {
-          extend: {
-            "colors": {
-                    "surface-container-lowest": "#ffffff",
-                    "surface-container-highest": "#e0e3e6",
-                    "on-secondary-fixed": "#001a41",
-                    "on-error": "#ffffff",
-                    "surface-container-high": "#e5e8eb",
-                    "secondary-fixed": "#d8e2ff",
-                    "error-container": "#ffdad6",
-                    "outline": "#75777f",
-                    "inverse-surface": "#2d3133",
-                    "primary": "#000d27",
-                    "outline-variant": "#c4c6cf",
-                    "primary-fixed-dim": "#b2c7f4",
-                    "on-tertiary-container": "#299e5c",
-                    "tertiary": "#001105",
-                    "error": "#ba1a1a",
-                    "surface-tint": "#4a5e86",
-                    "on-error-container": "#93000a",
-                    "surface-bright": "#f7fafd",
-                    "secondary-container": "#629afe",
-                    "on-primary-fixed": "#011b3f",
-                    "surface-variant": "#e0e3e6",
-                    "primary-fixed": "#d7e2ff",
-                    "inverse-on-surface": "#eef1f4",
-                    "on-primary-fixed-variant": "#32476c",
-                    "surface-container-low": "#f1f4f7",
-                    "on-tertiary": "#ffffff",
-                    "tertiary-fixed": "#8af9ae",
-                    "on-secondary-fixed-variant": "#004493",
-                    "secondary": "#0d5bbc",
-                    "surface": "#f7fafd",
-                    "on-surface-variant": "#44474e",
-                    "on-secondary": "#ffffff",
-                    "background": "#f7fafd",
-                    "on-surface": "#181c1e",
-                    "inverse-primary": "#b2c7f4",
-                    "secondary-fixed-dim": "#adc7ff",
-                    "tertiary-fixed-dim": "#6edc94",
-                    "on-tertiary-fixed-variant": "#00522a",
-                    "surface-container": "#ebeef1",
-                    "surface-dim": "#d7dadd",
-                    "on-tertiary-fixed": "#00210e",
-                    "on-secondary-container": "#00316d",
-                    "primary-container": "#0b2347",
-                    "on-primary": "#ffffff",
-                    "on-primary-container": "#778bb5",
-                    "tertiary-container": "#002a13",
-                    "on-background": "#181c1e"
-            },
-            "borderRadius": {
-                    "DEFAULT": "0.125rem",
-                    "lg": "0.25rem",
-                    "xl": "0.5rem",
-                    "full": "0.75rem"
-            },
-            "fontFamily": {
-                    "headline": ["Manrope"],
-                    "body": ["Inter"],
-                    "label": ["Inter"]
-            }
+<html class="light" lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>NileHive | Login</title>
+  <!-- Fonts -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap"
+    rel="stylesheet" />
+  <!-- Icons -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+    rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+    rel="stylesheet" />
+  <!-- Scripts -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "surface-container-lowest": "#ffffff",
+            "surface-container-highest": "#e0e3e6",
+            "on-secondary-fixed": "#001a41",
+            "on-error": "#ffffff",
+            "surface-container-high": "#e5e8eb",
+            "secondary-fixed": "#d8e2ff",
+            "error-container": "#ffdad6",
+            "outline": "#75777f",
+            "inverse-surface": "#2d3133",
+            "primary": "#000d27",
+            "outline-variant": "#c4c6cf",
+            "primary-fixed-dim": "#b2c7f4",
+            "on-tertiary-container": "#299e5c",
+            "tertiary": "#001105",
+            "error": "#ba1a1a",
+            "surface-tint": "#4a5e86",
+            "on-error-container": "#93000a",
+            "surface-bright": "#f7fafd",
+            "secondary-container": "#629afe",
+            "on-primary-fixed": "#011b3f",
+            "surface-variant": "#e0e3e6",
+            "primary-fixed": "#d7e2ff",
+            "inverse-on-surface": "#eef1f4",
+            "on-primary-fixed-variant": "#32476c",
+            "surface-container-low": "#f1f4f7",
+            "on-tertiary": "#ffffff",
+            "tertiary-fixed": "#8af9ae",
+            "on-secondary-fixed-variant": "#004493",
+            "secondary": "#0d5bbc",
+            "surface": "#f7fafd",
+            "on-surface-variant": "#44474e",
+            "on-secondary": "#ffffff",
+            "background": "#f7fafd",
+            "on-surface": "#181c1e",
+            "inverse-primary": "#b2c7f4",
+            "secondary-fixed-dim": "#adc7ff",
+            "tertiary-fixed-dim": "#6edc94",
+            "on-tertiary-fixed-variant": "#00522a",
+            "surface-container": "#ebeef1",
+            "surface-dim": "#d7dadd",
+            "on-tertiary-fixed": "#00210e",
+            "on-secondary-container": "#00316d",
+            "primary-container": "#0b2347",
+            "on-primary": "#ffffff",
+            "on-primary-container": "#778bb5",
+            "tertiary-container": "#002a13",
+            "on-background": "#181c1e"
           },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "fontFamily": {
+            "headline": ["Manrope"],
+            "body": ["Inter"],
+            "label": ["Inter"]
+          }
         },
-      }
-    </script>
-<style>
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
-        .sunrise-motif {
-            background: radial-gradient(circle at bottom right, rgba(245, 185, 66, 0.1) 0%, rgba(13, 91, 188, 0.05) 40%, transparent 70%);
-        }
-        .editorial-shadow {
-            box-shadow: 0px 4px 20px rgba(11, 35, 71, 0.06);
-        }
-    </style>
+      },
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+
+    .sunrise-motif {
+      background: radial-gradient(circle at bottom right, rgba(245, 185, 66, 0.1) 0%, rgba(13, 91, 188, 0.05) 40%, transparent 70%);
+    }
+
+    .editorial-shadow {
+      box-shadow: 0px 4px 20px rgba(11, 35, 71, 0.06);
+    }
+  </style>
 </head>
-<body class="bg-background font-body text-on-background min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
-<!-- Decorative Sunrise Motif -->
-<div class="absolute inset-0 z-0 pointer-events-none sunrise-motif"></div>
-<div class="absolute -bottom-24 -right-24 w-96 h-96 bg-tertiary-fixed/10 blur-[120px] rounded-full"></div>
-<div class="absolute top-1/4 -left-20 w-80 h-80 bg-secondary-container/10 blur-[100px] rounded-full"></div>
-<!-- Main Login Canvas -->
-<main class="w-full max-w-5xl grid grid-cols-1 md:grid-cols-12 gap-0 bg-surface-container-lowest rounded-xl overflow-hidden editorial-shadow z-10 relative">
-<!-- Branding & Imagery Side (Asymmetric Layout) -->
-<div class="hidden md:flex md:col-span-7 relative bg-primary-container p-12 flex-col justify-between overflow-hidden">
-<!-- Background Image with data-alt -->
-<div class="absolute inset-0 opacity-40">
-<img alt="Campus Architecture" class="w-full h-full object-cover" data-alt="Modern university campus architecture with sleek glass buildings and green lawns under a soft morning blue sky with golden light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOcyl3fQGGd0BuSaw42oMg7F_dWb7g2BnM1yAu0MhjS0f_63-3dUn4MeLyFEL4vWMR7FdZzhUWAxPObtqy9hoZSC1V6Pu3JWi98dgdcT3YAgvcU3Hm-SaRBilgKGE0c0coHaHUFbtJJ7UORjiYf3IazHNbSUWlJBmk5hGsLMMNj9DTscApRXr4MG1WHLGBbTdiLlLJE25VWkNCUSA_nbUCnD2jBoKlpZ0L62tJvpgxGXjvNBOx3GA2iGXiiygLBYCUP4ORbboS9-M4"/>
-</div>
-<!-- Logo Section -->
-<div class="relative z-20">
-<div class="flex items-center gap-3">
-<div class="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center shadow-lg">
-<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">hive</span>
-</div>
-<span class="text-2xl font-headline font-extrabold tracking-tight text-white">NileHive</span>
-</div>
-</div>
-<!-- Value Prop Section -->
-<div class="relative z-20 mt-auto">
-<h1 class="text-4xl lg:text-5xl font-headline font-extrabold text-white leading-tight">
-                    Empowering Student <br/>
-<span class="text-tertiary-fixed">Innovation &amp; Synergy.</span>
-</h1>
-<p class="mt-6 text-on-primary-container max-w-md font-medium leading-relaxed">
-                    The central hub for Nile University club operations, proposal management, and collaborative excellence.
-                </p>
-<div class="mt-8 flex gap-4">
-<div class="flex -space-x-3">
-<img alt="Student 1" class="w-10 h-10 rounded-full border-2 border-primary-container object-cover" data-alt="diverse student profile portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsPJsXtLpg7aXabPr4SK-LfpzwabRbFdTdmRGMJP-SDYM-fNhjQN3GK20iBHPbMo5uscc7HhSa_BX3bjGBNrkanMvSDS_4cQQXDqNju3ZeLHe262kdhJb49X0nLFIgCWE4lP8GNY5fZLZlZq8wFBp8EWnGBdi-esmXaJrgsgSviWcBw9fAnawMvO_5AA-bWcFSEDX_tIoMZdZRvtnGk-IMursZJNXdNQq_2OfiyhgIHioZnRPe4gLQB_CO0OGEwqRf7Qhx5OawczjG"/>
-<img alt="Student 2" class="w-10 h-10 rounded-full border-2 border-primary-container object-cover" data-alt="male student headshot in university setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTBKfyBLfXu6Rl3U71wJyKQo9HgnqqCprBn93UcMQ6ZXor3nn5WZiLXs6YxcbUoLQttFVZpXf-Su6AQ0jpXUqpmUymgbUIJWQovXcIHNOALaQsISoZRYVHHs--Cxwo57NodWh7k81CJalq6WGZ-R3wcwGn8mFZgADSfjfdVsXlBhtNgxvujSX8bl54pFOLW4b3MetGrrGvH9S8v4XaAhA0IzsJ9GvP3_AAi2k3SCX1VWlVbUVjjuoGm5JOZxNGmVAyEgcahv8nqAw6"/>
-<img alt="Student 3" class="w-10 h-10 rounded-full border-2 border-primary-container object-cover" data-alt="smiling woman student avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKCFuR5sxW97e1KKXOyzCinV_iIK5QM2BR5-vWKR8_HWks0m21Za8LGo3xs8gKhjNbAm-9Mw6lVmoRUAreDKOtjEdyzWD6UUyK5xX9zU09W1eygQLZlp7tFAlyC9zR5c0vHBQPUeUCCe7CxAAjUOo8Vz_w_8JRiTsRhnxUPj3A-PoIlepj_CY6wj_gFc1TyZQuOPiY4HMXR5FPgiHlsgzScsK12hP8u85YpKCij69BA5bRs-2sB5RxhJ39_iX4KDtGWlGwVHs4TxK_"/>
-</div>
-<div class="flex flex-col">
-<span class="text-sm font-bold text-white tracking-wide">Join 50+ Active Clubs</span>
-<span class="text-xs text-on-primary-container">Managing 200+ monthly events</span>
-</div>
-</div>
-</div>
-<!-- Sunrise Motif Accent (Asymmetric Overlay) -->
-<div class="absolute -bottom-10 -left-10 w-64 h-64 bg-secondary-container/20 rounded-full blur-[80px]"></div>
-</div>
-<!-- Form Side -->
-<div class="col-span-1 md:col-span-5 flex flex-col justify-center p-8 lg:p-16 bg-surface-container-lowest">
-<!-- Mobile Logo -->
-<div class="md:hidden mb-12 flex items-center gap-3">
-<span class="text-xl font-headline font-extrabold tracking-tight text-primary">NileHive</span>
-</div>
-<div class="mb-10">
-<span class="text-secondary font-headline font-bold text-sm tracking-widest uppercase">Club Services Platform</span>
-<h2 class="text-3xl font-headline font-extrabold text-on-surface mt-2">Welcome back</h2>
-<p class="text-on-surface-variant mt-2 font-medium">Access your club dashboard and proposals.</p>
-</div>
-<form class="space-y-6">
-<!-- Input Group: Email -->
-<div class="space-y-2">
-<label class="block text-sm font-label font-semibold text-on-surface" for="email">University Email</label>
-<div class="relative">
-<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-<span class="material-symbols-outlined text-outline text-[20px]">mail</span>
-</div>
-<input class="block w-full pl-11 pr-4 py-3 bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-secondary/20 focus:bg-white transition-all text-on-surface placeholder:text-outline-variant font-medium" id="email" name="email" placeholder="username@nileuniversity.edu.eg" type="email"/>
-</div>
-</div>
-<!-- Input Group: Password -->
-<div class="space-y-2">
-<div class="flex justify-between">
-<label class="block text-sm font-label font-semibold text-on-surface" for="password">Password</label>
-<a class="text-xs font-bold text-secondary hover:underline transition-all" href="#">Forgot password?</a>
-</div>
-<div class="relative">
-<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-<span class="material-symbols-outlined text-outline text-[20px]">lock</span>
-</div>
-<input class="block w-full pl-11 pr-4 py-3 bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-secondary/20 focus:bg-white transition-all text-on-surface placeholder:text-outline-variant font-medium" id="password" name="password" placeholder="••••••••" type="password"/>
-</div>
-</div>
-<!-- Remember Me -->
-<div class="flex items-center">
-<input class="h-4 w-4 rounded border-outline-variant text-secondary focus:ring-secondary" id="remember-me" name="remember-me" type="checkbox"/>
-<label class="ml-3 block text-sm font-medium text-on-surface-variant" for="remember-me">Keep me signed in</label>
-</div>
-<!-- CTA Button -->
-<button class="w-full bg-secondary text-on-secondary py-4 px-6 rounded-xl font-headline font-bold text-base shadow-lg shadow-secondary/20 hover:bg-primary transition-all flex items-center justify-center gap-2 group active:scale-95" type="submit">
-                    Sign in to Platform
-                    <span class="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
-</button>
-</form>
-<!-- Institutional Footer -->
-<div class="mt-12 pt-8 border-t border-surface-container flex flex-col sm:flex-row items-center justify-between gap-4">
-<div class="flex items-center gap-2">
-<div class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></div>
-<span class="text-xs font-label font-semibold text-on-surface-variant">System Status: Operational</span>
-</div>
-<div class="flex gap-4">
-<a class="text-xs font-medium text-on-surface-variant hover:text-secondary transition-colors" href="#">Privacy</a>
-<a class="text-xs font-medium text-on-surface-variant hover:text-secondary transition-colors" href="#">Terms</a>
-<a class="text-xs font-medium text-on-surface-variant hover:text-secondary transition-colors" href="#">IT Support</a>
-</div>
-</div>
-</div>
-</main>
-<!-- Bottom Left Decoration (Club Pulse) -->
-<div class="fixed bottom-8 left-8 hidden lg:flex items-center gap-3 bg-surface-container-lowest/80 backdrop-blur-md px-4 py-3 rounded-full editorial-shadow">
-<div class="relative flex h-3 w-3">
-<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary-fixed opacity-75"></span>
-<span class="relative inline-flex rounded-full h-3 w-3 bg-on-tertiary-container"></span>
-</div>
-<span class="text-xs font-bold text-primary tracking-wide">12 Upcoming Campus Events</span>
-</div>
-</body></html>
+
+<body
+  class="bg-background font-body text-on-background min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
+  <!-- Decorative Sunrise Motif -->
+  <div class="absolute inset-0 z-0 pointer-events-none sunrise-motif"></div>
+  <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-tertiary-fixed/10 blur-[120px] rounded-full"></div>
+  <div class="absolute top-1/4 -left-20 w-80 h-80 bg-secondary-container/10 blur-[100px] rounded-full"></div>
+  <!-- Main Login Canvas -->
+  <main
+    class="w-full max-w-5xl grid grid-cols-1 md:grid-cols-12 gap-0 bg-surface-container-lowest rounded-xl overflow-hidden editorial-shadow z-10 relative">
+    <!-- Branding & Imagery Side (Asymmetric Layout) -->
+    <div
+      class="hidden md:flex md:col-span-7 relative bg-primary-container p-12 flex-col justify-between overflow-hidden">
+      <!-- Background Image with data-alt -->
+      <div class="absolute inset-0 opacity-40">
+        <img alt="Campus Architecture" class="w-full h-full object-cover"
+          data-alt="Modern university campus architecture with sleek glass buildings and green lawns under a soft morning blue sky with golden light"
+          src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOcyl3fQGGd0BuSaw42oMg7F_dWb7g2BnM1yAu0MhjS0f_63-3dUn4MeLyFEL4vWMR7FdZzhUWAxPObtqy9hoZSC1V6Pu3JWi98dgdcT3YAgvcU3Hm-SaRBilgKGE0c0coHaHUFbtJJ7UORjiYf3IazHNbSUWlJBmk5hGsLMMNj9DTscApRXr4MG1WHLGBbTdiLlLJE25VWkNCUSA_nbUCnD2jBoKlpZ0L62tJvpgxGXjvNBOx3GA2iGXiiygLBYCUP4ORbboS9-M4" />
+      </div>
+      <!-- Logo Section -->
+      <div class="relative z-20">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center shadow-lg">
+            <span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">hive</span>
+          </div>
+          <span class="text-2xl font-headline font-extrabold tracking-tight text-white">NileHive</span>
+        </div>
+      </div>
+      <!-- Value Prop Section -->
+      <div class="relative z-20 mt-auto">
+        <h1 class="text-4xl lg:text-5xl font-headline font-extrabold text-white leading-tight">
+          Empowering Student <br />
+          <span class="text-tertiary-fixed">Innovation &amp; Synergy.</span>
+        </h1>
+        <p class="mt-6 text-on-primary-container max-w-md font-medium leading-relaxed">
+          The central hub for Nile University club operations, proposal management, and collaborative excellence.
+        </p>
+        <div class="mt-8 flex gap-4">
+          <div class="flex -space-x-3">
+            <img alt="Student 1" class="w-10 h-10 rounded-full border-2 border-primary-container object-cover"
+              data-alt="diverse student profile portrait"
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsPJsXtLpg7aXabPr4SK-LfpzwabRbFdTdmRGMJP-SDYM-fNhjQN3GK20iBHPbMo5uscc7HhSa_BX3bjGBNrkanMvSDS_4cQQXDqNju3ZeLHe262kdhJb49X0nLFIgCWE4lP8GNY5fZLZlZq8wFBp8EWnGBdi-esmXaJrgsgSviWcBw9fAnawMvO_5AA-bWcFSEDX_tIoMZdZRvtnGk-IMursZJNXdNQq_2OfiyhgIHioZnRPe4gLQB_CO0OGEwqRf7Qhx5OawczjG" />
+            <img alt="Student 2" class="w-10 h-10 rounded-full border-2 border-primary-container object-cover"
+              data-alt="male student headshot in university setting"
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCTBKfyBLfXu6Rl3U71wJyKQo9HgnqqCprBn93UcMQ6ZXor3nn5WZiLXs6YxcbUoLQttFVZpXf-Su6AQ0jpXUqpmUymgbUIJWQovXcIHNOALaQsISoZRYVHHs--Cxwo57NodWh7k81CJalq6WGZ-R3wcwGn8mFZgADSfjfdVsXlBhtNgxvujSX8bl54pFOLW4b3MetGrrGvH9S8v4XaAhA0IzsJ9GvP3_AAi2k3SCX1VWlVbUVjjuoGm5JOZxNGmVAyEgcahv8nqAw6" />
+            <img alt="Student 3" class="w-10 h-10 rounded-full border-2 border-primary-container object-cover"
+              data-alt="smiling woman student avatar"
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKCFuR5sxW97e1KKXOyzCinV_iIK5QM2BR5-vWKR8_HWks0m21Za8LGo3xs8gKhjNbAm-9Mw6lVmoRUAreDKOtjEdyzWD6UUyK5xX9zU09W1eygQLZlp7tFAlyC9zR5c0vHBQPUeUCCe7CxAAjUOo8Vz_w_8JRiTsRhnxUPj3A-PoIlepj_CY6wj_gFc1TyZQuOPiY4HMXR5FPgiHlsgzScsK12hP8u85YpKCij69BA5bRs-2sB5RxhJ39_iX4KDtGWlGwVHs4TxK_" />
+          </div>
+          <div class="flex flex-col">
+            <span class="text-sm font-bold text-white tracking-wide">Join 50+ Active Clubs</span>
+            <span class="text-xs text-on-primary-container">Managing 200+ monthly events</span>
+          </div>
+        </div>
+      </div>
+      <!-- Sunrise Motif Accent (Asymmetric Overlay) -->
+      <div class="absolute -bottom-10 -left-10 w-64 h-64 bg-secondary-container/20 rounded-full blur-[80px]"></div>
+    </div>
+    <!-- Form Side -->
+    <div class="col-span-1 md:col-span-5 flex flex-col justify-center p-8 lg:p-16 bg-surface-container-lowest">
+      <!-- Mobile Logo -->
+      <div class="md:hidden mb-12 flex items-center gap-3">
+        <span class="text-xl font-headline font-extrabold tracking-tight text-primary">NileHive</span>
+      </div>
+      <div class="mb-10">
+        <span class="text-secondary font-headline font-bold text-sm tracking-widest uppercase">Club Services
+          Platform</span>
+        <h2 class="text-3xl font-headline font-extrabold text-on-surface mt-2">Welcome back</h2>
+        <p class="text-on-surface-variant mt-2 font-medium">Access your club dashboard and proposals.</p>
+      </div>
+      <form class="space-y-6">
+        <!-- Input Group: Email -->
+        <div class="space-y-2">
+          <label class="block text-sm font-label font-semibold text-on-surface" for="email">University Email</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <span class="material-symbols-outlined text-outline text-[20px]">mail</span>
+            </div>
+            <input
+              class="block w-full pl-11 pr-4 py-3 bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-secondary/20 focus:bg-white transition-all text-on-surface placeholder:text-outline-variant font-medium"
+              id="email" name="email" placeholder="username@nileuniversity.edu.eg" type="email" />
+          </div>
+        </div>
+        <!-- Input Group: Password -->
+        <div class="space-y-2">
+          <div class="flex justify-between">
+            <label class="block text-sm font-label font-semibold text-on-surface" for="password">Password</label>
+            <a class="text-xs font-bold text-secondary hover:underline transition-all" href="#">Forgot password?</a>
+          </div>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <span class="material-symbols-outlined text-outline text-[20px]">lock</span>
+            </div>
+            <input
+              class="block w-full pl-11 pr-4 py-3 bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-secondary/20 focus:bg-white transition-all text-on-surface placeholder:text-outline-variant font-medium"
+              id="password" name="password" placeholder="••••••••" type="password" />
+          </div>
+        </div>
+        <!-- Remember Me -->
+        <div class="flex items-center">
+          <input class="h-4 w-4 rounded border-outline-variant text-secondary focus:ring-secondary" id="remember-me"
+            name="remember-me" type="checkbox" />
+          <label class="ml-3 block text-sm font-medium text-on-surface-variant" for="remember-me">Keep me signed
+            in</label>
+        </div>
+        <!-- CTA Button -->
+        <button
+          class="w-full bg-secondary text-on-secondary py-4 px-6 rounded-xl font-headline font-bold text-base shadow-lg shadow-secondary/20 hover:bg-primary transition-all flex items-center justify-center gap-2 group active:scale-95"
+          type="submit">
+          Sign in to Platform
+          <span
+            class="material-symbols-outlined text-[20px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
+        </button>
+      </form>
+      <!-- Institutional Footer -->
+      <div
+        class="mt-12 pt-8 border-t border-surface-container flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></div>
+          <span class="text-xs font-label font-semibold text-on-surface-variant">System Status: Operational</span>
+        </div>
+        <div class="flex gap-4">
+          <a class="text-xs font-medium text-on-surface-variant hover:text-secondary transition-colors"
+            href="#">Privacy</a>
+          <a class="text-xs font-medium text-on-surface-variant hover:text-secondary transition-colors"
+            href="#">Terms</a>
+          <a class="text-xs font-medium text-on-surface-variant hover:text-secondary transition-colors" href="#">IT
+            Support</a>
+        </div>
+      </div>
+    </div>
+  </main>
+  <!-- Bottom Left Decoration (Club Pulse) -->
+  <div
+    class="fixed bottom-8 left-8 hidden lg:flex items-center gap-3 bg-surface-container-lowest/80 backdrop-blur-md px-4 py-3 rounded-full editorial-shadow">
+    <div class="relative flex h-3 w-3">
+      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary-fixed opacity-75"></span>
+      <span class="relative inline-flex rounded-full h-3 w-3 bg-on-tertiary-container"></span>
+    </div>
+    <span class="text-xs font-bold text-primary tracking-wide">12 Upcoming Campus Events</span>
+  </div>
+</body>
+
+</html>
