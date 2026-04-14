@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import {
   Building2,
@@ -18,7 +18,16 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ApiClientError, createProposal, getClubs, type BudgetLineItem, type ResponsibleMember } from "@/lib/api";
+import {
+  ApiClientError,
+  createProposal,
+  getClubs,
+  getExecutiveProposal,
+  updateExecutiveProposal,
+  type BudgetLineItem,
+  type CreateProposalPayload,
+  type ResponsibleMember
+} from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const steps = ["Club Info", "Activity", "Budget", "Members", "Review"];
@@ -202,6 +211,9 @@ function toResponsibleMembers(members: ResponsibleMemberForm[]): ResponsibleMemb
 }
 
 export default function NewProposal() {
+  const [searchParams] = useSearchParams();
+  const editProposalId = searchParams.get("edit");
+  const isEditMode = Boolean(editProposalId);
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
     clubId: "",
@@ -221,6 +233,8 @@ export default function NewProposal() {
     createResponsibleMember()
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [didHydrateEditForm, setDidHydrateEditForm] = useState(false);
   const navigate = useNavigate();
 
   const { data: clubs = [], isLoading: isLoadingClubs } = useQuery({
@@ -229,11 +243,73 @@ export default function NewProposal() {
     retry: false
   });
 
+  const { data: editProposal } = useQuery({
+    queryKey: ["proposal-edit", editProposalId],
+    queryFn: () => getExecutiveProposal(editProposalId || ""),
+    enabled: !!editProposalId,
+    retry: false
+  });
+
   useEffect(() => {
     if (!form.clubId && clubs.length === 1) {
       setForm((current) => ({ ...current, clubId: clubs[0].id }));
     }
   }, [clubs, form.clubId]);
+
+  useEffect(() => {
+    if (!editProposal || didHydrateEditForm) {
+      return;
+    }
+
+    const venueMatchesPreset = editProposal.location
+      ? PRESET_VENUES.includes(editProposal.location)
+      : false;
+
+    setForm({
+      clubId: editProposal.club_id || "",
+      aimObjectives: editProposal.aim_objectives || "",
+      proposedActivity: editProposal.proposed_activity || editProposal.title || "",
+      description: editProposal.description || "",
+      eventDates: [editProposal.event_date || ""],
+      eventTime: editProposal.event_time?.slice(0, 5) || "",
+      eventEndTime: "",
+      venue: venueMatchesPreset ? editProposal.location || "" : editProposal.location ? "other" : "",
+      venueOther: venueMatchesPreset ? "" : editProposal.location || "",
+      roomNumber: "",
+      numberOfParticipants: editProposal.number_of_participants?.toString() || ""
+    });
+
+    setBudgetItems(
+      editProposal.budget_line_items?.length
+        ? editProposal.budget_line_items.map((item) => ({
+            id: crypto.randomUUID(),
+            item: item.item,
+            quantity: item.quantity.toString(),
+            description: item.description,
+            amount: item.amount.toString()
+          }))
+        : [createBudgetItem()]
+    );
+
+    setResponsibleMembers(
+      editProposal.responsible_members?.length
+        ? editProposal.responsible_members.map((member) => {
+            const usesPresetPosition = PRESET_POSITIONS.includes(member.position);
+
+            return {
+              id: crypto.randomUUID(),
+              name: member.name,
+              studentId: member.student_id,
+              phoneNumber: member.phone_number,
+              position: usesPresetPosition ? member.position : "other",
+              positionOther: usesPresetPosition ? "" : member.position
+            };
+          })
+        : [createResponsibleMember()]
+    );
+
+    setDidHydrateEditForm(true);
+  }, [didHydrateEditForm, editProposal]);
 
   const budgetTotal = useMemo(
     () =>
@@ -272,62 +348,84 @@ export default function NewProposal() {
     );
   }
 
-  const submit = async () => {
-    if (durationValidationMessage) {
+  function buildProposalPayload(saveAsDraft = false): CreateProposalPayload {
+    const budgetLineItems = toBudgetLineItems(budgetItems);
+    const members = toResponsibleMembers(responsibleMembers);
+    const validDates = form.eventDates.filter(Boolean);
+    const extraDates = validDates.slice(1);
+    const timeSuffix =
+      form.eventTime && form.eventEndTime
+        ? `Event time: ${formatTime12h(form.eventTime)} - ${formatTime12h(form.eventEndTime)}`
+        : form.eventEndTime
+        ? `Event ends at: ${formatTime12h(form.eventEndTime)}`
+        : "";
+    const dateSuffix =
+      extraDates.length > 0 ? `Additional event dates: ${extraDates.join(", ")}` : "";
+    const extras = [timeSuffix, dateSuffix].filter(Boolean).join("\n");
+    const descriptionWithDates = extras
+      ? `${form.description}${form.description ? "\n\n" : ""}${extras}`
+      : form.description;
+
+    return {
+      club_id: form.clubId || undefined,
+      title: form.proposedActivity,
+      proposed_activity: form.proposedActivity,
+      aim_objectives: form.aimObjectives,
+      description: descriptionWithDates,
+      event_date: validDates[0] || "",
+      event_time: form.eventTime || null,
+      location: (() => {
+        const venueName = form.venue === "other" ? form.venueOther : form.venue;
+        return [venueName, form.roomNumber ? `Room ${form.roomNumber}` : ""].filter(Boolean).join(", ");
+      })(),
+      number_of_participants: Number(form.numberOfParticipants),
+      budget_estimate: budgetLineItems.length ? budgetTotal : null,
+      budget_line_items: budgetLineItems,
+      responsible_members: members,
+      save_as_draft: saveAsDraft
+    };
+  }
+
+  const submit = async (options: { saveAsDraft?: boolean } = {}) => {
+    const shouldSaveDraft = options.saveAsDraft || editProposal?.status === "draft";
+
+    if (!shouldSaveDraft && durationValidationMessage) {
       toast.error("Invalid event time", {
         description: durationValidationMessage
       });
       return;
     }
 
-    setIsSubmitting(true);
+    if (shouldSaveDraft) {
+      setIsSavingDraft(true);
+    } else {
+      setIsSubmitting(true);
+    }
 
     try {
-      const budgetLineItems = toBudgetLineItems(budgetItems);
-      const members = toResponsibleMembers(responsibleMembers);
-      const validDates = form.eventDates.filter(Boolean);
-      const extraDates = validDates.slice(1);
-      const timeSuffix =
-        form.eventTime && form.eventEndTime
-          ? `Event time: ${formatTime12h(form.eventTime)} - ${formatTime12h(form.eventEndTime)}`
-          : form.eventEndTime
-          ? `Event ends at: ${formatTime12h(form.eventEndTime)}`
-          : "";
-      const dateSuffix =
-        extraDates.length > 0 ? `Additional event dates: ${extraDates.join(", ")}` : "";
-      const extras = [timeSuffix, dateSuffix].filter(Boolean).join("\n");
-      const descriptionWithDates = extras
-        ? `${form.description}${form.description ? "\n\n" : ""}${extras}`
-        : form.description;
+      const payload = buildProposalPayload(shouldSaveDraft);
 
-      await createProposal({
-        club_id: form.clubId || undefined,
-        title: form.proposedActivity,
-        proposed_activity: form.proposedActivity,
-        aim_objectives: form.aimObjectives,
-        description: descriptionWithDates,
-        event_date: validDates[0] || "",
-        event_time: form.eventTime || null,
-        location: (() => {
-          const venueName = form.venue === "other" ? form.venueOther : form.venue;
-          return [venueName, form.roomNumber ? `Room ${form.roomNumber}` : ""].filter(Boolean).join(", ");
-        })(),
-        number_of_participants: Number(form.numberOfParticipants),
-        budget_estimate: budgetLineItems.length ? budgetTotal : null,
-        budget_line_items: budgetLineItems,
-        responsible_members: members
-      });
+      if (editProposalId) {
+        await updateExecutiveProposal(editProposalId, payload);
+      } else {
+        await createProposal(payload);
+      }
 
-      toast.success("Proposal submitted successfully!", {
-        description: "Your full proposal package has been sent for advisor review."
+      toast.success(shouldSaveDraft ? "Proposal saved as draft" : "Proposal saved successfully", {
+        description: editProposalId
+          ? "Your proposal changes have been saved."
+          : shouldSaveDraft
+            ? "Your proposal is saved in drafts and was not sent for review yet."
+            : "Your full proposal package has been sent for advisor review."
       });
-      navigate("/proposals");
+      navigate(editProposalId ? `/proposals/${editProposalId}` : "/proposals");
     } catch (error) {
-      toast.error("Proposal submission failed", {
+      toast.error(shouldSaveDraft ? "Draft save failed" : "Proposal submission failed", {
         description: getSubmissionErrorMessage(error)
       });
     } finally {
       setIsSubmitting(false);
+      setIsSavingDraft(false);
     }
   };
 
@@ -336,9 +434,13 @@ export default function NewProposal() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#0d5bbc]">Proposal Form 2.0</p>
-          <h1 className="text-3xl font-extrabold tracking-tight text-[#000d27]">Create Proposal</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#000d27]">
+            {isEditMode ? "Edit Proposal" : "Create Proposal"}
+          </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Capture club details, activity plans, budget estimates, and responsible members.
+            {isEditMode
+              ? "Update a draft or rejected proposal before resubmission."
+              : "Capture club details, activity plans, budget estimates, and responsible members."}
           </p>
         </div>
         <div className="rounded-full bg-[#8af9ae]/35 px-4 py-2 text-xs font-bold text-[#00210e]">
@@ -987,19 +1089,30 @@ export default function NewProposal() {
         <Button variant="outline" onClick={back} disabled={step === 0 || isSubmitting}>
           Back
         </Button>
-        {step < steps.length - 1 ? (
-          <Button className="bg-[#0d5bbc] hover:bg-[#004493]" onClick={next} disabled={isSubmitting}>
-            Continue
-          </Button>
-        ) : (
-          <Button
-            onClick={submit}
-            disabled={isSubmitting}
-            className="bg-[#0d5bbc] hover:bg-[#004493] text-white"
-          >
-            {isSubmitting ? "Submitting..." : "Submit Proposal"}
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {!isEditMode && (
+            <Button
+              onClick={() => submit({ saveAsDraft: true })}
+              disabled={isSubmitting || isSavingDraft}
+              variant="outline"
+            >
+              {isSavingDraft ? "Saving..." : "Save Draft"}
+            </Button>
+          )}
+          {step < steps.length - 1 ? (
+            <Button className="bg-[#0d5bbc] hover:bg-[#004493]" onClick={next} disabled={isSubmitting}>
+              Continue
+            </Button>
+          ) : (
+            <Button
+              onClick={() => submit()}
+              disabled={isSubmitting || isSavingDraft}
+              className="bg-[#0d5bbc] hover:bg-[#004493] text-white"
+            >
+              {isSubmitting ? "Saving..." : isEditMode ? "Save Changes" : "Submit Proposal"}
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

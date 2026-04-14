@@ -28,7 +28,7 @@ function isValidIsoDate(value) {
 }
 
 function isValidTime(value) {
-  return /^\d{2}:\d{2}$/.test(value);
+  return /^\d{2}:\d{2}(:\d{2})?$/.test(value);
 }
 
 function normalizeBudgetLineItems(value, fieldErrors) {
@@ -176,6 +176,72 @@ function normalizeResponsibleMembers(value, fieldErrors) {
     .filter(Boolean);
 }
 
+function normalizeDraftBudgetLineItems(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((item) => item && typeof item === "object" && !Array.isArray(item))
+    .filter((item) => item.item || item.description || item.quantity || item.amount)
+    .map((item) => {
+      const quantity = normalizeNumber(item.quantity);
+      const amount = normalizeNumber(item.amount);
+
+      return {
+        item: normalizeString(item.item),
+        description: normalizeString(item.description),
+        quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 0,
+        amount: Number.isFinite(amount) && amount >= 0 ? amount : 0
+      };
+    });
+}
+
+function normalizeDraftResponsibleMembers(value) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((member) => member && typeof member === "object" && !Array.isArray(member))
+    .filter((member) => member.name || member.student_id || member.phone_number || member.position)
+    .map((member) => ({
+      name: normalizeString(member.name),
+      student_id: normalizeString(member.student_id),
+      phone_number: normalizeString(member.phone_number),
+      position: normalizeString(member.position)
+    }));
+}
+
+function validateDraftProposalPayload(payload = {}) {
+  const proposedActivity = normalizeString(payload.proposed_activity);
+  const title = normalizeString(payload.title) || proposedActivity || "Untitled draft";
+  const eventDate = normalizeString(payload.event_date);
+  const eventTime = normalizeString(payload.event_time);
+  const numberOfParticipants = normalizeNumber(payload.number_of_participants);
+  const budgetEstimate = normalizeNumber(payload.budget_estimate);
+
+  return {
+    title,
+    club_id: normalizeNullableString(payload.club_id),
+    description: normalizeNullableString(payload.description),
+    event_date: isValidIsoDate(eventDate) ? eventDate : null,
+    location: normalizeNullableString(payload.location) || normalizeNullableString(payload.venue),
+    aim_objectives: normalizeNullableString(payload.aim_objectives),
+    proposed_activity: proposedActivity || null,
+    event_time: isValidTime(eventTime) ? eventTime : null,
+    number_of_participants:
+      Number.isFinite(numberOfParticipants) && numberOfParticipants > 0
+        ? numberOfParticipants
+        : null,
+    budget_estimate:
+      Number.isFinite(budgetEstimate) && budgetEstimate >= 0
+        ? budgetEstimate
+        : null,
+    budget_line_items: normalizeDraftBudgetLineItems(payload.budget_line_items),
+    responsible_members: normalizeDraftResponsibleMembers(payload.responsible_members)
+  };
+}
 function validateCreateProposalPayload(payload = {}) {
   const proposedActivity = normalizeString(payload.proposed_activity);
   const title = normalizeString(payload.title) || proposedActivity;
@@ -257,6 +323,10 @@ function validateCreateProposalPayload(payload = {}) {
   };
 }
 
+function readSaveAsDraft(payload = {}) {
+  return payload.save_as_draft === true || payload.status === "draft";
+}
+
 function validateAdvisorDecisionPayload(payload = {}) {
   const decision = normalizeString(payload.decision);
   const remarks = normalizeString(payload.remarks);
@@ -286,5 +356,7 @@ function validateAdvisorDecisionPayload(payload = {}) {
 
 module.exports = {
   validateCreateProposalPayload,
+  validateDraftProposalPayload,
+  readSaveAsDraft,
   validateAdvisorDecisionPayload
 };

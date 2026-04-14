@@ -8,18 +8,19 @@ export interface HealthCheckResponse {
 }
 
 export interface CreateProposalPayload {
-  title: string;
-  description: string;
-  event_date: string;
-  location: string;
+  title?: string;
+  description?: string | null;
+  event_date?: string | null;
+  location?: string | null;
   club_id?: string;
-  aim_objectives: string;
-  proposed_activity: string;
+  aim_objectives?: string | null;
+  proposed_activity?: string | null;
   event_time?: string | null;
-  number_of_participants: number;
+  number_of_participants?: number | null;
   budget_estimate?: number | null;
-  budget_line_items: BudgetLineItem[];
-  responsible_members: ResponsibleMember[];
+  budget_line_items?: BudgetLineItem[];
+  responsible_members?: ResponsibleMember[];
+  save_as_draft?: boolean;
 }
 
 export interface BudgetLineItem {
@@ -49,9 +50,9 @@ export interface ProposalRecord {
   club_id?: string;
   submitted_by?: string;
   title: string;
-  description: string;
-  event_date: string;
-  location?: string;
+  description?: string | null;
+  event_date?: string | null;
+  location?: string | null;
   aim_objectives?: string | null;
   proposed_activity?: string | null;
   event_time?: string | null;
@@ -61,7 +62,12 @@ export interface ProposalRecord {
   responsible_members?: ResponsibleMember[];
   status: string;
   current_stage?: string;
+  current_owner_role?: string;
   submitted_at?: string;
+  resubmitted_at?: string | null;
+  revision_count?: number;
+  last_edited_at?: string | null;
+  last_edited_by?: string | null;
   advisor_remarks?: string | null;
   advisor_decided_at?: string | null;
   admin_remarks?: string | null;
@@ -431,6 +437,25 @@ export async function createProposal(payload: CreateProposalPayload, token?: str
     method: "POST",
     token,
     body: payload
+  });
+
+  return response.data;
+}
+
+export async function updateExecutiveProposal(proposalId: string, payload: CreateProposalPayload, token?: string) {
+  const response = await request<ApiEnvelope<ProposalRecord>>(`/api/v1/proposals/${proposalId}/edit`, {
+    method: "POST",
+    token,
+    body: payload
+  });
+
+  return response.data;
+}
+
+export async function submitExecutiveProposalRevision(proposalId: string, token?: string) {
+  const response = await request<ApiEnvelope<ProposalRecord>>(`/api/v1/proposals/${proposalId}/submit`, {
+    method: "POST",
+    token
   });
 
   return response.data;

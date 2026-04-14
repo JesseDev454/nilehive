@@ -2,7 +2,9 @@ const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
 const {
   validateAdvisorDecisionPayload,
-  validateCreateProposalPayload
+  validateCreateProposalPayload,
+  validateDraftProposalPayload,
+  readSaveAsDraft
 } = require("./proposals.validation");
 
 const ADVISOR_DECISION_TRANSITIONS = Object.freeze({
@@ -25,7 +27,8 @@ const NOTIFICATION_TYPES = Object.freeze({
   advisorRejected: "advisor_rejected",
   pendingAdminReview: "pending_admin_review",
   adminApproved: "admin_approved",
-  adminRejected: "admin_rejected"
+  adminRejected: "admin_rejected",
+  proposalResubmitted: "proposal_resubmitted"
 });
 
 function getNextProposalStatus(currentStatus, decision) {
@@ -58,6 +61,7 @@ function getNextAdminProposalStatus(currentStatus, decision) {
 
 function getCurrentStage(status) {
   const stages = {
+    draft: "draft",
     pending_advisor_review: "advisor_review",
     pending_admin_review: "admin_review",
     advisor_rejected: "rejected",
@@ -68,8 +72,22 @@ function getCurrentStage(status) {
   return stages[status] ?? status;
 }
 
+function getCurrentOwnerRole(status) {
+  const owners = {
+    draft: "executive",
+    pending_advisor_review: "advisor",
+    pending_admin_review: "admin",
+    advisor_rejected: "executive",
+    admin_rejected: "executive",
+    approved: "completed"
+  };
+
+  return owners[status] ?? "unknown";
+}
+
 function getStatusesForStage(stage) {
   const stageStatuses = {
+    draft: ["draft"],
     advisor_review: ["pending_advisor_review"],
     admin_review: ["pending_admin_review"],
     rejected: ["advisor_rejected", "admin_rejected"],
@@ -88,7 +106,8 @@ function buildNotificationMessage(type, proposal, remarks = null) {
     [NOTIFICATION_TYPES.advisorRejected]: `Your proposal "${proposal.title}" was rejected by the advisor.${remarksSuffix}`,
     [NOTIFICATION_TYPES.pendingAdminReview]: `Proposal "${proposal.title}" is now awaiting admin review.`,
     [NOTIFICATION_TYPES.adminApproved]: `Proposal "${proposal.title}" received final admin approval.${remarksSuffix}`,
-    [NOTIFICATION_TYPES.adminRejected]: `Proposal "${proposal.title}" was rejected during admin verification.${remarksSuffix}`
+    [NOTIFICATION_TYPES.adminRejected]: `Proposal "${proposal.title}" was rejected during admin verification.${remarksSuffix}`,
+    [NOTIFICATION_TYPES.proposalResubmitted]: `Proposal "${proposal.title}" was updated and resubmitted for advisor review.`
   };
 
   return messages[type];
@@ -160,7 +179,12 @@ function formatExecutiveProposal(proposal, latestApproval = null) {
     responsible_members: proposal.responsible_members ?? [],
     status: proposal.status,
     current_stage: getCurrentStage(proposal.status),
-    submitted_at: proposal.created_at,
+    current_owner_role: getCurrentOwnerRole(proposal.status),
+    submitted_at: proposal.submitted_at ?? proposal.created_at,
+    resubmitted_at: proposal.resubmitted_at,
+    revision_count: proposal.revision_count ?? 0,
+    last_edited_at: proposal.last_edited_at,
+    last_edited_by: proposal.last_edited_by,
     created_at: proposal.created_at,
     updated_at: proposal.updated_at,
     advisor_remarks: proposal.advisor_remarks,
@@ -197,7 +221,12 @@ function formatAdminProposal(proposal, latestApproval = null) {
     responsible_members: proposal.responsible_members ?? [],
     status: proposal.status,
     current_stage: getCurrentStage(proposal.status),
-    submitted_at: proposal.created_at,
+    current_owner_role: getCurrentOwnerRole(proposal.status),
+    submitted_at: proposal.submitted_at ?? proposal.created_at,
+    resubmitted_at: proposal.resubmitted_at,
+    revision_count: proposal.revision_count ?? 0,
+    last_edited_at: proposal.last_edited_at,
+    last_edited_by: proposal.last_edited_by,
     created_at: proposal.created_at,
     updated_at: proposal.updated_at,
     advisor_remarks: proposal.advisor_remarks,
@@ -235,8 +264,12 @@ async function createProposal(options) {
     throw new ApiError(409, "Executive profile is not linked to a club", "PROFILE_NOT_LINKED_TO_CLUB");
   }
 
-  const validatedPayload = validateCreateProposalPayload(payload);
+  const saveAsDraft = readSaveAsDraft(payload);
+  const validatedPayload = saveAsDraft
+    ? validateDraftProposalPayload(payload)
+    : validateCreateProposalPayload(payload);
   const clubId = validatedPayload.club_id || actor.clubId;
+  const submittedAt = saveAsDraft ? null : new Date().toISOString();
 
   if (clubId !== actor.clubId) {
     throw new ApiError(403, "Executives can only submit proposals for their assigned club", "FORBIDDEN");
@@ -256,8 +289,15 @@ async function createProposal(options) {
     budget_estimate: validatedPayload.budget_estimate,
     budget_line_items: validatedPayload.budget_line_items,
     responsible_members: validatedPayload.responsible_members,
-    status: "pending_advisor_review"
+    status: saveAsDraft ? "draft" : "pending_advisor_review",
+    submitted_at: submittedAt,
+    last_edited_at: new Date().toISOString(),
+    last_edited_by: actor.id
   });
+
+  if (saveAsDraft) {
+    return proposal;
+  }
 
   const advisorIds = await database.getAdvisorProfileIdsByClubId(clubId);
 
@@ -336,6 +376,111 @@ async function getExecutiveProposalDetail(options) {
   const latestApproval = await database.getLatestApprovalByProposalId(proposalId);
 
   return formatExecutiveProposal(proposal, latestApproval);
+}
+
+function ensureExecutiveEditableProposal(actor, proposal) {
+  if (!proposal || proposal.submitted_by !== actor.id) {
+    throw new ApiError(404, "Proposal not found", "PROPOSAL_NOT_FOUND");
+  }
+
+  const editableStatuses = ["draft", "advisor_rejected", "admin_rejected"];
+
+  if (!editableStatuses.includes(proposal.status)) {
+    throw new ApiError(
+      409,
+      "Only draft or rejected proposals can be edited by executives",
+      "INVALID_PROPOSAL_STATE"
+    );
+  }
+}
+
+async function updateExecutiveProposal(options) {
+  const { actor, proposalId, payload, database = db } = options;
+
+  if (!actor) {
+    throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
+  }
+
+  if (actor.role !== "executive") {
+    throw new ApiError(403, "Only executives can edit proposals", "FORBIDDEN");
+  }
+
+  const proposal = await database.getProposalById(proposalId);
+  ensureExecutiveEditableProposal(actor, proposal);
+
+  const saveAsDraft = proposal.status === "draft" || readSaveAsDraft(payload);
+  const validatedPayload = saveAsDraft
+    ? validateDraftProposalPayload(payload)
+    : validateCreateProposalPayload(payload);
+  const clubId = validatedPayload.club_id || actor.clubId;
+
+  if (clubId !== proposal.club_id || clubId !== actor.clubId) {
+    throw new ApiError(403, "Executives can only edit proposals for their assigned club", "FORBIDDEN");
+  }
+
+  const updatedProposal = await database.updateProposal(proposalId, {
+    club_id: clubId,
+    title: validatedPayload.title,
+    description: validatedPayload.description,
+    event_date: validatedPayload.event_date,
+    location: validatedPayload.location,
+    aim_objectives: validatedPayload.aim_objectives,
+    proposed_activity: validatedPayload.proposed_activity,
+    event_time: validatedPayload.event_time,
+    number_of_participants: validatedPayload.number_of_participants,
+    budget_estimate: validatedPayload.budget_estimate,
+    budget_line_items: validatedPayload.budget_line_items,
+    responsible_members: validatedPayload.responsible_members,
+    last_edited_at: new Date().toISOString(),
+    last_edited_by: actor.id
+  });
+
+  return formatExecutiveProposal(updatedProposal);
+}
+
+async function submitExecutiveProposalRevision(options) {
+  const { actor, proposalId, database = db } = options;
+
+  if (!actor) {
+    throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
+  }
+
+  if (actor.role !== "executive") {
+    throw new ApiError(403, "Only executives can submit proposal revisions", "FORBIDDEN");
+  }
+
+  const proposal = await database.getProposalById(proposalId);
+  ensureExecutiveEditableProposal(actor, proposal);
+  validateCreateProposalPayload(proposal);
+
+  const now = new Date().toISOString();
+  const isDraft = proposal.status === "draft";
+  const updatedProposal = await database.updateProposal(proposalId, {
+    status: "pending_advisor_review",
+    submitted_at: proposal.submitted_at ?? now,
+    resubmitted_at: isDraft ? proposal.resubmitted_at : now,
+    revision_count: isDraft ? proposal.revision_count ?? 0 : (proposal.revision_count ?? 0) + 1,
+    last_edited_at: now,
+    last_edited_by: actor.id
+  });
+
+  const advisorIds = await database.getAdvisorProfileIdsByClubId(updatedProposal.club_id);
+
+  await createNotificationBatch(
+    database,
+    advisorIds.map((advisorId) => ({
+      user_id: advisorId,
+      proposal_id: updatedProposal.id,
+      type: isDraft ? NOTIFICATION_TYPES.proposalSubmitted : NOTIFICATION_TYPES.proposalResubmitted,
+      message: buildNotificationMessage(
+        isDraft ? NOTIFICATION_TYPES.proposalSubmitted : NOTIFICATION_TYPES.proposalResubmitted,
+        updatedProposal
+      ),
+      delivery_status: "stored"
+    }))
+  );
+
+  return formatExecutiveProposal(updatedProposal);
 }
 
 async function getAdvisorProposalDetail(options) {
@@ -579,6 +724,8 @@ module.exports = {
   getPendingAdvisorProposals,
   listExecutiveProposals,
   getExecutiveProposalDetail,
+  updateExecutiveProposal,
+  submitExecutiveProposalRevision,
   submitAdvisorDecision,
   submitAdminDecision
 };

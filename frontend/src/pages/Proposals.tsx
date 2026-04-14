@@ -78,9 +78,12 @@ export default function Proposals() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All statuses</SelectItem>
+              <SelectItem value="draft">Draft</SelectItem>
               <SelectItem value="pending_advisor_review">Pending advisor review</SelectItem>
               <SelectItem value="pending_admin_review">Pending admin review</SelectItem>
               <SelectItem value="advisor_rejected">Advisor rejected</SelectItem>
+              <SelectItem value="admin_rejected">Admin rejected</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
             </SelectContent>
           </Select>
         )}

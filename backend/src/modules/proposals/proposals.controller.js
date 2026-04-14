@@ -8,7 +8,9 @@ const {
   listAdminProposals,
   listExecutiveProposals,
   submitAdminDecision,
-  submitAdvisorDecision
+  submitAdvisorDecision,
+  submitExecutiveProposalRevision,
+  updateExecutiveProposal
 } = require("./proposals.service");
 
 function createProposalsController(options = {}) {
@@ -80,6 +82,27 @@ function createProposalsController(options = {}) {
 
     getExecutiveProposalDetail: asyncHandler(async (req, res) => {
       const proposal = await getExecutiveProposalDetail({
+        actor: req.user,
+        proposalId: req.params.proposalId,
+        database
+      });
+
+      res.status(200).json({ data: proposal });
+    }),
+
+    updateExecutiveProposal: asyncHandler(async (req, res) => {
+      const proposal = await updateExecutiveProposal({
+        actor: req.user,
+        proposalId: req.params.proposalId,
+        payload: req.body,
+        database
+      });
+
+      res.status(200).json({ data: proposal });
+    }),
+
+    submitExecutiveProposalRevision: asyncHandler(async (req, res) => {
+      const proposal = await submitExecutiveProposalRevision({
         actor: req.user,
         proposalId: req.params.proposalId,
         database

@@ -33,6 +33,13 @@ function createProposalsRouter(options = {}) {
   );
   router.get("/", auth, requireRole("executive"), controller.listExecutiveProposals);
   router.get("/:proposalId", auth, requireRole("executive"), controller.getExecutiveProposalDetail);
+  router.post("/:proposalId/edit", auth, requireRole("executive"), controller.updateExecutiveProposal);
+  router.post(
+    "/:proposalId/submit",
+    auth,
+    requireRole("executive"),
+    controller.submitExecutiveProposalRevision
+  );
   router.post(
     "/:proposalId/advisor-decision",
     auth,

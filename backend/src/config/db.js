@@ -2,7 +2,7 @@ const { createClient } = require("@supabase/supabase-js");
 const { getEnv } = require("./env");
 
 const proposalSelect =
-  "id, club_id, submitted_by, title, description, event_date, location, aim_objectives, proposed_activity, event_time, number_of_participants, budget_estimate, budget_line_items, responsible_members, status, advisor_remarks, advisor_decided_at, advisor_decided_by, admin_remarks, admin_decided_at, admin_decided_by, created_at, updated_at";
+  "id, club_id, submitted_by, title, description, event_date, location, aim_objectives, proposed_activity, event_time, number_of_participants, budget_estimate, budget_line_items, responsible_members, status, submitted_at, resubmitted_at, revision_count, last_edited_at, last_edited_by, advisor_remarks, advisor_decided_at, advisor_decided_by, admin_remarks, admin_decided_at, admin_decided_by, created_at, updated_at";
 const notificationSelect =
   "id, user_id, proposal_id, type, message, delivery_status, created_at";
 const eventReminderSelect =
@@ -146,6 +146,21 @@ function createDatabase(options = {}) {
       }
 
       return data ?? null;
+    },
+
+    async updateProposal(proposalId, update) {
+      const { data, error } = await getClient()
+        .from("proposals")
+        .update(update)
+        .eq("id", proposalId)
+        .select(proposalSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
     },
 
     async listExecutiveProposals(submittedBy) {

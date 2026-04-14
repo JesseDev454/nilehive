@@ -14,6 +14,7 @@ import {
   getAdminProposal,
   getAdvisorProposal,
   getExecutiveProposal,
+  submitExecutiveProposalRevision,
   submitAdminDecision,
   type ProposalRecord
 } from "@/lib/api";
@@ -40,7 +41,9 @@ function formatCurrency(value?: number | null) {
 
 function buildApprovalSteps(proposal: ProposalRecord) {
   const advisorStepStatus =
-    proposal.status === "advisor_rejected"
+    proposal.status === "draft"
+      ? "pending"
+      : proposal.status === "advisor_rejected"
       ? "rejected"
       : proposal.status === "pending_advisor_review"
         ? "current"
@@ -60,8 +63,11 @@ function buildApprovalSteps(proposal: ProposalRecord) {
   return [
     {
       label: "Executive Submission",
-      status: "completed" as const,
-      remarks: `Submitted ${getDateLabel(proposal.submitted_at ?? proposal.created_at)}`
+      status: proposal.status === "draft" ? "current" as const : "completed" as const,
+      remarks:
+        proposal.status === "draft"
+          ? "Draft saved; not submitted yet"
+          : `Submitted ${getDateLabel(proposal.submitted_at ?? proposal.created_at)}`
     },
     {
       label: "Advisor Review",
@@ -82,6 +88,7 @@ export default function ProposalDetail() {
   const queryClient = useQueryClient();
   const [adminRemarks, setAdminRemarks] = useState("");
   const [adminDecision, setAdminDecision] = useState<"approve" | "reject" | null>(null);
+  const [isResubmitting, setIsResubmitting] = useState(false);
   const isUnsupportedRole = role !== "executive" && role !== "admin" && role !== "advisor";
 
   const { data: proposal, isLoading, isError, error } = useQuery({
@@ -154,6 +161,32 @@ export default function ProposalDetail() {
     }
   }
 
+  async function handleResubmit() {
+    if (!proposal) {
+      return;
+    }
+
+    setIsResubmitting(true);
+
+    try {
+      await submitExecutiveProposalRevision(proposal.id);
+      toast.success("Proposal resubmitted", {
+        description: "Your proposal has been sent back to advisor review."
+      });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["proposal-detail", role, id] }),
+        queryClient.invalidateQueries({ queryKey: ["proposals"] }),
+        queryClient.invalidateQueries({ queryKey: ["notifications"] })
+      ]);
+    } catch (resubmitError) {
+      toast.error("Resubmission failed", {
+        description: getErrorMessage(resubmitError)
+      });
+    } finally {
+      setIsResubmitting(false);
+    }
+  }
+
   return (
     <div className="max-w-3xl mx-auto space-y-6 animate-slide-up">
       <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-muted-foreground">
@@ -190,6 +223,30 @@ export default function ProposalDetail() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-2 space-y-4">
+              {role === "executive" &&
+                ["draft", "advisor_rejected", "admin_rejected"].includes(proposal.status) && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Revision Actions</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex flex-col gap-2 sm:flex-row">
+                      <Button
+                        variant="outline"
+                        onClick={() => navigate(`/proposals/new?edit=${proposal.id}`)}
+                      >
+                        Edit Proposal
+                      </Button>
+                      <Button
+                        className="bg-[#0d5bbc] hover:bg-[#004493] text-white"
+                        disabled={isResubmitting}
+                        onClick={handleResubmit}
+                      >
+                        {isResubmitting ? "Resubmitting..." : "Submit for Advisor Review"}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                )}
+
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base">Proposal Details</CardTitle>
@@ -227,9 +284,23 @@ export default function ProposalDetail() {
                       <p className="font-medium mt-1">{proposal.current_stage ?? proposal.status}</p>
                     </div>
                     <div>
+                      <span className="text-muted-foreground">Currently With</span>
+                      <p className="font-medium mt-1">{proposal.current_owner_role ?? "-"}</p>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Revision Count</span>
+                      <p className="font-medium mt-1">{proposal.revision_count ?? 0}</p>
+                    </div>
+                    <div>
                       <span className="text-muted-foreground">Updated</span>
                       <p className="font-medium mt-1">{getDateLabel(proposal.updated_at)}</p>
                     </div>
+                    {proposal.resubmitted_at && (
+                      <div>
+                        <span className="text-muted-foreground">Last Resubmitted</span>
+                        <p className="font-medium mt-1">{getDateLabel(proposal.resubmitted_at)}</p>
+                      </div>
+                    )}
                     {proposal.advisor_decided_at && (
                       <div>
                         <span className="text-muted-foreground">Advisor Decision</span>
