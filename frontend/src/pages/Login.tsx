@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { NhStudentId } from "@/components/NhStudentId";
 import { useAuth } from "@/contexts/AuthContext";
 
 const CAMPUS_IMAGE =
@@ -21,6 +22,7 @@ export default function Login() {
   const { signIn, session, isLoading } = useAuth();
   const location = useLocation();
   const [email, setEmail] = useState("");
+  const [studentId, setStudentId] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -132,6 +134,16 @@ export default function Login() {
                   required
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="font-semibold text-[#181c1e]" htmlFor="login-student-id">
+                Student ID
+              </Label>
+              <NhStudentId id="login-student-id" value={studentId} onChange={setStudentId} disabled />
+              <p className="px-1 text-[11px] font-medium text-[#75777f]">
+                Student ID login needs account mapping first. Use your university email for now.
+              </p>
             </div>
 
             <div className="space-y-2">

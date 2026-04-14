@@ -25,6 +25,7 @@ interface AuthContextType {
     fullName: string;
     requestedRole: string;
     clubName: string;
+    studentId: string;
   }) => Promise<void>;
   signOut: () => Promise<void>;
   getAccessToken: () => string;
@@ -142,7 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           throw error;
         }
       },
-      async signUp({ email, password, fullName, requestedRole, clubName }) {
+      async signUp({ email, password, fullName, requestedRole, clubName, studentId }) {
         const { error } = await supabase.auth.signUp({
           email: email.trim().toLowerCase(),
           password,
@@ -150,7 +151,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             data: {
               full_name: fullName.trim(),
               requested_role: requestedRole,
-              requested_club: clubName.trim()
+              requested_club: clubName.trim(),
+              student_id: studentId.trim()
             }
           }
         });

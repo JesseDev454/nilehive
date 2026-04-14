@@ -1,20 +1,29 @@
 import { FormEvent, useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowRight, Building2, CheckCircle2, Network, ShieldCheck, Users } from "lucide-react";
+import { ArrowRight, CheckCircle2, Network, ShieldCheck, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { NhStudentId } from "@/components/NhStudentId";
 import { useAuth } from "@/contexts/AuthContext";
 
 const CAMPUS_LOUNGE_IMAGE =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuBtWpjmv-aJhohYghqjIZGKpv8YmfVqo4M1_vpbn628XqWd8nC44bSnXbESgLdSk0EkQshCyBK5A1QNILkD4oAR4wJMwww7TQhzsNm5dzF2MKq4BsTDum7o8UMvLYO6PMeFeBJ0K4bWI4ijUTENADR2umL45GR3vqQ17gafeGeVmGfyUf_U77legsSkpxoSuocgzqvIuxQ4oLZ72OFiTujKX3NNCDI2sjLLfhLy6NpRQHx-RXBfUChYwniKEqg7yu6JTmVTIdyzsY7S";
 
+const SIGNUP_CLUB_OPTIONS = [
+  "NILE GDG CLUB",
+  "NILE GAMES CLUB",
+  "NILE CREATIVE ARTS CLUB",
+  "NILE BOOK CLUB"
+];
+
 export default function SignUp() {
   const { signUp, session, isLoading } = useAuth();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [studentId, setStudentId] = useState("");
   const [clubName, setClubName] = useState("");
   const [requestedRole, setRequestedRole] = useState("executive");
   const [password, setPassword] = useState("");
@@ -30,13 +39,22 @@ export default function SignUp() {
     setIsSubmitting(true);
     setSignupError(null);
 
+    if (!clubName) {
+      const message = "Please select your club before creating an account.";
+      setSignupError(message);
+      toast.error("Signup failed", { description: message });
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       await signUp({
         email,
         password,
         fullName,
         requestedRole,
-        clubName
+        clubName,
+        studentId
       });
       toast.success("Account request created", {
         description: "Club Services still needs to assign your NileHive profile before dashboard access."
@@ -153,6 +171,13 @@ export default function SignUp() {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label className="font-semibold text-[#181c1e]" htmlFor="student-id">
+                  Student ID
+                </Label>
+                <NhStudentId id="student-id" value={studentId} onChange={setStudentId} required />
+              </div>
+
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-xl font-bold text-[#000d27]">Organization Affinity</h3>
@@ -163,16 +188,21 @@ export default function SignUp() {
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label className="font-semibold text-[#181c1e]">Society / Club</Label>
-                    <div className="relative">
-                      <Building2 className="absolute left-4 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-[#75777f]" />
-                      <Input
-                        className="rounded-2xl border-0 bg-[#f1f4f7] py-6 pl-12 focus-visible:ring-[#0d5bbc]/30"
-                        placeholder="e.g. Nile Innovators Club"
-                        value={clubName}
-                        onChange={(event) => setClubName(event.target.value)}
-                        required
-                      />
-                    </div>
+                    <Select value={clubName} onValueChange={setClubName}>
+                      <SelectTrigger className="rounded-2xl border-0 bg-[#f1f4f7] py-6 focus:ring-[#0d5bbc]/30">
+                        <SelectValue placeholder="Select your club" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SIGNUP_CLUB_OPTIONS.map((club) => (
+                          <SelectItem key={club} value={club}>
+                            {club}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="px-1 text-[11px] font-medium text-[#75777f]">
+                      This stores your requested club for Club Services profile setup.
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label className="font-semibold text-[#181c1e]">Requested Role</Label>
