@@ -18,6 +18,10 @@ const duePaymentSelect =
   "id, club_id, member_id, amount, academic_session, payment_reference, proof_url, status, verified_by, verified_at, created_at, updated_at";
 const eventReportSelect =
   "id, proposal_id, club_id, submitted_by, attendance_count, summary, challenges, outcomes, budget_used, media_urls, report_file_url, status, submitted_at, created_at, updated_at, proposals(id, title, proposed_activity, event_date, event_time, location, status)";
+const announcementSelect =
+  "id, club_id, created_by, title, message, audience, created_at, updated_at";
+const feedbackSelect =
+  "id, club_id, proposal_id, submitted_by, category, rating, comment, status, created_at, updated_at";
 
 function createAdminClient() {
   const env = getEnv();
@@ -761,6 +765,100 @@ function createDatabase(options = {}) {
 
       if (filters.proposalId) {
         query = query.eq("proposal_id", filters.proposalId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async createAnnouncement(announcement) {
+      const { data, error } = await getClient()
+        .from("announcements")
+        .insert(announcement)
+        .select(announcementSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async listAnnouncements(filters = {}) {
+      let query = getClient()
+        .from("announcements")
+        .select(announcementSelect)
+        .order("created_at", { ascending: false });
+
+      if (filters.audience) {
+        query = query.eq("audience", filters.audience);
+      }
+
+      if (filters.clubId) {
+        query = query.or(`audience.eq.all,club_id.eq.${filters.clubId}`);
+      }
+
+      if (filters.clubIds) {
+        if (!filters.clubIds.length) {
+          query = query.eq("audience", "all");
+        } else {
+          query = query.or(`audience.eq.all,club_id.in.(${filters.clubIds.join(",")})`);
+        }
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async createFeedback(feedback) {
+      const { data, error } = await getClient()
+        .from("event_feedback")
+        .insert(feedback)
+        .select(feedbackSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async listFeedback(filters = {}) {
+      let query = getClient()
+        .from("event_feedback")
+        .select(feedbackSelect)
+        .order("created_at", { ascending: false });
+
+      if (filters.clubId) {
+        query = query.eq("club_id", filters.clubId);
+      }
+
+      if (filters.clubIds) {
+        if (!filters.clubIds.length) {
+          return [];
+        }
+
+        query = query.in("club_id", filters.clubIds);
+      }
+
+      if (filters.proposalId) {
+        query = query.eq("proposal_id", filters.proposalId);
+      }
+
+      if (filters.status) {
+        query = query.eq("status", filters.status);
       }
 
       const { data, error } = await query;

@@ -1,4 +1,4 @@
-import { CalendarDays, ClipboardList, CreditCard, FileText, Home, Plus, Clock, Bell, Users } from "lucide-react";
+import { CalendarDays, ClipboardList, CreditCard, FileText, Home, Plus, Clock, Bell, Users, MessageSquare } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useRole } from "@/contexts/RoleContext";
 import {
@@ -18,6 +18,7 @@ export function AppSidebar() {
     { title: "My Tasks", url: "/tasks", icon: ClipboardList },
     { title: "Members", url: "/members", icon: Users },
     { title: "Dues", url: "/dues", icon: CreditCard },
+    { title: "Announcements", url: "/communications", icon: MessageSquare },
     { title: "Approved Events", url: "/events", icon: CalendarDays },
     { title: "Reports Archive", url: "/archive", icon: FileText },
     { title: "Notifications", url: "/notifications", icon: Bell },
@@ -26,6 +27,7 @@ export function AppSidebar() {
   const advisorItems = [
     { title: "Dashboard", url: "/", icon: Home },
     { title: "Pending Approvals", url: "/approvals", icon: Clock },
+    { title: "Announcements", url: "/communications", icon: MessageSquare },
     { title: "Approved Events", url: "/events", icon: CalendarDays },
     { title: "Reports Archive", url: "/archive", icon: FileText },
     { title: "Notifications", url: "/notifications", icon: Bell },
@@ -36,6 +38,7 @@ export function AppSidebar() {
     { title: "All Proposals", url: "/proposals", icon: FileText },
     { title: "Members", url: "/members", icon: Users },
     { title: "Dues", url: "/dues", icon: CreditCard },
+    { title: "Announcements", url: "/communications", icon: MessageSquare },
     { title: "Approved Events", url: "/events", icon: CalendarDays },
     { title: "Reports Archive", url: "/archive", icon: FileText },
     { title: "Notifications", url: "/notifications", icon: Bell },
@@ -46,6 +49,7 @@ export function AppSidebar() {
     { title: "Task Delegation", url: "/tasks", icon: ClipboardList },
     { title: "Members", url: "/members", icon: Users },
     { title: "Dues", url: "/dues", icon: CreditCard },
+    { title: "Announcements", url: "/communications", icon: MessageSquare },
     { title: "Approved Events", url: "/events", icon: CalendarDays },
     { title: "Reports Archive", url: "/archive", icon: FileText },
     { title: "Notifications", url: "/notifications", icon: Bell },
