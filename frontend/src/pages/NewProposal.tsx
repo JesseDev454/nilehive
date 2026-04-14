@@ -157,6 +157,9 @@ function getDurationMinutes(startTime: string, endTime: string) {
 }
 
 function getDurationValidationMessage(startTime: string, endTime: string) {
+  if (startTime && !endTime) {
+    return "Select an end time for the event.";
+  }
   if (endTime && !startTime) {
     return "Select a start time before selecting an end time.";
   }
@@ -257,7 +260,21 @@ export default function NewProposal() {
     return selectedClub?.name || "";
   }
 
-  const next = () => setStep((current) => Math.min(current + 1, steps.length - 1));
+  const validateStep = (targetStep: number) => {
+    if (step === 1 && targetStep > 1 && durationValidationMessage) {
+      toast.error("Invalid event time", {
+        description: durationValidationMessage
+      });
+      return false;
+    }
+    return true;
+  };
+
+  const next = () => {
+    if (validateStep(step + 1)) {
+      setStep((current) => Math.min(current + 1, steps.length - 1));
+    }
+  };
   const back = () => setStep((current) => Math.max(current - 1, 0));
 
   function updateBudgetItem(id: string, patch: Partial<BudgetFormItem>) {
@@ -353,7 +370,11 @@ export default function NewProposal() {
             <button
               key={label}
               className="flex flex-col items-center gap-2"
-              onClick={() => setStep(index)}
+              onClick={() => {
+                if (validateStep(index)) {
+                  setStep(index);
+                }
+              }}
               type="button"
             >
               <span
