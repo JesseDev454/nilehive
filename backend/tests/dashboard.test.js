@@ -40,6 +40,12 @@ function createFakeDatabase() {
       full_name: "Daniel Advisor",
       role: "advisor",
       club_id: null
+    },
+    "admin-1": {
+      id: "admin-1",
+      full_name: "Club Services Admin",
+      role: "admin",
+      club_id: null
     }
   };
   const proposals = [
@@ -64,7 +70,8 @@ function createFakeDatabase() {
       const tokenProfiles = {
         "executive-token": "executive-1",
         "president-token": "president-1",
-        "advisor-token": "advisor-1"
+        "advisor-token": "advisor-1",
+        "admin-token": "admin-1"
       };
       const profileId = tokenProfiles[accessToken];
 
@@ -88,6 +95,24 @@ function createFakeDatabase() {
         created_at: "2026-04-01T10:00:00.000Z"
       };
     },
+    async listClubs() {
+      return [
+        {
+          id: "club-1",
+          name: "Nile Innovators Club",
+          code: "NIC",
+          advisor_id: "advisor-1",
+          created_at: "2026-04-01T10:00:00.000Z"
+        },
+        {
+          id: "club-2",
+          name: "Arts Society",
+          code: "ART",
+          advisor_id: null,
+          created_at: "2026-04-01T10:00:00.000Z"
+        }
+      ];
+    },
     async listExecutiveProposals(submittedBy) {
       assert.equal(submittedBy, "executive-1");
       return proposals.filter((proposal) => proposal.submitted_by === submittedBy);
@@ -96,8 +121,22 @@ function createFakeDatabase() {
       assert.equal(clubId, "club-1");
       return proposals;
     },
+    async listAdminProposals() {
+      return [
+        ...proposals,
+        createProposal({
+          id: "proposal-4",
+          club_id: "club-2",
+          title: "Draft Proposal",
+          status: "draft"
+        })
+      ];
+    },
     async listApprovedProposals(filters = {}) {
-      assert.deepEqual(filters.clubIds, ["club-1"]);
+      if (filters.clubIds) {
+        assert.deepEqual(filters.clubIds, ["club-1"]);
+      }
+
       return proposals.filter((proposal) => proposal.status === "approved");
     },
     async listEventRemindersByUserId(userId) {
@@ -130,6 +169,114 @@ function createFakeDatabase() {
       assert.equal(clubId, "club-1");
       assert.equal(filters.role, "executive");
       return [profiles["executive-1"]];
+    },
+    async listClubMembers() {
+      return [
+        {
+          id: "member-1",
+          club_id: "club-1",
+          profile_id: "student-1",
+          full_name: "Ada Student",
+          student_id: "NUN-001",
+          membership_status: "active"
+        },
+        {
+          id: "member-2",
+          club_id: "club-1",
+          profile_id: "student-2",
+          full_name: "Bola Student",
+          student_id: "NUN-002",
+          membership_status: "inactive"
+        }
+      ];
+    },
+    async listDuePayments() {
+      return [
+        {
+          id: "dues-1",
+          club_id: "club-1",
+          member_id: "member-1",
+          amount: 5000,
+          status: "paid",
+          created_at: "2026-04-07T10:00:00.000Z",
+          updated_at: "2026-04-07T10:00:00.000Z"
+        },
+        {
+          id: "dues-2",
+          club_id: "club-1",
+          member_id: "member-2",
+          amount: 5000,
+          status: "submitted",
+          created_at: "2026-04-08T10:00:00.000Z",
+          updated_at: "2026-04-08T10:00:00.000Z"
+        }
+      ];
+    },
+    async listMembershipRequests() {
+      return [
+        {
+          id: "request-1",
+          club_id: "club-1",
+          profile_id: "student-3",
+          status: "pending",
+          created_at: "2026-04-09T10:00:00.000Z",
+          updated_at: "2026-04-09T10:00:00.000Z"
+        }
+      ];
+    },
+    async listEventReports() {
+      return [];
+    },
+    async listTasks() {
+      return [
+        {
+          id: "task-1",
+          club_id: "club-1",
+          title: "Book hall",
+          status: "pending",
+          created_at: "2026-04-06T10:00:00.000Z",
+          updated_at: "2026-04-06T10:00:00.000Z"
+        }
+      ];
+    },
+    async listFeedback() {
+      return [
+        {
+          id: "feedback-1",
+          club_id: "club-1",
+          proposal_id: "proposal-2",
+          rating: 5,
+          status: "open",
+          created_at: "2026-04-11T10:00:00.000Z",
+          updated_at: "2026-04-11T10:00:00.000Z"
+        }
+      ];
+    },
+    async listEventRsvps() {
+      return [
+        {
+          id: "rsvp-1",
+          club_id: "club-1",
+          proposal_id: "proposal-2",
+          user_id: "student-1",
+          status: "going",
+          created_at: "2026-04-12T10:00:00.000Z",
+          updated_at: "2026-04-12T10:00:00.000Z"
+        }
+      ];
+    },
+    async listEventAttendance() {
+      return [
+        {
+          id: "attendance-1",
+          club_id: "club-1",
+          proposal_id: "proposal-2",
+          user_id: "student-1",
+          attended: true,
+          created_at: "2026-04-13T10:00:00.000Z",
+          updated_at: "2026-04-13T10:00:00.000Z"
+        }
+      ];
     }
   };
 }
@@ -219,6 +366,44 @@ test("wrong-role dashboard access is blocked", async (t) => {
     server.baseUrl,
     "/api/v1/dashboard/president",
     "advisor-token"
+  );
+
+  assert.equal(response.status, 403);
+  assert.equal(payload.error.code, "FORBIDDEN");
+});
+
+test("admin can fetch operations dashboard data", async (t) => {
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  const { response, payload } = await getDashboard(
+    server.baseUrl,
+    "/api/v1/dashboard/admin-operations",
+    "admin-token"
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.role, "admin");
+  assert.equal(payload.data.summary.total_clubs, 2);
+  assert.equal(payload.data.summary.total_members, 2);
+  assert.equal(payload.data.summary.pending_admin_proposals, 0);
+  assert.equal(payload.data.summary.pending_membership_requests, 1);
+  assert.equal(payload.data.summary.submitted_dues_payments, 1);
+  assert.equal(payload.data.club_performance.length, 2);
+  assert.equal(payload.data.club_performance[0].club_name, "Nile Innovators Club");
+  assert.ok(payload.data.proposal_bottlenecks.length > 0);
+  assert.ok(payload.data.pending_actions.some((action) => action.type === "membership_requests"));
+  assert.ok(payload.data.recent_activity.length > 0);
+});
+
+test("non-admin cannot fetch operations dashboard data", async (t) => {
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  const { response, payload } = await getDashboard(
+    server.baseUrl,
+    "/api/v1/dashboard/admin-operations",
+    "president-token"
   );
 
   assert.equal(response.status, 403);

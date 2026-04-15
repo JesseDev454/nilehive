@@ -1,5 +1,6 @@
 const asyncHandler = require("../../shared/asyncHandler");
 const {
+  getAdminOperationsDashboard,
   getExecutiveDashboard,
   getPresidentDashboard
 } = require("./dashboard.service");
@@ -19,6 +20,15 @@ function createDashboardController(options = {}) {
 
     getPresidentDashboard: asyncHandler(async (req, res) => {
       const dashboard = await getPresidentDashboard({
+        actor: req.user,
+        database
+      });
+
+      res.status(200).json({ data: dashboard });
+    }),
+
+    getAdminOperationsDashboard: asyncHandler(async (req, res) => {
+      const dashboard = await getAdminOperationsDashboard({
         actor: req.user,
         database
       });

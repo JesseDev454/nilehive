@@ -143,14 +143,15 @@ export default function ProposalDetail() {
       toast.success(decision === "approve" ? "Proposal approved" : "Proposal rejected", {
         description: "The final admin decision has been saved."
       });
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["proposal-detail", role, id] }),
-        queryClient.invalidateQueries({ queryKey: ["proposals"] }),
-        queryClient.invalidateQueries({ queryKey: ["admin-dashboard-proposals"] }),
-        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
-        queryClient.invalidateQueries({ queryKey: ["approved-events"] }),
-        queryClient.invalidateQueries({ queryKey: ["event-reminders"] })
-      ]);
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: ["proposal-detail", role, id] }),
+          queryClient.invalidateQueries({ queryKey: ["proposals"] }),
+          queryClient.invalidateQueries({ queryKey: ["admin-dashboard-proposals"] }),
+          queryClient.invalidateQueries({ queryKey: ["admin-operations-dashboard"] }),
+          queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+          queryClient.invalidateQueries({ queryKey: ["approved-events"] }),
+          queryClient.invalidateQueries({ queryKey: ["event-reminders"] })
+        ]);
       setAdminRemarks("");
     } catch (decisionError) {
       toast.error("Admin decision failed", {

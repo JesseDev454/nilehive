@@ -208,6 +208,74 @@ export interface PresidentDashboardRecord {
   notifications: NotificationRecord[];
 }
 
+export interface AdminOperationsDashboardRecord {
+  role: "admin";
+  generated_at: string;
+  summary: {
+    total_clubs: number;
+    total_members: number;
+    active_members: number;
+    pending_proposals: number;
+    pending_admin_proposals: number;
+    pending_membership_requests: number;
+    submitted_dues_payments: number;
+    approved_events: number;
+    reports_submitted: number;
+    missing_reports: number;
+    dues_collected_amount: number;
+    event_attendance_count: number;
+    event_rsvp_count: number;
+    attendance_rate: number;
+    feedback_count: number;
+    open_tasks: number;
+  };
+  pending_actions: {
+    type: string;
+    label: string;
+    count: number;
+  }[];
+  proposal_bottlenecks: {
+    status: string;
+    label: string;
+    count: number;
+  }[];
+  club_performance: {
+    club_id: string;
+    club_name: string;
+    club_code: string | null;
+    total_members: number;
+    active_members: number;
+    proposal_count: number;
+    pending_proposals: number;
+    approved_events: number;
+    rejected_proposals: number;
+    pending_membership_requests: number;
+    dues_collection_rate: number;
+    dues_collected_amount: number;
+    rsvp_count: number;
+    attendance_count: number;
+    reports_submitted: number;
+    feedback_count: number;
+    open_tasks: number;
+    last_activity_at: string | null;
+  }[];
+  missing_reports: {
+    proposal_id: string;
+    club_id: string;
+    title: string;
+    event_date: string;
+    days_since_event: number;
+  }[];
+  recent_activity: {
+    id: string;
+    type: string;
+    club_id: string;
+    title: string;
+    message: string;
+    created_at: string;
+  }[];
+}
+
 export interface TaskStatusHistoryRecord {
   id: string;
   task_id: string;
@@ -876,6 +944,18 @@ export async function updateClubMember(
     token,
     body: payload
   });
+
+  return response.data;
+}
+
+export async function getAdminOperationsDashboard(token?: string) {
+  const response = await request<ApiEnvelope<AdminOperationsDashboardRecord>>(
+    "/api/v1/dashboard/admin-operations",
+    {
+      method: "GET",
+      token
+    }
+  );
 
   return response.data;
 }
