@@ -23,6 +23,46 @@ function createApprovedProposal(overrides = {}) {
   };
 }
 
+function createRsvp(overrides = {}) {
+  return {
+    id: "rsvp-1",
+    proposal_id: "proposal-1",
+    club_id: "club-1",
+    user_id: "student-1",
+    status: "going",
+    profile: {
+      id: "student-1",
+      full_name: "Ada Student",
+      student_id: "NUN-001",
+      role: "student"
+    },
+    created_at: "2026-04-15T10:00:00.000Z",
+    updated_at: "2026-04-15T10:00:00.000Z",
+    ...overrides
+  };
+}
+
+function createAttendance(overrides = {}) {
+  return {
+    id: "attendance-1",
+    proposal_id: "proposal-1",
+    club_id: "club-1",
+    user_id: "student-1",
+    attended: true,
+    checked_in_by: "executive-1",
+    checked_in_at: "2026-04-15T10:00:00.000Z",
+    profile: {
+      id: "student-1",
+      full_name: "Ada Student",
+      student_id: "NUN-001",
+      role: "student"
+    },
+    created_at: "2026-04-15T10:00:00.000Z",
+    updated_at: "2026-04-15T10:00:00.000Z",
+    ...overrides
+  };
+}
+
 function createFakeDatabase() {
   const profiles = {
     "executive-1": {
@@ -90,6 +130,42 @@ function createFakeDatabase() {
       }
 
       return proposals.filter((proposal) => filters.clubIds.includes(proposal.club_id));
+    },
+    async getApprovedProposalById(proposalId) {
+      return proposals.find((proposal) => proposal.id === proposalId && proposal.status === "approved") ?? null;
+    },
+    async upsertEventRsvp(rsvp) {
+      return createRsvp(rsvp);
+    },
+    async listEventRsvps(filters = {}) {
+      if (filters.proposalId === "proposal-1") {
+        return [
+          createRsvp(),
+          createRsvp({
+            id: "rsvp-2",
+            user_id: "student-2",
+            status: "interested",
+            profile: {
+              id: "student-2",
+              full_name: "Bola Student",
+              student_id: "NUN-002",
+              role: "student"
+            }
+          })
+        ];
+      }
+
+      return [];
+    },
+    async upsertEventAttendance(attendance) {
+      return createAttendance(attendance);
+    },
+    async listEventAttendance(filters = {}) {
+      if (filters.proposalId === "proposal-1") {
+        return [createAttendance()];
+      }
+
+      return [];
     }
   };
 }
@@ -188,4 +264,94 @@ test("missing-token access is blocked for approved events", async (t) => {
 
   assert.equal(response.status, 401);
   assert.equal(payload.error.code, "AUTH_REQUIRED");
+});
+
+test("student can RSVP to an approved event", async (t) => {
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/events/proposal-1/rsvp`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer student-token",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ status: "going" })
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.status, "going");
+  assert.equal(payload.data.user_id, "student-1");
+});
+
+test("non-students cannot RSVP to an approved event", async (t) => {
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/events/proposal-1/rsvp`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer executive-token",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ status: "going" })
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 403);
+  assert.equal(payload.error.code, "FORBIDDEN");
+});
+
+test("club leaders can view engagement and mark attendance", async (t) => {
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  const engagementResponse = await fetch(`${server.baseUrl}/api/v1/events/proposal-1/engagement`, {
+    headers: {
+      Authorization: "Bearer executive-token"
+    }
+  });
+  const engagementPayload = await engagementResponse.json();
+  const attendanceResponse = await fetch(`${server.baseUrl}/api/v1/events/proposal-1/attendance`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer executive-token",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      user_id: "student-1",
+      attended: true
+    })
+  });
+  const attendancePayload = await attendanceResponse.json();
+
+  assert.equal(engagementResponse.status, 200);
+  assert.equal(engagementPayload.data.summary.total_rsvps, 2);
+  assert.equal(engagementPayload.data.summary.going, 1);
+  assert.equal(engagementPayload.data.rsvps.length, 2);
+  assert.equal(attendanceResponse.status, 200);
+  assert.equal(attendancePayload.data.attended, true);
+  assert.equal(attendancePayload.data.checked_in_by, "executive-1");
+});
+
+test("club leaders cannot manage engagement for another club event", async (t) => {
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/events/proposal-2/attendance`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer executive-token",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      user_id: "student-1",
+      attended: true
+    })
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 403);
+  assert.equal(payload.error.code, "FORBIDDEN");
 });

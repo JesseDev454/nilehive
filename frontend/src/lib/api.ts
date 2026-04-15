@@ -295,6 +295,56 @@ export interface MembershipRequestRecord {
   updated_at: string;
 }
 
+export interface EventRsvpRecord {
+  id: string;
+  proposal_id: string;
+  club_id: string;
+  user_id: string;
+  status: "interested" | "going" | "not_going" | "cancelled";
+  profile: {
+    id: string;
+    full_name: string | null;
+    student_id: string | null;
+    role: ProfileRecord["role"];
+  } | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EventAttendanceRecord {
+  id: string;
+  proposal_id: string;
+  club_id: string;
+  user_id: string;
+  attended: boolean;
+  checked_in_by: string;
+  checked_in_at: string;
+  profile: {
+    id: string;
+    full_name: string | null;
+    student_id: string | null;
+    role: ProfileRecord["role"];
+  } | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EventEngagementRecord {
+  event: ApprovedEventRecord;
+  summary: {
+    total_rsvps: number;
+    going: number;
+    interested: number;
+    not_going: number;
+    cancelled: number;
+    attended: number;
+  };
+  current_user_rsvp: EventRsvpRecord | null;
+  current_user_attendance: EventAttendanceRecord | null;
+  rsvps: EventRsvpRecord[];
+  attendance: EventAttendanceRecord[];
+}
+
 export interface DuePaymentRecord {
   id: string;
   club_id: string;
@@ -822,6 +872,43 @@ export async function updateClubMember(
   token?: string
 ) {
   const response = await request<ApiEnvelope<ClubMemberRecord>>(`/api/v1/members/${memberId}`, {
+    method: "POST",
+    token,
+    body: payload
+  });
+
+  return response.data;
+}
+
+export async function getEventEngagement(proposalId: string, token?: string) {
+  const response = await request<ApiEnvelope<EventEngagementRecord>>(`/api/v1/events/${proposalId}/engagement`, {
+    method: "GET",
+    token
+  });
+
+  return response.data;
+}
+
+export async function submitEventRsvp(
+  proposalId: string,
+  payload: { status: EventRsvpRecord["status"] },
+  token?: string
+) {
+  const response = await request<ApiEnvelope<EventRsvpRecord>>(`/api/v1/events/${proposalId}/rsvp`, {
+    method: "POST",
+    token,
+    body: payload
+  });
+
+  return response.data;
+}
+
+export async function submitEventAttendance(
+  proposalId: string,
+  payload: { user_id: string; attended?: boolean },
+  token?: string
+) {
+  const response = await request<ApiEnvelope<EventAttendanceRecord>>(`/api/v1/events/${proposalId}/attendance`, {
     method: "POST",
     token,
     body: payload

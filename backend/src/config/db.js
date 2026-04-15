@@ -24,6 +24,10 @@ const announcementSelect =
   "id, club_id, created_by, title, message, audience, created_at, updated_at";
 const feedbackSelect =
   "id, club_id, proposal_id, submitted_by, category, rating, comment, status, created_at, updated_at";
+const eventRsvpSelect =
+  "id, proposal_id, club_id, user_id, status, created_at, updated_at, profile:profiles!event_rsvps_user_id_fkey(id, full_name, student_id, role)";
+const eventAttendanceSelect =
+  "id, proposal_id, club_id, user_id, attended, checked_in_by, checked_in_at, created_at, updated_at, profile:profiles!event_attendance_user_id_fkey(id, full_name, student_id, role)";
 const profileSelect =
   "id, full_name, role, club_id, student_id, requested_role, onboarding_status, created_at, updated_at";
 const membershipRequestSelect =
@@ -258,6 +262,95 @@ function createDatabase(options = {}) {
         }
 
         query = query.in("club_id", filters.clubIds);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async getApprovedProposalById(proposalId) {
+      const { data, error } = await getClient()
+        .from("proposals")
+        .select(proposalSelect)
+        .eq("id", proposalId)
+        .eq("status", "approved")
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? null;
+    },
+
+    async upsertEventRsvp(rsvp) {
+      const { data, error } = await getClient()
+        .from("event_rsvps")
+        .upsert(rsvp, { onConflict: "proposal_id,user_id" })
+        .select(eventRsvpSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async listEventRsvps(filters = {}) {
+      let query = getClient()
+        .from("event_rsvps")
+        .select(eventRsvpSelect)
+        .order("created_at", { ascending: false });
+
+      if (filters.proposalId) {
+        query = query.eq("proposal_id", filters.proposalId);
+      }
+
+      if (filters.userId) {
+        query = query.eq("user_id", filters.userId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async upsertEventAttendance(attendance) {
+      const { data, error } = await getClient()
+        .from("event_attendance")
+        .upsert(attendance, { onConflict: "proposal_id,user_id" })
+        .select(eventAttendanceSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async listEventAttendance(filters = {}) {
+      let query = getClient()
+        .from("event_attendance")
+        .select(eventAttendanceSelect)
+        .order("checked_in_at", { ascending: false });
+
+      if (filters.proposalId) {
+        query = query.eq("proposal_id", filters.proposalId);
+      }
+
+      if (filters.userId) {
+        query = query.eq("user_id", filters.userId);
       }
 
       const { data, error } = await query;

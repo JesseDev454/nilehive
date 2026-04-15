@@ -10,6 +10,9 @@ function createEventsRouter(options = {}) {
   const controller = createEventsController({ database });
 
   router.get("/approved", auth, controller.listApprovedEvents);
+  router.get("/:proposalId/engagement", auth, controller.getEventEngagement);
+  router.post("/:proposalId/rsvp", auth, controller.submitEventRsvp);
+  router.post("/:proposalId/attendance", auth, controller.submitEventAttendance);
 
   return router;
 }

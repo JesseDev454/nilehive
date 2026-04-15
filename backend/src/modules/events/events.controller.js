@@ -1,5 +1,10 @@
 const asyncHandler = require("../../shared/asyncHandler");
-const { listApprovedEvents } = require("./events.service");
+const {
+  getEventEngagement,
+  listApprovedEvents,
+  submitEventAttendance,
+  submitEventRsvp
+} = require("./events.service");
 
 function createEventsController(options = {}) {
   const { database } = options;
@@ -12,6 +17,38 @@ function createEventsController(options = {}) {
       });
 
       res.status(200).json({ data: events });
+    }),
+
+    getEventEngagement: asyncHandler(async (req, res) => {
+      const engagement = await getEventEngagement({
+        actor: req.user,
+        proposalId: req.params.proposalId,
+        database
+      });
+
+      res.status(200).json({ data: engagement });
+    }),
+
+    submitEventRsvp: asyncHandler(async (req, res) => {
+      const rsvp = await submitEventRsvp({
+        actor: req.user,
+        proposalId: req.params.proposalId,
+        payload: req.body,
+        database
+      });
+
+      res.status(200).json({ data: rsvp });
+    }),
+
+    submitEventAttendance: asyncHandler(async (req, res) => {
+      const attendance = await submitEventAttendance({
+        actor: req.user,
+        proposalId: req.params.proposalId,
+        payload: req.body,
+        database
+      });
+
+      res.status(200).json({ data: attendance });
     })
   };
 }
