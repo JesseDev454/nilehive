@@ -3,8 +3,12 @@ const assert = require("node:assert/strict");
 const { createApp } = require("../src/app");
 const {
   createDuePayment,
+  getPaymentSettings,
   listDuePayments,
+  listMyDuePayments,
+  submitDuePaymentConfirmation,
   summarizeDues,
+  upsertPaymentSettings,
   updateDuePayment
 } = require("../src/modules/dues/dues.service");
 
@@ -26,6 +30,10 @@ function createPayment(overrides = {}) {
     academic_session: "2025/2026",
     payment_reference: null,
     proof_url: null,
+    payment_account_name: null,
+    payment_paid_at: null,
+    payer_note: null,
+    submitted_at: null,
     status: "unpaid",
     verified_by: null,
     verified_at: null,
@@ -133,6 +141,155 @@ test("president can verify a submitted payment as paid", async () => {
   assert.equal(updatePayload.verified_by, "president-1");
   assert.ok(updatePayload.verified_at);
   assert.equal(payment.status, "paid");
+});
+
+test("student can list own dues payments", async () => {
+  const fakeDatabase = {
+    async listDuePaymentsForProfile(profileId) {
+      assert.equal(profileId, "student-1");
+      return [createPayment()];
+    }
+  };
+
+  const result = await listMyDuePayments({
+    actor: {
+      id: "student-1",
+      role: "student"
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(result.payments.length, 1);
+  assert.equal(result.summary.unpaid, 1);
+});
+
+test("student can submit payment confirmation for own unpaid dues", async () => {
+  let updatePayload;
+  const fakeDatabase = {
+    async getDuePaymentById(paymentId) {
+      assert.equal(paymentId, "payment-1");
+      return createPayment();
+    },
+    async getClubMemberById(memberId) {
+      assert.equal(memberId, "member-1");
+      return createMember({
+        profile_id: "student-1"
+      });
+    },
+    async updateDuePayment(paymentId, update) {
+      updatePayload = update;
+      return createPayment({
+        id: paymentId,
+        ...update
+      });
+    }
+  };
+
+  const payment = await submitDuePaymentConfirmation({
+    actor: {
+      id: "student-1",
+      role: "student"
+    },
+    paymentId: "payment-1",
+    payload: {
+      payment_account_name: "Ada Student",
+      payment_reference: "NUE-12345",
+      payment_paid_at: "2026-04-15",
+      proof_url: "https://example.com/receipt.png",
+      payer_note: "Paid from my GTBank account."
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(updatePayload.status, "submitted");
+  assert.equal(updatePayload.payment_account_name, "Ada Student");
+  assert.equal(updatePayload.payment_reference, "NUE-12345");
+  assert.ok(updatePayload.submitted_at);
+  assert.equal(payment.status, "submitted");
+});
+
+test("student cannot submit payment confirmation for another member", async () => {
+  const fakeDatabase = {
+    async getDuePaymentById() {
+      return createPayment();
+    },
+    async getClubMemberById() {
+      return createMember({
+        profile_id: "someone-else"
+      });
+    }
+  };
+
+  await assert.rejects(
+    () =>
+      submitDuePaymentConfirmation({
+        actor: {
+          id: "student-1",
+          role: "student"
+        },
+        paymentId: "payment-1",
+        payload: {
+          payment_account_name: "Ada Student",
+          payment_reference: "NUE-12345"
+        },
+        database: fakeDatabase
+      }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
+});
+
+test("president can save and fetch payment settings for their club", async () => {
+  let savedSettings;
+  const fakeDatabase = {
+    async upsertClubPaymentSettings(settings) {
+      savedSettings = settings;
+      return {
+        id: "settings-1",
+        created_at: "2026-04-15T10:00:00.000Z",
+        updated_at: "2026-04-15T10:00:00.000Z",
+        ...settings
+      };
+    },
+    async getClubPaymentSettings(clubId) {
+      assert.equal(clubId, "club-1");
+      return {
+        id: "settings-1",
+        club_id: "club-1",
+        bank_name: "Zenith Bank",
+        account_number: "1234567890",
+        account_name: "Nile Innovators Club",
+        payment_instructions: "Use your student ID as narration.",
+        created_at: "2026-04-15T10:00:00.000Z",
+        updated_at: "2026-04-15T10:00:00.000Z"
+      };
+    }
+  };
+
+  const actor = {
+    id: "president-1",
+    role: "president",
+    clubId: "club-1"
+  };
+
+  const settings = await upsertPaymentSettings({
+    actor,
+    payload: {
+      bank_name: "Zenith Bank",
+      account_number: "1234567890",
+      account_name: "Nile Innovators Club",
+      payment_instructions: "Use your student ID as narration."
+    },
+    database: fakeDatabase
+  });
+
+  const fetchedSettings = await getPaymentSettings({
+    actor,
+    database: fakeDatabase
+  });
+
+  assert.equal(savedSettings.club_id, "club-1");
+  assert.equal(settings.bank_name, "Zenith Bank");
+  assert.equal(fetchedSettings.account_number, "1234567890");
 });
 
 test("president cannot manage dues for another club", async () => {

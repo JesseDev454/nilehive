@@ -15,7 +15,9 @@ const taskStatusHistorySelect =
 const clubMemberSelect =
   "id, club_id, profile_id, full_name, student_id, email, phone_number, club_role, membership_status, created_at, updated_at";
 const duePaymentSelect =
-  "id, club_id, member_id, amount, academic_session, payment_reference, proof_url, status, verified_by, verified_at, created_at, updated_at";
+  "id, club_id, member_id, amount, academic_session, payment_reference, payment_account_name, payment_paid_at, payer_note, proof_url, submitted_at, status, verified_by, verified_at, created_at, updated_at";
+const clubPaymentSettingsSelect =
+  "id, club_id, bank_name, account_number, account_name, payment_instructions, created_at, updated_at";
 const eventReportSelect =
   "id, proposal_id, club_id, submitted_by, attendance_count, summary, challenges, outcomes, budget_used, media_urls, report_file_url, status, submitted_at, created_at, updated_at, proposals(id, title, proposed_activity, event_date, event_time, location, status)";
 const announcementSelect =
@@ -681,6 +683,34 @@ function createDatabase(options = {}) {
       return data ?? null;
     },
 
+    async getClubPaymentSettings(clubId) {
+      const { data, error } = await getClient()
+        .from("club_payment_settings")
+        .select(clubPaymentSettingsSelect)
+        .eq("club_id", clubId)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? null;
+    },
+
+    async upsertClubPaymentSettings(settings) {
+      const { data, error } = await getClient()
+        .from("club_payment_settings")
+        .upsert(settings, { onConflict: "club_id" })
+        .select(clubPaymentSettingsSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
     async updateClubMember(memberId, update) {
       const { data, error } = await getClient()
         .from("club_members")
@@ -758,6 +788,35 @@ function createDatabase(options = {}) {
         .eq("id", paymentId)
         .select(duePaymentSelect)
         .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async listDuePaymentsForProfile(profileId) {
+      const { data: members, error: membersError } = await getClient()
+        .from("club_members")
+        .select("id")
+        .eq("profile_id", profileId);
+
+      if (membersError) {
+        throw membersError;
+      }
+
+      const memberIds = members.map((member) => member.id);
+
+      if (!memberIds.length) {
+        return [];
+      }
+
+      const { data, error } = await getClient()
+        .from("due_payments")
+        .select(duePaymentSelect)
+        .in("member_id", memberIds)
+        .order("created_at", { ascending: false });
 
       if (error) {
         throw error;

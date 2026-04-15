@@ -9,8 +9,12 @@ function createDuesRouter(options = {}) {
   const auth = createAuthMiddleware({ database });
   const controller = createDuesController({ database });
 
+  router.get("/me", auth, controller.listMyDuePayments);
+  router.get("/payment-settings", auth, controller.getPaymentSettings);
+  router.post("/payment-settings", auth, controller.upsertPaymentSettings);
   router.get("/", auth, controller.listDuePayments);
   router.post("/", auth, controller.createDuePayment);
+  router.post("/:paymentId/submit-confirmation", auth, controller.submitDuePaymentConfirmation);
   router.post("/:paymentId", auth, controller.updateDuePayment);
 
   return router;

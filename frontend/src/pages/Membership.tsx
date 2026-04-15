@@ -16,11 +16,15 @@ import {
   ApiClientError,
   createMembershipRequest,
   decideMembershipRequest,
+  getClubPaymentSettings,
   getMembershipRequests,
+  getMyDuePayments,
   getMyMembershipRequests,
   getPublicClubs,
+  submitDuePaymentConfirmation,
   type ClubMemberRecord,
   type ClubRecord,
+  type DuePaymentRecord,
   type MembershipRequestRecord
 } from "@/lib/api";
 
@@ -85,6 +89,170 @@ function getClubName(clubId: string, clubs: ClubRecord[], request?: MembershipRe
   return request?.club?.name || clubs.find((club) => club.id === clubId)?.name || "Selected club";
 }
 
+function DuesConfirmationCard({
+  request,
+  payment
+}: {
+  request: MembershipRequestRecord;
+  payment?: DuePaymentRecord;
+}) {
+  const queryClient = useQueryClient();
+  const [accountName, setAccountName] = useState("");
+  const [reference, setReference] = useState("");
+  const [paidAt, setPaidAt] = useState("");
+  const [proofUrl, setProofUrl] = useState("");
+  const [note, setNote] = useState("");
+  const { data: settings, isLoading: isLoadingSettings } = useQuery({
+    queryKey: ["club-payment-settings", request.club_id],
+    queryFn: () => getClubPaymentSettings(request.club_id),
+    retry: false
+  });
+  const submitMutation = useMutation({
+    mutationFn: () =>
+      submitDuePaymentConfirmation(request.due_payment_id || "", {
+        payment_account_name: accountName,
+        payment_reference: reference,
+        payment_paid_at: paidAt || null,
+        proof_url: proofUrl || null,
+        payer_note: note || null
+      }),
+    onSuccess: async () => {
+      toast.success("Payment confirmation submitted", {
+        description: "Your president or Club Services admin can now review it."
+      });
+      setAccountName("");
+      setReference("");
+      setPaidAt("");
+      setProofUrl("");
+      setNote("");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["my-dues"] }),
+        queryClient.invalidateQueries({ queryKey: ["my-membership-requests"] })
+      ]);
+    },
+    onError: (mutationError) => {
+      toast.error("Could not submit payment confirmation", {
+        description: getErrorMessage(mutationError)
+      });
+    }
+  });
+
+  if (!request.due_payment_id) {
+    return (
+      <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">
+        <p className="font-semibold text-primary">Approved. Dues payment required.</p>
+        <p className="mt-1 text-muted-foreground">Your dues record is still being prepared. Please check again shortly.</p>
+      </div>
+    );
+  }
+
+  if (payment?.status === "submitted") {
+    return (
+      <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">
+        <p className="font-semibold text-primary">Payment submitted for review</p>
+        <p className="mt-1 text-muted-foreground">
+          Reference: {payment.payment_reference || "-"} {payment.payment_account_name ? `- Paid by ${payment.payment_account_name}` : ""}
+        </p>
+      </div>
+    );
+  }
+
+  if (payment?.status === "paid") {
+    return (
+      <div className="mt-4 rounded-xl border border-success/20 bg-success/5 p-4 text-sm">
+        <p className="font-semibold text-success">Dues verified. You are now an active member.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">
+      <div>
+        <p className="font-semibold text-primary">Approved. Dues payment required.</p>
+        <p className="mt-1 text-muted-foreground">
+          Pay {formatCurrency(request.dues_amount)} for {request.academic_session || "the current session"}, then submit your payment details below.
+        </p>
+      </div>
+
+      <div className="rounded-xl bg-white p-4 shadow-sm">
+        {isLoadingSettings ? (
+          <p className="text-muted-foreground">Loading payment details...</p>
+        ) : settings ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Bank</p>
+              <p className="font-semibold">{settings.bank_name}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Account Number</p>
+              <p className="font-semibold">{settings.account_number}</p>
+            </div>
+            <div className="sm:col-span-2">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Account Name</p>
+              <p className="font-semibold">{settings.account_name}</p>
+            </div>
+            {settings.payment_instructions ? (
+              <p className="sm:col-span-2 text-muted-foreground">{settings.payment_instructions}</p>
+            ) : null}
+          </div>
+        ) : (
+          <p className="text-muted-foreground">
+            Payment account details have not been configured yet. Please contact your club president.
+          </p>
+        )}
+      </div>
+
+      {payment?.status === "rejected" ? (
+        <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3">
+          <p className="font-medium text-destructive">Previous payment confirmation was rejected.</p>
+          <p className="mt-1 text-muted-foreground">Check your reference and submit corrected details.</p>
+        </div>
+      ) : null}
+
+      <form
+        className="grid gap-3 sm:grid-cols-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          submitMutation.mutate();
+        }}
+      >
+        <div className="space-y-2">
+          <Label>Name on account used</Label>
+          <Input value={accountName} onChange={(event) => setAccountName(event.target.value)} required />
+        </div>
+        <div className="space-y-2">
+          <Label>Payment reference / transaction ID</Label>
+          <Input value={reference} onChange={(event) => setReference(event.target.value)} required />
+        </div>
+        <div className="space-y-2">
+          <Label>Payment date</Label>
+          <Input type="date" value={paidAt} onChange={(event) => setPaidAt(event.target.value)} />
+        </div>
+        <div className="space-y-2">
+          <Label>Proof URL</Label>
+          <Input value={proofUrl} onChange={(event) => setProofUrl(event.target.value)} placeholder="Optional receipt link" />
+        </div>
+        <div className="space-y-2 sm:col-span-2">
+          <Label>Note</Label>
+          <Textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Optional note for verification" />
+        </div>
+        <div className="sm:col-span-2 flex justify-end">
+          <Button type="submit" disabled={submitMutation.isPending}>
+            {submitMutation.isPending ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Submitting...
+              </>
+            ) : (
+              "I Have Paid"
+            )}
+          </Button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 function StudentMembershipView() {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
@@ -111,6 +279,15 @@ function StudentMembershipView() {
     queryFn: () => getMyMembershipRequests(),
     retry: false
   });
+  const { data: myDuesData } = useQuery({
+    queryKey: ["my-dues"],
+    queryFn: () => getMyDuePayments(),
+    retry: false
+  });
+  const paymentById = useMemo(
+    () => new Map((myDuesData?.payments || []).map((payment) => [payment.id, payment])),
+    [myDuesData?.payments]
+  );
   const requestByClubId = useMemo(
     () => new Map(myRequests.map((request) => [request.club_id, request])),
     [myRequests]
@@ -210,12 +387,7 @@ function StudentMembershipView() {
                     </div>
                   </div>
                   {request.status === "approved_pending_dues" ? (
-                    <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">
-                      <p className="font-semibold text-primary">Approved. Dues payment required.</p>
-                      <p className="mt-1 text-muted-foreground">
-                        Pay {formatCurrency(request.dues_amount)} for {request.academic_session || "the current session"}, then wait for the president/admin to verify it.
-                      </p>
-                    </div>
+                    <DuesConfirmationCard request={request} payment={paymentById.get(request.due_payment_id || "")} />
                   ) : null}
                   {request.decision_remarks ? (
                     <p className="mt-4 rounded-xl bg-muted p-3 text-sm text-muted-foreground">

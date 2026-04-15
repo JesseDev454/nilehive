@@ -302,12 +302,43 @@ export interface DuePaymentRecord {
   amount: number;
   academic_session: string;
   payment_reference: string | null;
+  payment_account_name?: string | null;
+  payment_paid_at?: string | null;
+  payer_note?: string | null;
   proof_url: string | null;
+  submitted_at?: string | null;
   status: "unpaid" | "submitted" | "paid" | "rejected";
   verified_by: string | null;
   verified_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ClubPaymentSettingsRecord {
+  id: string;
+  club_id: string;
+  bank_name: string;
+  account_number: string;
+  account_name: string;
+  payment_instructions: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PaymentConfirmationPayload {
+  payment_account_name: string;
+  payment_reference: string;
+  payment_paid_at?: string | null;
+  proof_url?: string | null;
+  payer_note?: string | null;
+}
+
+export interface PaymentSettingsPayload {
+  club_id?: string | null;
+  bank_name: string;
+  account_number: string;
+  account_name: string;
+  payment_instructions?: string | null;
 }
 
 export interface MembershipRequestDecisionResult {
@@ -906,6 +937,44 @@ export async function getDuePayments(
   return response.data;
 }
 
+export async function getMyDuePayments(token?: string) {
+  const response = await request<ApiEnvelope<DuesResponse>>("/api/v1/dues/me", {
+    method: "GET",
+    token
+  });
+
+  return response.data;
+}
+
+export async function getClubPaymentSettings(clubId?: string, token?: string) {
+  const params = new URLSearchParams();
+
+  if (clubId) {
+    params.set("club_id", clubId);
+  }
+
+  const query = params.toString();
+  const response = await request<ApiEnvelope<ClubPaymentSettingsRecord | null>>(
+    `/api/v1/dues/payment-settings${query ? `?${query}` : ""}`,
+    {
+      method: "GET",
+      token
+    }
+  );
+
+  return response.data;
+}
+
+export async function saveClubPaymentSettings(payload: PaymentSettingsPayload, token?: string) {
+  const response = await request<ApiEnvelope<ClubPaymentSettingsRecord>>("/api/v1/dues/payment-settings", {
+    method: "POST",
+    token,
+    body: payload
+  });
+
+  return response.data;
+}
+
 export async function createDuePayment(payload: CreateDuePaymentPayload, token?: string) {
   const response = await request<ApiEnvelope<DuePaymentRecord>>("/api/v1/dues", {
     method: "POST",
@@ -922,6 +991,20 @@ export async function updateDuePayment(
   token?: string
 ) {
   const response = await request<ApiEnvelope<DuePaymentRecord>>(`/api/v1/dues/${paymentId}`, {
+    method: "POST",
+    token,
+    body: payload
+  });
+
+  return response.data;
+}
+
+export async function submitDuePaymentConfirmation(
+  paymentId: string,
+  payload: PaymentConfirmationPayload,
+  token?: string
+) {
+  const response = await request<ApiEnvelope<DuePaymentRecord>>(`/api/v1/dues/${paymentId}/submit-confirmation`, {
     method: "POST",
     token,
     body: payload

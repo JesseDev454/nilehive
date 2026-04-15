@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CreditCard, Loader2 } from "lucide-react";
+import { CreditCard, Landmark, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,9 @@ import {
   createDuePayment,
   getClubMembers,
   getClubs,
+  getClubPaymentSettings,
   getDuePayments,
+  saveClubPaymentSettings,
   updateDuePayment,
   type DuePaymentRecord
 } from "@/lib/api";
@@ -57,6 +59,10 @@ export default function Dues() {
   const [paymentReference, setPaymentReference] = useState("");
   const [proofUrl, setProofUrl] = useState("");
   const [status, setStatus] = useState<DuePaymentRecord["status"]>("unpaid");
+  const [bankName, setBankName] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [accountName, setAccountName] = useState("");
+  const [paymentInstructions, setPaymentInstructions] = useState("");
   const canViewDues = role === "president" || role === "executive" || role === "admin";
   const canManageDues = role === "president" || role === "admin";
 
@@ -83,6 +89,23 @@ export default function Dues() {
     enabled: role === "admin",
     retry: false
   });
+  const { data: paymentSettings } = useQuery({
+    queryKey: ["club-payment-settings", role, selectedClubId],
+    queryFn: () => getClubPaymentSettings(role === "admin" ? selectedClubId : undefined),
+    enabled: canManageDues && (role !== "admin" || Boolean(selectedClubId)),
+    retry: false
+  });
+
+  useEffect(() => {
+    if (!paymentSettings) {
+      return;
+    }
+
+    setBankName(paymentSettings.bank_name);
+    setAccountNumber(paymentSettings.account_number);
+    setAccountName(paymentSettings.account_name);
+    setPaymentInstructions(paymentSettings.payment_instructions || "");
+  }, [paymentSettings]);
   const memberNameById = useMemo(
     () => Object.fromEntries(members.map((member) => [member.id, member.full_name])),
     [members]
@@ -114,6 +137,27 @@ export default function Dues() {
       });
     }
   });
+  const saveSettingsMutation = useMutation({
+    mutationFn: () =>
+      saveClubPaymentSettings({
+        club_id: role === "admin" ? selectedClubId : undefined,
+        bank_name: bankName,
+        account_number: accountNumber,
+        account_name: accountName,
+        payment_instructions: paymentInstructions || null
+      }),
+    onSuccess: async () => {
+      toast.success("Payment details saved", {
+        description: "Students can now see where to pay their dues."
+      });
+      await queryClient.invalidateQueries({ queryKey: ["club-payment-settings"] });
+    },
+    onError: (mutationError) => {
+      toast.error("Could not save payment details", {
+        description: getErrorMessage(mutationError)
+      });
+    }
+  });
   const updateMutation = useMutation({
     mutationFn: ({ payment, nextStatus }: { payment: DuePaymentRecord; nextStatus: DuePaymentRecord["status"] }) =>
       updateDuePayment(payment.id, {
@@ -133,6 +177,11 @@ export default function Dues() {
   function handleCreatePayment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     createMutation.mutate();
+  }
+
+  function handleSavePaymentSettings(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    saveSettingsMutation.mutate();
   }
 
   if (!canViewDues) {
@@ -187,6 +236,89 @@ export default function Dues() {
           </CardContent>
         </Card>
       </div>
+
+      {canManageDues ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Landmark className="h-5 w-5 text-primary" />
+              Club Payment Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSavePaymentSettings} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {role === "admin" ? (
+                <div className="space-y-2 lg:col-span-2">
+                  <Label htmlFor="settings_club_id">Club</Label>
+                  <Select value={selectedClubId} onValueChange={setSelectedClubId}>
+                    <SelectTrigger id="settings_club_id">
+                      <SelectValue placeholder="Select club before saving payment details" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clubs.map((club) => (
+                        <SelectItem key={club.id} value={club.id}>
+                          {club.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : null}
+              <div className="space-y-2">
+                <Label htmlFor="bank_name">Bank Name</Label>
+                <Input
+                  id="bank_name"
+                  value={bankName}
+                  onChange={(event) => setBankName(event.target.value)}
+                  placeholder="Zenith Bank"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="account_number">Account Number</Label>
+                <Input
+                  id="account_number"
+                  value={accountNumber}
+                  onChange={(event) => setAccountNumber(event.target.value)}
+                  placeholder="1234567890"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="account_name">Account Name</Label>
+                <Input
+                  id="account_name"
+                  value={accountName}
+                  onChange={(event) => setAccountName(event.target.value)}
+                  placeholder="Nile University Club Account"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="payment_instructions">Payment Instructions</Label>
+                <Input
+                  id="payment_instructions"
+                  value={paymentInstructions}
+                  onChange={(event) => setPaymentInstructions(event.target.value)}
+                  placeholder="Use your student ID as narration/reference"
+                />
+              </div>
+              <div className="lg:col-span-2 flex justify-end">
+                <Button type="submit" disabled={saveSettingsMutation.isPending || (role === "admin" && !selectedClubId)}>
+                  {saveSettingsMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Payment Details"
+                  )}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {canManageDues ? (
         <Card>
@@ -335,6 +467,19 @@ export default function Dues() {
                       <td className="p-3">
                         <p className="font-medium">{memberNameById[payment.member_id] || "Unknown member"}</p>
                         <p className="text-xs text-muted-foreground">{payment.payment_reference || "No reference"}</p>
+                        {payment.payment_account_name ? (
+                          <p className="text-xs text-muted-foreground">Paid by {payment.payment_account_name}</p>
+                        ) : null}
+                        {payment.proof_url ? (
+                          <a
+                            className="text-xs text-primary underline"
+                            href={payment.proof_url}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            View proof
+                          </a>
+                        ) : null}
                       </td>
                       <td className="p-3 font-medium">{formatCurrency(payment.amount)}</td>
                       <td className="p-3 hidden md:table-cell text-muted-foreground">{payment.academic_session}</td>
