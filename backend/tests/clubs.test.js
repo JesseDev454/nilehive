@@ -21,6 +21,12 @@ function createFakeDatabase() {
       full_name: "Club Services Admin",
       role: "admin",
       club_id: null
+    },
+    "student-1": {
+      id: "student-1",
+      full_name: "Ada Student",
+      role: "student",
+      club_id: "club-1"
     }
   };
 
@@ -53,6 +59,10 @@ function createFakeDatabase() {
     "admin-token": {
       id: "admin-1",
       email: "admin@nilehive.test"
+    },
+    "student-token": {
+      id: "student-1",
+      email: "student@nilehive.test"
     }
   };
 
@@ -120,6 +130,26 @@ async function getClubs(baseUrl, token = "") {
   return { response, payload };
 }
 
+async function getPublicClubs(baseUrl) {
+  const response = await fetch(`${baseUrl}/api/v1/clubs/public`, {
+    method: "GET"
+  });
+  const payload = await response.json();
+
+  return { response, payload };
+}
+
+test("public club list supports signup and profile onboarding", async (t) => {
+  const database = createFakeDatabase();
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const { response, payload } = await getPublicClubs(server.baseUrl);
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.length, 2);
+});
+
 test("executive can fetch only their linked club for the proposal dropdown", async (t) => {
   const database = createFakeDatabase();
   const server = await createTestServer(database);
@@ -150,6 +180,17 @@ test("admin can fetch all clubs", async (t) => {
   t.after(() => server.close());
 
   const { response, payload } = await getClubs(server.baseUrl, "admin-token");
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.length, 2);
+});
+
+test("student can fetch club list after onboarding", async (t) => {
+  const database = createFakeDatabase();
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const { response, payload } = await getClubs(server.baseUrl, "student-token");
 
   assert.equal(response.status, 200);
   assert.equal(payload.data.length, 2);

@@ -7,6 +7,7 @@ const roles: { value: Role; label: string }[] = [
   { value: "advisor", label: "Advisor" },
   { value: "admin", label: "Admin" },
   { value: "president", label: "President" },
+  { value: "student", label: "Student" },
 ];
 
 export function RoleToggle() {

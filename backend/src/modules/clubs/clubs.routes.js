@@ -9,6 +9,7 @@ function createClubsRouter(options = {}) {
   const auth = createAuthMiddleware({ database });
   const controller = createClubsController({ database });
 
+  router.get("/public", controller.listPublicClubs);
   router.get("/", auth, controller.listClubs);
 
   return router;

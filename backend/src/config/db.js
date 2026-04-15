@@ -22,6 +22,8 @@ const announcementSelect =
   "id, club_id, created_by, title, message, audience, created_at, updated_at";
 const feedbackSelect =
   "id, club_id, proposal_id, submitted_by, category, rating, comment, status, created_at, updated_at";
+const profileSelect =
+  "id, full_name, role, club_id, student_id, requested_role, onboarding_status, created_at, updated_at";
 
 function createAdminClient() {
   const env = getEnv();
@@ -72,7 +74,7 @@ function createDatabase(options = {}) {
     async getProfileById(profileId) {
       const { data, error } = await getClient()
         .from("profiles")
-        .select("id, full_name, role, club_id")
+        .select(profileSelect)
         .eq("id", profileId)
         .maybeSingle();
 
@@ -146,6 +148,20 @@ function createDatabase(options = {}) {
       }
 
       return data ?? null;
+    },
+
+    async createProfile(profile) {
+      const { data, error } = await getClient()
+        .from("profiles")
+        .insert(profile)
+        .select(profileSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
     },
 
     async updateProposal(proposalId, update) {

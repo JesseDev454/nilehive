@@ -55,11 +55,19 @@ export function AppSidebar() {
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
 
+  const studentItems = [
+    { title: "Events", url: "/", icon: CalendarDays },
+    { title: "Approved Events", url: "/events", icon: CalendarDays },
+    { title: "Announcements", url: "/communications", icon: MessageSquare },
+    { title: "Notifications", url: "/notifications", icon: Bell },
+  ];
+
   const itemsMap = {
     executive: execItems,
     advisor: advisorItems,
     admin: adminItems,
     president: presidentItems,
+    student: studentItems,
   };
 
   const items = itemsMap[role];

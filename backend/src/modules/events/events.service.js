@@ -14,6 +14,10 @@ async function getVisibleClubIds(actor, database) {
     return actor.clubId ? [actor.clubId] : [];
   }
 
+  if (actor.role === "student") {
+    return null;
+  }
+
   return [];
 }
 

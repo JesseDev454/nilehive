@@ -42,6 +42,12 @@ function createFakeDatabase() {
       full_name: "Club Services Admin",
       role: "admin",
       club_id: null
+    },
+    "student-1": {
+      id: "student-1",
+      full_name: "Ada Student",
+      role: "student",
+      club_id: "club-1"
     }
   };
   const proposals = [
@@ -59,7 +65,8 @@ function createFakeDatabase() {
       const tokenProfiles = {
         "executive-token": "executive-1",
         "advisor-token": "advisor-1",
-        "admin-token": "admin-1"
+        "admin-token": "admin-1",
+        "student-token": "student-1"
       };
       const profileId = tokenProfiles[accessToken];
 
@@ -160,6 +167,17 @@ test("advisor can fetch approved events for assigned clubs", async (t) => {
   assert.equal(response.status, 200);
   assert.equal(payload.data.length, 1);
   assert.equal(payload.data[0].club_id, "club-2");
+});
+
+test("student can fetch approved events feed", async (t) => {
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  const { response, payload } = await getApprovedEvents(server.baseUrl, "student-token");
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.length, 2);
+  assert.ok(payload.data.every((event) => event.status === "approved"));
 });
 
 test("missing-token access is blocked for approved events", async (t) => {

@@ -45,6 +45,26 @@ export interface ClubRecord {
   created_at: string;
 }
 
+export interface ProfileRecord {
+  id: string;
+  email?: string | null;
+  full_name: string | null;
+  role: "executive" | "advisor" | "admin" | "president" | "student";
+  club_id: string | null;
+  student_id?: string | null;
+  requested_role?: "executive" | "advisor" | "admin" | "president" | "student" | null;
+  onboarding_status?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ProfileOnboardingPayload {
+  full_name: string;
+  student_id: string;
+  club_id: string;
+  requested_role?: "student" | "executive" | "president";
+}
+
 export interface ProposalRecord {
   id: string;
   club_id?: string;
@@ -465,6 +485,24 @@ export async function getClubs(token?: string) {
   const response = await request<ApiEnvelope<ClubRecord[]>>("/api/v1/clubs", {
     method: "GET",
     token
+  });
+
+  return response.data;
+}
+
+export async function getPublicClubs() {
+  const response = await request<ApiEnvelope<ClubRecord[]>>("/api/v1/clubs/public", {
+    method: "GET"
+  });
+
+  return response.data;
+}
+
+export async function completeProfileOnboarding(payload: ProfileOnboardingPayload, token?: string) {
+  const response = await request<ApiEnvelope<ProfileRecord>>("/api/v1/profile/onboarding", {
+    method: "POST",
+    token,
+    body: payload
   });
 
   return response.data;

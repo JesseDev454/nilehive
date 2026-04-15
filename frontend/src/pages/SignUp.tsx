@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowRight, CheckCircle2, Network, ShieldCheck, Users } from "lucide-react";
@@ -8,16 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NhStudentId } from "@/components/NhStudentId";
 import { useAuth } from "@/contexts/AuthContext";
+import { getPublicClubs } from "@/lib/api";
 
 const CAMPUS_LOUNGE_IMAGE =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuBtWpjmv-aJhohYghqjIZGKpv8YmfVqo4M1_vpbn628XqWd8nC44bSnXbESgLdSk0EkQshCyBK5A1QNILkD4oAR4wJMwww7TQhzsNm5dzF2MKq4BsTDum7o8UMvLYO6PMeFeBJ0K4bWI4ijUTENADR2umL45GR3vqQ17gafeGeVmGfyUf_U77legsSkpxoSuocgzqvIuxQ4oLZ72OFiTujKX3NNCDI2sjLLfhLy6NpRQHx-RXBfUChYwniKEqg7yu6JTmVTIdyzsY7S";
-
-const SIGNUP_CLUB_OPTIONS = [
-  "NILE GDG CLUB",
-  "NILE GAMES CLUB",
-  "NILE CREATIVE ARTS CLUB",
-  "NILE BOOK CLUB"
-];
 
 export default function SignUp() {
   const { signUp, session, isLoading } = useAuth();
@@ -29,6 +24,11 @@ export default function SignUp() {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signupError, setSignupError] = useState<string | null>(null);
+  const { data: clubs = [], isLoading: isLoadingClubs } = useQuery({
+    queryKey: ["public-clubs"],
+    queryFn: getPublicClubs,
+    retry: false
+  });
 
   if (!isLoading && session) {
     return <Navigate to="/" replace />;
@@ -57,7 +57,7 @@ export default function SignUp() {
         studentId
       });
       toast.success("Account request created", {
-        description: "Club Services still needs to assign your NileHive profile before dashboard access."
+        description: "After confirming your email, log in and complete your NileHive profile setup."
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Please check the form and try again.";
@@ -137,7 +137,7 @@ export default function SignUp() {
                 </p>
                 <h2 className="mt-2 text-3xl font-extrabold text-[#000d27]">Create your account</h2>
                 <p className="mt-2 text-sm text-[#44474e]">
-                  Account creation is real, but dashboard access still requires a Club Services profile assignment.
+                  Account creation is real. After login, NileHive will guide you through profile setup.
                 </p>
               </div>
 
@@ -188,20 +188,20 @@ export default function SignUp() {
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   <div className="space-y-2">
                     <Label className="font-semibold text-[#181c1e]">Society / Club</Label>
-                    <Select value={clubName} onValueChange={setClubName}>
+                    <Select disabled={isLoadingClubs} value={clubName} onValueChange={setClubName}>
                       <SelectTrigger className="rounded-2xl border-0 bg-[#f1f4f7] py-6 focus:ring-[#0d5bbc]/30">
-                        <SelectValue placeholder="Select your club" />
+                        <SelectValue placeholder={isLoadingClubs ? "Loading clubs..." : "Select your club"} />
                       </SelectTrigger>
                       <SelectContent>
-                        {SIGNUP_CLUB_OPTIONS.map((club) => (
-                          <SelectItem key={club} value={club}>
-                            {club}
+                        {clubs.map((club) => (
+                          <SelectItem key={club.id} value={club.name}>
+                            {club.name}{club.code ? ` (${club.code})` : ""}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     <p className="px-1 text-[11px] font-medium text-[#75777f]">
-                      This stores your requested club for Club Services profile setup.
+                      This helps preselect your club during profile setup.
                     </p>
                   </div>
                   <div className="space-y-2">
@@ -212,6 +212,7 @@ export default function SignUp() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="executive">Executive</SelectItem>
+                        <SelectItem value="president">President</SelectItem>
                         <SelectItem value="student">Student</SelectItem>
                       </SelectContent>
                     </Select>
@@ -267,8 +268,8 @@ export default function SignUp() {
               <div className="flex items-start gap-3 rounded-2xl bg-[#f1f4f7] p-4 text-sm text-[#44474e]">
                 <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-[#299e5c]" />
                 <p>
-                  After signup, Club Services must create your matching app profile before the dashboard opens.
-                  This keeps role access controlled while onboarding is still being built out.
+                  After signup, log in to complete profile setup. Executive or president access remains a
+                  request until Club Services approves it.
                 </p>
               </div>
             </form>

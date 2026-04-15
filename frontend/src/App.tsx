@@ -3,12 +3,12 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from "rea
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Button } from "@/components/ui/button";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { RoleProvider } from "@/contexts/RoleContext";
 import { AppLayout } from "@/components/AppLayout";
 import Dashboard from "@/pages/Dashboard";
 import Login from "@/pages/Login";
+import ProfileSetup from "@/pages/ProfileSetup";
 import SignUp from "@/pages/SignUp";
 import NewProposal from "@/pages/NewProposal";
 import Proposals from "@/pages/Proposals";
@@ -27,7 +27,7 @@ import NotFound from "@/pages/NotFound";
 const queryClient = new QueryClient();
 
 function ProtectedRoutes() {
-  const { profile, profileError, session, signOut, isLoading } = useAuth();
+  const { profile, session, isLoading } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -43,19 +43,7 @@ function ProtectedRoutes() {
   }
 
   if (!profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="max-w-md rounded-lg border bg-card p-6 text-center shadow-sm">
-          <h1 className="text-lg font-semibold">Profile setup required</h1>
-          <p className="text-sm text-muted-foreground mt-2">
-            {profileError || "This account does not have a NileHive role profile yet."}
-          </p>
-          <Button className="mt-4" variant="outline" onClick={() => signOut()}>
-            Sign out
-          </Button>
-        </div>
-      </div>
-    );
+    return <ProfileSetup />;
   }
 
   return <Outlet />;

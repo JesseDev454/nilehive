@@ -20,6 +20,7 @@ import {
   getAdvisorPendingProposalsErrorMessage,
   useAdvisorPendingProposals
 } from "@/hooks/use-advisor-pending-proposals";
+import EventCalendar from "@/pages/EventCalendar";
 
 function StatCard({
   title,
@@ -490,5 +491,6 @@ export default function Dashboard() {
   if (role === "advisor") return <AdvisorDashboard />;
   if (role === "admin") return <AdminDashboard />;
   if (role === "president") return <PresidentDashboard />;
+  if (role === "student") return <EventCalendar />;
   return <ExecutiveDashboard />;
 }

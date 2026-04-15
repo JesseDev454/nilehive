@@ -8,7 +8,7 @@ async function listVisibleClubs(options) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
   }
 
-  if (actor.role === "admin" || actor.role === "president") {
+  if (actor.role === "admin" || actor.role === "president" || actor.role === "student") {
     return database.listClubs();
   }
 
@@ -27,6 +27,12 @@ async function listVisibleClubs(options) {
   return [];
 }
 
+async function listPublicClubs(options = {}) {
+  const { database = db } = options;
+  return database.listClubs();
+}
+
 module.exports = {
+  listPublicClubs,
   listVisibleClubs
 };

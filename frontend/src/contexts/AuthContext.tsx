@@ -2,13 +2,16 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
-export type AppRole = "executive" | "advisor" | "admin" | "president";
+export type AppRole = "executive" | "advisor" | "admin" | "president" | "student";
 
 export interface AppProfile {
   id: string;
   full_name: string | null;
   role: AppRole;
   club_id: string | null;
+  student_id?: string | null;
+  requested_role?: AppRole | null;
+  onboarding_status?: string | null;
 }
 
 interface AuthContextType {
@@ -29,6 +32,7 @@ interface AuthContextType {
   }) => Promise<void>;
   signOut: () => Promise<void>;
   getAccessToken: () => string;
+  refreshProfile: () => Promise<AppProfile | null>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -36,7 +40,7 @@ const AuthContext = createContext<AuthContextType | null>(null);
 async function fetchProfile(userId: string) {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, full_name, role, club_id")
+    .select("id, full_name, role, club_id, student_id, requested_role, onboarding_status")
     .eq("id", userId)
     .maybeSingle();
 
@@ -168,6 +172,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
       getAccessToken() {
         return session?.access_token ?? "";
+      },
+      async refreshProfile() {
+        if (!session?.user) {
+          setProfile(null);
+          setProfileError(null);
+          return null;
+        }
+
+        const nextProfile = await fetchProfile(session.user.id);
+        setProfile(nextProfile);
+        setProfileError(nextProfile ? null : "No application profile was found for this user.");
+        return nextProfile;
       }
     }),
     [isLoading, profile, profileError, session]
