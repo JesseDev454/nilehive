@@ -8,6 +8,7 @@ const { createDashboardRouter } = require("./modules/dashboard/dashboard.routes"
 const { createDuesRouter } = require("./modules/dues/dues.routes");
 const { createEventsRouter } = require("./modules/events/events.routes");
 const { createMembersRouter } = require("./modules/members/members.routes");
+const { createMembershipRequestsRouter } = require("./modules/membership-requests/membership-requests.routes");
 const { createNotificationsRouter } = require("./modules/notifications/notifications.routes");
 const { createProfileRouter } = require("./modules/profile/profile.routes");
 const { createProposalsRouter } = require("./modules/proposals/proposals.routes");
@@ -48,6 +49,7 @@ function createApp(options = {}) {
   app.use("/api/v1/dues", createDuesRouter({ database }));
   app.use("/api/v1/events", createEventsRouter({ database }));
   app.use("/api/v1/members", createMembersRouter({ database }));
+  app.use("/api/v1/membership-requests", createMembershipRequestsRouter({ database }));
   app.use("/api/v1/notifications", createNotificationsRouter({ database }));
   app.use("/api/v1/profile", createProfileRouter({ database }));
   app.use("/api/v1/proposals", createProposalsRouter({ database }));

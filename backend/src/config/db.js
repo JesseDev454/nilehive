@@ -24,6 +24,8 @@ const feedbackSelect =
   "id, club_id, proposal_id, submitted_by, category, rating, comment, status, created_at, updated_at";
 const profileSelect =
   "id, full_name, role, club_id, student_id, requested_role, onboarding_status, created_at, updated_at";
+const membershipRequestSelect =
+  "id, profile_id, club_id, requested_role, status, remarks, decision_remarks, reviewed_by, reviewed_at, member_id, due_payment_id, dues_amount, academic_session, created_at, updated_at, profiles(id, full_name, student_id, role), clubs(id, name, code)";
 
 function createAdminClient() {
   const env = getEnv();
@@ -154,6 +156,21 @@ function createDatabase(options = {}) {
       const { data, error } = await getClient()
         .from("profiles")
         .insert(profile)
+        .select(profileSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async updateProfile(profileId, update) {
+      const { data, error } = await getClient()
+        .from("profiles")
+        .update(update)
+        .eq("id", profileId)
         .select(profileSelect)
         .single();
 
@@ -649,6 +666,21 @@ function createDatabase(options = {}) {
       return data;
     },
 
+    async getClubMemberByProfileAndClub(profileId, clubId) {
+      const { data, error } = await getClient()
+        .from("club_members")
+        .select(clubMemberSelect)
+        .eq("profile_id", profileId)
+        .eq("club_id", clubId)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? null;
+    },
+
     async updateClubMember(memberId, update) {
       const { data, error } = await getClient()
         .from("club_members")
@@ -725,6 +757,107 @@ function createDatabase(options = {}) {
         .update(update)
         .eq("id", paymentId)
         .select(duePaymentSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async createMembershipRequest(request) {
+      const { data, error } = await getClient()
+        .from("membership_requests")
+        .insert(request)
+        .select(membershipRequestSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async getMembershipRequestById(requestId) {
+      const { data, error } = await getClient()
+        .from("membership_requests")
+        .select(membershipRequestSelect)
+        .eq("id", requestId)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? null;
+    },
+
+    async getOpenMembershipRequest(profileId, clubId) {
+      const { data, error } = await getClient()
+        .from("membership_requests")
+        .select(membershipRequestSelect)
+        .eq("profile_id", profileId)
+        .eq("club_id", clubId)
+        .in("status", ["pending", "approved_pending_dues", "active"])
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? null;
+    },
+
+    async getMembershipRequestByMemberId(memberId) {
+      const { data, error } = await getClient()
+        .from("membership_requests")
+        .select(membershipRequestSelect)
+        .eq("member_id", memberId)
+        .eq("status", "approved_pending_dues")
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? null;
+    },
+
+    async listMembershipRequests(filters = {}) {
+      let query = getClient()
+        .from("membership_requests")
+        .select(membershipRequestSelect)
+        .order("created_at", { ascending: false });
+
+      if (filters.profileId) {
+        query = query.eq("profile_id", filters.profileId);
+      }
+
+      if (filters.clubId) {
+        query = query.eq("club_id", filters.clubId);
+      }
+
+      if (filters.status) {
+        query = query.eq("status", filters.status);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async updateMembershipRequest(requestId, update) {
+      const { data, error } = await getClient()
+        .from("membership_requests")
+        .update(update)
+        .eq("id", requestId)
+        .select(membershipRequestSelect)
         .single();
 
       if (error) {

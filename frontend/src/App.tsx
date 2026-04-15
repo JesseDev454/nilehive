@@ -20,6 +20,7 @@ import Dues from "@/pages/Dues";
 import EventCalendar from "@/pages/EventCalendar";
 import MediaArchive from "@/pages/MediaArchive";
 import Members from "@/pages/Members";
+import Membership from "@/pages/Membership";
 import Notifications from "@/pages/Notifications";
 import Tasks from "@/pages/Tasks";
 import NotFound from "@/pages/NotFound";
@@ -69,6 +70,7 @@ const App = () => (
                   <Route path="/approvals" element={<Approvals />} />
                   <Route path="/notifications" element={<Notifications />} />
                   <Route path="/events" element={<EventCalendar />} />
+                  <Route path="/membership" element={<Membership />} />
                   <Route path="/members" element={<Members />} />
                   <Route path="/dues" element={<Dues />} />
                   <Route path="/communications" element={<Communications />} />

@@ -4,6 +4,9 @@ const {
   validateCreateDuePaymentPayload,
   validateUpdateDuePaymentPayload
 } = require("./dues.validation");
+const {
+  activateMembershipAfterPaidDues
+} = require("../membership-requests/membership-requests.service");
 
 function requireActor(actor) {
   if (!actor) {
@@ -156,6 +159,14 @@ async function updateDuePayment(options) {
   }
 
   const updatedPayment = await database.updateDuePayment(paymentId, update);
+
+  if (updatedPayment.status === "paid") {
+    await activateMembershipAfterPaidDues({
+      payment: updatedPayment,
+      actor,
+      database
+    });
+  }
 
   return formatDuePayment(updatedPayment);
 }

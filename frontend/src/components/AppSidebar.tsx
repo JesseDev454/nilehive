@@ -1,4 +1,4 @@
-import { CalendarDays, ClipboardList, CreditCard, FileText, Home, Plus, Clock, Bell, Users, MessageSquare } from "lucide-react";
+import { CalendarDays, ClipboardList, CreditCard, FileText, Home, Plus, Clock, Bell, Users, MessageSquare, UserPlus } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useRole } from "@/contexts/RoleContext";
 import {
@@ -36,6 +36,7 @@ export function AppSidebar() {
   const adminItems = [
     { title: "Dashboard", url: "/", icon: Home },
     { title: "All Proposals", url: "/proposals", icon: FileText },
+    { title: "Membership", url: "/membership", icon: UserPlus },
     { title: "Members", url: "/members", icon: Users },
     { title: "Dues", url: "/dues", icon: CreditCard },
     { title: "Announcements", url: "/communications", icon: MessageSquare },
@@ -46,6 +47,7 @@ export function AppSidebar() {
 
   const presidentItems = [
     { title: "Dashboard", url: "/", icon: Home },
+    { title: "Membership Requests", url: "/membership", icon: UserPlus },
     { title: "Task Delegation", url: "/tasks", icon: ClipboardList },
     { title: "Members", url: "/members", icon: Users },
     { title: "Dues", url: "/dues", icon: CreditCard },
@@ -57,6 +59,7 @@ export function AppSidebar() {
 
   const studentItems = [
     { title: "Events", url: "/", icon: CalendarDays },
+    { title: "My Membership", url: "/membership", icon: UserPlus },
     { title: "Approved Events", url: "/events", icon: CalendarDays },
     { title: "Announcements", url: "/communications", icon: MessageSquare },
     { title: "Notifications", url: "/notifications", icon: Bell },

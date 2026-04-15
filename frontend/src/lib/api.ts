@@ -266,6 +266,35 @@ export interface CreateClubMemberPayload {
   membership_status?: ClubMemberRecord["membership_status"];
 }
 
+export interface MembershipRequestRecord {
+  id: string;
+  profile_id: string;
+  club_id: string;
+  requested_role: ClubMemberRecord["club_role"];
+  status: "pending" | "approved_pending_dues" | "active" | "rejected" | "cancelled";
+  remarks: string | null;
+  decision_remarks: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  member_id: string | null;
+  due_payment_id: string | null;
+  dues_amount: number | null;
+  academic_session: string | null;
+  profile?: {
+    id: string;
+    full_name: string | null;
+    student_id: string | null;
+    role: ProfileRecord["role"];
+  } | null;
+  club?: {
+    id: string;
+    name: string;
+    code: string | null;
+  } | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface DuePaymentRecord {
   id: string;
   club_id: string;
@@ -279,6 +308,12 @@ export interface DuePaymentRecord {
   verified_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface MembershipRequestDecisionResult {
+  request: MembershipRequestRecord;
+  member: ClubMemberRecord | null;
+  due_payment: DuePaymentRecord | null;
 }
 
 export interface DuesSummary {
@@ -760,6 +795,83 @@ export async function updateClubMember(
     token,
     body: payload
   });
+
+  return response.data;
+}
+
+export async function createMembershipRequest(
+  payload: {
+    club_id: string;
+    requested_role?: ClubMemberRecord["club_role"];
+    remarks?: string;
+  },
+  token?: string
+) {
+  const response = await request<ApiEnvelope<MembershipRequestRecord>>("/api/v1/membership-requests", {
+    method: "POST",
+    token,
+    body: payload
+  });
+
+  return response.data;
+}
+
+export async function getMyMembershipRequests(token?: string) {
+  const response = await request<ApiEnvelope<MembershipRequestRecord[]>>(
+    "/api/v1/membership-requests/me",
+    {
+      method: "GET",
+      token
+    }
+  );
+
+  return response.data;
+}
+
+export async function getMembershipRequests(
+  filters: { status?: string; club_id?: string } = {},
+  token?: string
+) {
+  const params = new URLSearchParams();
+
+  if (filters.status) {
+    params.set("status", filters.status);
+  }
+
+  if (filters.club_id) {
+    params.set("club_id", filters.club_id);
+  }
+
+  const query = params.toString();
+  const response = await request<ApiEnvelope<MembershipRequestRecord[]>>(
+    `/api/v1/membership-requests${query ? `?${query}` : ""}`,
+    {
+      method: "GET",
+      token
+    }
+  );
+
+  return response.data;
+}
+
+export async function decideMembershipRequest(
+  requestId: string,
+  payload: {
+    decision: "approve" | "reject";
+    remarks?: string;
+    dues_amount?: number;
+    academic_session?: string;
+  },
+  token?: string
+) {
+  const response = await request<ApiEnvelope<MembershipRequestDecisionResult>>(
+    `/api/v1/membership-requests/${requestId}/decision`,
+    {
+      method: "POST",
+      token,
+      body: payload
+    }
+  );
 
   return response.data;
 }
