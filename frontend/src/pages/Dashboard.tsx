@@ -10,6 +10,7 @@ import {
   getAdminOperationsDashboard,
   getExecutiveDashboard,
   getPresidentDashboard,
+  type AdminOperationsDashboardRecord,
   type ApprovedEventRecord,
   type DashboardActivity,
   type DashboardProposalSummary,
@@ -18,13 +19,20 @@ import {
 import {
   Activity,
   AlertTriangle,
+  ArrowRight,
+  Banknote,
   BarChart3,
   CalendarDays,
   CheckCircle,
+  ClipboardList,
   Clock,
   CreditCard,
   FileText,
+  Gauge,
+  MessageSquare,
   Plus,
+  RefreshCw,
+  TrendingUp,
   UserPlus,
   Users,
   XCircle
@@ -196,29 +204,173 @@ function RecentActivityList({ activity }: { activity: DashboardActivity[] }) {
 function AdminActivityList({
   activity
 }: {
-  activity: {
-    id: string;
-    type: string;
-    club_id: string;
-    title: string;
-    message: string;
-    created_at: string;
-  }[];
+  activity: AdminOperationsDashboardRecord["recent_activity"];
 }) {
+  const activityIcons: Record<string, ElementType> = {
+    proposal: FileText,
+    membership_request: UserPlus,
+    dues: CreditCard,
+    event_report: ClipboardList,
+    feedback: MessageSquare,
+    task: ClipboardList
+  };
+
   return (
-    <div className="space-y-3">
+    <div className="relative space-y-5 before:absolute before:left-4 before:top-2 before:bottom-2 before:w-px before:bg-border">
       {activity.slice(0, 6).map((item) => (
-        <div key={item.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-          <Activity className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+        <div key={item.id} className="relative flex items-start gap-3 pl-10">
+          <div className="absolute left-0 top-0 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+            {(() => {
+              const Icon = activityIcons[item.type] || Activity;
+              return <Icon className="h-4 w-4" />;
+            })()}
+          </div>
           <div className="min-w-0">
             <p className="text-sm font-medium truncate">{item.title}</p>
             <p className="text-xs text-muted-foreground mt-1">{item.message}</p>
             <p className="text-[11px] text-muted-foreground mt-1">
-              Club {item.club_id} - {getDateLabel(item.created_at)}
+              Club record {item.club_id} - {getDateLabel(item.created_at)}
             </p>
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function getAdminActionLink(type: string) {
+  const links: Record<string, string> = {
+    pending_admin_review: "/proposals",
+    pending_advisor_review: "/proposals",
+    membership_requests: "/membership",
+    dues_verification: "/dues",
+    missing_reports: "/archive",
+    open_tasks: "/tasks"
+  };
+
+  return links[type] || "/";
+}
+
+function getAdminActionIcon(type: string) {
+  const icons: Record<string, ElementType> = {
+    pending_admin_review: FileText,
+    pending_advisor_review: Clock,
+    membership_requests: UserPlus,
+    dues_verification: CreditCard,
+    missing_reports: AlertTriangle,
+    open_tasks: ClipboardList
+  };
+
+  return icons[type] || Activity;
+}
+
+function getClubInitials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "NH";
+}
+
+function getClubPulse(club: AdminOperationsDashboardRecord["club_performance"][number]) {
+  if (club.pending_proposals > 0 || club.open_tasks > 0) {
+    return {
+      label: "Needs attention",
+      className: "bg-warning/15 text-warning"
+    };
+  }
+
+  if (club.approved_events > 0 || club.active_members > 0) {
+    return {
+      label: "Active",
+      className: "bg-success/15 text-success"
+    };
+  }
+
+  return {
+    label: "Quiet",
+    className: "bg-muted text-muted-foreground"
+  };
+}
+
+function AdminMetricCard({
+  title,
+  value,
+  detail,
+  icon: Icon,
+  variant = "blue"
+}: {
+  title: string;
+  value: string | number;
+  detail: string;
+  icon: ElementType;
+  variant?: "blue" | "green" | "gold" | "red" | "navy";
+}) {
+  const variants = {
+    blue: "bg-primary/10 text-primary",
+    green: "bg-success/10 text-success",
+    gold: "bg-warning/15 text-warning",
+    red: "bg-destructive/10 text-destructive",
+    navy: "bg-primary text-primary-foreground"
+  };
+
+  return (
+    <Card className="overflow-hidden border-0 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{title}</p>
+            <p className="mt-3 text-3xl font-black tracking-tight text-primary">{value}</p>
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{detail}</p>
+          </div>
+          <div className={`rounded-2xl p-3 ${variants[variant]}`}>
+            <Icon className="h-5 w-5" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AdminLoadingSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="h-40 rounded-[2rem] bg-muted" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="h-32 rounded-2xl bg-muted" />
+        ))}
+      </div>
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="xl:col-span-2 h-80 rounded-2xl bg-muted" />
+        <div className="h-80 rounded-2xl bg-muted" />
+      </div>
+    </div>
+  );
+}
+
+function AdminEmptyState({
+  icon: Icon,
+  title,
+  message,
+  action
+}: {
+  icon: ElementType;
+  title: string;
+  message: string;
+  action?: { label: string; to: string };
+}) {
+  return (
+    <div className="rounded-2xl bg-muted/60 p-6 text-center">
+      <Icon className="mx-auto h-8 w-8 text-muted-foreground" />
+      <p className="mt-3 font-semibold">{title}</p>
+      <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">{message}</p>
+      {action ? (
+        <Button asChild variant="outline" size="sm" className="mt-4">
+          <Link to={action.to}>{action.label}</Link>
+        </Button>
+      ) : null}
     </div>
   );
 }
@@ -577,6 +729,391 @@ function AdminDashboard() {
   );
 }
 
+function PolishedAdminDashboard() {
+  const { data: dashboard, isLoading, isError, error } = useQuery({
+    queryKey: ["admin-operations-dashboard"],
+    queryFn: () => getAdminOperationsDashboard(),
+    retry: false
+  });
+  const summary = dashboard?.summary;
+  const totalPending =
+    (summary?.pending_admin_proposals ?? 0) +
+    (summary?.pending_membership_requests ?? 0) +
+    (summary?.submitted_dues_payments ?? 0) +
+    (summary?.missing_reports ?? 0);
+  const totalProposalBottlenecks =
+    dashboard?.proposal_bottlenecks.reduce((sum, item) => sum + item.count, 0) ?? 0;
+
+  return (
+    <div className="space-y-7 animate-slide-up">
+      <section className="relative overflow-hidden rounded-[2rem] bg-primary p-6 text-primary-foreground shadow-xl md:p-8">
+        <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-warning/20 blur-3xl" />
+        <div className="absolute bottom-0 right-10 h-24 w-24 rounded-full bg-success/10 blur-2xl" />
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white/80">
+              <Gauge className="h-3.5 w-3.5 text-warning" />
+              Club Services Control Tower
+            </div>
+            <h1 className="text-3xl font-black tracking-tight md:text-4xl">Admin Operations</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75 md:text-base">
+              One calm place to see what needs attention across clubs, proposals, dues,
+              reports, events, and student membership activity.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3 lg:min-w-[420px]">
+            <div className="rounded-2xl bg-white/10 p-4 backdrop-blur">
+              <p className="text-xs text-white/60">Needs attention</p>
+              <p className="mt-2 text-2xl font-black">{formatNumber(totalPending)}</p>
+            </div>
+            <div className="rounded-2xl bg-white/10 p-4 backdrop-blur">
+              <p className="text-xs text-white/60">Attendance rate</p>
+              <p className="mt-2 text-2xl font-black">{formatNumber(summary?.attendance_rate)}%</p>
+            </div>
+            <div className="col-span-2 rounded-2xl bg-white/10 p-4 backdrop-blur sm:col-span-1">
+              <p className="text-xs text-white/60">Dues collected</p>
+              <p className="mt-2 text-2xl font-black">{formatCurrency(summary?.dues_collected_amount)}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {isError ? (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-3" />
+            <p className="font-medium">We could not load the operations dashboard</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              {getErrorMessage(error)} Try refreshing the page, and confirm the backend is running.
+            </p>
+          </CardContent>
+        </Card>
+      ) : isLoading ? (
+        <AdminLoadingSkeleton />
+      ) : (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <AdminMetricCard
+              title="Clubs"
+              value={formatNumber(summary?.total_clubs)}
+              detail={`${formatNumber(summary?.active_members)} active member records are currently tracked.`}
+              icon={Users}
+              variant="blue"
+            />
+            <AdminMetricCard
+              title="Admin Reviews"
+              value={formatNumber(summary?.pending_admin_proposals)}
+              detail="Proposal decisions waiting for Club Services final verification."
+              icon={Clock}
+              variant="gold"
+            />
+            <AdminMetricCard
+              title="Dues Queue"
+              value={formatNumber(summary?.submitted_dues_payments)}
+              detail="Payment confirmations that still need a human check."
+              icon={CreditCard}
+              variant="green"
+            />
+            <AdminMetricCard
+              title="Report Gaps"
+              value={formatNumber(summary?.missing_reports)}
+              detail="Approved past events that still need documentation."
+              icon={AlertTriangle}
+              variant={(summary?.missing_reports ?? 0) > 0 ? "red" : "navy"}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <Card className="xl:col-span-2 border-0 shadow-sm">
+              <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <CardTitle className="text-lg">What needs attention</CardTitle>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    The quickest way to know what Club Services should handle next.
+                  </p>
+                </div>
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/proposals">
+                    View proposals
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {!dashboard?.pending_actions.length ? (
+                  <AdminEmptyState
+                    icon={CheckCircle}
+                    title="Everything is calm for now"
+                    message="No urgent proposal, dues, membership, task, or report follow-up is waiting."
+                  />
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {dashboard.pending_actions.map((action) => (
+                      <Link key={action.type} to={getAdminActionLink(action.type)} className="group block">
+                        <div className="flex items-center justify-between gap-4 rounded-2xl bg-muted/60 p-4 transition-all hover:-translate-y-0.5 hover:bg-accent hover:shadow-sm">
+                          <div className="flex items-center gap-4">
+                            <div className="rounded-2xl bg-background p-3 text-primary shadow-sm">
+                              {(() => {
+                                const Icon = getAdminActionIcon(action.type);
+                                return <Icon className="h-5 w-5" />;
+                              })()}
+                            </div>
+                            <div>
+                              <p className="font-semibold">{action.label}</p>
+                              <p className="text-xs text-muted-foreground">Open the related workspace</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl font-black text-primary">{action.count}</span>
+                            <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg">Proposal bottlenecks</CardTitle>
+                <p className="text-sm text-muted-foreground">Where proposals are sitting right now.</p>
+              </CardHeader>
+              <CardContent>
+                {dashboard?.proposal_bottlenecks.length ? (
+                  <div className="space-y-3">
+                    {dashboard.proposal_bottlenecks.map((item) => (
+                      <div key={item.status} className="space-y-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <StatusBadge status={item.status} />
+                          <span className="text-sm font-semibold">{item.count}</span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className="h-full rounded-full bg-primary"
+                            style={{
+                              width: `${totalProposalBottlenecks > 0 ? Math.max(6, (item.count / totalProposalBottlenecks) * 100) : 0}%`
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <AdminEmptyState
+                    icon={FileText}
+                    title="No proposal data yet"
+                    message="Once clubs start submitting proposals, this panel will show where delays are happening."
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <Card className="xl:col-span-2 overflow-hidden border-0 shadow-sm">
+              <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <CardTitle className="text-lg">Club performance matrix</CardTitle>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    A quick read on activity, dues, reports, and accountability.
+                  </p>
+                </div>
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/members">Members</Link>
+                </Button>
+              </CardHeader>
+              <CardContent className="p-0">
+                {!dashboard?.club_performance.length ? (
+                  <div className="p-6">
+                    <AdminEmptyState
+                      icon={Users}
+                      title="No clubs are available yet"
+                      message="Club performance will appear after club records, proposals, and members are added."
+                    />
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-muted/70 text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                        <tr>
+                          <th className="px-6 py-4 font-semibold">Club</th>
+                          <th className="px-4 py-4 font-semibold">Members</th>
+                          <th className="px-4 py-4 font-semibold">Pending</th>
+                          <th className="px-4 py-4 font-semibold">Dues</th>
+                          <th className="px-4 py-4 font-semibold">Reports</th>
+                          <th className="px-6 py-4 font-semibold">Pulse</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dashboard.club_performance.slice(0, 7).map((club) => {
+                          const pulse = getClubPulse(club);
+                          return (
+                            <tr key={club.club_id} className="border-t transition-colors hover:bg-muted/40">
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-xs font-black text-primary-foreground">
+                                    {getClubInitials(club.club_name)}
+                                  </div>
+                                  <div>
+                                    <p className="font-semibold">{club.club_name}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {club.club_code || "No code"} - Last activity {getDateLabel(club.last_activity_at ?? undefined)}
+                                    </p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4">
+                                <p className="font-semibold">{club.active_members}/{club.total_members}</p>
+                                <p className="text-xs text-muted-foreground">active</p>
+                              </td>
+                              <td className="px-4 py-4">
+                                <p className="font-semibold">{club.pending_proposals}</p>
+                                <p className="text-xs text-muted-foreground">{club.open_tasks} open task(s)</p>
+                              </td>
+                              <td className="px-4 py-4">
+                                <div className="min-w-24">
+                                  <div className="mb-1 flex justify-between text-xs">
+                                    <span>{club.dues_collection_rate}%</span>
+                                    <span>{formatCurrency(club.dues_collected_amount)}</span>
+                                  </div>
+                                  <div className="h-2 overflow-hidden rounded-full bg-muted">
+                                    <div
+                                      className="h-full rounded-full bg-success"
+                                      style={{ width: `${Math.min(100, club.dues_collection_rate)}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-4">
+                                <p className="font-semibold">{club.reports_submitted}</p>
+                                <p className="text-xs text-muted-foreground">{club.feedback_count} feedback</p>
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${pulse.className}`}>
+                                  {pulse.label}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg">Institution snapshot</CardTitle>
+                <p className="text-sm text-muted-foreground">Numbers that help you sense the system at a glance.</p>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="rounded-2xl bg-muted/70 p-4">
+                  <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    <Banknote className="h-4 w-4" />
+                    Dues collected
+                  </div>
+                  <p className="text-2xl font-black text-primary">{formatCurrency(summary?.dues_collected_amount)}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Across all tracked club payment records.</p>
+                </div>
+                <div className="rounded-2xl bg-muted/70 p-4">
+                  <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    <TrendingUp className="h-4 w-4" />
+                    Attendance health
+                  </div>
+                  <p className="text-2xl font-black text-primary">{formatNumber(summary?.attendance_rate)}%</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {formatNumber(summary?.event_attendance_count)} attendance marks from {formatNumber(summary?.event_rsvp_count)} RSVP records.
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-muted/70 p-4">
+                  <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    <MessageSquare className="h-4 w-4" />
+                    Student feedback
+                  </div>
+                  <p className="text-2xl font-black text-primary">{formatNumber(summary?.feedback_count)}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Feedback records are ready for sentiment review.</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <Card className="overflow-hidden border-0 bg-primary text-primary-foreground shadow-xl">
+              <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <CardTitle className="text-lg text-primary-foreground">Reports to chase</CardTitle>
+                  <p className="mt-1 text-sm text-primary-foreground/70">
+                    Approved events should not disappear after the day ends.
+                  </p>
+                </div>
+                <Button asChild variant="secondary" size="sm">
+                  <Link to="/archive">Archive</Link>
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {!dashboard?.missing_reports.length ? (
+                  <div className="rounded-2xl bg-white/10 p-6 text-center">
+                    <CheckCircle className="mx-auto h-8 w-8 text-success" />
+                    <p className="mt-3 font-semibold">No missing reports right now</p>
+                    <p className="mt-1 text-sm text-primary-foreground/70">
+                      Every past approved event currently has its documentation covered.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {dashboard.missing_reports.map((report) => (
+                      <Link key={report.proposal_id} to={`/proposals/${report.proposal_id}`} className="block">
+                        <div className="rounded-2xl bg-white/10 p-4 transition-colors hover:bg-white/15">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="font-semibold">{report.title}</p>
+                              <p className="mt-1 text-xs text-primary-foreground/65">
+                                Event date {getDateLabel(report.event_date)}
+                              </p>
+                            </div>
+                            <span className="rounded-full bg-destructive px-2.5 py-1 text-xs font-bold text-destructive-foreground">
+                              {report.days_since_event}d overdue
+                            </span>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">Recent movement</CardTitle>
+                  <p className="mt-1 text-sm text-muted-foreground">A living trail of what has changed recently.</p>
+                </div>
+                <RefreshCw className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                {!dashboard?.recent_activity.length ? (
+                  <AdminEmptyState
+                    icon={Activity}
+                    title="No recent movement yet"
+                    message="Proposal updates, membership requests, dues, reports, feedback, and tasks will appear here."
+                  />
+                ) : (
+                  <AdminActivityList activity={dashboard.recent_activity} />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function PresidentDashboard() {
   const { data: dashboard, isLoading, isError, error } = useQuery({
     queryKey: ["president-dashboard"],
@@ -699,7 +1236,7 @@ export default function Dashboard() {
   const { role } = useRole();
 
   if (role === "advisor") return <AdvisorDashboard />;
-  if (role === "admin") return <AdminDashboard />;
+  if (role === "admin") return <PolishedAdminDashboard />;
   if (role === "president") return <PresidentDashboard />;
   if (role === "student") return <EventCalendar />;
   return <ExecutiveDashboard />;

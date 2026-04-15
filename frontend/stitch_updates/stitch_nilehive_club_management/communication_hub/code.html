@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NileHive | Announcement Hub</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline-variant": "#c4c6cf",
+                    "on-error": "#ffffff",
+                    "on-primary-fixed": "#011b3f",
+                    "on-tertiary-container": "#299e5c",
+                    "tertiary": "#001105",
+                    "surface-container-lowest": "#ffffff",
+                    "primary-fixed-dim": "#b2c7f4",
+                    "surface-container": "#ebeef1",
+                    "error-container": "#ffdad6",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-fixed": "#00210e",
+                    "on-primary-container": "#778bb5",
+                    "surface-variant": "#e0e3e6",
+                    "secondary-fixed": "#d8e2ff",
+                    "secondary-container": "#629afe",
+                    "surface-dim": "#d7dadd",
+                    "secondary-fixed-dim": "#adc7ff",
+                    "background": "#f7fafd",
+                    "tertiary-fixed": "#8af9ae",
+                    "tertiary-fixed-dim": "#6edc94",
+                    "on-primary-fixed-variant": "#32476c",
+                    "on-secondary-fixed": "#001a41",
+                    "error": "#ba1a1a",
+                    "on-primary": "#ffffff",
+                    "on-background": "#181c1e",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-low": "#f1f4f7",
+                    "surface-container-highest": "#e0e3e6",
+                    "inverse-primary": "#b2c7f4",
+                    "surface": "#f7fafd",
+                    "on-surface": "#181c1e",
+                    "on-secondary-fixed-variant": "#004493",
+                    "inverse-surface": "#2d3133",
+                    "surface-tint": "#4a5e86",
+                    "surface-container-high": "#e5e8eb",
+                    "primary": "#000d27",
+                    "primary-fixed": "#d7e2ff",
+                    "on-tertiary-fixed-variant": "#00522a",
+                    "outline": "#75777f",
+                    "surface-bright": "#f7fafd",
+                    "secondary": "#0d5bbc",
+                    "inverse-on-surface": "#eef1f4",
+                    "on-error-container": "#93000a",
+                    "tertiary-container": "#002a13",
+                    "on-surface-variant": "#44474e",
+                    "primary-container": "#0b2347",
+                    "on-secondary-container": "#00316d"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-headline { font-family: 'Manrope', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .sunrise-motif {
+            background: radial-gradient(circle at top right, rgba(245, 185, 66, 0.08) 0%, transparent 70%);
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex overflow-x-hidden">
+<!-- SideNavBar (Desktop) -->
+<aside class="h-screen w-64 hidden md:flex flex-col sticky top-0 left-0 bg-slate-50 dark:bg-slate-900 border-none z-50">
+<div class="flex flex-col h-full p-6">
+<div class="mb-10">
+<h1 class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white font-headline">NileHive</h1>
+<p class="text-xs font-medium text-on-primary-container mt-1 uppercase tracking-widest">Executive Academic</p>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined">sensors</span>
+<span class="text-sm font-medium">Club Pulse</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined">settings_applications</span>
+<span class="text-sm font-medium">Operations</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-blue-700 dark:text-blue-400 font-bold border-r-4 border-amber-400 bg-slate-100 dark:bg-slate-800 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">campaign</span>
+<span class="text-sm">Announcements</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="text-sm font-medium">Directory</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined">tune</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+</nav>
+<div class="pt-6 border-t border-slate-200 dark:border-slate-800 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-600 transition-colors" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="text-sm font-medium">Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-600 transition-colors" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="text-sm font-medium">Log Out</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="flex-1 flex flex-col min-w-0 bg-surface sunrise-motif relative">
+<!-- TopNavBar -->
+<header class="docked full-width top-0 sticky z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 shadow-sm">
+<div class="flex justify-between items-center w-full px-6 py-3">
+<div class="flex items-center gap-8">
+<span class="text-xl font-black text-slate-900 dark:text-white font-headline md:hidden">NileHive</span>
+<div class="hidden lg:flex items-center bg-surface-container-low px-4 py-2 rounded-full w-96">
+<span class="material-symbols-outlined text-on-surface-variant text-lg">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full ml-2" placeholder="Search announcements..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex gap-6">
+<a class="text-slate-500 hover:text-slate-900 text-sm font-manrope font-semibold transition-all" href="#">My Clubs</a>
+<a class="text-slate-500 hover:text-slate-900 text-sm font-manrope font-semibold transition-all" href="#">Events</a>
+<a class="text-slate-500 hover:text-slate-900 text-sm font-manrope font-semibold transition-all" href="#">Finance</a>
+</nav>
+<div class="flex items-center gap-3 border-l border-slate-200 pl-6">
+<button class="material-symbols-outlined text-slate-500 hover:text-amber-500 transition-all">notifications</button>
+<button class="material-symbols-outlined text-slate-500 hover:text-amber-500 transition-all">account_balance_wallet</button>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-primary-container ml-2">
+<img alt="User Profile Image" class="w-full h-full object-cover" data-alt="professional portrait of a middle-aged academic man with glasses and a friendly smile in a bright studio setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDto2t7d6Za5BSI5qNo1GTIS4vmsnJabrSZ3zO5fkONz5kmeONNWKABTi16uDmUl3EaEoExlYw451jWLDTPwx5edMSODmCy0D11vMCzJiZQE2oNXcCMlX1rFlHAKanBYuSnQk3QvU2sReHDvam4wbeTTqupImxCkd8rLgGBvlJHZRPOkJFqioaohRzFQ39BW75KjPlfe0My98ArVcngBzolzlziJkpHk9JB7-tRaUO-uOeugBEfFyiZ5qJICxwVNITQsLbajFjp0aHd"/>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<div class="p-6 md:p-10 max-w-7xl mx-auto w-full space-y-10">
+<!-- Hero / Editorial Section -->
+<section class="grid grid-cols-12 gap-8 items-end">
+<div class="col-span-12 lg:col-span-8">
+<h2 class="text-primary font-headline text-4xl md:text-5xl font-extrabold tracking-tight mb-4">The Voice of Nile</h2>
+<p class="text-on-surface-variant text-lg max-w-2xl font-medium leading-relaxed">
+                        Curate institutional directives, club milestones, and campus-wide narratives from the Executive Command center.
+                    </p>
+</div>
+<div class="col-span-12 lg:col-span-4 flex justify-end">
+<div class="bg-secondary-container/10 p-6 rounded-3xl border border-secondary-container/20 backdrop-blur-sm">
+<div class="flex items-center gap-4 mb-2">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">campaign</span>
+<span class="font-headline font-bold text-secondary text-xl">Active Hub</span>
+</div>
+<p class="text-on-surface-variant text-sm font-medium">12 Published this week • 4 Drafts</p>
+</div>
+</div>
+</section>
+<!-- Main Layout Grid (Bento) -->
+<div class="grid grid-cols-12 gap-8">
+<!-- Create Announcement (Sticky Sidebar Style) -->
+<div class="col-span-12 lg:col-span-4 space-y-6">
+<div class="bg-surface-container-lowest p-8 rounded-[2rem] shadow-sm border border-outline-variant/10">
+<h3 class="font-headline text-xl font-bold text-primary mb-6">Draft New Update</h3>
+<form class="space-y-6">
+<div class="space-y-2">
+<label class="text-xs font-bold text-on-primary-container tracking-wider uppercase">Headline</label>
+<input class="w-full bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-secondary/20 py-3 text-sm" placeholder="Something impactful..." type="text"/>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold text-on-primary-container tracking-wider uppercase">Target Audience</label>
+<div class="flex flex-wrap gap-2">
+<button class="px-3 py-1.5 rounded-full bg-secondary text-white text-xs font-semibold shadow-sm transition-transform active:scale-95" type="button">All Students</button>
+<button class="px-3 py-1.5 rounded-full bg-surface-container text-on-surface-variant text-xs font-semibold hover:bg-surface-variant transition-colors" type="button">Club Presidents</button>
+<button class="px-3 py-1.5 rounded-full bg-surface-container text-on-surface-variant text-xs font-semibold hover:bg-surface-variant transition-colors" type="button">Engineering Society</button>
+<button class="px-3 py-1.5 rounded-full bg-surface-container-low text-secondary text-xs font-bold border border-secondary/20 flex items-center gap-1" type="button">
+<span class="material-symbols-outlined text-xs">add</span> Add
+                                    </button>
+</div>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold text-on-primary-container tracking-wider uppercase">Priority</label>
+<select class="w-full bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-secondary/20 py-3 text-sm appearance-none">
+<option>Standard Distribution</option>
+<option>High Priority (Gold)</option>
+<option>Critical (Red Notification)</option>
+</select>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold text-on-primary-container tracking-wider uppercase">Content Narrative</label>
+<textarea class="w-full bg-surface-container-low border-none rounded-xl focus:ring-2 focus:ring-secondary/20 py-3 text-sm resize-none" placeholder="Craft your message..." rows="4"></textarea>
+</div>
+<button class="w-full bg-secondary text-on-secondary font-headline font-bold py-4 rounded-xl shadow-lg shadow-secondary/20 hover:opacity-90 transition-all flex items-center justify-center gap-2" type="submit">
+<span class="material-symbols-outlined text-xl">send</span>
+                                Broadcast Message
+                            </button>
+</form>
+</div>
+<!-- Club Pulse Bespoke Chip Area -->
+<div class="bg-primary-container text-on-primary p-6 rounded-[2rem] relative overflow-hidden">
+<div class="relative z-10">
+<h4 class="font-headline font-bold mb-4">Pulse Status</h4>
+<div class="flex items-center gap-3 bg-tertiary-container/30 w-fit px-4 py-2 rounded-full border border-tertiary-fixed/20">
+<span class="flex h-2 w-2 rounded-full bg-tertiary-fixed animate-pulse"></span>
+<span class="text-tertiary-fixed text-xs font-bold tracking-tight">8 CLUBS BROADCASTING LIVE</span>
+</div>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-10">
+<span class="material-symbols-outlined text-8xl" style="font-variation-settings: 'FILL' 1;">sensors</span>
+</div>
+</div>
+</div>
+<!-- Announcement Feed (High-end UI patterns) -->
+<div class="col-span-12 lg:col-span-8 space-y-8">
+<!-- Announcement Item 1: High Priority -->
+<div class="group bg-surface-container-lowest rounded-[2rem] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 border border-transparent hover:border-outline-variant/10">
+<div class="flex flex-col md:flex-row h-full">
+<div class="w-full md:w-48 h-48 md:h-auto overflow-hidden">
+<img alt="Graduation Event" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="vibrant collegiate scene of sun-drenched library halls with tall arched windows and students studying at long wooden tables" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDDNtgcJgDoNZiDyUACESh3pgU8-CQf1MRiEvnxsZK9UMSonf3Eh26ElRZq1j6m6-pPcjDfRBuaejp4SQ5sBmjIf1rfTxHH-Yai1fFx1T_FjzeoLJPCKrOX8bLSILrUmy8v8AHwQUCWkF-5poo1-0HnFUSgYq-aVndUT0W1AQoC2Yvv2b9H1tE4ldO2WI0mcMHXk_hJbI8bbiTAGOs8x9IVkdw78mJK7mWcRKmg5kybqOEd1EX7C98BldJTIEyukMjKPTsaaS329WMY"/>
+</div>
+<div class="flex-1 p-8 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-4">
+<div class="flex gap-2">
+<span class="bg-amber-100 text-amber-800 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-amber-200">Urgent</span>
+<span class="bg-surface-container text-on-surface-variant text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full">Global</span>
+</div>
+<span class="text-on-surface-variant text-xs">2 hours ago</span>
+</div>
+<h3 class="font-headline text-2xl font-bold text-primary mb-3 leading-tight">Annual Executive Gala: Reservation Window Closing</h3>
+<p class="text-on-surface-variant text-sm line-clamp-2 mb-6">Final call for the prestigious Year-End Gala. Secure your club's seating arrangement by Friday. All student presidents must verify their lists in the portal.</p>
+</div>
+<div class="flex items-center justify-between pt-4 border-t border-surface-container">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-lowest bg-slate-200 overflow-hidden"><img alt="User" data-alt="face of a smiling student in a casual sweatshirt" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA6rSSWloQ1Jsx_Y2EFVccHKDVmfoauw_0AQVPBZRW3bVRCvO0ZOySyGTLB2fP_lwioBm5YYXm4EzBxtnrdedFi0jQdWxw6p7htZhv7hVwfVrak-yodwnS0VBbWSm_est99ymrLwRfxm0cKMrf3933Fwk4BYLKUTF0WedL237pZcn-wan3EBbEPBGrw4ia87AIX3bb57wptL55UvZnfctzPjFEtApE1NUvseYIB1Z2PF52agfkAqWArGz-xSSdFp9jiOcDym7LQjQYu"/></div>
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-lowest bg-slate-200 overflow-hidden"><img alt="User" data-alt="face of a young woman with curly hair looking thoughtful" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmD3X_Z8-6aY4VqqNt_cALjl2NIC-QiC0CvrX9O4YlRNJwwUZ7HDhgQXggjBPD0JQCYyGmcCrBStQh39-cYoYpqVqb_FAhvJ7y1VVjUJ-ruBpvzhfEux4YfrRIgBxMHz_oDl7oMt0AcfSB3qR6xmXIYz7QOXYxAT7WK2xuS91LN2sahqOqtGeLxLTlSzYcx4XqsfUQszhFPPLpnMwETsJlbtVyY-THz3CwmfpwsILKGq15vayC8ELc-Pph8NHWmKPCG6MFNU8c0jxD"/></div>
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-lowest bg-primary-container flex items-center justify-center text-[10px] text-white font-bold">+18</div>
+</div>
+<button class="flex items-center gap-2 text-secondary text-sm font-bold group/btn">
+                                        Open Details <span class="material-symbols-outlined text-lg group-hover/btn:translate-x-1 transition-transform">arrow_right_alt</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Announcement Item 2: Standard Editorial -->
+<div class="bg-surface-container-lowest rounded-[2rem] p-8 shadow-sm relative overflow-hidden border border-outline-variant/10">
+<div class="flex items-start justify-between mb-6">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-2xl bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-white">gavel</span>
+</div>
+<div>
+<h4 class="font-headline font-extrabold text-primary">Constitution Amendments</h4>
+<p class="text-xs text-on-surface-variant font-medium">Operations • Sent by Pres. Al-Zayani</p>
+</div>
+</div>
+<span class="text-on-surface-variant text-xs">Yesterday</span>
+</div>
+<p class="text-on-surface-variant leading-relaxed text-sm mb-6">
+                            The Council has finalized the new bylaws regarding club funding and cross-disciplinary collaborations. These changes aim to foster more organic partnerships across the Engineering and Arts faculties. Review the full document attached.
+                        </p>
+<div class="bg-surface-container-low rounded-2xl p-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-red-600">description</span>
+<span class="text-xs font-bold text-primary">Bylaws_Revised_v2.pdf</span>
+</div>
+<span class="text-[10px] text-on-surface-variant uppercase font-black">2.4 MB</span>
+</div>
+<!-- Integrated Feedback/Comments Panel -->
+<div class="mt-8 pt-8 border-t border-surface-container">
+<div class="flex items-center justify-between mb-4">
+<span class="text-xs font-bold text-on-primary-container uppercase tracking-widest">Feedback Channel</span>
+<span class="text-xs text-on-surface-variant">14 Comments</span>
+</div>
+<div class="space-y-4">
+<div class="flex gap-3">
+<div class="w-8 h-8 rounded-full bg-slate-200 shrink-0 overflow-hidden"><img alt="User" data-alt="close up headshot of a smiling young woman with bright expression" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0SL7pkSJoJwe6XpiXBIPtVCkT-nIkvpY0J7u9gaS1p2qP5xCUpEU_GOMgTZL2tb2OS7g2rt7N_gNbwatslLD47NcnPzNnkECxf-KsA5m6f88tsPKgbymoMm4rg3Uhpp1a8XywU_1awMOmNoLoViW3qPIbuHk-bn4KKZ3PvZUjbfaeHe0a9sdK2uoyj1SnBkA-KAxfOlYWbU6iIgWKtlfwhJzp1d8qwtlfC4nykT6sbuVt8fZgOkNxflEqTs3nudX6L0aD4xDU5VuY"/></div>
+<div class="bg-surface-container px-4 py-3 rounded-2xl rounded-tl-none">
+<p class="text-[13px] font-medium text-primary">Does this apply to clubs formed in the last semester as well?</p>
+</div>
+</div>
+<div class="flex items-center gap-3 bg-surface-container-low p-2 rounded-full">
+<input class="flex-1 bg-transparent border-none focus:ring-0 text-xs px-2" placeholder="Add a public response..." type="text"/>
+<button class="w-8 h-8 rounded-full bg-secondary text-white flex items-center justify-center transition-transform active:scale-90">
+<span class="material-symbols-outlined text-sm">reply</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Small List Style (Asymmetric Content) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="bg-white/40 backdrop-blur-md p-6 rounded-[2rem] border border-outline-variant/10 hover:bg-white/60 transition-colors">
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-green-600 text-sm">verified</span>
+<span class="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Milestone</span>
+</div>
+<h5 class="font-headline font-bold text-primary mb-2">Robotics Team Wins Nationals</h5>
+<p class="text-xs text-on-surface-variant leading-relaxed">Our Nile Tigers have secured 1st place in the Cairo Tech Summit. Homecoming party this Friday.</p>
+</div>
+<div class="bg-white/40 backdrop-blur-md p-6 rounded-[2rem] border border-outline-variant/10 hover:bg-white/60 transition-colors">
+<div class="flex items-center gap-2 mb-3">
+<span class="material-symbols-outlined text-blue-600 text-sm">schedule</span>
+<span class="text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Schedule</span>
+</div>
+<h5 class="font-headline font-bold text-primary mb-2">Extended Hub Hours</h5>
+<p class="text-xs text-on-surface-variant leading-relaxed">The Innovation Hub will now remain open until midnight during finals week for project work.</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Spacer for BottomNavBar -->
+<div class="h-24 md:hidden"></div>
+</main>
+<!-- BottomNavBar (Mobile) -->
+<nav class="fixed bottom-0 w-full md:hidden z-50 rounded-t-3xl bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shadow-[0_-4px_20px_rgba(11,35,71,0.06)]">
+<div class="flex justify-around items-center px-4 py-3 pb-safe">
+<button class="flex flex-col items-center justify-center text-slate-400 active:bg-slate-50 p-2 rounded-xl">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] font-medium">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-400 active:bg-slate-50 p-2 rounded-xl">
+<span class="material-symbols-outlined">sensors</span>
+<span class="text-[10px] font-medium">Pulse</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-400 active:bg-slate-50 p-2 rounded-xl">
+<span class="material-symbols-outlined">assignment</span>
+<span class="text-[10px] font-medium">Tasks</span>
+</button>
+<button class="flex flex-col items-center justify-center text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-xl px-3 py-1 scale-95 transition-all">
+<span class="material-symbols-outlined">article</span>
+<span class="text-[10px] font-medium">News</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-400 active:bg-slate-50 p-2 rounded-xl">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-medium">Profile</span>
+</button>
+</div>
+</nav>
+<!-- FAB (Suppressed on this deep task page per rules, but included if deemed necessary for global state, however contextually this view has its own "Create" form on the canvas) -->
+</body></html>
