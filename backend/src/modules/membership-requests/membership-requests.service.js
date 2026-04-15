@@ -28,19 +28,19 @@ function formatMembershipRequest(request) {
       ? null
       : Number(request.dues_amount),
     academic_session: request.academic_session,
-    profile: request.profiles
+    profile: request.profile
       ? {
-          id: request.profiles.id,
-          full_name: request.profiles.full_name,
-          student_id: request.profiles.student_id,
-          role: request.profiles.role
+          id: request.profile.id,
+          full_name: request.profile.full_name,
+          student_id: request.profile.student_id,
+          role: request.profile.role
         }
       : null,
-    club: request.clubs
+    club: request.club
       ? {
-          id: request.clubs.id,
-          name: request.clubs.name,
-          code: request.clubs.code
+          id: request.club.id,
+          name: request.club.name,
+          code: request.club.code
         }
       : null,
     created_at: request.created_at,

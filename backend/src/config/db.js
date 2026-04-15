@@ -25,7 +25,7 @@ const feedbackSelect =
 const profileSelect =
   "id, full_name, role, club_id, student_id, requested_role, onboarding_status, created_at, updated_at";
 const membershipRequestSelect =
-  "id, profile_id, club_id, requested_role, status, remarks, decision_remarks, reviewed_by, reviewed_at, member_id, due_payment_id, dues_amount, academic_session, created_at, updated_at, profiles(id, full_name, student_id, role), clubs(id, name, code)";
+  "id, profile_id, club_id, requested_role, status, remarks, decision_remarks, reviewed_by, reviewed_at, member_id, due_payment_id, dues_amount, academic_session, created_at, updated_at, profile:profiles!membership_requests_profile_id_fkey(id, full_name, student_id, role), club:clubs!membership_requests_club_id_fkey(id, name, code)";
 
 function createAdminClient() {
   const env = getEnv();
