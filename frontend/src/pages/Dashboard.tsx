@@ -1,19 +1,33 @@
+import { useMemo } from "react";
 import type { ElementType } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/contexts/RoleContext";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import {
   ApiClientError,
   getAdminOperationsDashboard,
+  getApprovedEvents,
   getExecutiveDashboard,
+  getEventEngagement,
+  getEventReminders,
+  getMyDuePayments,
+  getMyMembershipRequests,
+  getNotifications,
   getPresidentDashboard,
   type AdminOperationsDashboardRecord,
   type ApprovedEventRecord,
   type DashboardActivity,
   type DashboardProposalSummary,
+  type DuePaymentRecord,
+  type EventReminderRecord,
+  type EventRsvpRecord,
+  type MembershipRequestRecord,
+  type NotificationRecord,
   type ProposalRecord
 } from "@/lib/api";
 import {
@@ -21,6 +35,7 @@ import {
   AlertTriangle,
   ArrowRight,
   Banknote,
+  Bell,
   BarChart3,
   CalendarDays,
   CheckCircle,
@@ -29,19 +44,21 @@ import {
   CreditCard,
   FileText,
   Gauge,
+  MapPin,
   MessageSquare,
   Plus,
   RefreshCw,
+  ShieldCheck,
   TrendingUp,
   UserPlus,
   Users,
+  WalletCards,
   XCircle
 } from "lucide-react";
 import {
   getAdvisorPendingProposalsErrorMessage,
   useAdvisorPendingProposals
 } from "@/hooks/use-advisor-pending-proposals";
-import EventCalendar from "@/pages/EventCalendar";
 
 function StatCard({
   title,
@@ -1114,6 +1131,427 @@ function PolishedAdminDashboard() {
   );
 }
 
+function getMembershipStatusLabel(status: MembershipRequestRecord["status"]) {
+  return {
+    pending: "Under review",
+    approved_pending_dues: "Dues required",
+    active: "Active member",
+    rejected: "Rejected",
+    cancelled: "Cancelled"
+  }[status];
+}
+
+function MembershipStatusPill({ status }: { status: MembershipRequestRecord["status"] }) {
+  const className = {
+    pending: "bg-warning/15 text-warning",
+    approved_pending_dues: "bg-primary/15 text-primary",
+    active: "bg-success/15 text-success",
+    rejected: "bg-destructive/15 text-destructive",
+    cancelled: "bg-muted text-muted-foreground"
+  }[status];
+
+  return <Badge className={className}>{getMembershipStatusLabel(status)}</Badge>;
+}
+
+function StudentQuickLink({
+  title,
+  description,
+  to,
+  icon: Icon
+}: {
+  title: string;
+  description: string;
+  to: string;
+  icon: ElementType;
+}) {
+  return (
+    <Link to={to} className="group block">
+      <div className="flex h-full items-start gap-4 rounded-2xl bg-white/10 p-4 text-primary-foreground backdrop-blur transition-all hover:-translate-y-0.5 hover:bg-white/15">
+        <div className="rounded-2xl bg-white/15 p-3">
+          <Icon className="h-5 w-5" />
+        </div>
+        <div className="min-w-0">
+          <p className="font-semibold">{title}</p>
+          <p className="mt-1 text-xs leading-5 text-primary-foreground/70">{description}</p>
+        </div>
+        <ArrowRight className="ml-auto h-4 w-4 shrink-0 opacity-60 transition-transform group-hover:translate-x-1" />
+      </div>
+    </Link>
+  );
+}
+
+function StudentEventCard({
+  event,
+  rsvp
+}: {
+  event: ApprovedEventRecord;
+  rsvp?: EventRsvpRecord | null;
+}) {
+  return (
+    <Link to="/events" className="block">
+      <div className="rounded-2xl border bg-card p-4 transition-all hover:-translate-y-0.5 hover:bg-accent hover:shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="font-semibold">{event.title}</p>
+            <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{event.description}</p>
+          </div>
+          <Badge className="w-fit bg-success/15 text-success hover:bg-success/15">Approved</Badge>
+        </div>
+        <div className="mt-4 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
+          <span className="inline-flex items-center gap-2">
+            <CalendarDays className="h-4 w-4" />
+            {getDateLabel(event.event_date)}
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            {event.event_time ? event.event_time.slice(0, 5) : "Time TBC"}
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <MapPin className="h-4 w-4" />
+            {event.location || "Venue TBC"}
+          </span>
+        </div>
+        <div className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-muted/70 p-3">
+          <p className="text-xs text-muted-foreground">Your RSVP</p>
+          <Badge variant={rsvp?.status ? "default" : "outline"} className={rsvp?.status ? "capitalize" : ""}>
+            {rsvp?.status ? rsvp.status.replace("_", " ") : "Not selected"}
+          </Badge>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function StudentDashboard() {
+  const { profile } = useAuth();
+  const {
+    data: membershipRequests = [],
+    isLoading: membershipsLoading,
+    isError: membershipsFailed,
+    error: membershipsError
+  } = useQuery({
+    queryKey: ["my-membership-requests"],
+    queryFn: () => getMyMembershipRequests(),
+    retry: false
+  });
+  const {
+    data: duesData,
+    isLoading: duesLoading,
+    isError: duesFailed,
+    error: duesError
+  } = useQuery({
+    queryKey: ["my-dues"],
+    queryFn: () => getMyDuePayments(),
+    retry: false
+  });
+  const {
+    data: events = [],
+    isLoading: eventsLoading,
+    isError: eventsFailed,
+    error: eventsError
+  } = useQuery({
+    queryKey: ["approved-events"],
+    queryFn: () => getApprovedEvents(),
+    retry: false
+  });
+  const { data: reminders = [] } = useQuery({
+    queryKey: ["event-reminders"],
+    queryFn: () => getEventReminders(),
+    retry: false
+  });
+  const { data: notifications = [] } = useQuery({
+    queryKey: ["notifications"],
+    queryFn: () => getNotifications(),
+    retry: false
+  });
+  const upcomingEvents = events.slice(0, 3);
+  const engagementQueries = useQueries({
+    queries: upcomingEvents.map((event) => ({
+      queryKey: ["event-engagement", event.proposal_id],
+      queryFn: () => getEventEngagement(event.proposal_id),
+      retry: false
+    }))
+  });
+  const engagementByProposalId = useMemo(
+    () =>
+      new Map(
+        engagementQueries
+          .map((query) => query.data)
+          .filter(Boolean)
+          .map((engagement) => [engagement!.event.proposal_id, engagement!])
+      ),
+    [engagementQueries]
+  );
+  const duePayments = duesData?.payments || [];
+  const activeMemberships = membershipRequests.filter((request) => request.status === "active");
+  const pendingRequests = membershipRequests.filter((request) => request.status === "pending");
+  const duesRequiredRequests = membershipRequests.filter((request) => request.status === "approved_pending_dues");
+  const submittedDues = duePayments.filter((payment) => payment.status === "submitted");
+  const unpaidDues = duePayments.filter((payment) => payment.status === "unpaid" || payment.status === "rejected");
+  const duesById = useMemo(
+    () => new Map(duePayments.map((payment) => [payment.id, payment] as const)),
+    [duePayments]
+  );
+  const firstDuesRequest = duesRequiredRequests[0];
+  const firstDuesPayment = firstDuesRequest?.due_payment_id ? duesById.get(firstDuesRequest.due_payment_id) : undefined;
+
+  return (
+    <div className="space-y-7 animate-slide-up">
+      <section className="relative overflow-hidden rounded-[2rem] bg-primary p-6 text-primary-foreground shadow-xl md:p-8">
+        <div className="absolute -right-20 -top-20 h-56 w-56 rounded-full bg-warning/20 blur-3xl" />
+        <div className="absolute -bottom-16 left-1/2 h-40 w-40 rounded-full bg-success/10 blur-3xl" />
+        <div className="relative grid gap-6 lg:grid-cols-[1.3fr_0.7fr] lg:items-end">
+          <div>
+            <Badge className="mb-4 bg-white/15 text-white hover:bg-white/15">Student Home</Badge>
+            <h1 className="text-3xl font-black tracking-tight md:text-4xl">
+              Welcome back, {profile?.full_name?.split(" ")[0] || "student"}
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75 md:text-base">
+              Track your club membership, dues, approved events, RSVP choices, and reminders from one simple home base.
+            </p>
+          </div>
+          <div className="rounded-2xl bg-white/10 p-4 backdrop-blur">
+            <p className="text-xs uppercase tracking-[0.18em] text-white/60">Student profile</p>
+            <p className="mt-2 font-semibold">{profile?.full_name || "Student"}</p>
+            <p className="text-sm text-white/70">{profile?.student_id || "Student ID not set"}</p>
+          </div>
+        </div>
+        <div className="relative mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <StudentQuickLink title="Find clubs" description="Discover clubs and request to join." to="/membership" icon={UserPlus} />
+          <StudentQuickLink title="Approved events" description="See official events and RSVP." to="/events" icon={CalendarDays} />
+          <StudentQuickLink title="Announcements" description="Catch updates from clubs and admins." to="/communications" icon={MessageSquare} />
+          <StudentQuickLink title="Notifications" description="Review your latest NileHive alerts." to="/notifications" icon={Bell} />
+        </div>
+      </section>
+
+      {(membershipsFailed || duesFailed || eventsFailed) ? (
+        <Card>
+          <CardContent className="p-8">
+            <p className="font-medium">Some student dashboard data could not load</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {getErrorMessage(membershipsError || duesError || eventsError)}
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <AdminMetricCard
+          title="Active Clubs"
+          value={formatNumber(activeMemberships.length)}
+          detail="Clubs where your membership is officially active."
+          icon={ShieldCheck}
+          variant="green"
+        />
+        <AdminMetricCard
+          title="Requests"
+          value={formatNumber(pendingRequests.length)}
+          detail="Club membership requests waiting for review."
+          icon={UserPlus}
+          variant="gold"
+        />
+        <AdminMetricCard
+          title="Dues Alerts"
+          value={formatNumber(duesRequiredRequests.length + unpaidDues.length)}
+          detail="Payments you may need to complete or resubmit."
+          icon={WalletCards}
+          variant={(duesRequiredRequests.length + unpaidDues.length) > 0 ? "red" : "blue"}
+        />
+        <AdminMetricCard
+          title="Upcoming Events"
+          value={formatNumber(events.length)}
+          detail="Approved events currently visible to students."
+          icon={CalendarDays}
+          variant="blue"
+        />
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
+        <div className="space-y-6">
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="text-lg">Membership journey</CardTitle>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  You become an official club member after approval and verified dues payment.
+                </p>
+              </div>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/membership">Manage membership</Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {membershipsLoading ? (
+                <AdminLoadingSkeleton />
+              ) : membershipRequests.length === 0 ? (
+                <AdminEmptyState
+                  icon={UserPlus}
+                  title="You have not requested a club yet"
+                  message="Start by choosing a club you care about. Your request will go to the right club leadership."
+                  action={{ label: "Discover clubs", to: "/membership" }}
+                />
+              ) : (
+                <div className="grid gap-4 lg:grid-cols-2">
+                  {membershipRequests.slice(0, 4).map((request) => {
+                    const payment = request.due_payment_id ? duesById.get(request.due_payment_id) : undefined;
+
+                    return (
+                      <div key={request.id} className="rounded-2xl border bg-card p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-semibold">{request.club?.name || "Selected club"}</p>
+                            <p className="text-sm capitalize text-muted-foreground">Requested as {request.requested_role}</p>
+                          </div>
+                          <MembershipStatusPill status={request.status} />
+                        </div>
+                        <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
+                          <div className="rounded-xl bg-success/10 p-2 text-success">Submitted</div>
+                          <div className={`rounded-xl p-2 ${request.status === "pending" ? "bg-warning/15 text-warning" : "bg-success/10 text-success"}`}>
+                            Reviewed
+                          </div>
+                          <div className={`rounded-xl p-2 ${request.status === "active" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
+                            Active
+                          </div>
+                        </div>
+                        {request.status === "approved_pending_dues" ? (
+                          <div className="mt-4 rounded-xl bg-primary/5 p-3 text-sm">
+                            <p className="font-medium text-primary">Dues payment is the next step.</p>
+                            <p className="mt-1 text-muted-foreground">
+                              {request.dues_amount ? formatCurrency(request.dues_amount) : "Dues amount pending"} for {request.academic_session || "this session"}.
+                            </p>
+                            {payment?.status === "submitted" ? (
+                              <p className="mt-2 font-medium text-primary">Your confirmation is waiting for review.</p>
+                            ) : (
+                              <Button asChild size="sm" className="mt-3">
+                                <Link to="/membership">I have paid</Link>
+                              </Button>
+                            )}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="text-lg">Approved events for you</CardTitle>
+                <p className="mt-1 text-sm text-muted-foreground">Only final admin-approved events show here.</p>
+              </div>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/events">Open events</Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {eventsLoading ? (
+                <p className="text-sm text-muted-foreground">Loading approved events...</p>
+              ) : upcomingEvents.length === 0 ? (
+                <AdminEmptyState
+                  icon={CalendarDays}
+                  title="No approved events yet"
+                  message="When Club Services gives final approval, events will appear here for students."
+                />
+              ) : (
+                <div className="space-y-3">
+                  {upcomingEvents.map((event) => (
+                    <StudentEventCard
+                      key={event.id}
+                      event={event}
+                      rsvp={engagementByProposalId.get(event.proposal_id)?.current_user_rsvp}
+                    />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="space-y-6">
+          <Card className="overflow-hidden border-0 bg-primary text-primary-foreground shadow-xl">
+            <CardHeader>
+              <CardTitle className="text-lg text-primary-foreground">Dues and activation</CardTitle>
+              <p className="text-sm text-primary-foreground/70">Paying dues is what turns approval into official membership.</p>
+            </CardHeader>
+            <CardContent>
+              {duesLoading ? (
+                <p className="text-sm text-primary-foreground/70">Checking dues records...</p>
+              ) : firstDuesRequest ? (
+                <div className="rounded-2xl bg-white/10 p-4">
+                  <p className="font-semibold">{firstDuesRequest.club?.name || "Selected club"}</p>
+                  <p className="mt-1 text-sm text-primary-foreground/70">
+                    {firstDuesRequest.dues_amount ? formatCurrency(firstDuesRequest.dues_amount) : "Dues amount pending"}
+                    {" "}for {firstDuesRequest.academic_session || "this session"}
+                  </p>
+                  <p className="mt-3 text-sm">
+                    {firstDuesPayment?.status === "submitted"
+                      ? "Your payment confirmation is in review."
+                      : "Open membership to submit the name on the account used, reference, and proof if available."}
+                  </p>
+                  <Button asChild variant="secondary" size="sm" className="mt-4">
+                    <Link to="/membership">{firstDuesPayment?.status === "submitted" ? "View status" : "I have paid"}</Link>
+                  </Button>
+                </div>
+              ) : submittedDues.length > 0 ? (
+                <div className="rounded-2xl bg-white/10 p-4">
+                  <p className="font-semibold">Payment confirmation submitted</p>
+                  <p className="mt-1 text-sm text-primary-foreground/70">Your club leadership or admin can now verify it.</p>
+                </div>
+              ) : (
+                <div className="rounded-2xl bg-white/10 p-4 text-sm text-primary-foreground/75">
+                  No dues action is waiting from you right now.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="text-lg">Reminders</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {reminders.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No event reminders yet.</p>
+              ) : (
+                reminders.slice(0, 3).map((reminder: EventReminderRecord) => (
+                  <div key={reminder.id} className="rounded-2xl bg-muted/70 p-3">
+                    <p className="text-sm font-medium">{reminder.message}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">Reminder date {getDateLabel(reminder.remind_at)}</p>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-lg">Latest notifications</CardTitle>
+              <Button asChild variant="ghost" size="sm">
+                <Link to="/notifications">View all</Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {notifications.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No notifications yet.</p>
+              ) : (
+                notifications.slice(0, 4).map((notification: NotificationRecord) => (
+                  <div key={notification.id} className="rounded-2xl bg-muted/70 p-3">
+                    <p className="text-sm font-medium">{notification.message}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">{getDateLabel(notification.created_at)}</p>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PresidentDashboard() {
   const { data: dashboard, isLoading, isError, error } = useQuery({
     queryKey: ["president-dashboard"],
@@ -1238,6 +1676,6 @@ export default function Dashboard() {
   if (role === "advisor") return <AdvisorDashboard />;
   if (role === "admin") return <PolishedAdminDashboard />;
   if (role === "president") return <PresidentDashboard />;
-  if (role === "student") return <EventCalendar />;
+  if (role === "student") return <StudentDashboard />;
   return <ExecutiveDashboard />;
 }
