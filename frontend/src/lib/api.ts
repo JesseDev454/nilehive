@@ -40,6 +40,7 @@ export interface ResponsibleMember {
 export interface ClubRecord {
   id: string;
   name: string;
+  description: string | null;
   code: string | null;
   advisor_id: string | null;
   created_at: string;
