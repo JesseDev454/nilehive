@@ -52,7 +52,6 @@ function formatEventReport(report) {
     outcomes: report.outcomes,
     budget_used: report.budget_used === null ? null : Number(report.budget_used),
     media_urls: report.media_urls ?? [],
-    report_file_url: report.report_file_url,
     status: report.status,
     submitted_at: report.submitted_at,
     created_at: report.created_at,
@@ -104,7 +103,6 @@ async function createEventReport(options) {
     outcomes: validatedPayload.outcomes,
     budget_used: validatedPayload.budget_used,
     media_urls: validatedPayload.media_urls,
-    report_file_url: validatedPayload.report_file_url,
     status: "submitted"
   });
 

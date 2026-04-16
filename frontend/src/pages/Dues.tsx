@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { FormEvent } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CreditCard, Landmark, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/contexts/RoleContext";
 import {
   ApiClientError,
@@ -21,6 +22,7 @@ import {
   updateDuePayment,
   type DuePaymentRecord
 } from "@/lib/api";
+import { resolveStorageFileUrl, uploadStorageFile } from "@/lib/storage";
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -50,6 +52,7 @@ function DueStatusBadge({ status }: { status: DuePaymentRecord["status"] }) {
 }
 
 export default function Dues() {
+  const { user, profile } = useAuth();
   const { role } = useRole();
   const queryClient = useQueryClient();
   const [memberId, setMemberId] = useState("");
@@ -58,6 +61,9 @@ export default function Dues() {
   const [academicSession, setAcademicSession] = useState("2025/2026");
   const [paymentReference, setPaymentReference] = useState("");
   const [proofUrl, setProofUrl] = useState("");
+  const [uploadedProofName, setUploadedProofName] = useState("");
+  const [isUploadingProof, setIsUploadingProof] = useState(false);
+  const [proofLinksByPaymentId, setProofLinksByPaymentId] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<DuePaymentRecord["status"]>("unpaid");
   const [bankName, setBankName] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
@@ -106,10 +112,50 @@ export default function Dues() {
     setAccountName(paymentSettings.account_name);
     setPaymentInstructions(paymentSettings.payment_instructions || "");
   }, [paymentSettings]);
+
+  useEffect(() => {
+    const payments = duesData?.payments || [];
+
+    if (!payments.length) {
+      setProofLinksByPaymentId({});
+      return;
+    }
+
+    let cancelled = false;
+
+    async function hydrateProofLinks() {
+      const nextEntries = await Promise.all(
+        payments.map(async (payment) => {
+          const resolvedUrl = await resolveStorageFileUrl("dues-receipts", payment.proof_url);
+          return [payment.id, resolvedUrl] as const;
+        })
+      );
+
+      if (cancelled) {
+        return;
+      }
+
+      setProofLinksByPaymentId(
+        nextEntries.reduce<Record<string, string>>((acc, [paymentId, url]) => {
+          if (url) {
+            acc[paymentId] = url;
+          }
+          return acc;
+        }, {})
+      );
+    }
+
+    hydrateProofLinks();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [duesData?.payments]);
   const memberNameById = useMemo(
     () => Object.fromEntries(members.map((member) => [member.id, member.full_name])),
     [members]
   );
+  const selectedMember = useMemo(() => members.find((member) => member.id === memberId) || null, [members, memberId]);
   const createMutation = useMutation({
     mutationFn: () =>
       createDuePayment({
@@ -128,6 +174,7 @@ export default function Dues() {
       setAmount("");
       setPaymentReference("");
       setProofUrl("");
+      setUploadedProofName("");
       setStatus("unpaid");
       await queryClient.invalidateQueries({ queryKey: ["dues"] });
     },
@@ -177,6 +224,56 @@ export default function Dues() {
   function handleCreatePayment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     createMutation.mutate();
+  }
+
+  async function handleProofUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Receipt is too large", {
+        description: "Please upload a file smaller than 5MB."
+      });
+      return;
+    }
+
+    try {
+      setIsUploadingProof(true);
+
+      const clubPathSegment =
+        role === "admin"
+          ? selectedClubId || selectedMember?.club_id || ""
+          : profile?.club_id || selectedMember?.club_id || "";
+
+      const memberPathSegment = selectedMember?.profile_id || selectedMember?.id || user?.id || "";
+
+      if (!clubPathSegment || !memberPathSegment) {
+        toast.error("Select member details first", {
+          description: "Choose a member (and club for admins) before uploading receipt proof."
+        });
+        return;
+      }
+
+      const upload = await uploadStorageFile(file, "dues-receipts", {
+        folder: `${clubPathSegment}/${memberPathSegment}`
+      });
+
+      setProofUrl(upload.path);
+      setUploadedProofName(file.name);
+      toast.success("Receipt uploaded", {
+        description: "The file will be attached to this dues record."
+      });
+    } catch (uploadError) {
+      toast.error("Could not upload receipt", {
+        description: getErrorMessage(uploadError)
+      });
+    } finally {
+      setIsUploadingProof(false);
+      event.target.value = "";
+    }
   }
 
   function handleSavePaymentSettings(event: FormEvent<HTMLFormElement>) {
@@ -391,12 +488,28 @@ export default function Dues() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="proof_url">Proof URL</Label>
+                <Label htmlFor="proof_upload">Upload proof (optional)</Label>
+                <Input
+                  id="proof_upload"
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={handleProofUpload}
+                  disabled={isUploadingProof}
+                />
+                {uploadedProofName ? (
+                  <p className="text-xs text-muted-foreground">Uploaded: {uploadedProofName}</p>
+                ) : null}
+                {proofUrl ? (
+                  <p className="text-xs text-muted-foreground break-all">Stored path: {proofUrl}</p>
+                ) : null}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="proof_url">Proof URL or path (optional)</Label>
                 <Input
                   id="proof_url"
                   value={proofUrl}
                   onChange={(event) => setProofUrl(event.target.value)}
-                  placeholder="Optional link to receipt"
+                  placeholder="Paste an external URL or keep uploaded path"
                 />
               </div>
               <div className="space-y-2">
@@ -414,7 +527,7 @@ export default function Dues() {
                 </Select>
               </div>
               <div className="lg:col-span-2 flex justify-end">
-                <Button type="submit" disabled={createMutation.isPending}>
+                <Button type="submit" disabled={createMutation.isPending || isUploadingProof}>
                   {createMutation.isPending ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -470,10 +583,10 @@ export default function Dues() {
                         {payment.payment_account_name ? (
                           <p className="text-xs text-muted-foreground">Paid by {payment.payment_account_name}</p>
                         ) : null}
-                        {payment.proof_url ? (
+                        {proofLinksByPaymentId[payment.id] ? (
                           <a
                             className="text-xs text-primary underline"
-                            href={payment.proof_url}
+                            href={proofLinksByPaymentId[payment.id]}
                             target="_blank"
                             rel="noreferrer"
                           >

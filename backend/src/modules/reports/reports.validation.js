@@ -1,4 +1,5 @@
 const ApiError = require("../../shared/ApiError");
+const MAX_REPORT_MEDIA_IMAGES = 10;
 
 function readRequiredString(payload, fieldName, label) {
   const value = typeof payload[fieldName] === "string" ? payload[fieldName].trim() : "";
@@ -67,6 +68,17 @@ function readMediaUrls(payload) {
     });
   }
 
+  if (urls.length > MAX_REPORT_MEDIA_IMAGES) {
+    throw new ApiError(
+      400,
+      `You can upload up to ${MAX_REPORT_MEDIA_IMAGES} images for an event report`,
+      "VALIDATION_ERROR",
+      {
+        field: "media_urls"
+      }
+    );
+  }
+
   return urls;
 }
 
@@ -78,8 +90,7 @@ function validateCreateEventReportPayload(payload = {}) {
     challenges: readOptionalString(payload, "challenges"),
     outcomes: readOptionalString(payload, "outcomes"),
     budget_used: readOptionalAmount(payload, "budget_used", "Budget used"),
-    media_urls: readMediaUrls(payload),
-    report_file_url: readOptionalString(payload, "report_file_url")
+    media_urls: readMediaUrls(payload)
   };
 }
 

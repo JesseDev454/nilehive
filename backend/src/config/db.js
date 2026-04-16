@@ -19,7 +19,7 @@ const duePaymentSelect =
 const clubPaymentSettingsSelect =
   "id, club_id, bank_name, account_number, account_name, payment_instructions, created_at, updated_at";
 const eventReportSelect =
-  "id, proposal_id, club_id, submitted_by, attendance_count, summary, challenges, outcomes, budget_used, media_urls, report_file_url, status, submitted_at, created_at, updated_at, proposals(id, title, proposed_activity, event_date, event_time, location, status)";
+  "id, proposal_id, club_id, submitted_by, attendance_count, summary, challenges, outcomes, budget_used, media_urls, status, submitted_at, created_at, updated_at, proposals(id, title, proposed_activity, event_date, event_time, location, status)";
 const announcementSelect =
   "id, club_id, created_by, title, message, audience, created_at, updated_at";
 const feedbackSelect =

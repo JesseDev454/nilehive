@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import type { FormEvent } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Crown, Loader2, Search, ShieldCheck, UserPlus, Users, WalletCards } from "lucide-react";
 import { toast } from "sonner";
@@ -27,6 +27,7 @@ import {
   type DuePaymentRecord,
   type MembershipRequestRecord
 } from "@/lib/api";
+import { resolveStorageFileUrl, uploadStorageFile } from "@/lib/storage";
 
 const REQUEST_STATUSES = [
   "all",
@@ -96,11 +97,15 @@ function DuesConfirmationCard({
   request: MembershipRequestRecord;
   payment?: DuePaymentRecord;
 }) {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [accountName, setAccountName] = useState("");
   const [reference, setReference] = useState("");
   const [paidAt, setPaidAt] = useState("");
   const [proofUrl, setProofUrl] = useState("");
+  const [proofFileName, setProofFileName] = useState("");
+  const [isUploadingProof, setIsUploadingProof] = useState(false);
+  const [paymentProofLink, setPaymentProofLink] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const { data: settings, isLoading: isLoadingSettings } = useQuery({
     queryKey: ["club-payment-settings", request.club_id],
@@ -124,6 +129,7 @@ function DuesConfirmationCard({
       setReference("");
       setPaidAt("");
       setProofUrl("");
+      setProofFileName("");
       setNote("");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["my-dues"] }),
@@ -136,6 +142,67 @@ function DuesConfirmationCard({
       });
     }
   });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function resolveProofLink() {
+      const resolved = await resolveStorageFileUrl("dues-receipts", payment?.proof_url);
+
+      if (!cancelled) {
+        setPaymentProofLink(resolved);
+      }
+    }
+
+    resolveProofLink();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [payment?.proof_url]);
+
+  async function handleReceiptUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Receipt is too large", {
+        description: "Please upload a file smaller than 5MB."
+      });
+      return;
+    }
+
+    try {
+      setIsUploadingProof(true);
+
+      if (!user?.id) {
+        toast.error("You are not signed in", {
+          description: "Please sign in again and retry uploading your receipt."
+        });
+        return;
+      }
+
+      const upload = await uploadStorageFile(file, "dues-receipts", {
+        folder: `${request.club_id}/${user.id}`
+      });
+
+      setProofUrl(upload.path);
+      setProofFileName(file.name);
+      toast.success("Receipt uploaded", {
+        description: "The upload is ready to submit with your payment confirmation."
+      });
+    } catch (uploadError) {
+      toast.error("Could not upload receipt", {
+        description: getErrorMessage(uploadError)
+      });
+    } finally {
+      setIsUploadingProof(false);
+      event.target.value = "";
+    }
+  }
 
   if (!request.due_payment_id) {
     return (
@@ -153,6 +220,11 @@ function DuesConfirmationCard({
         <p className="mt-1 text-muted-foreground">
           Reference: {payment.payment_reference || "-"} {payment.payment_account_name ? `- Paid by ${payment.payment_account_name}` : ""}
         </p>
+        {paymentProofLink ? (
+          <a className="mt-2 inline-block text-primary underline" href={paymentProofLink} target="_blank" rel="noreferrer">
+            View submitted receipt
+          </a>
+        ) : null}
       </div>
     );
   }
@@ -229,7 +301,19 @@ function DuesConfirmationCard({
           <Input type="date" value={paidAt} onChange={(event) => setPaidAt(event.target.value)} />
         </div>
         <div className="space-y-2">
-          <Label>Proof URL</Label>
+          <Label htmlFor="membership_proof_upload">Upload receipt (optional)</Label>
+          <Input
+            id="membership_proof_upload"
+            type="file"
+            accept="image/*,.pdf"
+            onChange={handleReceiptUpload}
+            disabled={isUploadingProof}
+          />
+          {proofFileName ? <p className="text-xs text-muted-foreground">Uploaded: {proofFileName}</p> : null}
+          {proofUrl ? <p className="text-xs text-muted-foreground break-all">Stored path: {proofUrl}</p> : null}
+        </div>
+        <div className="space-y-2">
+          <Label>Proof URL or path</Label>
           <Input value={proofUrl} onChange={(event) => setProofUrl(event.target.value)} placeholder="Optional receipt link" />
         </div>
         <div className="space-y-2 sm:col-span-2">
@@ -237,7 +321,7 @@ function DuesConfirmationCard({
           <Textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Optional note for verification" />
         </div>
         <div className="sm:col-span-2 flex justify-end">
-          <Button type="submit" disabled={submitMutation.isPending}>
+          <Button type="submit" disabled={submitMutation.isPending || isUploadingProof}>
             {submitMutation.isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

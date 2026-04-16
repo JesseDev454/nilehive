@@ -502,7 +502,6 @@ export interface EventReportRecord {
   outcomes: string | null;
   budget_used: number | null;
   media_urls: string[];
-  report_file_url: string | null;
   status: "submitted";
   submitted_at: string;
   created_at: string;
@@ -526,7 +525,6 @@ export interface CreateEventReportPayload {
   outcomes?: string | null;
   budget_used?: number | null;
   media_urls?: string[];
-  report_file_url?: string | null;
 }
 
 export interface AnnouncementRecord {

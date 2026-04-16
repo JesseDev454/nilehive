@@ -33,7 +33,6 @@ function createReport(overrides = {}) {
     outcomes: "Members received handover guidance.",
     budget_used: 200000,
     media_urls: ["https://example.com/photo.jpg"],
-    report_file_url: null,
     status: "submitted",
     submitted_at: "2026-05-21T10:00:00.000Z",
     created_at: "2026-05-21T10:00:00.000Z",
@@ -138,6 +137,41 @@ test("duplicate post-event reports are blocked", async () => {
         database: fakeDatabase
       }),
     (error) => error.statusCode === 409 && error.code === "REPORT_ALREADY_EXISTS"
+  );
+});
+
+test("post-event report rejects more than 10 media images", async () => {
+  const fakeDatabase = {
+    async getProposalById() {
+      return createApprovedProposal();
+    },
+    async getEventReportByProposalId() {
+      return null;
+    }
+  };
+
+  const mediaUrls = Array.from({ length: 11 }, (_, index) => `https://example.com/photo-${index + 1}.jpg`);
+
+  await assert.rejects(
+    () =>
+      createEventReport({
+        actor: {
+          id: "executive-1",
+          role: "executive",
+          clubId: "club-1"
+        },
+        payload: {
+          proposal_id: "proposal-1",
+          attendance_count: 75,
+          summary: "The event was completed successfully.",
+          media_urls: mediaUrls
+        },
+        database: fakeDatabase
+      }),
+    (error) =>
+      error.statusCode === 400 &&
+      error.code === "VALIDATION_ERROR" &&
+      error.details?.field === "media_urls"
   );
 });
 

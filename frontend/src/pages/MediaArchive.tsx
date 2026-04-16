@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import type { FormEvent } from "react";
+import type { ChangeEvent, FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, FileText, ImageIcon, Loader2, Upload } from "lucide-react";
+import { FileText, ImageIcon, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,9 @@ import {
   getEventReports,
   type EventReportRecord
 } from "@/lib/api";
+import { uploadStorageFile } from "@/lib/storage";
+
+const MAX_REPORT_MEDIA_IMAGES = 10;
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -41,13 +44,6 @@ function formatCurrency(value?: number | null) {
     currency: "NGN",
     maximumFractionDigits: 0
   }).format(value);
-}
-
-function splitUrls(value: string) {
-  return value
-    .split(/\r?\n/)
-    .map((url) => url.trim())
-    .filter(Boolean);
 }
 
 function ReportCard({ report }: { report: EventReportRecord }) {
@@ -94,19 +90,11 @@ function ReportCard({ report }: { report: EventReportRecord }) {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {report.report_file_url ? (
-            <Button asChild variant="outline" size="sm">
-              <a href={report.report_file_url} target="_blank" rel="noreferrer">
-                <Download className="h-4 w-4 mr-2" />
-                Report File
-              </a>
-            </Button>
-          ) : null}
           {report.media_urls.length ? (
             <Button asChild variant="outline" size="sm">
               <a href={report.media_urls[0]} target="_blank" rel="noreferrer">
                 <ImageIcon className="h-4 w-4 mr-2" />
-                View Media
+                View Media ({report.media_urls.length})
               </a>
             </Button>
           ) : null}
@@ -125,8 +113,9 @@ export default function MediaArchive() {
   const [challenges, setChallenges] = useState("");
   const [outcomes, setOutcomes] = useState("");
   const [budgetUsed, setBudgetUsed] = useState("");
-  const [mediaUrls, setMediaUrls] = useState("");
-  const [reportFileUrl, setReportFileUrl] = useState("");
+  const [uploadedMediaUrls, setUploadedMediaUrls] = useState<string[]>([]);
+  const [uploadedMediaNames, setUploadedMediaNames] = useState<string[]>([]);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const canSubmitReports = role === "executive";
   const canViewReports = ["admin", "advisor", "president", "executive"].includes(role);
 
@@ -152,6 +141,11 @@ export default function MediaArchive() {
     [reports]
   );
   const reportableEvents = approvedEvents.filter((event) => !reportedProposalIds.has(event.proposal_id));
+  const selectedEvent = useMemo(
+    () => reportableEvents.find((event) => event.proposal_id === proposalId) || null,
+    [proposalId, reportableEvents]
+  );
+  const totalMediaCount = uploadedMediaUrls.length;
   const createMutation = useMutation({
     mutationFn: () =>
       createEventReport({
@@ -161,8 +155,7 @@ export default function MediaArchive() {
         challenges: challenges || null,
         outcomes: outcomes || null,
         budget_used: budgetUsed ? Number(budgetUsed) : null,
-        media_urls: splitUrls(mediaUrls),
-        report_file_url: reportFileUrl || null
+        media_urls: uploadedMediaUrls
       }),
     onSuccess: async () => {
       toast.success("Post-event report submitted");
@@ -172,8 +165,8 @@ export default function MediaArchive() {
       setChallenges("");
       setOutcomes("");
       setBudgetUsed("");
-      setMediaUrls("");
-      setReportFileUrl("");
+      setUploadedMediaUrls([]);
+      setUploadedMediaNames([]);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["event-reports"] }),
         queryClient.invalidateQueries({ queryKey: ["approved-events"] })
@@ -188,7 +181,84 @@ export default function MediaArchive() {
 
   function handleSubmitReport(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (totalMediaCount > MAX_REPORT_MEDIA_IMAGES) {
+      toast.error("Too many images", {
+        description: `You can attach up to ${MAX_REPORT_MEDIA_IMAGES} images per report.`
+      });
+      return;
+    }
+
     createMutation.mutate();
+  }
+
+  async function handleMediaUpload(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files || []);
+
+    if (!files.length) {
+      return;
+    }
+
+    if (!selectedEvent?.club_id) {
+      toast.error("Select approved event first", {
+        description: "Choose the event before uploading images so they are scoped to the correct club."
+      });
+      event.target.value = "";
+      return;
+    }
+
+    const nonImageFile = files.find((file) => !file.type.startsWith("image/"));
+
+    if (nonImageFile) {
+      toast.error("Only image files are allowed", {
+        description: `Unsupported file: ${nonImageFile.name}`
+      });
+      event.target.value = "";
+      return;
+    }
+
+    if (totalMediaCount + files.length > MAX_REPORT_MEDIA_IMAGES) {
+      toast.error("Image limit exceeded", {
+        description: `You can attach up to ${MAX_REPORT_MEDIA_IMAGES} images in total.`
+      });
+      event.target.value = "";
+      return;
+    }
+
+    try {
+      setIsUploadingMedia(true);
+      const uploads = [] as { url: string; name: string }[];
+
+      for (const file of files) {
+        const upload = await uploadStorageFile(file, "event-media", {
+          folder: selectedEvent.club_id
+        });
+
+        uploads.push({
+          url: upload.url,
+          name: file.name
+        });
+      }
+
+      setUploadedMediaUrls((current) => [...current, ...uploads.map((item) => item.url)]);
+      setUploadedMediaNames((current) => [...current, ...uploads.map((item) => item.name)]);
+
+      toast.success("Images uploaded", {
+        description: `${uploads.length} image${uploads.length > 1 ? "s" : ""} ready for submission.`
+      });
+    } catch (uploadError) {
+      toast.error("Could not upload images", {
+        description: getErrorMessage(uploadError)
+      });
+    } finally {
+      setIsUploadingMedia(false);
+      event.target.value = "";
+    }
+  }
+
+  function removeUploadedMedia(index: number) {
+    setUploadedMediaUrls((current) => current.filter((_, currentIndex) => currentIndex !== index));
+    setUploadedMediaNames((current) => current.filter((_, currentIndex) => currentIndex !== index));
   }
 
   if (!canViewReports) {
@@ -296,25 +366,39 @@ export default function MediaArchive() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="media_urls">Media URLs</Label>
-                <Textarea
-                  id="media_urls"
-                  value={mediaUrls}
-                  onChange={(event) => setMediaUrls(event.target.value)}
-                  placeholder="One photo/video link per line"
+                <Label htmlFor="media_upload">Upload Event Images</Label>
+                <Input
+                  id="media_upload"
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleMediaUpload}
+                  disabled={isUploadingMedia || !proposalId}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Max {MAX_REPORT_MEDIA_IMAGES} images per report. Uploaded: {uploadedMediaUrls.length}.
+                </p>
+                {uploadedMediaNames.length ? (
+                  <div className="space-y-1">
+                    {uploadedMediaNames.map((name, index) => (
+                      <div key={`${name}-${index}`} className="flex items-center justify-between rounded border px-2 py-1 text-xs">
+                        <span className="truncate pr-2">{name}</span>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => removeUploadedMedia(index)}>
+                          Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="report_file_url">Report File URL</Label>
-                <Input
-                  id="report_file_url"
-                  value={reportFileUrl}
-                  onChange={(event) => setReportFileUrl(event.target.value)}
-                  placeholder="Optional document link"
-                />
+                <p className="text-xs text-muted-foreground">Total media count: {totalMediaCount}/{MAX_REPORT_MEDIA_IMAGES}</p>
               </div>
               <div className="lg:col-span-2 flex justify-end">
-                <Button type="submit" disabled={createMutation.isPending || !proposalId}>
+                <Button
+                  type="submit"
+                  disabled={createMutation.isPending || isUploadingMedia || !proposalId || totalMediaCount > MAX_REPORT_MEDIA_IMAGES}
+                >
                   {createMutation.isPending ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
