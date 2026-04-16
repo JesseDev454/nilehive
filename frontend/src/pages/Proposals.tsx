@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRole } from "@/contexts/RoleContext";
-import { ApiClientError, getAdminProposals, getExecutiveProposals, type ProposalRecord } from "@/lib/api";
+import { ApiClientError, getAdminProposals, getPresidentProposals, type ProposalRecord } from "@/lib/api";
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -25,8 +25,8 @@ export default function Proposals() {
   const { role } = useRole();
   const [statusFilter, setStatusFilter] = useState("all");
   const isAdmin = role === "admin";
-  const isExecutive = role === "executive";
-  const canFetch = isAdmin || isExecutive;
+  const isPresident = role === "president";
+  const canFetch = isAdmin || isPresident;
 
   const { data: proposals = [], isLoading, isError, error } = useQuery({
     queryKey: ["proposals", role, statusFilter],
@@ -37,7 +37,7 @@ export default function Proposals() {
         });
       }
 
-      return getExecutiveProposals();
+      return getPresidentProposals();
     },
     enabled: canFetch,
     retry: false
@@ -51,7 +51,7 @@ export default function Proposals() {
       };
     }
 
-    if (isExecutive) {
+    if (isPresident) {
       return {
         title: "My Proposals",
         description: "Track proposals you submitted"
@@ -62,7 +62,7 @@ export default function Proposals() {
       title: "Proposals",
       description: "Proposal list access is not available for this role yet"
     };
-  }, [isAdmin, isExecutive]);
+  }, [isAdmin, isPresident]);
 
   return (
     <div className="space-y-6 animate-slide-up">

@@ -183,9 +183,17 @@ export interface DashboardActivity {
 export interface ExecutiveDashboardRecord {
   role: "executive";
   club_id: string;
-  summary: DashboardSummary;
+  summary: {
+    total_tasks: number;
+    pending_tasks: number;
+    in_progress_tasks: number;
+    completed_tasks: number;
+    blocked_tasks: number;
+    upcoming_events: number;
+    reminders: number;
+  };
   action_items: DashboardActionItem[];
-  recent_proposals: DashboardProposalSummary[];
+  assigned_tasks: TaskRecord[];
   upcoming_events: ApprovedEventRecord[];
   reminders: EventReminderRecord[];
   notifications: NotificationRecord[];
@@ -577,6 +585,9 @@ interface ApiRequestOptions {
   body?: unknown;
 }
 
+const TOKEN_REFRESH_BUFFER_SECONDS = 60;
+export const SESSION_EXPIRED_EVENT = "nilehive:session-expired";
+
 export class ApiClientError extends Error {
   status: number;
   code?: string;
@@ -591,15 +602,51 @@ export class ApiClientError extends Error {
   }
 }
 
-async function request<T>(path: string, options: ApiRequestOptions = {}) {
-  const { method = "GET", token, body } = options;
+function dispatchSessionExpired() {
+  window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+}
+
+async function getFreshAccessToken(explicitToken?: string, forceRefresh = false) {
+  if (explicitToken) {
+    return explicitToken;
+  }
+
+  const {
+    data: { session }
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    return "";
+  }
+
+  const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
+  const shouldRefresh =
+    forceRefresh ||
+    !expiresAt ||
+    expiresAt - Date.now() <= TOKEN_REFRESH_BUFFER_SECONDS * 1000;
+
+  if (!shouldRefresh) {
+    return session.access_token;
+  }
+
+  const { data, error } = await supabase.auth.refreshSession();
+
+  if (error || !data.session) {
+    if (expiresAt && expiresAt > Date.now()) {
+      return session.access_token;
+    }
+
+    return "";
+  }
+
+  return data.session.access_token;
+}
+
+async function executeRequest<T>(path: string, options: ApiRequestOptions, accessToken: string) {
+  const { method = "GET", body } = options;
   const headers: Record<string, string> = {
     Accept: "application/json"
   };
-  const accessToken =
-    token ||
-    (await supabase.auth.getSession()).data.session?.access_token ||
-    "";
 
   if (accessToken) {
     headers.Authorization = `Bearer ${accessToken}`;
@@ -631,6 +678,41 @@ async function request<T>(path: string, options: ApiRequestOptions = {}) {
   return responseJson as T;
 }
 
+async function request<T>(path: string, options: ApiRequestOptions = {}) {
+  const accessToken = await getFreshAccessToken(options.token);
+
+  try {
+    return await executeRequest<T>(path, options, accessToken);
+  } catch (error) {
+    if (
+      options.token ||
+      !(error instanceof ApiClientError) ||
+      error.status !== 401
+    ) {
+      throw error;
+    }
+
+    const retryToken = await getFreshAccessToken(undefined, true);
+
+    if (!retryToken || retryToken === accessToken) {
+      await supabase.auth.signOut();
+      dispatchSessionExpired();
+      throw error;
+    }
+
+    try {
+      return await executeRequest<T>(path, options, retryToken);
+    } catch (retryError) {
+      if (retryError instanceof ApiClientError && retryError.status === 401) {
+        await supabase.auth.signOut();
+        dispatchSessionExpired();
+      }
+
+      throw retryError;
+    }
+  }
+}
+
 export async function getHealth() {
   return request<HealthCheckResponse>("/api/v1/health");
 }
@@ -645,7 +727,7 @@ export async function createProposal(payload: CreateProposalPayload, token?: str
   return response.data;
 }
 
-export async function updateExecutiveProposal(proposalId: string, payload: CreateProposalPayload, token?: string) {
+export async function updatePresidentProposal(proposalId: string, payload: CreateProposalPayload, token?: string) {
   const response = await request<ApiEnvelope<ProposalRecord>>(`/api/v1/proposals/${proposalId}/edit`, {
     method: "POST",
     token,
@@ -655,7 +737,7 @@ export async function updateExecutiveProposal(proposalId: string, payload: Creat
   return response.data;
 }
 
-export async function submitExecutiveProposalRevision(proposalId: string, token?: string) {
+export async function submitPresidentProposalRevision(proposalId: string, token?: string) {
   const response = await request<ApiEnvelope<ProposalRecord>>(`/api/v1/proposals/${proposalId}/submit`, {
     method: "POST",
     token
@@ -663,6 +745,9 @@ export async function submitExecutiveProposalRevision(proposalId: string, token?
 
   return response.data;
 }
+
+export const updateExecutiveProposal = updatePresidentProposal;
+export const submitExecutiveProposalRevision = submitPresidentProposalRevision;
 
 export async function getClubs(token?: string) {
   const response = await request<ApiEnvelope<ClubRecord[]>>("/api/v1/clubs", {
@@ -720,7 +805,7 @@ export async function submitAdvisorDecision(
   return response.data;
 }
 
-export async function getExecutiveProposals(token?: string) {
+export async function getPresidentProposals(token?: string) {
   const response = await request<ApiEnvelope<ProposalRecord[]>>("/api/v1/proposals", {
     method: "GET",
     token
@@ -729,7 +814,7 @@ export async function getExecutiveProposals(token?: string) {
   return response.data;
 }
 
-export async function getExecutiveProposal(proposalId: string, token?: string) {
+export async function getPresidentProposal(proposalId: string, token?: string) {
   const response = await request<ApiEnvelope<ProposalRecord>>(`/api/v1/proposals/${proposalId}`, {
     method: "GET",
     token
@@ -737,6 +822,9 @@ export async function getExecutiveProposal(proposalId: string, token?: string) {
 
   return response.data;
 }
+
+export const getExecutiveProposals = getPresidentProposals;
+export const getExecutiveProposal = getPresidentProposal;
 
 export async function getAdvisorProposal(proposalId: string, token?: string) {
   const response = await request<ApiEnvelope<ProposalRecord>>(`/api/v1/proposals/advisor/${proposalId}`, {

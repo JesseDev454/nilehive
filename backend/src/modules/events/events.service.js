@@ -119,20 +119,12 @@ async function assertCanManageEvent(actor, proposal, database) {
     return;
   }
 
-  if (["president", "executive"].includes(actor.role)) {
+  if (actor.role === "president") {
     if (actor.clubId === proposal.club_id) {
       return;
     }
 
     throw new ApiError(403, "You can only manage events for your own club", "FORBIDDEN");
-  }
-
-  if (actor.role === "advisor") {
-    const clubIds = await database.getAdvisorClubIds(actor.id);
-
-    if (clubIds.includes(proposal.club_id)) {
-      return;
-    }
   }
 
   throw new ApiError(403, "You cannot manage this event", "FORBIDDEN");
@@ -188,7 +180,7 @@ async function getEventEngagement(options) {
   ]);
   const formattedRsvps = rsvps.map(formatRsvp);
   const formattedAttendance = attendance.map(formatAttendance);
-  const canManage = ["admin", "president", "executive", "advisor"].includes(actor.role);
+  const canManage = ["admin", "president"].includes(actor.role);
 
   if (canManage) {
     await assertCanManageEvent(actor, proposal, database);

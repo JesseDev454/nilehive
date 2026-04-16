@@ -74,11 +74,11 @@ function getCurrentStage(status) {
 
 function getCurrentOwnerRole(status) {
   const owners = {
-    draft: "executive",
+    draft: "president",
     pending_advisor_review: "advisor",
     pending_admin_review: "admin",
-    advisor_rejected: "executive",
-    admin_rejected: "executive",
+    advisor_rejected: "president",
+    admin_rejected: "president",
     approved: "completed"
   };
 
@@ -256,12 +256,12 @@ async function createProposal(options) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
   }
 
-  if (actor.role !== "executive") {
-    throw new ApiError(403, "Only executives can submit proposals", "FORBIDDEN");
+  if (actor.role !== "president") {
+    throw new ApiError(403, "Only presidents can submit proposals", "FORBIDDEN");
   }
 
   if (!actor.clubId) {
-    throw new ApiError(409, "Executive profile is not linked to a club", "PROFILE_NOT_LINKED_TO_CLUB");
+    throw new ApiError(409, "President profile is not linked to a club", "PROFILE_NOT_LINKED_TO_CLUB");
   }
 
   const saveAsDraft = readSaveAsDraft(payload);
@@ -272,7 +272,7 @@ async function createProposal(options) {
   const submittedAt = saveAsDraft ? null : new Date().toISOString();
 
   if (clubId !== actor.clubId) {
-    throw new ApiError(403, "Executives can only submit proposals for their assigned club", "FORBIDDEN");
+    throw new ApiError(403, "Presidents can only submit proposals for their assigned club", "FORBIDDEN");
   }
 
   const proposal = await database.createProposal({
@@ -335,15 +335,15 @@ async function getPendingAdvisorProposals(options) {
   return database.listPendingProposalsByClubIds(clubIds);
 }
 
-async function listExecutiveProposals(options) {
+async function listPresidentProposals(options) {
   const { actor, database = db } = options;
 
   if (!actor) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
   }
 
-  if (actor.role !== "executive") {
-    throw new ApiError(403, "Only executives can view their proposals", "FORBIDDEN");
+  if (actor.role !== "president") {
+    throw new ApiError(403, "Only presidents can view their proposals", "FORBIDDEN");
   }
 
   const proposals = await database.listExecutiveProposals(actor.id);
@@ -356,15 +356,15 @@ async function listExecutiveProposals(options) {
   );
 }
 
-async function getExecutiveProposalDetail(options) {
+async function getPresidentProposalDetail(options) {
   const { actor, proposalId, database = db } = options;
 
   if (!actor) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
   }
 
-  if (actor.role !== "executive") {
-    throw new ApiError(403, "Only executives can view their proposals", "FORBIDDEN");
+  if (actor.role !== "president") {
+    throw new ApiError(403, "Only presidents can view their proposals", "FORBIDDEN");
   }
 
   const proposal = await database.getProposalById(proposalId);
@@ -378,7 +378,7 @@ async function getExecutiveProposalDetail(options) {
   return formatExecutiveProposal(proposal, latestApproval);
 }
 
-function ensureExecutiveEditableProposal(actor, proposal) {
+function ensurePresidentEditableProposal(actor, proposal) {
   if (!proposal || proposal.submitted_by !== actor.id) {
     throw new ApiError(404, "Proposal not found", "PROPOSAL_NOT_FOUND");
   }
@@ -388,25 +388,25 @@ function ensureExecutiveEditableProposal(actor, proposal) {
   if (!editableStatuses.includes(proposal.status)) {
     throw new ApiError(
       409,
-      "Only draft or rejected proposals can be edited by executives",
+      "Only draft or rejected proposals can be edited by presidents",
       "INVALID_PROPOSAL_STATE"
     );
   }
 }
 
-async function updateExecutiveProposal(options) {
+async function updatePresidentProposal(options) {
   const { actor, proposalId, payload, database = db } = options;
 
   if (!actor) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
   }
 
-  if (actor.role !== "executive") {
-    throw new ApiError(403, "Only executives can edit proposals", "FORBIDDEN");
+  if (actor.role !== "president") {
+    throw new ApiError(403, "Only presidents can edit proposals", "FORBIDDEN");
   }
 
   const proposal = await database.getProposalById(proposalId);
-  ensureExecutiveEditableProposal(actor, proposal);
+  ensurePresidentEditableProposal(actor, proposal);
 
   const saveAsDraft = proposal.status === "draft" || readSaveAsDraft(payload);
   const validatedPayload = saveAsDraft
@@ -415,7 +415,7 @@ async function updateExecutiveProposal(options) {
   const clubId = validatedPayload.club_id || actor.clubId;
 
   if (clubId !== proposal.club_id || clubId !== actor.clubId) {
-    throw new ApiError(403, "Executives can only edit proposals for their assigned club", "FORBIDDEN");
+    throw new ApiError(403, "Presidents can only edit proposals for their assigned club", "FORBIDDEN");
   }
 
   const updatedProposal = await database.updateProposal(proposalId, {
@@ -438,19 +438,19 @@ async function updateExecutiveProposal(options) {
   return formatExecutiveProposal(updatedProposal);
 }
 
-async function submitExecutiveProposalRevision(options) {
+async function submitPresidentProposalRevision(options) {
   const { actor, proposalId, database = db } = options;
 
   if (!actor) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
   }
 
-  if (actor.role !== "executive") {
-    throw new ApiError(403, "Only executives can submit proposal revisions", "FORBIDDEN");
+  if (actor.role !== "president") {
+    throw new ApiError(403, "Only presidents can submit proposal revisions", "FORBIDDEN");
   }
 
   const proposal = await database.getProposalById(proposalId);
-  ensureExecutiveEditableProposal(actor, proposal);
+  ensurePresidentEditableProposal(actor, proposal);
   validateCreateProposalPayload(proposal);
 
   const now = new Date().toISOString();
@@ -722,10 +722,10 @@ module.exports = {
   getAdminProposalDetail,
   getAdvisorProposalDetail,
   getPendingAdvisorProposals,
-  listExecutiveProposals,
-  getExecutiveProposalDetail,
-  updateExecutiveProposal,
-  submitExecutiveProposalRevision,
+  listPresidentProposals,
+  getPresidentProposalDetail,
+  updatePresidentProposal,
+  submitPresidentProposalRevision,
   submitAdvisorDecision,
   submitAdminDecision
 };

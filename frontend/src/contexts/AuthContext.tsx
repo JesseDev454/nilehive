@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
+import { SESSION_EXPIRED_EVENT } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 
 export type AppRole = "executive" | "advisor" | "admin" | "president" | "student";
@@ -36,6 +37,8 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
+const INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000;
+const ACTIVITY_EVENTS = ["click", "keydown", "mousemove", "scroll", "touchstart"] as const;
 
 async function fetchProfile(userId: string) {
   const { data, error } = await supabase
@@ -131,6 +134,54 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    function clearAuthState() {
+      setSession(null);
+      setProfile(null);
+      setProfileError(null);
+      setIsLoading(false);
+    }
+
+    function handleSessionExpired() {
+      clearAuthState();
+      void supabase.auth.signOut();
+    }
+
+    window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+
+    return () => {
+      window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!session) {
+      return;
+    }
+
+    let timeoutId: ReturnType<typeof window.setTimeout>;
+
+    function resetTimer() {
+      window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        void supabase.auth.signOut();
+      }, INACTIVITY_TIMEOUT_MS);
+    }
+
+    resetTimer();
+
+    ACTIVITY_EVENTS.forEach((eventName) => {
+      window.addEventListener(eventName, resetTimer, { passive: true });
+    });
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      ACTIVITY_EVENTS.forEach((eventName) => {
+        window.removeEventListener(eventName, resetTimer);
+      });
+    };
+  }, [session]);
 
   const value = useMemo<AuthContextType>(
     () => ({

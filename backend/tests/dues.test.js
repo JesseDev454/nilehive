@@ -75,34 +75,19 @@ test("president can create a due payment record for a club member", async () => 
   assert.equal(payment.amount, 5000);
 });
 
-test("executive can list club due payments with summary", async () => {
-  const fakeDatabase = {
-    async listDuePayments(filters) {
-      assert.deepEqual(filters, {
-        clubId: "club-1",
-        status: undefined,
-        memberId: undefined
-      });
-      return [
-        createPayment({ id: "payment-1", status: "paid" }),
-        createPayment({ id: "payment-2", status: "unpaid" })
-      ];
-    }
-  };
-
-  const result = await listDuePayments({
-    actor: {
-      id: "executive-1",
-      role: "executive",
-      clubId: "club-1"
-    },
-    database: fakeDatabase
-  });
-
-  assert.equal(result.summary.total_records, 2);
-  assert.equal(result.summary.paid, 1);
-  assert.equal(result.summary.unpaid, 1);
-  assert.equal(result.payments.length, 2);
+test("executive cannot list club due payments", async () => {
+  await assert.rejects(
+    () =>
+      listDuePayments({
+        actor: {
+          id: "executive-1",
+          role: "executive",
+          clubId: "club-1"
+        },
+        database: {}
+      }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
 });
 
 test("president can verify a submitted payment as paid", async () => {

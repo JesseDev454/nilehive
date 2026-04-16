@@ -261,22 +261,57 @@ function buildClubPerformance({
   });
 }
 
-function buildExecutiveActionItems(proposals, reminders) {
+function buildTaskSummary(tasks, approvedEvents, reminders) {
+  const pending = tasks.filter((task) => task.status === "pending").length;
+  const inProgress = tasks.filter((task) => task.status === "in_progress").length;
+  const completed = tasks.filter((task) => task.status === "completed").length;
+  const blocked = tasks.filter((task) => task.status === "blocked").length;
+
+  return {
+    total_tasks: tasks.length,
+    pending_tasks: pending,
+    in_progress_tasks: inProgress,
+    completed_tasks: completed,
+    blocked_tasks: blocked,
+    upcoming_events: approvedEvents.length,
+    reminders: reminders.length
+  };
+}
+
+function buildExecutiveTaskActionItems(tasks, reminders) {
   const actionItems = [];
-  const pendingCount = proposals.filter((proposal) => isPendingStatus(proposal.status)).length;
-  const rejectedCount = proposals.filter((proposal) => isRejectedStatus(proposal.status)).length;
+  const pendingCount = tasks.filter((task) => task.status === "pending").length;
+  const blockedCount = tasks.filter((task) => task.status === "blocked").length;
+  const dueSoonCount = tasks.filter((task) => {
+    if (!task.due_date || task.status === "completed") {
+      return false;
+    }
+
+    const dueTime = new Date(task.due_date).getTime();
+    const now = Date.now();
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+
+    return dueTime >= now && dueTime - now <= sevenDays;
+  }).length;
 
   if (pendingCount > 0) {
     actionItems.push({
-      type: "proposal_follow_up",
-      label: `${pendingCount} proposal(s) are still moving through approval.`
+      type: "task_start",
+      label: `${pendingCount} assigned task(s) are waiting to be started.`
     });
   }
 
-  if (rejectedCount > 0) {
+  if (dueSoonCount > 0) {
     actionItems.push({
-      type: "proposal_revision",
-      label: `${rejectedCount} proposal(s) need review after rejection.`
+      type: "task_due_soon",
+      label: `${dueSoonCount} task(s) are due soon.`
+    });
+  }
+
+  if (blockedCount > 0) {
+    actionItems.push({
+      type: "task_blocked",
+      label: `${blockedCount} task(s) are currently blocked.`
     });
   }
 
@@ -288,6 +323,22 @@ function buildExecutiveActionItems(proposals, reminders) {
   }
 
   return actionItems;
+}
+
+function formatTaskSummary(task) {
+  return {
+    id: task.id,
+    club_id: task.club_id,
+    assigned_by: task.assigned_by,
+    assigned_to: task.assigned_to,
+    title: task.title,
+    description: task.description,
+    priority: task.priority,
+    status: task.status,
+    due_date: task.due_date,
+    created_at: task.created_at,
+    updated_at: task.updated_at
+  };
 }
 
 async function getDashboardClub(actor, database) {
@@ -311,7 +362,9 @@ async function getExecutiveDashboard(options) {
 
   await getDashboardClub(actor, database);
 
-  const proposals = await database.listExecutiveProposals(actor.id);
+  const tasks = database.listTasks
+    ? await database.listTasks({ assignedTo: actor.id })
+    : [];
   const approvedEvents = await database.listApprovedProposals({ clubIds: [actor.clubId] });
   const reminders = database.listEventRemindersByUserId
     ? await database.listEventRemindersByUserId(actor.id)
@@ -323,13 +376,9 @@ async function getExecutiveDashboard(options) {
   return {
     role: "executive",
     club_id: actor.clubId,
-    summary: {
-      ...summarizeProposals(proposals),
-      upcoming_events: approvedEvents.length,
-      reminders: reminders.length
-    },
-    action_items: buildExecutiveActionItems(proposals, reminders),
-    recent_proposals: proposals.slice(0, 5).map(formatProposalSummary),
+    summary: buildTaskSummary(tasks, approvedEvents, reminders),
+    action_items: buildExecutiveTaskActionItems(tasks, reminders),
+    assigned_tasks: tasks.slice(0, 5).map(formatTaskSummary),
     upcoming_events: approvedEvents.slice(0, 5).map(formatEventSummary),
     reminders: reminders.slice(0, 5),
     notifications: notifications.slice(0, 5)

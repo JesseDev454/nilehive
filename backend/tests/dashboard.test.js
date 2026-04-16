@@ -6,7 +6,7 @@ function createProposal(overrides = {}) {
   return {
     id: "proposal-1",
     club_id: "club-1",
-    submitted_by: "executive-1",
+    submitted_by: "president-1",
     title: "Leadership Summit",
     description: "A leadership event.",
     event_date: "2026-05-20",
@@ -227,17 +227,38 @@ function createFakeDatabase() {
     async listEventReports() {
       return [];
     },
-    async listTasks() {
-      return [
+    async listTasks(filters = {}) {
+      const tasks = [
         {
           id: "task-1",
           club_id: "club-1",
+          assigned_by: "president-1",
+          assigned_to: "executive-1",
           title: "Book hall",
+          description: "Reserve the main hall before the event.",
+          priority: "high",
           status: "pending",
+          due_date: "2026-04-18",
           created_at: "2026-04-06T10:00:00.000Z",
           updated_at: "2026-04-06T10:00:00.000Z"
         }
       ];
+
+      return tasks.filter((task) => {
+        if (filters.assignedTo && task.assigned_to !== filters.assignedTo) {
+          return false;
+        }
+
+        if (filters.clubId && task.club_id !== filters.clubId) {
+          return false;
+        }
+
+        if (filters.status && task.status !== filters.status) {
+          return false;
+        }
+
+        return true;
+      });
     },
     async listFeedback() {
       return [
@@ -322,7 +343,7 @@ async function getDashboard(baseUrl, path, token = "") {
   return { response, payload };
 }
 
-test("executive can fetch live dashboard data", async (t) => {
+test("executive can fetch task-focused dashboard data", async (t) => {
   const server = await createTestServer(createFakeDatabase());
   t.after(() => server.close());
 
@@ -334,10 +355,13 @@ test("executive can fetch live dashboard data", async (t) => {
 
   assert.equal(response.status, 200);
   assert.equal(payload.data.role, "executive");
-  assert.equal(payload.data.summary.total_proposals, 3);
-  assert.equal(payload.data.summary.approved_proposals, 1);
+  assert.equal(payload.data.summary.total_tasks, 1);
+  assert.equal(payload.data.summary.pending_tasks, 1);
+  assert.equal(payload.data.assigned_tasks.length, 1);
+  assert.equal(payload.data.assigned_tasks[0].assigned_to, "executive-1");
   assert.equal(payload.data.upcoming_events.length, 1);
-  assert.equal(payload.data.action_items.length, 3);
+  assert.equal(payload.data.recent_proposals, undefined);
+  assert.ok(payload.data.action_items.some((action) => action.type === "task_start"));
 });
 
 test("president can fetch live club dashboard data", async (t) => {

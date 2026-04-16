@@ -71,6 +71,12 @@ function createFakeDatabase() {
       role: "executive",
       club_id: "club-1"
     },
+    "president-1": {
+      id: "president-1",
+      full_name: "Tomi President",
+      role: "president",
+      club_id: "club-1"
+    },
     "advisor-1": {
       id: "advisor-1",
       full_name: "Daniel Advisor",
@@ -105,6 +111,7 @@ function createFakeDatabase() {
       const tokenProfiles = {
         "executive-token": "executive-1",
         "advisor-token": "advisor-1",
+        "president-token": "president-1",
         "admin-token": "admin-1",
         "student-token": "student-1"
       };
@@ -303,20 +310,20 @@ test("non-students cannot RSVP to an approved event", async (t) => {
   assert.equal(payload.error.code, "FORBIDDEN");
 });
 
-test("club leaders can view engagement and mark attendance", async (t) => {
+test("president can view engagement and mark attendance", async (t) => {
   const server = await createTestServer(createFakeDatabase());
   t.after(() => server.close());
 
   const engagementResponse = await fetch(`${server.baseUrl}/api/v1/events/proposal-1/engagement`, {
     headers: {
-      Authorization: "Bearer executive-token"
+      Authorization: "Bearer president-token"
     }
   });
   const engagementPayload = await engagementResponse.json();
   const attendanceResponse = await fetch(`${server.baseUrl}/api/v1/events/proposal-1/attendance`, {
     method: "POST",
     headers: {
-      Authorization: "Bearer executive-token",
+      Authorization: "Bearer president-token",
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
@@ -332,14 +339,14 @@ test("club leaders can view engagement and mark attendance", async (t) => {
   assert.equal(engagementPayload.data.rsvps.length, 2);
   assert.equal(attendanceResponse.status, 200);
   assert.equal(attendancePayload.data.attended, true);
-  assert.equal(attendancePayload.data.checked_in_by, "executive-1");
+  assert.equal(attendancePayload.data.checked_in_by, "president-1");
 });
 
-test("club leaders cannot manage engagement for another club event", async (t) => {
+test("executive cannot manage event attendance", async (t) => {
   const server = await createTestServer(createFakeDatabase());
   t.after(() => server.close());
 
-  const response = await fetch(`${server.baseUrl}/api/v1/events/proposal-2/attendance`, {
+  const response = await fetch(`${server.baseUrl}/api/v1/events/proposal-1/attendance`, {
     method: "POST",
     headers: {
       Authorization: "Bearer executive-token",

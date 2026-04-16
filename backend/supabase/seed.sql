@@ -2,6 +2,76 @@
 -- If your managed Supabase project blocks direct writes into auth.users,
 -- create these users through the dashboard and keep the same UUIDs here.
 
+with seed_users (
+  instance_id,
+  id,
+  aud,
+  role,
+  email,
+  encrypted_password,
+  email_confirmed_at,
+  raw_app_meta_data,
+  raw_user_meta_data,
+  created_at,
+  updated_at,
+  confirmation_token,
+  email_change,
+  email_change_token_new,
+  recovery_token
+) as (
+  values
+    (
+      '00000000-0000-0000-0000-000000000000',
+      '11111111-1111-1111-1111-111111111111',
+      'authenticated',
+      'authenticated',
+      'executive@nilehive.test',
+      crypt('password123', gen_salt('bf')),
+      timezone('utc', now()),
+      '{"provider":"email","providers":["email"]}',
+      '{"full_name":"Amina Executive"}',
+      timezone('utc', now()),
+      timezone('utc', now()),
+      '',
+      '',
+      '',
+      ''
+    ),
+    (
+      '00000000-0000-0000-0000-000000000000',
+      '22222222-2222-2222-2222-222222222222',
+      'authenticated',
+      'authenticated',
+      'advisor@nilehive.test',
+      crypt('password123', gen_salt('bf')),
+      timezone('utc', now()),
+      '{"provider":"email","providers":["email"]}',
+      '{"full_name":"Daniel Advisor"}',
+      timezone('utc', now()),
+      timezone('utc', now()),
+      '',
+      '',
+      '',
+      ''
+    ),
+    (
+      '00000000-0000-0000-0000-000000000000',
+      '44444444-4444-4444-4444-444444444444',
+      'authenticated',
+      'authenticated',
+      'president@nilehive.test',
+      crypt('password123', gen_salt('bf')),
+      timezone('utc', now()),
+      '{"provider":"email","providers":["email"]}',
+      '{"full_name":"Tomi President"}',
+      timezone('utc', now()),
+      timezone('utc', now()),
+      '',
+      '',
+      '',
+      ''
+    )
+)
 insert into auth.users (
   instance_id,
   id,
@@ -18,42 +88,29 @@ insert into auth.users (
   email_change,
   email_change_token_new,
   recovery_token
-) values
-  (
-    '00000000-0000-0000-0000-000000000000',
-    '11111111-1111-1111-1111-111111111111',
-    'authenticated',
-    'authenticated',
-    'executive@nilehive.test',
-    crypt('password123', gen_salt('bf')),
-    timezone('utc', now()),
-    '{"provider":"email","providers":["email"]}',
-    '{"full_name":"Amina Executive"}',
-    timezone('utc', now()),
-    timezone('utc', now()),
-    '',
-    '',
-    '',
-    ''
-  ),
-  (
-    '00000000-0000-0000-0000-000000000000',
-    '22222222-2222-2222-2222-222222222222',
-    'authenticated',
-    'authenticated',
-    'advisor@nilehive.test',
-    crypt('password123', gen_salt('bf')),
-    timezone('utc', now()),
-    '{"provider":"email","providers":["email"]}',
-    '{"full_name":"Daniel Advisor"}',
-    timezone('utc', now()),
-    timezone('utc', now()),
-    '',
-    '',
-    '',
-    ''
-  )
-on conflict (id) do nothing;
+)
+select
+  su.instance_id::uuid,
+  su.id::uuid,
+  su.aud,
+  su.role,
+  su.email,
+  su.encrypted_password,
+  su.email_confirmed_at,
+  su.raw_app_meta_data::jsonb,
+  su.raw_user_meta_data::jsonb,
+  su.created_at,
+  su.updated_at,
+  su.confirmation_token,
+  su.email_change,
+  su.email_change_token_new,
+  su.recovery_token
+from seed_users su
+where not exists (
+  select 1
+  from auth.users u
+  where u.id = su.id::uuid or lower(u.email) = lower(su.email)
+);
 
 insert into public.clubs (id, name, description, code)
 values (
@@ -146,28 +203,42 @@ values (
   'Break boundaries and inspire innovation. Join a community of like-minded women who are shaping the future of technology and making strides in a traditionally male-dominated field.',
   'WIT'
 )
-on conflict (id) do nothing;
+on conflict (name) do update set
+  description = excluded.description,
+  code = excluded.code;
 
 insert into public.profiles (id, full_name, role, club_id)
-values
-  (
-    '11111111-1111-1111-1111-111111111111',
-    'Amina Executive',
-    'executive',
-    '33333333-3333-3333-3333-333333333333'
-  ),
-  (
-    '22222222-2222-2222-2222-222222222222',
-    'Daniel Advisor',
-    'advisor',
-    null
-  )
+select
+  u.id,
+  'Amina Executive',
+  'executive'::app_role,
+  (select c.id from public.clubs c where c.name = 'Nile Innovators Club')
+from auth.users u
+where lower(u.email) = lower('executive@nilehive.test')
+union all
+select
+  u.id,
+  'Tomi President',
+  'president'::app_role,
+  (select c.id from public.clubs c where c.name = 'Nile Innovators Club')
+from auth.users u
+where lower(u.email) = lower('president@nilehive.test')
+union all
+select
+  u.id,
+  'Daniel Advisor',
+  'advisor'::app_role,
+  null
+from auth.users u
+where lower(u.email) = lower('advisor@nilehive.test')
 on conflict (id) do update set
   full_name = excluded.full_name,
   role = excluded.role,
   club_id = excluded.club_id;
 
-update public.clubs
-set advisor_id = '22222222-2222-2222-2222-222222222222'
-where id = '33333333-3333-3333-3333-333333333333';
+update public.clubs c
+set advisor_id = u.id
+from auth.users u
+where c.name = 'Nile Innovators Club'
+  and lower(u.email) = lower('advisor@nilehive.test');
 

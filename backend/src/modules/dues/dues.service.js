@@ -17,7 +17,7 @@ function requireActor(actor) {
 }
 
 function requireSupportedRole(actor) {
-  if (!["admin", "president", "executive"].includes(actor.role)) {
+  if (!["admin", "president"].includes(actor.role)) {
     throw new ApiError(403, "This role cannot view dues tracking", "FORBIDDEN");
   }
 }

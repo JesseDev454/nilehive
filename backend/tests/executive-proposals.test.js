@@ -3,22 +3,22 @@ const assert = require("node:assert/strict");
 const { createApp } = require("../src/app");
 const {
   createProposal,
-  submitExecutiveProposalRevision,
-  updateExecutiveProposal
+  submitPresidentProposalRevision,
+  updatePresidentProposal
 } = require("../src/modules/proposals/proposals.service");
 
 function createFakeDatabase() {
   const profiles = {
-    "executive-1": {
-      id: "executive-1",
-      full_name: "Amina Executive",
-      role: "executive",
+    "president-1": {
+      id: "president-1",
+      full_name: "Tomi President",
+      role: "president",
       club_id: "club-1"
     },
-    "executive-2": {
-      id: "executive-2",
-      full_name: "Other Executive",
-      role: "executive",
+    "president-2": {
+      id: "president-2",
+      full_name: "Other President",
+      role: "president",
       club_id: "club-2"
     },
     "advisor-1": {
@@ -33,7 +33,7 @@ function createFakeDatabase() {
     {
       id: "proposal-1",
       club_id: "club-1",
-      submitted_by: "executive-1",
+      submitted_by: "president-1",
       title: "Leadership Summit",
       description: "A planning summit for executive handover.",
       event_date: "2026-05-20",
@@ -48,7 +48,7 @@ function createFakeDatabase() {
     {
       id: "proposal-2",
       club_id: "club-1",
-      submitted_by: "executive-1",
+      submitted_by: "president-1",
       title: "Budget Revision",
       description: "A revised budget proposal.",
       event_date: "2026-05-25",
@@ -63,7 +63,7 @@ function createFakeDatabase() {
     {
       id: "proposal-4",
       club_id: "club-1",
-      submitted_by: "executive-1",
+      submitted_by: "president-1",
       title: "Draft Proposal",
       description: "Saved draft.",
       event_date: "2026-06-01",
@@ -78,7 +78,7 @@ function createFakeDatabase() {
     {
       id: "proposal-3",
       club_id: "club-2",
-      submitted_by: "executive-2",
+      submitted_by: "president-2",
       title: "Other Club Proposal",
       description: "Should not be visible to another executive.",
       event_date: "2026-05-26",
@@ -112,9 +112,9 @@ function createFakeDatabase() {
   };
 
   const tokens = {
-    "executive-token": {
-      id: "executive-1",
-      email: "executive@nilehive.test"
+    "president-token": {
+      id: "president-1",
+      email: "president@nilehive.test"
     },
     "advisor-token": {
       id: "advisor-1",
@@ -171,7 +171,7 @@ function createRichProposalPayload(overrides = {}) {
     ],
     responsible_members: [
       {
-        name: "Amina Executive",
+        name: "Tomi President",
         student_id: "24-2120-109",
         phone_number: "08012345678",
         position: "Executive"
@@ -222,7 +222,7 @@ async function getExecutiveProposals(baseUrl, path, token) {
   return { response, payload };
 }
 
-test("executive can fetch own proposals list", async (t) => {
+test("president can fetch own proposals list", async (t) => {
   const database = createFakeDatabase();
   const server = await createTestServer(database);
   t.after(() => server.close());
@@ -230,7 +230,7 @@ test("executive can fetch own proposals list", async (t) => {
   const { response, payload } = await getExecutiveProposals(
     server.baseUrl,
     "/api/v1/proposals",
-    "executive-token"
+    "president-token"
   );
 
   assert.equal(response.status, 200);
@@ -239,7 +239,7 @@ test("executive can fetch own proposals list", async (t) => {
   assert.ok(payload.data.every((proposal) => proposal.current_stage));
 });
 
-test("executive can fetch own proposal detail", async (t) => {
+test("president can fetch own proposal detail", async (t) => {
   const database = createFakeDatabase();
   const server = await createTestServer(database);
   t.after(() => server.close());
@@ -247,7 +247,7 @@ test("executive can fetch own proposal detail", async (t) => {
   const { response, payload } = await getExecutiveProposals(
     server.baseUrl,
     "/api/v1/proposals/proposal-1",
-    "executive-token"
+    "president-token"
   );
 
   assert.equal(response.status, 200);
@@ -257,7 +257,7 @@ test("executive can fetch own proposal detail", async (t) => {
   assert.equal(payload.data.advisor_remarks, "Ready for admin review.");
 });
 
-test("executive cannot fetch another club's proposal", async (t) => {
+test("president cannot fetch another club's proposal", async (t) => {
   const database = createFakeDatabase();
   const server = await createTestServer(database);
   t.after(() => server.close());
@@ -265,7 +265,7 @@ test("executive cannot fetch another club's proposal", async (t) => {
   const { response, payload } = await getExecutiveProposals(
     server.baseUrl,
     "/api/v1/proposals/proposal-3",
-    "executive-token"
+    "president-token"
   );
 
   assert.equal(response.status, 404);
@@ -310,14 +310,14 @@ test("not-found proposal returns correctly", async (t) => {
   const { response, payload } = await getExecutiveProposals(
     server.baseUrl,
     "/api/v1/proposals/does-not-exist",
-    "executive-token"
+    "president-token"
   );
 
   assert.equal(response.status, 404);
   assert.equal(payload.error.code, "PROPOSAL_NOT_FOUND");
 });
 
-test("executive can save a proposal as draft without notifying advisors", async () => {
+test("president can save a proposal as draft without notifying advisors", async () => {
   let createdProposal;
   let notificationCount = 0;
   const fakeDatabase = {
@@ -341,8 +341,8 @@ test("executive can save a proposal as draft without notifying advisors", async 
 
   const draft = await createProposal({
     actor: {
-      id: "executive-1",
-      role: "executive",
+      id: "president-1",
+      role: "president",
       clubId: "club-1"
     },
     payload: createRichProposalPayload({
@@ -353,12 +353,12 @@ test("executive can save a proposal as draft without notifying advisors", async 
 
   assert.equal(createdProposal.status, "draft");
   assert.equal(createdProposal.submitted_at, null);
-  assert.equal(createdProposal.last_edited_by, "executive-1");
+  assert.equal(createdProposal.last_edited_by, "president-1");
   assert.equal(notificationCount, 0);
   assert.equal(draft.status, "draft");
 });
 
-test("executive can save an incomplete proposal as a draft", async () => {
+test("president can save an incomplete proposal as a draft", async () => {
   let createdProposal;
   const fakeDatabase = {
     async createProposal(proposal) {
@@ -380,8 +380,8 @@ test("executive can save an incomplete proposal as a draft", async () => {
 
   const draft = await createProposal({
     actor: {
-      id: "executive-1",
-      role: "executive",
+      id: "president-1",
+      role: "president",
       clubId: "club-1"
     },
     payload: {
@@ -399,13 +399,13 @@ test("executive can save an incomplete proposal as a draft", async () => {
   assert.equal(draft.status, "draft");
 });
 
-test("executive cannot submit an incomplete draft for advisor review", async () => {
+test("president cannot submit an incomplete draft for advisor review", async () => {
   const fakeDatabase = {
     async getProposalById() {
       return {
         id: "proposal-partial-draft",
         club_id: "club-1",
-        submitted_by: "executive-1",
+        submitted_by: "president-1",
         title: "Freshers Mixer",
         description: null,
         event_date: null,
@@ -421,10 +421,10 @@ test("executive cannot submit an incomplete draft for advisor review", async () 
 
   await assert.rejects(
     () =>
-      submitExecutiveProposalRevision({
+      submitPresidentProposalRevision({
         actor: {
-          id: "executive-1",
-          role: "executive",
+          id: "president-1",
+          role: "president",
           clubId: "club-1"
         },
         proposalId: "proposal-partial-draft",
@@ -434,7 +434,7 @@ test("executive cannot submit an incomplete draft for advisor review", async () 
   );
 });
 
-test("executive can keep editing an incomplete draft", async () => {
+test("president can keep editing an incomplete draft", async () => {
   let update;
   const fakeDatabase = {
     async getProposalById(proposalId) {
@@ -442,7 +442,7 @@ test("executive can keep editing an incomplete draft", async () => {
       return {
         id: "proposal-partial-draft",
         club_id: "club-1",
-        submitted_by: "executive-1",
+        submitted_by: "president-1",
         title: "Untitled draft",
         description: null,
         event_date: null,
@@ -457,7 +457,7 @@ test("executive can keep editing an incomplete draft", async () => {
       return {
         id: proposalId,
         club_id: "club-1",
-        submitted_by: "executive-1",
+        submitted_by: "president-1",
         status: "draft",
         created_at: "2026-04-10T10:00:00.000Z",
         updated_at: "2026-04-10T10:00:00.000Z",
@@ -466,10 +466,10 @@ test("executive can keep editing an incomplete draft", async () => {
     }
   };
 
-  const proposal = await updateExecutiveProposal({
+  const proposal = await updatePresidentProposal({
     actor: {
-      id: "executive-1",
-      role: "executive",
+      id: "president-1",
+      role: "president",
       clubId: "club-1"
     },
     proposalId: "proposal-partial-draft",
@@ -483,11 +483,11 @@ test("executive can keep editing an incomplete draft", async () => {
 
   assert.equal(update.title, "Freshers Mixer");
   assert.equal(update.description, null);
-  assert.equal(update.last_edited_by, "executive-1");
+  assert.equal(update.last_edited_by, "president-1");
   assert.equal(proposal.status, "draft");
 });
 
-test("executive can edit a rejected proposal", async () => {
+test("president can edit a rejected proposal", async () => {
   let update;
   const fakeDatabase = {
     async getProposalById(proposalId) {
@@ -495,7 +495,7 @@ test("executive can edit a rejected proposal", async () => {
       return {
         id: "proposal-2",
         club_id: "club-1",
-        submitted_by: "executive-1",
+        submitted_by: "president-1",
         title: "Budget Revision",
         description: "A revised budget proposal.",
         event_date: "2026-05-25",
@@ -510,7 +510,7 @@ test("executive can edit a rejected proposal", async () => {
       return {
         id: proposalId,
         club_id: "club-1",
-        submitted_by: "executive-1",
+        submitted_by: "president-1",
         status: "advisor_rejected",
         created_at: "2026-04-06T10:00:00.000Z",
         updated_at: "2026-04-08T10:00:00.000Z",
@@ -519,10 +519,10 @@ test("executive can edit a rejected proposal", async () => {
     }
   };
 
-  const proposal = await updateExecutiveProposal({
+  const proposal = await updatePresidentProposal({
     actor: {
-      id: "executive-1",
-      role: "executive",
+      id: "president-1",
+      role: "president",
       clubId: "club-1"
     },
     proposalId: "proposal-2",
@@ -531,11 +531,11 @@ test("executive can edit a rejected proposal", async () => {
   });
 
   assert.equal(update.title, "Leadership Summit Revised");
-  assert.equal(update.last_edited_by, "executive-1");
+  assert.equal(update.last_edited_by, "president-1");
   assert.equal(proposal.status, "advisor_rejected");
 });
 
-test("executive can resubmit a rejected proposal for advisor review", async () => {
+test("president can resubmit a rejected proposal for advisor review", async () => {
   let update;
   let notifications = [];
   const fakeDatabase = {
@@ -544,7 +544,7 @@ test("executive can resubmit a rejected proposal for advisor review", async () =
       return {
         id: "proposal-2",
         club_id: "club-1",
-        submitted_by: "executive-1",
+        submitted_by: "president-1",
         title: "Budget Revision",
         description: "A revised budget proposal.",
         event_date: "2026-05-25",
@@ -563,7 +563,7 @@ test("executive can resubmit a rejected proposal for advisor review", async () =
         ],
         responsible_members: [
           {
-            name: "Amina Executive",
+            name: "Tomi President",
             student_id: "24-2120-109",
             phone_number: "08012345678",
             position: "Executive"
@@ -581,7 +581,7 @@ test("executive can resubmit a rejected proposal for advisor review", async () =
       return {
         id: proposalId,
         club_id: "club-1",
-        submitted_by: "executive-1",
+        submitted_by: "president-1",
         title: "Budget Revision",
         description: "A revised budget proposal.",
         event_date: "2026-05-25",
@@ -601,10 +601,10 @@ test("executive can resubmit a rejected proposal for advisor review", async () =
     }
   };
 
-  const proposal = await submitExecutiveProposalRevision({
+  const proposal = await submitPresidentProposalRevision({
     actor: {
-      id: "executive-1",
-      role: "executive",
+      id: "president-1",
+      role: "president",
       clubId: "club-1"
     },
     proposalId: "proposal-2",
@@ -618,13 +618,13 @@ test("executive can resubmit a rejected proposal for advisor review", async () =
   assert.equal(proposal.current_owner_role, "advisor");
 });
 
-test("executive cannot edit a proposal that is already in review", async () => {
+test("president cannot edit a proposal that is already in review", async () => {
   const fakeDatabase = {
     async getProposalById() {
       return {
         id: "proposal-1",
         club_id: "club-1",
-        submitted_by: "executive-1",
+        submitted_by: "president-1",
         status: "pending_advisor_review"
       };
     }
@@ -632,10 +632,10 @@ test("executive cannot edit a proposal that is already in review", async () => {
 
   await assert.rejects(
     () =>
-      updateExecutiveProposal({
+      updatePresidentProposal({
         actor: {
-          id: "executive-1",
-          role: "executive",
+          id: "president-1",
+          role: "president",
           clubId: "club-1"
         },
         proposalId: "proposal-1",
@@ -645,3 +645,4 @@ test("executive cannot edit a proposal that is already in review", async () => {
     (error) => error.statusCode === 409 && error.code === "INVALID_PROPOSAL_STATE"
   );
 });
+

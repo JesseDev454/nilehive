@@ -13,8 +13,8 @@ import {
   ApiClientError,
   getAdminProposal,
   getAdvisorProposal,
-  getExecutiveProposal,
-  submitExecutiveProposalRevision,
+  getPresidentProposal,
+  submitPresidentProposalRevision,
   submitAdminDecision,
   type ProposalRecord
 } from "@/lib/api";
@@ -62,7 +62,7 @@ function buildApprovalSteps(proposal: ProposalRecord) {
 
   return [
     {
-      label: "Executive Submission",
+      label: "President Submission",
       status: proposal.status === "draft" ? "current" as const : "completed" as const,
       remarks:
         proposal.status === "draft"
@@ -89,7 +89,7 @@ export default function ProposalDetail() {
   const [adminRemarks, setAdminRemarks] = useState("");
   const [adminDecision, setAdminDecision] = useState<"approve" | "reject" | null>(null);
   const [isResubmitting, setIsResubmitting] = useState(false);
-  const isUnsupportedRole = role !== "executive" && role !== "admin" && role !== "advisor";
+  const isUnsupportedRole = role !== "president" && role !== "admin" && role !== "advisor";
 
   const { data: proposal, isLoading, isError, error } = useQuery({
     queryKey: ["proposal-detail", role, id],
@@ -102,7 +102,7 @@ export default function ProposalDetail() {
         return getAdvisorProposal(id);
       }
 
-      return getExecutiveProposal(id);
+      return getPresidentProposal(id);
     },
     enabled: !!id && !isUnsupportedRole,
     retry: false
@@ -119,7 +119,7 @@ export default function ProposalDetail() {
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
             <p className="font-medium">Proposal detail is not available for this role yet.</p>
             <p className="text-sm text-muted-foreground mt-2">
-              This proposal detail route is currently available for executives, advisors, and admins.
+              This proposal detail route is currently available for presidents, advisors, and admins.
             </p>
           </CardContent>
         </Card>
@@ -170,7 +170,7 @@ export default function ProposalDetail() {
     setIsResubmitting(true);
 
     try {
-      await submitExecutiveProposalRevision(proposal.id);
+      await submitPresidentProposalRevision(proposal.id);
       toast.success("Proposal resubmitted", {
         description: "Your proposal has been sent back to advisor review."
       });
@@ -224,7 +224,7 @@ export default function ProposalDetail() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-2 space-y-4">
-              {role === "executive" &&
+              {role === "president" &&
                 ["draft", "advisor_rejected", "admin_rejected"].includes(proposal.status) && (
                   <Card>
                     <CardHeader>

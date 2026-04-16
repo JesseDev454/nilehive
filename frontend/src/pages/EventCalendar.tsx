@@ -59,7 +59,7 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
   const [feedback, setFeedback] = useState("");
   const [rating, setRating] = useState("5");
   const isStudent = role === "student";
-  const canManageAttendance = ["admin", "president", "executive", "advisor"].includes(role);
+  const canManageAttendance = ["admin", "president"].includes(role);
   const {
     data: engagement,
     isLoading,
