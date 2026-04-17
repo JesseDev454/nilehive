@@ -194,26 +194,30 @@ export default function Login() {
             </Link>
           </div>
 
-          <div className="mt-8 flex flex-col gap-4 border-t border-[#ebeef1] pt-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-[#6edc94]" />
-              <span className="text-xs font-semibold text-[#44474e]">System Status: Operational</span>
+          {/* Changed mt-8 to mt-4 and pt-6 to pt-4 */}
+          <div className="mt-4 flex flex-col gap-4 border-t border-[#ebeef1] pt-4 sm:flex-row sm:items-center sm:justify-between">
+            {/* Left Side Group */}
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-[#6edc94]" />
+                <span className="text-xs font-semibold text-[#44474e]">System: Operational</span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-[#6edc94]" />
+                <span className="text-xs font-semibold text-[#44474e]">Live Workflow</span>
+              </div>
             </div>
-            <div className="flex items-center gap-2 text-xs font-bold text-[#000d27]">
-              <Sparkles className="h-4 w-4 text-[#F5B942]" />
+
+            {/* Right Side Badge */}
+            <div className="flex items-center gap-2 rounded-lg bg-[#f1f4f7] px-3 py-1 text-xs font-bold text-[#000d27]">
+              <Sparkles className="h-3.5 w-3.5 text-[#F5B942]" />
               Club Services
             </div>
           </div>
         </div>
       </section>
 
-      <div className="fixed bottom-8 left-8 hidden items-center gap-3 rounded-full bg-white/80 px-4 py-3 shadow-[0_4px_20px_rgba(11,35,71,0.08)] backdrop-blur-md lg:flex">
-        <span className="relative flex h-3 w-3">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#8af9ae] opacity-75" />
-          <span className="relative inline-flex h-3 w-3 rounded-full bg-[#299e5c]" />
-        </span>
-        <span className="text-xs font-bold tracking-wide text-[#000d27]">Live club workflow</span>
-      </div>
     </main>
   );
 }
