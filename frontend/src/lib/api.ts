@@ -59,6 +59,35 @@ export interface ProfileRecord {
   updated_at?: string;
 }
 
+export interface AdminUserProfileRecord extends ProfileRecord {
+  club?: {
+    id: string;
+    name: string;
+    code: string | null;
+  } | null;
+}
+
+export interface ProfileRoleHistoryRecord {
+  id: string;
+  profile_id: string;
+  previous_role: ProfileRecord["role"] | null;
+  new_role: ProfileRecord["role"];
+  previous_club_id: string | null;
+  new_club_id: string | null;
+  changed_by: string;
+  remarks: string | null;
+  created_at: string;
+}
+
+export interface AdminRoleChangeResult {
+  profile: AdminUserProfileRecord;
+  history: ProfileRoleHistoryRecord | null;
+}
+
+export interface AdminAdvisorAssignmentResult extends AdminRoleChangeResult {
+  club: ClubRecord;
+}
+
 export interface ProfileOnboardingPayload {
   full_name: string;
   student_id: string;
@@ -864,6 +893,82 @@ export async function getAdminProposal(proposalId: string, token?: string) {
     {
       method: "GET",
       token
+    }
+  );
+
+  return response.data;
+}
+
+export async function getAdminUsers(
+  filters: { role?: string; club_id?: string; requested_role?: string; q?: string } = {},
+  token?: string
+) {
+  const params = new URLSearchParams();
+
+  if (filters.role) {
+    params.set("role", filters.role);
+  }
+
+  if (filters.club_id) {
+    params.set("club_id", filters.club_id);
+  }
+
+  if (filters.requested_role) {
+    params.set("requested_role", filters.requested_role);
+  }
+
+  if (filters.q) {
+    params.set("q", filters.q);
+  }
+
+  const query = params.toString();
+  const response = await request<ApiEnvelope<AdminUserProfileRecord[]>>(
+    `/api/v1/admin/users${query ? `?${query}` : ""}`,
+    {
+      method: "GET",
+      token
+    }
+  );
+
+  return response.data;
+}
+
+export async function updateAdminUserRole(
+  profileId: string,
+  payload: {
+    role: ProfileRecord["role"];
+    club_id?: string | null;
+    remarks?: string | null;
+  },
+  token?: string
+) {
+  const response = await request<ApiEnvelope<AdminRoleChangeResult>>(
+    `/api/v1/admin/users/${profileId}/role`,
+    {
+      method: "POST",
+      token,
+      body: payload
+    }
+  );
+
+  return response.data;
+}
+
+export async function assignAdminUserAdvisor(
+  profileId: string,
+  payload: {
+    club_id: string;
+    replace_existing?: boolean;
+    remarks?: string | null;
+  },
+  token?: string
+) {
+  const response = await request<ApiEnvelope<AdminAdvisorAssignmentResult>>(
+    `/api/v1/admin/users/${profileId}/advisor-assignment`,
+    {
+      method: "POST",
+      token,
+      body: payload
     }
   );
 

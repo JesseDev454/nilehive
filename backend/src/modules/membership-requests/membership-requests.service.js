@@ -61,8 +61,8 @@ function assertCanReviewRequest(actor, request) {
     throw new ApiError(403, "Presidents can only review requests for their own club", "FORBIDDEN");
   }
 
-  if (request.requested_role === "president") {
-    throw new ApiError(403, "Only admins can approve president requests", "FORBIDDEN");
+  if (["executive", "president"].includes(request.requested_role)) {
+    throw new ApiError(403, "Only admins can approve executive or president requests", "FORBIDDEN");
   }
 }
 

@@ -141,7 +141,7 @@ export default function ProfileSetup() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="profile-student-id">Student ID</Label>
+                <Label htmlFor="profile-student-id">University ID</Label>
                 <NhStudentId
                   id="profile-student-id"
                   value={studentId}

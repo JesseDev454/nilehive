@@ -185,7 +185,7 @@ export default function SignUp() {
 
               <div className="space-y-2">
                 <Label className="font-semibold text-[#181c1e]" htmlFor="student-id">
-                  Student ID
+                  University ID
                 </Label>
                 <NhStudentId id="student-id" value={studentId} onChange={setStudentId} required />
               </div>

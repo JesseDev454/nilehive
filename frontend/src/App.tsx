@@ -23,6 +23,7 @@ import Members from "@/pages/Members";
 import Membership from "@/pages/Membership";
 import Notifications from "@/pages/Notifications";
 import Tasks from "@/pages/Tasks";
+import UserManagement from "@/pages/UserManagement";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -75,6 +76,7 @@ const App = () => (
                   <Route path="/dues" element={<Dues />} />
                   <Route path="/communications" element={<Communications />} />
                   <Route path="/tasks" element={<Tasks />} />
+                  <Route path="/user-management" element={<UserManagement />} />
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/archive" element={<MediaArchive />} />
                 </Route>

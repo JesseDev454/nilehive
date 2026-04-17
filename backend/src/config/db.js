@@ -30,8 +30,12 @@ const eventAttendanceSelect =
   "id, proposal_id, club_id, user_id, attended, checked_in_by, checked_in_at, created_at, updated_at, profile:profiles!event_attendance_user_id_fkey(id, full_name, student_id, role)";
 const profileSelect =
   "id, full_name, role, club_id, student_id, requested_role, onboarding_status, created_at, updated_at";
+const profileWithClubSelect =
+  "id, full_name, role, club_id, student_id, requested_role, onboarding_status, created_at, updated_at, club:clubs!profiles_club_id_fkey(id, name, code)";
 const membershipRequestSelect =
   "id, profile_id, club_id, requested_role, status, remarks, decision_remarks, reviewed_by, reviewed_at, member_id, due_payment_id, dues_amount, academic_session, created_at, updated_at, profile:profiles!membership_requests_profile_id_fkey(id, full_name, student_id, role), club:clubs!membership_requests_club_id_fkey(id, name, code)";
+const profileRoleHistorySelect =
+  "id, profile_id, previous_role, new_role, previous_club_id, new_club_id, changed_by, remarks, created_at";
 
 function createAdminClient() {
   const env = getEnv();
@@ -144,6 +148,35 @@ function createDatabase(options = {}) {
       return data ?? null;
     },
 
+    async updateClubAdvisor(clubId, advisorId) {
+      const { data, error } = await getClient()
+        .from("clubs")
+        .update({ advisor_id: advisorId })
+        .eq("id", clubId)
+        .select(clubSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async clearClubAdvisorAssignments(advisorId) {
+      const { data, error } = await getClient()
+        .from("clubs")
+        .update({ advisor_id: null })
+        .eq("advisor_id", advisorId)
+        .select(clubSelect);
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
     async getProposalById(proposalId) {
       const { data, error } = await getClient()
         .from("proposals")
@@ -178,6 +211,55 @@ function createDatabase(options = {}) {
         .update(update)
         .eq("id", profileId)
         .select(profileSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async listProfiles(filters = {}) {
+      let query = getClient()
+        .from("profiles")
+        .select(profileWithClubSelect)
+        .order("created_at", { ascending: false });
+
+      if (filters.role) {
+        query = query.eq("role", filters.role);
+      }
+
+      if (filters.clubId) {
+        query = query.eq("club_id", filters.clubId);
+      }
+
+      if (filters.requestedRole) {
+        query = query.eq("requested_role", filters.requestedRole);
+      }
+
+      if (filters.q) {
+        const search = filters.q.replace(/[%(),]/g, "").trim();
+
+        if (search) {
+          query = query.or(`full_name.ilike.%${search}%,student_id.ilike.%${search}%`);
+        }
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async createProfileRoleHistory(entry) {
+      const { data, error } = await getClient()
+        .from("profile_role_history")
+        .insert(entry)
+        .select(profileRoleHistorySelect)
         .single();
 
       if (error) {

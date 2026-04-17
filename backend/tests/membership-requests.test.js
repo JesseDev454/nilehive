@@ -12,7 +12,7 @@ function createRequest(overrides = {}) {
     id: "request-1",
     profile_id: "student-1",
     club_id: "club-1",
-    requested_role: "executive",
+    requested_role: "member",
     status: "pending",
     remarks: "I want to help run events.",
     decision_remarks: null,
@@ -35,7 +35,7 @@ function createProfile(overrides = {}) {
     role: "student",
     club_id: "club-1",
     student_id: "NUN-001",
-    requested_role: "executive",
+    requested_role: "member",
     created_at: "2026-04-15T10:00:00.000Z",
     updated_at: "2026-04-15T10:00:00.000Z",
     ...overrides
@@ -51,7 +51,7 @@ function createMember(overrides = {}) {
     student_id: "NUN-001",
     email: null,
     phone_number: null,
-    club_role: "executive",
+    club_role: "member",
     membership_status: "inactive",
     created_at: "2026-04-15T10:00:00.000Z",
     updated_at: "2026-04-15T10:00:00.000Z",
@@ -165,7 +165,7 @@ test("president approval creates inactive member and unpaid dues record", async 
   });
 
   assert.equal(createdMember.membership_status, "inactive");
-  assert.equal(createdMember.club_role, "executive");
+  assert.equal(createdMember.club_role, "member");
   assert.equal(createdPayment.status, "unpaid");
   assert.equal(createdPayment.amount, 5000);
   assert.equal(requestUpdate.status, "approved_pending_dues");
@@ -177,6 +177,35 @@ test("president cannot approve president membership requests", async () => {
     async getMembershipRequestById() {
       return createRequest({
         requested_role: "president"
+      });
+    }
+  };
+
+  await assert.rejects(
+    () =>
+      decideMembershipRequest({
+        actor: {
+          id: "president-1",
+          role: "president",
+          clubId: "club-1"
+        },
+        requestId: "request-1",
+        payload: {
+          decision: "approve",
+          dues_amount: 5000,
+          academic_session: "2025/2026"
+        },
+        database: fakeDatabase
+      }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
+});
+
+test("president cannot approve executive membership requests", async () => {
+  const fakeDatabase = {
+    async getMembershipRequestById() {
+      return createRequest({
+        requested_role: "executive"
       });
     }
   };
@@ -220,6 +249,7 @@ test("dues payment verification activates membership and requested role", async 
     async getMembershipRequestByMemberId(memberId) {
       assert.equal(memberId, "member-1");
       return createRequest({
+        requested_role: "executive",
         status: "approved_pending_dues",
         member_id: "member-1",
         due_payment_id: "payment-1"

@@ -1,4 +1,4 @@
-import { CalendarDays, ClipboardList, CreditCard, FileText, Home, Plus, Clock, Bell, Users, MessageSquare, UserPlus } from "lucide-react";
+import { CalendarDays, ClipboardList, CreditCard, FileText, Home, Plus, Clock, Bell, Users, MessageSquare, UserPlus, UserCog } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useRole } from "@/contexts/RoleContext";
 import {
@@ -30,6 +30,7 @@ export function AppSidebar() {
 
   const adminItems = [
     { title: "Dashboard", url: "/", icon: Home },
+    { title: "User Management", url: "/user-management", icon: UserCog },
     { title: "All Proposals", url: "/proposals", icon: FileText },
     { title: "Membership", url: "/membership", icon: UserPlus },
     { title: "Members", url: "/members", icon: Users },
