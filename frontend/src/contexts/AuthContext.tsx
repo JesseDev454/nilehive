@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { SESSION_EXPIRED_EVENT } from "@/lib/api";
+import { getAllowedEmailDomainLabel, isAllowedEmailDomain } from "@/lib/env";
 import { supabase } from "@/lib/supabase";
 
 export type AppRole = "executive" | "advisor" | "admin" | "president" | "student";
@@ -199,8 +200,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       },
       async signUp({ email, password, fullName, requestedRole, clubName, studentId }) {
+        const normalizedEmail = email.trim().toLowerCase();
+
+        if (!isAllowedEmailDomain(normalizedEmail)) {
+          throw new Error(`Please use your Nile University email address (${getAllowedEmailDomainLabel()}).`);
+        }
+
         const { error } = await supabase.auth.signUp({
-          email: email.trim().toLowerCase(),
+          email: normalizedEmail,
           password,
           options: {
             data: {

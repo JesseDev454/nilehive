@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { NhStudentId } from "@/components/NhStudentId";
 import { useAuth } from "@/contexts/AuthContext";
 import { completeProfileOnboarding, getPublicClubs } from "@/lib/api";
+import { getAllowedEmailDomainLabel, isAllowedEmailDomain } from "@/lib/env";
 
 export default function ProfileSetup() {
   const { session, signOut, refreshProfile } = useAuth();
@@ -48,6 +49,13 @@ export default function ProfileSetup() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (!isAllowedEmailDomain(session?.user.email ?? "")) {
+      toast.error("Use your Nile University email", {
+        description: `Profile setup requires ${getAllowedEmailDomainLabel()}.`
+      });
+      return;
+    }
 
     if (!clubId) {
       toast.error("Select your club", {
@@ -101,7 +109,7 @@ export default function ProfileSetup() {
             </h1>
             <p className="mt-4 text-base leading-relaxed text-[#44474e]">
               We found your Supabase login, but NileHive still needs your app profile before
-              opening the dashboard. This replaces manual profile setup in Supabase.
+              opening the dashboard. Real users must use a Nile University email address.
             </p>
           </div>
           <Card className="border-0 bg-white/80 shadow-sm">
