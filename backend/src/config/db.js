@@ -8,6 +8,7 @@ const notificationSelect =
 const eventReminderSelect =
   "id, user_id, proposal_id, message, remind_at, delivery_status, created_at";
 const clubSelect = "id, name, code, advisor_id, created_at";
+const publicClubSelect = "id, name, code, created_at";
 const taskSelect =
   "id, club_id, assigned_by, assigned_to, title, description, priority, status, due_date, created_at, updated_at";
 const taskStatusHistorySelect =
@@ -163,6 +164,37 @@ function createDatabase(options = {}) {
       return data;
     },
 
+    async listPublicClubs() {
+      let query = getClient()
+        .from("clubs")
+        .select(publicClubSelect)
+        .order("name", { ascending: true });
+
+      let { data, error } = await query;
+
+      if (error) {
+        const fallback = await getClient()
+          .from("clubs")
+          .select("id, name")
+          .order("name", { ascending: true });
+
+        data = fallback.data;
+        error = fallback.error;
+      }
+
+      if (error) {
+        throw error;
+      }
+
+      return (data ?? []).map((club) => ({
+        id: club.id,
+        name: club.name,
+        code: club.code ?? null,
+        advisor_id: null,
+        created_at: club.created_at ?? null
+      }));
+    },
+
     async clearClubAdvisorAssignments(advisorId) {
       const { data, error } = await getClient()
         .from("clubs")
@@ -246,13 +278,53 @@ function createDatabase(options = {}) {
         }
       }
 
-      const { data, error } = await query;
+      let { data, error } = await query;
+
+      if (error) {
+        let fallbackQuery = getClient()
+          .from("clubs")
+          .select("id, name, advisor_id")
+          .order("name", { ascending: true });
+
+        if (filters.ids?.length) {
+          fallbackQuery = fallbackQuery.in("id", filters.ids);
+        }
+
+        if (filters.advisorId) {
+          fallbackQuery = fallbackQuery.eq("advisor_id", filters.advisorId);
+        }
+
+        const fallback = await fallbackQuery;
+        data = fallback.data;
+        error = fallback.error;
+      }
+
+      if (error && !filters.advisorId) {
+        let minimalQuery = getClient()
+          .from("clubs")
+          .select("id, name")
+          .order("name", { ascending: true });
+
+        if (filters.ids?.length) {
+          minimalQuery = minimalQuery.in("id", filters.ids);
+        }
+
+        const minimal = await minimalQuery;
+        data = minimal.data;
+        error = minimal.error;
+      }
 
       if (error) {
         throw error;
       }
 
-      return data;
+      return (data ?? []).map((club) => ({
+        id: club.id,
+        name: club.name,
+        code: club.code ?? null,
+        advisor_id: club.advisor_id ?? null,
+        created_at: club.created_at ?? null
+      }));
     },
 
     async createProfileRoleHistory(entry) {
@@ -602,6 +674,20 @@ function createDatabase(options = {}) {
       }
 
       return data ?? null;
+    },
+
+    async getApprovalsByProposalId(proposalId) {
+      const { data, error } = await getClient()
+        .from("approvals")
+        .select("proposal_id, reviewer_id, reviewer_role, decision, remarks, decided_at")
+        .eq("proposal_id", proposalId)
+        .order("decided_at", { ascending: true });
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? [];
     },
 
     async getLatestApprovalsByProposalIds(proposalIds) {

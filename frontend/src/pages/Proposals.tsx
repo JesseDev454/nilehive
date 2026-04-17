@@ -8,6 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRole } from "@/contexts/RoleContext";
 import { ApiClientError, getAdminProposals, getPresidentProposals, type ProposalRecord } from "@/lib/api";
+import {
+  getProposalOwnerLabel,
+  getProposalPrimaryActionLabel,
+  getProposalStatusMeta,
+  isProposalEditable
+} from "@/lib/proposalWorkflow";
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -53,8 +59,8 @@ export default function Proposals() {
 
     if (isPresident) {
       return {
-        title: "My Proposals",
-        description: "Track proposals you submitted"
+        title: "Club Proposals",
+        description: "Track proposals submitted by the club president"
       };
     }
 
@@ -129,7 +135,7 @@ export default function Proposals() {
                   <tr className="border-b bg-muted/50">
                     <th className="text-left p-3 font-medium text-muted-foreground">Title</th>
                     <th className="text-left p-3 font-medium text-muted-foreground hidden md:table-cell">
-                      {isAdmin ? "Club ID" : "Stage"}
+                      {isAdmin ? "Club ID" : "Currently With"}
                     </th>
                     <th className="text-left p-3 font-medium text-muted-foreground hidden sm:table-cell">Date</th>
                     <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
@@ -145,7 +151,7 @@ export default function Proposals() {
                         </Link>
                       </td>
                       <td className="p-3 hidden md:table-cell text-muted-foreground">
-                        {isAdmin ? proposal.club_id ?? "-" : proposal.current_stage ?? "-"}
+                        {isAdmin ? proposal.club_id ?? "-" : getProposalOwnerLabel(proposal.current_owner_role)}
                       </td>
                       <td className="p-3 hidden sm:table-cell text-muted-foreground">
                         {getDateLabel(proposal.event_date)}
@@ -155,8 +161,19 @@ export default function Proposals() {
                       </td>
                       <td className="p-3">
                         <Button asChild variant="outline" size="sm">
-                          <Link to={`/proposals/${proposal.id}`}>View</Link>
+                          <Link
+                            to={
+                              isPresident && isProposalEditable(proposal.status)
+                                ? `/proposals/new?edit=${proposal.id}`
+                                : `/proposals/${proposal.id}`
+                            }
+                          >
+                            {isPresident ? getProposalPrimaryActionLabel(proposal.status) : "View"}
+                          </Link>
                         </Button>
+                        <p className="mt-1 text-xs text-muted-foreground hidden lg:block">
+                          {getProposalStatusMeta(proposal.status).label}
+                        </p>
                       </td>
                     </tr>
                   ))}

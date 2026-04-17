@@ -18,6 +18,13 @@ import {
   submitAdminDecision,
   type ProposalRecord
 } from "@/lib/api";
+import {
+  getProposalNextAction,
+  getProposalOwnerLabel,
+  getProposalPrimaryActionLabel,
+  getProposalStatusMeta,
+  isProposalEditable
+} from "@/lib/proposalWorkflow";
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -31,6 +38,17 @@ function getDateLabel(value?: string) {
   return value ? value.slice(0, 10) : "-";
 }
 
+function getDateTimeLabel(value?: string | null) {
+  if (!value) {
+    return undefined;
+  }
+
+  return new Intl.DateTimeFormat("en-NG", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(new Date(value));
+}
+
 function formatCurrency(value?: number | null) {
   return new Intl.NumberFormat("en-NG", {
     style: "currency",
@@ -40,6 +58,8 @@ function formatCurrency(value?: number | null) {
 }
 
 function buildApprovalSteps(proposal: ProposalRecord) {
+  const advisorDecision = proposal.approval_history?.find((approval) => approval.reviewer_role === "advisor");
+  const adminDecision = proposal.approval_history?.find((approval) => approval.reviewer_role === "admin");
   const advisorStepStatus =
     proposal.status === "draft"
       ? "pending"
@@ -67,16 +87,25 @@ function buildApprovalSteps(proposal: ProposalRecord) {
       remarks:
         proposal.status === "draft"
           ? "Draft saved; not submitted yet"
-          : `Submitted ${getDateLabel(proposal.submitted_at ?? proposal.created_at)}`
+          : "Submitted by the club president",
+      timestamp: getDateTimeLabel(proposal.submitted_at ?? proposal.created_at)
     },
     {
       label: "Advisor Review",
       status: advisorStepStatus as "completed" | "current" | "pending" | "rejected",
-      remarks: proposal.advisor_remarks ?? undefined
+      remarks: advisorDecision?.remarks ?? proposal.advisor_remarks ?? undefined,
+      timestamp: getDateTimeLabel(advisorDecision?.decided_at ?? proposal.advisor_decided_at)
     },
     {
       label: "Admin Review",
-      status: adminStepStatus as "completed" | "current" | "pending" | "rejected"
+      status: adminStepStatus as "completed" | "current" | "pending" | "rejected",
+      remarks: adminDecision?.remarks ?? proposal.admin_remarks ?? undefined,
+      timestamp: getDateTimeLabel(adminDecision?.decided_at ?? proposal.admin_decided_at)
+    },
+    {
+      label: "Approved Event",
+      status: proposal.status === "approved" ? "completed" as const : "pending" as const,
+      remarks: proposal.status === "approved" ? "Ready to appear in approved events." : undefined
     }
   ];
 }
@@ -215,35 +244,71 @@ export default function ProposalDetail() {
             <div>
               <h1 className="text-2xl font-bold">{proposal.title}</h1>
               <p className="text-sm text-muted-foreground mt-1">
-                {role === "admin" || role === "advisor" ? `Club ${proposal.club_id ?? "-"}` : "Submitted proposal"} -{" "}
+                {role === "admin" || role === "advisor" ? `Submitted by the club president for club ${proposal.club_id ?? "-"}` : "Club proposal"} -{" "}
                 {getDateLabel(proposal.created_at)}
               </p>
             </div>
             <StatusBadge status={proposal.status} />
           </div>
 
+          <Card className="border-0 bg-[#000d27] text-white shadow-xl">
+            <CardHeader>
+              <CardTitle className="text-base text-white">Workflow Status</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-white/50">Current Status</p>
+                <p className="mt-1 font-semibold">{getProposalStatusMeta(proposal.status).label}</p>
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-white/50">Currently With</p>
+                <p className="mt-1 font-semibold">{getProposalOwnerLabel(proposal.current_owner_role)}</p>
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-white/50">Revision Count</p>
+                <p className="mt-1 font-semibold">{proposal.revision_count ?? 0}</p>
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-white/50">Last Updated</p>
+                <p className="mt-1 font-semibold">{getDateLabel(proposal.updated_at)}</p>
+              </div>
+              <div className="rounded-2xl bg-white/10 p-4 sm:col-span-2 lg:col-span-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-[#F5B942]">Next Action</p>
+                <p className="mt-1 text-white/90">{getProposalNextAction(proposal.status)}</p>
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-2 space-y-4">
-              {role === "president" &&
-                ["draft", "advisor_rejected", "admin_rejected"].includes(proposal.status) && (
+              {role === "president" && isProposalEditable(proposal.status) && (
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-base">Revision Actions</CardTitle>
+                      <CardTitle className="text-base">
+                        {proposal.status === "draft" ? "Draft Actions" : "Returned Proposal Actions"}
+                      </CardTitle>
                     </CardHeader>
-                    <CardContent className="flex flex-col gap-2 sm:flex-row">
-                      <Button
-                        variant="outline"
-                        onClick={() => navigate(`/proposals/new?edit=${proposal.id}`)}
-                      >
-                        Edit Proposal
-                      </Button>
-                      <Button
-                        className="bg-[#0d5bbc] hover:bg-[#004493] text-white"
-                        disabled={isResubmitting}
-                        onClick={handleResubmit}
-                      >
-                        {isResubmitting ? "Resubmitting..." : "Submit for Advisor Review"}
-                      </Button>
+                    <CardContent className="space-y-4">
+                      <p className="text-sm text-muted-foreground">
+                        {proposal.status === "draft"
+                          ? "This proposal is saved but has not been submitted."
+                          : "This proposal was returned. Review the remarks, edit it, then resubmit."}
+                      </p>
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <Button
+                          variant="outline"
+                          onClick={() => navigate(`/proposals/new?edit=${proposal.id}`)}
+                        >
+                          {getProposalPrimaryActionLabel(proposal.status)}
+                        </Button>
+                        <Button
+                          className="bg-[#0d5bbc] hover:bg-[#004493] text-white"
+                          disabled={isResubmitting}
+                          onClick={handleResubmit}
+                        >
+                          {isResubmitting ? "Resubmitting..." : "Submit for Advisor Review"}
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 )}
@@ -282,11 +347,11 @@ export default function ProposalDetail() {
                     </div>
                     <div>
                       <span className="text-muted-foreground">Current Stage</span>
-                      <p className="font-medium mt-1">{proposal.current_stage ?? proposal.status}</p>
+                      <p className="font-medium mt-1">{getProposalStatusMeta(proposal.status).label}</p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Currently With</span>
-                      <p className="font-medium mt-1">{proposal.current_owner_role ?? "-"}</p>
+                      <p className="font-medium mt-1">{getProposalOwnerLabel(proposal.current_owner_role)}</p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Revision Count</span>
@@ -409,24 +474,30 @@ export default function ProposalDetail() {
               {(proposal.advisor_remarks || proposal.admin_remarks || proposal.latest_approval) && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Latest Decision Context</CardTitle>
+                    <CardTitle className="text-base">Review Notes</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm">
                     {proposal.advisor_remarks && (
-                      <div>
-                        <span className="text-muted-foreground">Advisor Remarks</span>
+                      <div className="rounded-xl bg-muted p-3">
+                        <span className="font-medium">Advisor remarks</span>
                         <p className="mt-1">{proposal.advisor_remarks}</p>
+                        {proposal.advisor_decided_at && (
+                          <p className="mt-2 text-xs text-muted-foreground">{getDateTimeLabel(proposal.advisor_decided_at)}</p>
+                        )}
                       </div>
                     )}
                     {proposal.admin_remarks && (
-                      <div>
-                        <span className="text-muted-foreground">Admin Remarks</span>
+                      <div className="rounded-xl bg-muted p-3">
+                        <span className="font-medium">Club Services admin remarks</span>
                         <p className="mt-1">{proposal.admin_remarks}</p>
+                        {proposal.admin_decided_at && (
+                          <p className="mt-2 text-xs text-muted-foreground">{getDateTimeLabel(proposal.admin_decided_at)}</p>
+                        )}
                       </div>
                     )}
                     {proposal.latest_approval && (
-                      <div>
-                        <span className="text-muted-foreground">Latest Approval</span>
+                      <div className="rounded-xl border p-3">
+                        <span className="font-medium">Latest decision</span>
                         <p className="mt-1">
                           {proposal.latest_approval.reviewer_role} {proposal.latest_approval.decision} on{" "}
                           {getDateLabel(proposal.latest_approval.decided_at)}

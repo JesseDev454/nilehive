@@ -162,8 +162,29 @@ async function createApprovedEventReminders(database, proposal, recipientIds) {
   );
 }
 
-function formatExecutiveProposal(proposal, latestApproval = null) {
+function formatApproval(approval) {
   return {
+    reviewer_id: approval.reviewer_id,
+    reviewer_role: approval.reviewer_role,
+    decision: approval.decision,
+    remarks: approval.remarks,
+    decided_at: approval.decided_at
+  };
+}
+
+function withApprovalHistory(formattedProposal, approvalHistory) {
+  if (!Array.isArray(approvalHistory)) {
+    return formattedProposal;
+  }
+
+  return {
+    ...formattedProposal,
+    approval_history: approvalHistory.map(formatApproval)
+  };
+}
+
+function formatExecutiveProposal(proposal, latestApproval = null, approvalHistory = null) {
+  return withApprovalHistory({
     id: proposal.id,
     club_id: proposal.club_id,
     title: proposal.title,
@@ -191,20 +212,12 @@ function formatExecutiveProposal(proposal, latestApproval = null) {
     advisor_decided_at: proposal.advisor_decided_at,
     admin_remarks: proposal.admin_remarks,
     admin_decided_at: proposal.admin_decided_at,
-    latest_approval: latestApproval
-      ? {
-          reviewer_id: latestApproval.reviewer_id,
-          reviewer_role: latestApproval.reviewer_role,
-          decision: latestApproval.decision,
-          remarks: latestApproval.remarks,
-          decided_at: latestApproval.decided_at
-        }
-      : null
-  };
+    latest_approval: latestApproval ? formatApproval(latestApproval) : null
+  }, approvalHistory);
 }
 
-function formatAdminProposal(proposal, latestApproval = null) {
-  return {
+function formatAdminProposal(proposal, latestApproval = null, approvalHistory = null) {
+  return withApprovalHistory({
     id: proposal.id,
     title: proposal.title,
     description: proposal.description,
@@ -233,20 +246,12 @@ function formatAdminProposal(proposal, latestApproval = null) {
     advisor_decided_at: proposal.advisor_decided_at,
     admin_remarks: proposal.admin_remarks,
     admin_decided_at: proposal.admin_decided_at,
-    latest_approval: latestApproval
-      ? {
-          reviewer_id: latestApproval.reviewer_id,
-          reviewer_role: latestApproval.reviewer_role,
-          decision: latestApproval.decision,
-          remarks: latestApproval.remarks,
-          decided_at: latestApproval.decided_at
-        }
-      : null
-  };
+    latest_approval: latestApproval ? formatApproval(latestApproval) : null
+  }, approvalHistory);
 }
 
-function formatAdvisorProposal(proposal, latestApproval = null) {
-  return formatAdminProposal(proposal, latestApproval);
+function formatAdvisorProposal(proposal, latestApproval = null, approvalHistory = null) {
+  return formatAdminProposal(proposal, latestApproval, approvalHistory);
 }
 
 async function createProposal(options) {
@@ -373,9 +378,14 @@ async function getPresidentProposalDetail(options) {
     throw new ApiError(404, "Proposal not found", "PROPOSAL_NOT_FOUND");
   }
 
-  const latestApproval = await database.getLatestApprovalByProposalId(proposalId);
+  const [latestApproval, approvalHistory] = await Promise.all([
+    database.getLatestApprovalByProposalId(proposalId),
+    typeof database.getApprovalsByProposalId === "function"
+      ? database.getApprovalsByProposalId(proposalId)
+      : []
+  ]);
 
-  return formatExecutiveProposal(proposal, latestApproval);
+  return formatExecutiveProposal(proposal, latestApproval, approvalHistory);
 }
 
 function ensurePresidentEditableProposal(actor, proposal) {
@@ -506,9 +516,14 @@ async function getAdvisorProposalDetail(options) {
     throw new ApiError(404, "Proposal not found", "PROPOSAL_NOT_FOUND");
   }
 
-  const latestApproval = await database.getLatestApprovalByProposalId(proposalId);
+  const [latestApproval, approvalHistory] = await Promise.all([
+    database.getLatestApprovalByProposalId(proposalId),
+    typeof database.getApprovalsByProposalId === "function"
+      ? database.getApprovalsByProposalId(proposalId)
+      : []
+  ]);
 
-  return formatAdvisorProposal(proposal, latestApproval);
+  return formatAdvisorProposal(proposal, latestApproval, approvalHistory);
 }
 
 async function listAdminProposals(options) {
@@ -557,9 +572,14 @@ async function getAdminProposalDetail(options) {
     throw new ApiError(404, "Proposal not found", "PROPOSAL_NOT_FOUND");
   }
 
-  const latestApproval = await database.getLatestApprovalByProposalId(proposalId);
+  const [latestApproval, approvalHistory] = await Promise.all([
+    database.getLatestApprovalByProposalId(proposalId),
+    typeof database.getApprovalsByProposalId === "function"
+      ? database.getApprovalsByProposalId(proposalId)
+      : []
+  ]);
 
-  return formatAdminProposal(proposal, latestApproval);
+  return formatAdminProposal(proposal, latestApproval, approvalHistory);
 }
 
 async function submitAdvisorDecision(options) {

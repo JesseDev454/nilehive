@@ -113,7 +113,7 @@ function getSubmissionErrorMessage(error: unknown) {
     const fieldMessages = details?.fields?.map((field) => field.message).filter(Boolean);
 
     if (fieldMessages?.length) {
-      return fieldMessages.join(" ");
+      return `Please complete these items: ${fieldMessages.join("; ")}`;
     }
 
     return error.message;
@@ -1129,15 +1129,13 @@ export default function NewProposal() {
           Back
         </Button>
         <div className="flex gap-2">
-          {!isEditMode && (
-            <Button
-              onClick={() => submit({ saveAsDraft: true })}
-              disabled={isSubmitting || isSavingDraft}
-              variant="outline"
-            >
-              {isSavingDraft ? "Saving..." : "Save Draft"}
-            </Button>
-          )}
+          <Button
+            onClick={() => submit({ saveAsDraft: true })}
+            disabled={isSubmitting || isSavingDraft}
+            variant="outline"
+          >
+            {isSavingDraft ? "Saving..." : "Save Draft"}
+          </Button>
           {step < steps.length - 1 ? (
             <Button className="bg-[#0d5bbc] hover:bg-[#004493]" onClick={next} disabled={isSubmitting}>
               Continue

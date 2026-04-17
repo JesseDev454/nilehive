@@ -110,6 +110,28 @@ function createFakeDatabase() {
       decided_at: "2026-04-07T10:00:00.000Z"
     }
   };
+  const approvalHistory = {
+    "proposal-1": [
+      {
+        proposal_id: "proposal-1",
+        reviewer_id: "advisor-1",
+        reviewer_role: "advisor",
+        decision: "approve",
+        remarks: "Ready for admin review.",
+        decided_at: "2026-04-06T10:00:00.000Z"
+      }
+    ],
+    "proposal-2": [
+      {
+        proposal_id: "proposal-2",
+        reviewer_id: "advisor-1",
+        reviewer_role: "advisor",
+        decision: "reject",
+        remarks: "Please revise the venue budget.",
+        decided_at: "2026-04-07T10:00:00.000Z"
+      }
+    ]
+  };
 
   const tokens = {
     "president-token": {
@@ -137,6 +159,9 @@ function createFakeDatabase() {
     },
     async getLatestApprovalByProposalId(proposalId) {
       return latestApprovals[proposalId] ?? null;
+    },
+    async getApprovalsByProposalId(proposalId) {
+      return approvalHistory[proposalId] ?? [];
     },
     async getLatestApprovalsByProposalIds(proposalIds) {
       return proposalIds.reduce((approvalsByProposal, proposalId) => {
@@ -254,6 +279,8 @@ test("president can fetch own proposal detail", async (t) => {
   assert.equal(payload.data.id, "proposal-1");
   assert.equal(payload.data.status, "pending_admin_review");
   assert.equal(payload.data.latest_approval.decision, "approve");
+  assert.equal(payload.data.approval_history.length, 1);
+  assert.equal(payload.data.approval_history[0].remarks, "Ready for admin review.");
   assert.equal(payload.data.advisor_remarks, "Ready for admin review.");
 });
 

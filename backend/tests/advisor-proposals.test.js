@@ -117,6 +117,10 @@ test("advisor can fetch proposal detail for assigned clubs", async () => {
     async getLatestApprovalByProposalId(proposalId) {
       assert.equal(proposalId, "proposal-1");
       return null;
+    },
+    async getApprovalsByProposalId(proposalId) {
+      assert.equal(proposalId, "proposal-1");
+      return [];
     }
   };
 
@@ -131,6 +135,7 @@ test("advisor can fetch proposal detail for assigned clubs", async () => {
 
   assert.equal(proposal.id, "proposal-1");
   assert.equal(proposal.current_stage, "advisor_review");
+  assert.deepEqual(proposal.approval_history, []);
   assert.equal(proposal.aim_objectives, "Prepare executives for handover.");
   assert.equal(proposal.budget_line_items.length, 1);
   assert.equal(proposal.responsible_members.length, 1);

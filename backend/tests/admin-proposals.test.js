@@ -84,6 +84,18 @@ function createFakeDatabase() {
       decided_at: "2026-04-07T10:00:00.000Z"
     }
   };
+  const approvalHistory = {
+    "proposal-1": [
+      {
+        proposal_id: "proposal-1",
+        reviewer_id: "advisor-1",
+        reviewer_role: "advisor",
+        decision: "approve",
+        remarks: "Ready for admin review.",
+        decided_at: "2026-04-06T10:00:00.000Z"
+      }
+    ]
+  };
 
   const tokens = {
     "admin-token": {
@@ -117,6 +129,9 @@ function createFakeDatabase() {
     },
     async getLatestApprovalByProposalId(proposalId) {
       return latestApprovals[proposalId] ?? null;
+    },
+    async getApprovalsByProposalId(proposalId) {
+      return approvalHistory[proposalId] ?? [];
     },
     async getLatestApprovalsByProposalIds(proposalIds) {
       return proposalIds.reduce((approvalsByProposal, proposalId) => {
@@ -204,6 +219,8 @@ test("admin can fetch one proposal detail", async (t) => {
   assert.equal(payload.data.club_id, "club-1");
   assert.equal(payload.data.submitted_by, "executive-1");
   assert.equal(payload.data.latest_approval.decision, "approve");
+  assert.equal(payload.data.approval_history.length, 1);
+  assert.equal(payload.data.approval_history[0].reviewer_role, "advisor");
 });
 
 test("wrong-role access is blocked for admin proposal routes", async (t) => {

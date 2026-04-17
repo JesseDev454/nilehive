@@ -129,6 +129,13 @@ export interface ProposalRecord {
     remarks: string | null;
     decided_at: string;
   } | null;
+  approval_history?: Array<{
+    reviewer_id: string;
+    reviewer_role: string;
+    decision: string;
+    remarks: string | null;
+    decided_at: string;
+  }>;
   created_at: string;
   updated_at: string;
 }
