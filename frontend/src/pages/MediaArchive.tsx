@@ -116,8 +116,8 @@ export default function MediaArchive() {
   const [uploadedMediaUrls, setUploadedMediaUrls] = useState<string[]>([]);
   const [uploadedMediaNames, setUploadedMediaNames] = useState<string[]>([]);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
-  const canSubmitReports = role === "executive";
-  const canViewReports = ["admin", "advisor", "president", "executive"].includes(role);
+  const canSubmitReports = role === "president";
+  const canViewReports = ["admin", "advisor", "president"].includes(role);
 
   const {
     data: reports = [],
@@ -434,7 +434,7 @@ export default function MediaArchive() {
               <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
               <p className="font-medium">No event reports yet</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Reports will appear here after executives document approved events.
+                Reports will appear here after presidents document approved events.
               </p>
             </div>
           ) : (

@@ -3,14 +3,14 @@ const {
   getAdminProposalDetail,
   getAdvisorProposalDetail,
   createProposal,
-  getExecutiveProposalDetail,
+  getPresidentProposalDetail,
   getPendingAdvisorProposals,
   listAdminProposals,
-  listExecutiveProposals,
+  listPresidentProposals,
   submitAdminDecision,
   submitAdvisorDecision,
-  submitExecutiveProposalRevision,
-  updateExecutiveProposal
+  submitPresidentProposalRevision,
+  updatePresidentProposal
 } = require("./proposals.service");
 
 function createProposalsController(options = {}) {
@@ -71,8 +71,8 @@ function createProposalsController(options = {}) {
       res.status(200).json({ data: proposal });
     }),
 
-    listExecutiveProposals: asyncHandler(async (req, res) => {
-      const proposals = await listExecutiveProposals({
+    listPresidentProposals: asyncHandler(async (req, res) => {
+      const proposals = await listPresidentProposals({
         actor: req.user,
         database
       });
@@ -80,8 +80,8 @@ function createProposalsController(options = {}) {
       res.status(200).json({ data: proposals });
     }),
 
-    getExecutiveProposalDetail: asyncHandler(async (req, res) => {
-      const proposal = await getExecutiveProposalDetail({
+    getPresidentProposalDetail: asyncHandler(async (req, res) => {
+      const proposal = await getPresidentProposalDetail({
         actor: req.user,
         proposalId: req.params.proposalId,
         database
@@ -90,8 +90,8 @@ function createProposalsController(options = {}) {
       res.status(200).json({ data: proposal });
     }),
 
-    updateExecutiveProposal: asyncHandler(async (req, res) => {
-      const proposal = await updateExecutiveProposal({
+    updatePresidentProposal: asyncHandler(async (req, res) => {
+      const proposal = await updatePresidentProposal({
         actor: req.user,
         proposalId: req.params.proposalId,
         payload: req.body,
@@ -101,8 +101,8 @@ function createProposalsController(options = {}) {
       res.status(200).json({ data: proposal });
     }),
 
-    submitExecutiveProposalRevision: asyncHandler(async (req, res) => {
-      const proposal = await submitExecutiveProposalRevision({
+    submitPresidentProposalRevision: asyncHandler(async (req, res) => {
+      const proposal = await submitPresidentProposalRevision({
         actor: req.user,
         proposalId: req.params.proposalId,
         database

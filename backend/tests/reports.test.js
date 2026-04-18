@@ -10,7 +10,7 @@ function createApprovedProposal(overrides = {}) {
   return {
     id: "proposal-1",
     club_id: "club-1",
-    submitted_by: "executive-1",
+    submitted_by: "president-1",
     title: "Leadership Summit",
     proposed_activity: "Leadership Summit 2026",
     event_date: "2026-05-20",
@@ -26,7 +26,7 @@ function createReport(overrides = {}) {
     id: "report-1",
     proposal_id: "proposal-1",
     club_id: "club-1",
-    submitted_by: "executive-1",
+    submitted_by: "president-1",
     attendance_count: 75,
     summary: "The event was completed successfully.",
     challenges: null,
@@ -42,7 +42,7 @@ function createReport(overrides = {}) {
   };
 }
 
-test("executive can submit a post-event report for an approved club proposal", async () => {
+test("president can submit a post-event report for an approved club proposal", async () => {
   let createdReport;
   const fakeDatabase = {
     async getProposalById(proposalId) {
@@ -61,8 +61,8 @@ test("executive can submit a post-event report for an approved club proposal", a
 
   const report = await createEventReport({
     actor: {
-      id: "executive-1",
-      role: "executive",
+      id: "president-1",
+      role: "president",
       clubId: "club-1"
     },
     payload: {
@@ -77,7 +77,7 @@ test("executive can submit a post-event report for an approved club proposal", a
   });
 
   assert.equal(createdReport.club_id, "club-1");
-  assert.equal(createdReport.submitted_by, "executive-1");
+  assert.equal(createdReport.submitted_by, "president-1");
   assert.equal(createdReport.status, "submitted");
   assert.equal(report.attendance_count, 75);
   assert.equal(report.proposal.title, "Leadership Summit");
@@ -96,8 +96,8 @@ test("post-event report requires an approved proposal", async () => {
     () =>
       createEventReport({
         actor: {
-          id: "executive-1",
-          role: "executive",
+          id: "president-1",
+          role: "president",
           clubId: "club-1"
         },
         payload: {
@@ -125,8 +125,8 @@ test("duplicate post-event reports are blocked", async () => {
     () =>
       createEventReport({
         actor: {
-          id: "executive-1",
-          role: "executive",
+          id: "president-1",
+          role: "president",
           clubId: "club-1"
         },
         payload: {
@@ -156,8 +156,8 @@ test("post-event report rejects more than 10 media images", async () => {
     () =>
       createEventReport({
         actor: {
-          id: "executive-1",
-          role: "executive",
+          id: "president-1",
+          role: "president",
           clubId: "club-1"
         },
         payload: {
@@ -224,23 +224,23 @@ test("president cannot list reports for another club", async () => {
 
 function createRouteDatabase() {
   const profiles = {
-    "executive-1": {
-      id: "executive-1",
-      full_name: "Amina Executive",
-      role: "executive",
+    "president-1": {
+      id: "president-1",
+      full_name: "Tomi President",
+      role: "president",
       club_id: "club-1"
     }
   };
 
   return {
     async getUserByAccessToken(accessToken) {
-      if (accessToken !== "executive-token") {
+      if (accessToken !== "president-token") {
         return null;
       }
 
       return {
-        id: "executive-1",
-        email: "executive@nilehive.test"
+        id: "president-1",
+        email: "president@nilehive.test"
       };
     },
     async getProfileById(profileId) {
@@ -287,3 +287,4 @@ test("missing-token access is blocked for event reports", async (t) => {
   assert.equal(response.status, 401);
   assert.equal(payload.error.code, "AUTH_REQUIRED");
 });
+

@@ -29,7 +29,9 @@ async function listVisibleClubs(options) {
 
 async function listPublicClubs(options = {}) {
   const { database = db } = options;
-  return database.listClubs();
+  return typeof database.listPublicClubs === "function"
+    ? database.listPublicClubs()
+    : database.listClubs();
 }
 
 module.exports = {

@@ -64,12 +64,12 @@ async function createEventReport(options) {
   const { actor, payload, database = db } = options;
   requireActor(actor);
 
-  if (actor.role !== "executive") {
-    throw new ApiError(403, "Only executives can submit post-event reports", "FORBIDDEN");
+  if (actor.role !== "president") {
+    throw new ApiError(403, "Only presidents can submit post-event reports", "FORBIDDEN");
   }
 
   if (!actor.clubId) {
-    throw new ApiError(409, "Executive profile is not linked to a club", "PROFILE_NOT_LINKED_TO_CLUB");
+    throw new ApiError(409, "President profile is not linked to a club", "PROFILE_NOT_LINKED_TO_CLUB");
   }
 
   const validatedPayload = validateCreateEventReportPayload(payload);
@@ -116,7 +116,7 @@ async function listEventReports(options) {
   const { actor, filters = {}, database = db } = options;
   requireActor(actor);
 
-  const supportedRoles = ["admin", "advisor", "president", "executive"];
+  const supportedRoles = ["admin", "advisor", "president"];
 
   if (!supportedRoles.includes(actor.role)) {
     throw new ApiError(403, "This role cannot view event reports", "FORBIDDEN");
@@ -164,7 +164,7 @@ async function getEventReportDetail(options) {
     return formatEventReport(report);
   }
 
-  if ((actor.role === "president" || actor.role === "executive") && actor.clubId === report.club_id) {
+  if (actor.role === "president" && actor.clubId === report.club_id) {
     return formatEventReport(report);
   }
 

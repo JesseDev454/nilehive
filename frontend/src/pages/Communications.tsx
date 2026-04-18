@@ -1,6 +1,6 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Megaphone, MessageSquare } from "lucide-react";
+import { Bell, CheckCircle2, Filter, Megaphone, MessageSquare, Send, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,12 +11,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import {
+  AnnouncementRecord,
   ApiClientError,
+  CreateAnnouncementPayload,
   createAnnouncement,
   createFeedback,
   getAnnouncements,
-  getFeedback
+  getClubs,
+  getFeedback,
+  markAllAnnouncementsRead,
+  markAnnouncementRead
 } from "@/lib/api";
+
+type AnnouncementAudience = AnnouncementRecord["audience"];
+type AnnouncementPriority = AnnouncementRecord["priority"];
+type AnnouncementFilter = "all" | "unread" | "priority" | "club";
+type HubTab = "announcements" | "feedback";
+type TargetRole = "student" | "executive" | "president" | "advisor" | "admin";
+
+const priorityOptions: AnnouncementPriority[] = ["low", "normal", "high", "urgent"];
+const adminRoleOptions: TargetRole[] = ["student", "executive", "president", "advisor", "admin"];
+const presidentRoleOptions: TargetRole[] = ["student", "executive"];
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -26,18 +41,82 @@ function getErrorMessage(error: unknown) {
   return "Unable to load communications right now.";
 }
 
-function getDateLabel(value?: string) {
+function getDateLabel(value?: string | null) {
   return value ? new Date(value).toLocaleString() : "-";
+}
+
+function getAudienceLabel(announcement: AnnouncementRecord, clubName?: string) {
+  if (announcement.audience === "all_users") {
+    return "All users";
+  }
+
+  if (announcement.audience === "all_clubs") {
+    return "All clubs";
+  }
+
+  if (announcement.audience === "club") {
+    return clubName ? `${clubName}` : "One club";
+  }
+
+  const role = announcement.target_role ? announcement.target_role.replace("_", " ") : "role";
+  return announcement.club_id && clubName
+    ? `${clubName} ${role}s`
+    : `${role}s`;
+}
+
+function getPriorityClass(priority: AnnouncementPriority) {
+  if (priority === "urgent") {
+    return "border-red-200 bg-red-50 text-red-700";
+  }
+
+  if (priority === "high") {
+    return "border-amber-200 bg-amber-50 text-amber-700";
+  }
+
+  if (priority === "low") {
+    return "border-slate-200 bg-slate-50 text-slate-600";
+  }
+
+  return "border-emerald-200 bg-emerald-50 text-emerald-700";
+}
+
+function getAudienceHelp(audience: AnnouncementAudience, role: string | null) {
+  if (role === "president") {
+    return audience === "role"
+      ? "This will only go to selected members of your club."
+      : "This will go to everyone connected to your club.";
+  }
+
+  if (audience === "all_users") {
+    return "Every NileHive user will receive this announcement.";
+  }
+
+  if (audience === "all_clubs") {
+    return "Club-linked users and assigned advisors will receive this announcement.";
+  }
+
+  if (audience === "club") {
+    return "Only users connected to the selected club will receive this announcement.";
+  }
+
+  return "Only users with the selected role will receive this announcement.";
 }
 
 export default function Communications() {
   const queryClient = useQueryClient();
   const { role } = useAuth();
-  const canCreateAnnouncement = role === "admin" || role === "president" || role === "executive";
+  const canCreateAnnouncement = role === "admin" || role === "president";
   const canSubmitFeedback = role === "president" || role === "executive";
+  const [activeTab, setActiveTab] = useState<HubTab>("announcements");
+  const [announcementFilter, setAnnouncementFilter] = useState<AnnouncementFilter>("all");
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementMessage, setAnnouncementMessage] = useState("");
-  const [announcementAudience, setAnnouncementAudience] = useState<"all" | "club">("all");
+  const [announcementAudience, setAnnouncementAudience] = useState<AnnouncementAudience>(
+    role === "admin" ? "all_users" : "club"
+  );
+  const [announcementPriority, setAnnouncementPriority] = useState<AnnouncementPriority>("normal");
+  const [announcementClubId, setAnnouncementClubId] = useState("");
+  const [announcementTargetRole, setAnnouncementTargetRole] = useState<TargetRole>("student");
   const [feedbackCategory, setFeedbackCategory] = useState<"general" | "event" | "club">("general");
   const [feedbackRating, setFeedbackRating] = useState("");
   const [feedbackComment, setFeedbackComment] = useState("");
@@ -54,6 +133,16 @@ export default function Communications() {
   });
 
   const {
+    data: clubs = [],
+    isLoading: isLoadingClubs
+  } = useQuery({
+    queryKey: ["clubs", "communications"],
+    queryFn: () => getClubs(),
+    enabled: role === "admin",
+    retry: false
+  });
+
+  const {
     data: feedback = [],
     isLoading: isLoadingFeedback,
     isError: isFeedbackError,
@@ -64,21 +153,89 @@ export default function Communications() {
     retry: false
   });
 
+  const clubNameById = useMemo(
+    () => new Map(clubs.map((club) => [club.id, club.name])),
+    [clubs]
+  );
+
+  const filteredAnnouncements = useMemo(() => {
+    if (announcementFilter === "unread") {
+      return announcements.filter((announcement) => !announcement.is_read);
+    }
+
+    if (announcementFilter === "priority") {
+      return announcements.filter((announcement) => ["high", "urgent"].includes(announcement.priority));
+    }
+
+    if (announcementFilter === "club") {
+      return announcements.filter((announcement) => announcement.audience === "club" || announcement.audience === "all_clubs");
+    }
+
+    return announcements;
+  }, [announcementFilter, announcements]);
+
+  const unreadCount = announcements.filter((announcement) => !announcement.is_read).length;
+  const urgentCount = announcements.filter((announcement) => ["high", "urgent"].includes(announcement.priority)).length;
+
   const createAnnouncementMutation = useMutation({
-    mutationFn: () =>
-      createAnnouncement({
+    mutationFn: () => {
+      const payload: CreateAnnouncementPayload = {
         title: announcementTitle,
         message: announcementMessage,
-        audience: role === "admin" ? announcementAudience : "club"
-      }),
+        audience: role === "president" && announcementAudience !== "role" ? "club" : announcementAudience,
+        priority: announcementPriority
+      };
+
+      if (role === "admin" && announcementAudience === "club") {
+        payload.club_id = announcementClubId;
+      }
+
+      if (announcementAudience === "role") {
+        payload.target_role = announcementTargetRole;
+      }
+
+      return createAnnouncement(payload);
+    },
     onSuccess: () => {
       toast.success("Announcement published");
       setAnnouncementTitle("");
       setAnnouncementMessage("");
+      setAnnouncementPriority("normal");
+      setAnnouncementClubId("");
+      setAnnouncementAudience(role === "admin" ? "all_users" : "club");
+      setAnnouncementTargetRole("student");
       queryClient.invalidateQueries({ queryKey: ["announcements"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
     onError: (error) => {
       toast.error("Announcement failed", {
+        description: getErrorMessage(error)
+      });
+    }
+  });
+
+  const markReadMutation = useMutation({
+    mutationFn: (announcementId: string) => markAnnouncementRead(announcementId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["announcements"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+    onError: (error) => {
+      toast.error("Could not mark announcement as read", {
+        description: getErrorMessage(error)
+      });
+    }
+  });
+
+  const markAllReadMutation = useMutation({
+    mutationFn: () => markAllAnnouncementsRead(),
+    onSuccess: (result) => {
+      toast.success(result.marked_read ? "Announcements marked as read" : "No unread announcements");
+      queryClient.invalidateQueries({ queryKey: ["announcements"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+    onError: (error) => {
+      toast.error("Could not update announcements", {
         description: getErrorMessage(error)
       });
     }
@@ -115,196 +272,430 @@ export default function Communications() {
     createFeedbackMutation.mutate();
   }
 
+  const roleOptions = role === "president" ? presidentRoleOptions : adminRoleOptions;
+
   return (
     <div className="space-y-6 animate-slide-up">
-      <div>
-        <h1 className="text-2xl font-bold">Announcements & Feedback</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Club communication records and feedback tracking
-        </p>
+      <div className="rounded-3xl border bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-6 text-white shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <Badge className="mb-3 border-white/20 bg-white/10 text-white hover:bg-white/10">
+              NileHive Communication Hub
+            </Badge>
+            <h1 className="text-3xl font-bold tracking-tight">Announcements and Feedback</h1>
+            <p className="mt-2 max-w-2xl text-sm text-white/75">
+              Publish official updates, track who has seen them, and keep club feedback in one place before Outlook delivery is added later.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:min-w-[340px]">
+            <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
+              <p className="text-2xl font-semibold">{unreadCount}</p>
+              <p className="text-xs text-white/70">Unread announcements</p>
+            </div>
+            <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
+              <p className="text-2xl font-semibold">{urgentCount}</p>
+              <p className="text-xs text-white/70">High priority updates</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {canCreateAnnouncement && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Megaphone className="h-5 w-5 text-primary" />
-                Create Announcement
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form className="space-y-4" onSubmit={handleAnnouncementSubmit}>
-                {role === "admin" && (
-                  <div className="space-y-2">
-                    <Label>Audience</Label>
-                    <Select
-                      value={announcementAudience}
-                      onValueChange={(value) => setAnnouncementAudience(value as "all" | "club")}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          type="button"
+          variant={activeTab === "announcements" ? "default" : "outline"}
+          onClick={() => setActiveTab("announcements")}
+        >
+          <Megaphone className="mr-2 h-4 w-4" />
+          Announcements
+        </Button>
+        <Button
+          type="button"
+          variant={activeTab === "feedback" ? "default" : "outline"}
+          onClick={() => setActiveTab("feedback")}
+        >
+          <MessageSquare className="mr-2 h-4 w-4" />
+          Feedback
+        </Button>
+      </div>
+
+      {activeTab === "announcements" ? (
+        <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
+          <div className="space-y-6">
+            {canCreateAnnouncement ? (
+              <Card className="overflow-hidden">
+                <CardHeader className="bg-muted/40">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Send className="h-5 w-5 text-primary" />
+                    Publish Announcement
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {role === "admin"
+                      ? "Send updates to everyone, a club, or a role group."
+                      : "Send updates to members or executives in your club."}
+                  </p>
+                </CardHeader>
+                <CardContent className="pt-6">
+                  <form className="space-y-4" onSubmit={handleAnnouncementSubmit}>
+                    <div className="space-y-2">
+                      <Label>Audience</Label>
+                      <Select
+                        value={announcementAudience}
+                        onValueChange={(value) => {
+                          const nextAudience = value as AnnouncementAudience;
+                          setAnnouncementAudience(nextAudience);
+                          if (nextAudience !== "club") {
+                            setAnnouncementClubId("");
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {role === "admin" && (
+                            <>
+                              <SelectItem value="all_users">All users</SelectItem>
+                              <SelectItem value="all_clubs">All clubs</SelectItem>
+                              <SelectItem value="club">Specific club</SelectItem>
+                            </>
+                          )}
+                          {role === "president" && <SelectItem value="club">My club</SelectItem>}
+                          <SelectItem value="role">
+                            {role === "president" ? "My club role group" : "Role group"}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        {getAudienceHelp(announcementAudience, role)}
+                      </p>
+                    </div>
+
+                    {role === "admin" && announcementAudience === "club" && (
+                      <div className="space-y-2">
+                        <Label>Club</Label>
+                        <Select value={announcementClubId} onValueChange={setAnnouncementClubId} required>
+                          <SelectTrigger>
+                            <SelectValue placeholder={isLoadingClubs ? "Loading clubs..." : "Choose a club"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {clubs.map((club) => (
+                              <SelectItem key={club.id} value={club.id}>
+                                {club.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    {announcementAudience === "role" && (
+                      <div className="space-y-2">
+                        <Label>Target role</Label>
+                        <Select
+                          value={announcementTargetRole}
+                          onValueChange={(value) => setAnnouncementTargetRole(value as TargetRole)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {roleOptions.map((option) => (
+                              <SelectItem key={option} value={option} className="capitalize">
+                                {option}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <Label>Priority</Label>
+                      <Select
+                        value={announcementPriority}
+                        onValueChange={(value) => setAnnouncementPriority(value as AnnouncementPriority)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {priorityOptions.map((priority) => (
+                            <SelectItem key={priority} value={priority} className="capitalize">
+                              {priority}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="announcement-title">Title</Label>
+                      <Input
+                        id="announcement-title"
+                        value={announcementTitle}
+                        onChange={(event) => setAnnouncementTitle(event.target.value)}
+                        placeholder="e.g. Club Services update"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="announcement-message">Message</Label>
+                      <Textarea
+                        id="announcement-message"
+                        value={announcementMessage}
+                        onChange={(event) => setAnnouncementMessage(event.target.value)}
+                        placeholder="Write the announcement..."
+                        required
+                        rows={5}
+                      />
+                    </div>
+
+                    <Button
+                      className="w-full"
+                      disabled={
+                        createAnnouncementMutation.isPending ||
+                        (role === "admin" && announcementAudience === "club" && !announcementClubId)
+                      }
+                      type="submit"
                     >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All clubs</SelectItem>
-                        <SelectItem value="club" disabled>
-                          Specific club later
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                      {createAnnouncementMutation.isPending ? "Publishing..." : "Publish Announcement"}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex gap-3">
+                    <div className="rounded-full bg-muted p-3">
+                      <Bell className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <h2 className="font-semibold">Read-only communication access</h2>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        You can view announcements relevant to your role and club. Announcement creation is currently limited to admins and presidents.
+                      </p>
+                    </div>
                   </div>
-                )}
-                <div className="space-y-2">
-                  <Label htmlFor="announcement-title">Title</Label>
-                  <Input
-                    id="announcement-title"
-                    value={announcementTitle}
-                    onChange={(event) => setAnnouncementTitle(event.target.value)}
-                    placeholder="e.g. Club Services update"
-                    required
-                  />
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          <Card>
+            <CardHeader className="space-y-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Megaphone className="h-5 w-5 text-primary" />
+                    Announcement Feed
+                  </CardTitle>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Official updates filtered to what your account is allowed to see.
+                  </p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="announcement-message">Message</Label>
-                  <Textarea
-                    id="announcement-message"
-                    value={announcementMessage}
-                    onChange={(event) => setAnnouncementMessage(event.target.value)}
-                    placeholder="Write the announcement..."
-                    required
-                  />
-                </div>
-                <Button disabled={createAnnouncementMutation.isPending} type="submit">
-                  {createAnnouncementMutation.isPending ? "Publishing..." : "Publish Announcement"}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => markAllReadMutation.mutate()}
+                  disabled={markAllReadMutation.isPending || unreadCount === 0}
+                >
+                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                  Mark all read
                 </Button>
-              </form>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  ["all", "All"],
+                  ["unread", `Unread (${unreadCount})`],
+                  ["priority", `High/Urgent (${urgentCount})`],
+                  ["club", "Club updates"]
+                ].map(([value, label]) => (
+                  <Button
+                    key={value}
+                    type="button"
+                    size="sm"
+                    variant={announcementFilter === value ? "default" : "outline"}
+                    onClick={() => setAnnouncementFilter(value as AnnouncementFilter)}
+                  >
+                    {value === "all" && <Filter className="mr-2 h-3.5 w-3.5" />}
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {isLoadingAnnouncements ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map((item) => (
+                    <div key={item} className="h-28 animate-pulse rounded-2xl bg-muted" />
+                  ))}
+                </div>
+              ) : isAnnouncementsError ? (
+                <p className="text-sm text-destructive">{getErrorMessage(announcementsError)}</p>
+              ) : filteredAnnouncements.length === 0 ? (
+                <div className="rounded-2xl border border-dashed p-8 text-center">
+                  <Megaphone className="mx-auto h-8 w-8 text-muted-foreground" />
+                  <p className="mt-3 font-medium">No announcements here yet.</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Try another filter or publish a new announcement if your role allows it.
+                  </p>
+                </div>
+              ) : (
+                filteredAnnouncements.map((announcement) => {
+                  const clubName = announcement.club_id ? clubNameById.get(announcement.club_id) : undefined;
+
+                  return (
+                    <div
+                      key={announcement.id}
+                      className={`rounded-2xl border p-4 transition ${
+                        announcement.is_read ? "bg-card" : "border-primary/30 bg-primary/5"
+                      }`}
+                    >
+                      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="font-semibold">{announcement.title}</h3>
+                            {!announcement.is_read && <Badge>Unread</Badge>}
+                            <Badge variant="outline" className={getPriorityClass(announcement.priority)}>
+                              {announcement.priority}
+                            </Badge>
+                            <Badge variant="secondary">
+                              <Users className="mr-1 h-3 w-3" />
+                              {getAudienceLabel(announcement, clubName)}
+                            </Badge>
+                          </div>
+                          <p className="text-sm leading-6 text-muted-foreground">{announcement.message}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Published {getDateLabel(announcement.created_at)}
+                            {announcement.read_at ? ` • Read ${getDateLabel(announcement.read_at)}` : ""}
+                          </p>
+                        </div>
+                        {!announcement.is_read && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => markReadMutation.mutate(announcement.id)}
+                            disabled={markReadMutation.isPending}
+                          >
+                            Mark as read
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </CardContent>
           </Card>
-        )}
-
-        {canSubmitFeedback && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <MessageSquare className="h-5 w-5 text-primary" />
-                Submit Feedback
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <form className="space-y-4" onSubmit={handleFeedbackSubmit}>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Category</Label>
-                    <Select
-                      value={feedbackCategory}
-                      onValueChange={(value) => setFeedbackCategory(value as "general" | "event" | "club")}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="general">General</SelectItem>
-                        <SelectItem value="event">Event</SelectItem>
-                        <SelectItem value="club">Club</SelectItem>
-                      </SelectContent>
-                    </Select>
+        </div>
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
+          {canSubmitFeedback ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <MessageSquare className="h-5 w-5 text-primary" />
+                  Submit Feedback
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Share club or event feedback for follow-up.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <form className="space-y-4" onSubmit={handleFeedbackSubmit}>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Category</Label>
+                      <Select
+                        value={feedbackCategory}
+                        onValueChange={(value) => setFeedbackCategory(value as "general" | "event" | "club")}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="general">General</SelectItem>
+                          <SelectItem value="event">Event</SelectItem>
+                          <SelectItem value="club">Club</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="feedback-rating">Rating</Label>
+                      <Input
+                        id="feedback-rating"
+                        max="5"
+                        min="1"
+                        onChange={(event) => setFeedbackRating(event.target.value)}
+                        placeholder="1-5"
+                        type="number"
+                        value={feedbackRating}
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="feedback-rating">Rating</Label>
-                    <Input
-                      id="feedback-rating"
-                      max="5"
-                      min="1"
-                      onChange={(event) => setFeedbackRating(event.target.value)}
-                      placeholder="1-5"
-                      type="number"
-                      value={feedbackRating}
+                    <Label htmlFor="feedback-comment">Comment</Label>
+                    <Textarea
+                      id="feedback-comment"
+                      value={feedbackComment}
+                      onChange={(event) => setFeedbackComment(event.target.value)}
+                      placeholder="Share the feedback..."
+                      required
+                      rows={5}
                     />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="feedback-comment">Comment</Label>
-                  <Textarea
-                    id="feedback-comment"
-                    value={feedbackComment}
-                    onChange={(event) => setFeedbackComment(event.target.value)}
-                    placeholder="Share the feedback..."
-                    required
-                  />
-                </div>
-                <Button disabled={createFeedbackMutation.isPending} type="submit">
-                  {createFeedbackMutation.isPending ? "Submitting..." : "Submit Feedback"}
-                </Button>
-              </form>
+                  <Button disabled={createFeedbackMutation.isPending} type="submit">
+                    {createFeedbackMutation.isPending ? "Submitting..." : "Submit Feedback"}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="pt-6 text-sm text-muted-foreground">
+                Feedback submission is currently limited to club operators. You can still read announcements from the main tab.
+              </CardContent>
+            </Card>
+          )}
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Feedback</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {isLoadingFeedback ? (
+                <p className="text-sm text-muted-foreground">Loading feedback...</p>
+              ) : isFeedbackError ? (
+                <p className="text-sm text-destructive">{getErrorMessage(feedbackError)}</p>
+              ) : feedback.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No feedback yet.</p>
+              ) : (
+                feedback.map((entry) => (
+                  <div key={entry.id} className="rounded-2xl border p-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline" className="capitalize">
+                        {entry.category}
+                      </Badge>
+                      <Badge variant="secondary" className="capitalize">
+                        {entry.status}
+                      </Badge>
+                      {entry.rating && <span className="text-xs text-muted-foreground">{entry.rating}/5</span>}
+                    </div>
+                    <p className="mt-2 text-sm text-muted-foreground">{entry.comment}</p>
+                    <p className="mt-3 text-xs text-muted-foreground">
+                      {getDateLabel(entry.created_at)}
+                    </p>
+                  </div>
+                ))
+              )}
             </CardContent>
           </Card>
-        )}
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Announcements</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {isLoadingAnnouncements ? (
-              <p className="text-sm text-muted-foreground">Loading announcements...</p>
-            ) : isAnnouncementsError ? (
-              <p className="text-sm text-destructive">{getErrorMessage(announcementsError)}</p>
-            ) : announcements.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No announcements yet.</p>
-            ) : (
-              announcements.map((announcement) => (
-                <div key={announcement.id} className="rounded-lg border p-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-medium">{announcement.title}</p>
-                    <Badge variant="outline" className="capitalize">
-                      {announcement.audience}
-                    </Badge>
-                  </div>
-                  <p className="mt-2 text-sm text-muted-foreground">{announcement.message}</p>
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    {getDateLabel(announcement.created_at)}
-                  </p>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Feedback</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {isLoadingFeedback ? (
-              <p className="text-sm text-muted-foreground">Loading feedback...</p>
-            ) : isFeedbackError ? (
-              <p className="text-sm text-destructive">{getErrorMessage(feedbackError)}</p>
-            ) : feedback.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No feedback yet.</p>
-            ) : (
-              feedback.map((entry) => (
-                <div key={entry.id} className="rounded-lg border p-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="outline" className="capitalize">
-                      {entry.category}
-                    </Badge>
-                    <Badge variant="secondary" className="capitalize">
-                      {entry.status}
-                    </Badge>
-                    {entry.rating && <span className="text-xs text-muted-foreground">{entry.rating}/5</span>}
-                  </div>
-                  <p className="mt-2 text-sm text-muted-foreground">{entry.comment}</p>
-                  <p className="mt-3 text-xs text-muted-foreground">
-                    {getDateLabel(entry.created_at)}
-                  </p>
-                </div>
-              ))
-            )}
-          </CardContent>
-        </Card>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

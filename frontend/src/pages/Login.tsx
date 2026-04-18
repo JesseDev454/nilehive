@@ -138,11 +138,11 @@ export default function Login() {
 
             <div className="space-y-2">
               <Label className="font-semibold text-[#181c1e]" htmlFor="login-student-id">
-                Student ID
+                University ID
               </Label>
               <NhStudentId id="login-student-id" value={studentId} onChange={setStudentId} disabled />
               <p className="px-1 text-[11px] font-medium text-[#75777f]">
-                Student ID login needs account mapping first. Use your university email for now.
+                University ID login needs account mapping first. Use your university email for now.
               </p>
             </div>
 
@@ -151,9 +151,7 @@ export default function Login() {
                 <Label className="font-semibold text-[#181c1e]" htmlFor="password">
                   Password
                 </Label>
-                <button className="text-xs font-bold text-[#0d5bbc] hover:underline" type="button">
-                  Forgot password?
-                </button>
+                <span className="text-xs font-bold text-[#0d5bbc]">Contact Club Services</span>
               </div>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#75777f]" />
@@ -188,15 +186,19 @@ export default function Login() {
           </form>
 
           <div className="mt-8 rounded-2xl bg-[#f1f4f7] p-4 text-sm text-[#44474e]">
-            New here?{" "}
+            New to NileHive?{" "}
             <Link className="font-bold text-[#0d5bbc] hover:underline" to="/signup">
               Request a NileHive account
             </Link>
           </div>
 
+<<<<<<< HEAD
           {/* Changed mt-8 to mt-4 and pt-6 to pt-4 */}
           <div className="mt-4 flex flex-col gap-4 border-t border-[#ebeef1] pt-4 sm:flex-row sm:items-center sm:justify-between">
             {/* Left Side Group */}
+=======
+          <div className="mt-4 flex flex-col gap-4 border-t border-[#ebeef1] pt-4 sm:flex-row sm:items-center sm:justify-between">
+>>>>>>> origin/main
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-[#6edc94]" />
@@ -209,7 +211,10 @@ export default function Login() {
               </div>
             </div>
 
+<<<<<<< HEAD
             {/* Right Side Badge */}
+=======
+>>>>>>> origin/main
             <div className="flex items-center gap-2 rounded-lg bg-[#f1f4f7] px-3 py-1 text-xs font-bold text-[#000d27]">
               <Sparkles className="h-3.5 w-3.5 text-[#F5B942]" />
               Club Services
@@ -220,4 +225,4 @@ export default function Login() {
 
     </main>
   );
-}
+} 

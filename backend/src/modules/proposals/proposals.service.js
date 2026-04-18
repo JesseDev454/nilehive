@@ -74,11 +74,11 @@ function getCurrentStage(status) {
 
 function getCurrentOwnerRole(status) {
   const owners = {
-    draft: "executive",
+    draft: "president",
     pending_advisor_review: "advisor",
     pending_admin_review: "admin",
-    advisor_rejected: "executive",
-    admin_rejected: "executive",
+    advisor_rejected: "president",
+    admin_rejected: "president",
     approved: "completed"
   };
 
@@ -162,8 +162,29 @@ async function createApprovedEventReminders(database, proposal, recipientIds) {
   );
 }
 
-function formatExecutiveProposal(proposal, latestApproval = null) {
+function formatApproval(approval) {
   return {
+    reviewer_id: approval.reviewer_id,
+    reviewer_role: approval.reviewer_role,
+    decision: approval.decision,
+    remarks: approval.remarks,
+    decided_at: approval.decided_at
+  };
+}
+
+function withApprovalHistory(formattedProposal, approvalHistory) {
+  if (!Array.isArray(approvalHistory)) {
+    return formattedProposal;
+  }
+
+  return {
+    ...formattedProposal,
+    approval_history: approvalHistory.map(formatApproval)
+  };
+}
+
+function formatExecutiveProposal(proposal, latestApproval = null, approvalHistory = null) {
+  return withApprovalHistory({
     id: proposal.id,
     club_id: proposal.club_id,
     title: proposal.title,
@@ -191,20 +212,12 @@ function formatExecutiveProposal(proposal, latestApproval = null) {
     advisor_decided_at: proposal.advisor_decided_at,
     admin_remarks: proposal.admin_remarks,
     admin_decided_at: proposal.admin_decided_at,
-    latest_approval: latestApproval
-      ? {
-          reviewer_id: latestApproval.reviewer_id,
-          reviewer_role: latestApproval.reviewer_role,
-          decision: latestApproval.decision,
-          remarks: latestApproval.remarks,
-          decided_at: latestApproval.decided_at
-        }
-      : null
-  };
+    latest_approval: latestApproval ? formatApproval(latestApproval) : null
+  }, approvalHistory);
 }
 
-function formatAdminProposal(proposal, latestApproval = null) {
-  return {
+function formatAdminProposal(proposal, latestApproval = null, approvalHistory = null) {
+  return withApprovalHistory({
     id: proposal.id,
     title: proposal.title,
     description: proposal.description,
@@ -233,20 +246,12 @@ function formatAdminProposal(proposal, latestApproval = null) {
     advisor_decided_at: proposal.advisor_decided_at,
     admin_remarks: proposal.admin_remarks,
     admin_decided_at: proposal.admin_decided_at,
-    latest_approval: latestApproval
-      ? {
-          reviewer_id: latestApproval.reviewer_id,
-          reviewer_role: latestApproval.reviewer_role,
-          decision: latestApproval.decision,
-          remarks: latestApproval.remarks,
-          decided_at: latestApproval.decided_at
-        }
-      : null
-  };
+    latest_approval: latestApproval ? formatApproval(latestApproval) : null
+  }, approvalHistory);
 }
 
-function formatAdvisorProposal(proposal, latestApproval = null) {
-  return formatAdminProposal(proposal, latestApproval);
+function formatAdvisorProposal(proposal, latestApproval = null, approvalHistory = null) {
+  return formatAdminProposal(proposal, latestApproval, approvalHistory);
 }
 
 async function createProposal(options) {
@@ -256,12 +261,12 @@ async function createProposal(options) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
   }
 
-  if (actor.role !== "executive") {
-    throw new ApiError(403, "Only executives can submit proposals", "FORBIDDEN");
+  if (actor.role !== "president") {
+    throw new ApiError(403, "Only presidents can submit proposals", "FORBIDDEN");
   }
 
   if (!actor.clubId) {
-    throw new ApiError(409, "Executive profile is not linked to a club", "PROFILE_NOT_LINKED_TO_CLUB");
+    throw new ApiError(409, "President profile is not linked to a club", "PROFILE_NOT_LINKED_TO_CLUB");
   }
 
   const saveAsDraft = readSaveAsDraft(payload);
@@ -272,7 +277,7 @@ async function createProposal(options) {
   const submittedAt = saveAsDraft ? null : new Date().toISOString();
 
   if (clubId !== actor.clubId) {
-    throw new ApiError(403, "Executives can only submit proposals for their assigned club", "FORBIDDEN");
+    throw new ApiError(403, "Presidents can only submit proposals for their assigned club", "FORBIDDEN");
   }
 
   const proposal = await database.createProposal({
@@ -335,15 +340,15 @@ async function getPendingAdvisorProposals(options) {
   return database.listPendingProposalsByClubIds(clubIds);
 }
 
-async function listExecutiveProposals(options) {
+async function listPresidentProposals(options) {
   const { actor, database = db } = options;
 
   if (!actor) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
   }
 
-  if (actor.role !== "executive") {
-    throw new ApiError(403, "Only executives can view their proposals", "FORBIDDEN");
+  if (actor.role !== "president") {
+    throw new ApiError(403, "Only presidents can view their proposals", "FORBIDDEN");
   }
 
   const proposals = await database.listExecutiveProposals(actor.id);
@@ -356,15 +361,15 @@ async function listExecutiveProposals(options) {
   );
 }
 
-async function getExecutiveProposalDetail(options) {
+async function getPresidentProposalDetail(options) {
   const { actor, proposalId, database = db } = options;
 
   if (!actor) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
   }
 
-  if (actor.role !== "executive") {
-    throw new ApiError(403, "Only executives can view their proposals", "FORBIDDEN");
+  if (actor.role !== "president") {
+    throw new ApiError(403, "Only presidents can view their proposals", "FORBIDDEN");
   }
 
   const proposal = await database.getProposalById(proposalId);
@@ -373,12 +378,17 @@ async function getExecutiveProposalDetail(options) {
     throw new ApiError(404, "Proposal not found", "PROPOSAL_NOT_FOUND");
   }
 
-  const latestApproval = await database.getLatestApprovalByProposalId(proposalId);
+  const [latestApproval, approvalHistory] = await Promise.all([
+    database.getLatestApprovalByProposalId(proposalId),
+    typeof database.getApprovalsByProposalId === "function"
+      ? database.getApprovalsByProposalId(proposalId)
+      : []
+  ]);
 
-  return formatExecutiveProposal(proposal, latestApproval);
+  return formatExecutiveProposal(proposal, latestApproval, approvalHistory);
 }
 
-function ensureExecutiveEditableProposal(actor, proposal) {
+function ensurePresidentEditableProposal(actor, proposal) {
   if (!proposal || proposal.submitted_by !== actor.id) {
     throw new ApiError(404, "Proposal not found", "PROPOSAL_NOT_FOUND");
   }
@@ -388,25 +398,25 @@ function ensureExecutiveEditableProposal(actor, proposal) {
   if (!editableStatuses.includes(proposal.status)) {
     throw new ApiError(
       409,
-      "Only draft or rejected proposals can be edited by executives",
+      "Only draft or rejected proposals can be edited by presidents",
       "INVALID_PROPOSAL_STATE"
     );
   }
 }
 
-async function updateExecutiveProposal(options) {
+async function updatePresidentProposal(options) {
   const { actor, proposalId, payload, database = db } = options;
 
   if (!actor) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
   }
 
-  if (actor.role !== "executive") {
-    throw new ApiError(403, "Only executives can edit proposals", "FORBIDDEN");
+  if (actor.role !== "president") {
+    throw new ApiError(403, "Only presidents can edit proposals", "FORBIDDEN");
   }
 
   const proposal = await database.getProposalById(proposalId);
-  ensureExecutiveEditableProposal(actor, proposal);
+  ensurePresidentEditableProposal(actor, proposal);
 
   const saveAsDraft = proposal.status === "draft" || readSaveAsDraft(payload);
   const validatedPayload = saveAsDraft
@@ -415,7 +425,7 @@ async function updateExecutiveProposal(options) {
   const clubId = validatedPayload.club_id || actor.clubId;
 
   if (clubId !== proposal.club_id || clubId !== actor.clubId) {
-    throw new ApiError(403, "Executives can only edit proposals for their assigned club", "FORBIDDEN");
+    throw new ApiError(403, "Presidents can only edit proposals for their assigned club", "FORBIDDEN");
   }
 
   const updatedProposal = await database.updateProposal(proposalId, {
@@ -438,19 +448,19 @@ async function updateExecutiveProposal(options) {
   return formatExecutiveProposal(updatedProposal);
 }
 
-async function submitExecutiveProposalRevision(options) {
+async function submitPresidentProposalRevision(options) {
   const { actor, proposalId, database = db } = options;
 
   if (!actor) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
   }
 
-  if (actor.role !== "executive") {
-    throw new ApiError(403, "Only executives can submit proposal revisions", "FORBIDDEN");
+  if (actor.role !== "president") {
+    throw new ApiError(403, "Only presidents can submit proposal revisions", "FORBIDDEN");
   }
 
   const proposal = await database.getProposalById(proposalId);
-  ensureExecutiveEditableProposal(actor, proposal);
+  ensurePresidentEditableProposal(actor, proposal);
   validateCreateProposalPayload(proposal);
 
   const now = new Date().toISOString();
@@ -506,9 +516,14 @@ async function getAdvisorProposalDetail(options) {
     throw new ApiError(404, "Proposal not found", "PROPOSAL_NOT_FOUND");
   }
 
-  const latestApproval = await database.getLatestApprovalByProposalId(proposalId);
+  const [latestApproval, approvalHistory] = await Promise.all([
+    database.getLatestApprovalByProposalId(proposalId),
+    typeof database.getApprovalsByProposalId === "function"
+      ? database.getApprovalsByProposalId(proposalId)
+      : []
+  ]);
 
-  return formatAdvisorProposal(proposal, latestApproval);
+  return formatAdvisorProposal(proposal, latestApproval, approvalHistory);
 }
 
 async function listAdminProposals(options) {
@@ -557,9 +572,14 @@ async function getAdminProposalDetail(options) {
     throw new ApiError(404, "Proposal not found", "PROPOSAL_NOT_FOUND");
   }
 
-  const latestApproval = await database.getLatestApprovalByProposalId(proposalId);
+  const [latestApproval, approvalHistory] = await Promise.all([
+    database.getLatestApprovalByProposalId(proposalId),
+    typeof database.getApprovalsByProposalId === "function"
+      ? database.getApprovalsByProposalId(proposalId)
+      : []
+  ]);
 
-  return formatAdminProposal(proposal, latestApproval);
+  return formatAdminProposal(proposal, latestApproval, approvalHistory);
 }
 
 async function submitAdvisorDecision(options) {
@@ -722,10 +742,10 @@ module.exports = {
   getAdminProposalDetail,
   getAdvisorProposalDetail,
   getPendingAdvisorProposals,
-  listExecutiveProposals,
-  getExecutiveProposalDetail,
-  updateExecutiveProposal,
-  submitExecutiveProposalRevision,
+  listPresidentProposals,
+  getPresidentProposalDetail,
+  updatePresidentProposal,
+  submitPresidentProposalRevision,
   submitAdvisorDecision,
   submitAdminDecision
 };

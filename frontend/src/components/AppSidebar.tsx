@@ -1,4 +1,4 @@
-import { CalendarDays, ClipboardList, CreditCard, FileText, Home, Plus, Clock, Bell, Users, MessageSquare, UserPlus } from "lucide-react";
+import { CalendarDays, ClipboardList, CreditCard, FileText, Home, Plus, Clock, Bell, Users, MessageSquare, UserPlus, UserCog } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useRole } from "@/contexts/RoleContext";
 import {
@@ -13,14 +13,9 @@ export function AppSidebar() {
 
   const execItems = [
     { title: "Dashboard", url: "/", icon: Home },
-    { title: "New Proposal", url: "/proposals/new", icon: Plus },
-    { title: "My Proposals", url: "/proposals", icon: FileText },
     { title: "My Tasks", url: "/tasks", icon: ClipboardList },
-    { title: "Members", url: "/members", icon: Users },
-    { title: "Dues", url: "/dues", icon: CreditCard },
     { title: "Announcements", url: "/communications", icon: MessageSquare },
     { title: "Approved Events", url: "/events", icon: CalendarDays },
-    { title: "Reports Archive", url: "/archive", icon: FileText },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
 
@@ -35,6 +30,7 @@ export function AppSidebar() {
 
   const adminItems = [
     { title: "Dashboard", url: "/", icon: Home },
+    { title: "User Management", url: "/user-management", icon: UserCog },
     { title: "All Proposals", url: "/proposals", icon: FileText },
     { title: "Membership", url: "/membership", icon: UserPlus },
     { title: "Members", url: "/members", icon: Users },
@@ -47,6 +43,8 @@ export function AppSidebar() {
 
   const presidentItems = [
     { title: "Dashboard", url: "/", icon: Home },
+    { title: "New Proposal", url: "/proposals/new", icon: Plus },
+    { title: "My Proposals", url: "/proposals", icon: FileText },
     { title: "Membership Requests", url: "/membership", icon: UserPlus },
     { title: "Task Delegation", url: "/tasks", icon: ClipboardList },
     { title: "Members", url: "/members", icon: Users },

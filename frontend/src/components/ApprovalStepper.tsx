@@ -7,6 +7,7 @@ interface Step {
   label: string;
   status: StepStatus;
   remarks?: string;
+  timestamp?: string;
 }
 
 export function ApprovalStepper({ steps }: { steps: Step[] }) {
@@ -45,6 +46,9 @@ export function ApprovalStepper({ steps }: { steps: Step[] }) {
             </p>
             {step.remarks && (
               <p className="text-xs text-muted-foreground mt-1">{step.remarks}</p>
+            )}
+            {step.timestamp && (
+              <p className="text-[11px] font-medium text-muted-foreground mt-1">{step.timestamp}</p>
             )}
           </div>
         </div>

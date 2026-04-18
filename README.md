@@ -26,12 +26,14 @@ The app currently supports:
 - Manual dues and payment tracking
 - Post-event report submission
 - Reports and media archive visibility
+- Communication Hub for targeted announcements, read state, and feedback
+- Microsoft SSO foundation is present but hidden until the university approves it
+- Microsoft Graph email foundation for high/urgent announcements
 
 Planned but not fully implemented yet:
 
-- Student/member experience
-- Announcements and feedback
-- Production onboarding/admin invite flow
+- Full Outlook calendar sync
+- Production deployment and Club Services user guide
 
 ## Repository Structure
 
@@ -92,6 +94,14 @@ PORT=4000
 SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+ALLOWED_EMAIL_DOMAINS=nileuniversity.edu.ng,nilehive.test
+FRONTEND_APP_URL=http://localhost:8080
+EMAIL_DELIVERY_ENABLED=false
+EMAIL_PROVIDER=microsoft_graph
+MICROSOFT_TENANT_ID=your-azure-tenant-id
+MICROSOFT_CLIENT_ID=your-azure-app-client-id
+MICROSOFT_CLIENT_SECRET=your-azure-app-client-secret
+MICROSOFT_SENDER_EMAIL=clubservices@nileuniversity.edu.ng
 ```
 
 Frontend env file:
@@ -106,9 +116,50 @@ Example:
 VITE_API_BASE_URL=http://localhost:4000
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+VITE_ALLOWED_EMAIL_DOMAINS=nileuniversity.edu.ng,nilehive.test
+VITE_AUTH_MODE=password
+VITE_MICROSOFT_PASSWORD_HELP_URL=https://passwordreset.microsoftonline.com/
 ```
 
 Frontend developers only need the Supabase URL and anon key. They should never use the service role key in frontend code.
+
+## Microsoft Outlook Authentication
+
+NileHive has a dormant Microsoft/Outlook authentication foundation, but the visible app currently keeps the normal email/password login while university approval is pending.
+
+For now, keep:
+
+```env
+VITE_AUTH_MODE=password
+```
+
+If the university approves Microsoft SSO later, production NileHive users can sign in with their existing Nile University Microsoft/Outlook account:
+
+```text
+user@nileuniversity.edu.ng
+```
+
+At that point, Supabase Auth should be configured with the Microsoft/Azure provider and the frontend can be switched to:
+
+```env
+VITE_AUTH_MODE=microsoft
+```
+
+Password recovery for production users is handled by Nile University's Microsoft account recovery process, not by NileHive.
+
+## Microsoft Graph Email Delivery
+
+NileHive can send high/urgent announcement emails through Microsoft Graph from the Club Services mailbox. This is separate from Microsoft login.
+
+Required Azure setup:
+
+- Create an Azure app registration.
+- Add Microsoft Graph application permission: `Mail.Send`.
+- Grant admin consent.
+- Set `MICROSOFT_TENANT_ID`, `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, and `MICROSOFT_SENDER_EMAIL`.
+- Set `EMAIL_DELIVERY_ENABLED=true` only when the Microsoft setup is ready.
+
+If email delivery fails, NileHive still publishes the announcement and stores the in-app notification. Email delivery attempts are logged in `email_deliveries`.
 
 ## First-Time Setup
 
@@ -151,6 +202,9 @@ Current migration order:
 0010_member_database.sql
 0011_dues_payment_tracking.sql
 0012_post_event_reports.sql
+...
+0025_communication_hub.sql
+0026_email_delivery_logs.sql
 ```
 
 Apply them in the Supabase SQL Editor, one file at a time, in numeric order.

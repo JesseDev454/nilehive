@@ -110,7 +110,7 @@ export function NhStudentId({ value, onChange, id, required, disabled, className
         )}
       >
         {showSuccess
-          ? "Valid student ID"
+          ? "Valid University ID"
           : showError
             ? `Needs ${RAW_LEN} digits; you have ${digits.length}`
             : "Format: YY-XXXX-XXX (e.g. 24-2120-109)"}

@@ -1,4 +1,5 @@
 const { db } = require("../../config/db");
+const { formatAllowedEmailDomains, isAllowedEmail } = require("../../config/emailPolicy");
 const ApiError = require("../../shared/ApiError");
 const { validateCompleteProfilePayload } = require("./profile.validation");
 
@@ -43,6 +44,17 @@ async function completeProfileOnboarding(options) {
 
   if (existingProfile) {
     throw new ApiError(409, "Profile already exists for this user", "PROFILE_ALREADY_EXISTS");
+  }
+
+  if (!isAllowedEmail(authUser.email)) {
+    throw new ApiError(
+      403,
+      `Please use your Nile University email address (${formatAllowedEmailDomains()}) to complete profile setup.`,
+      "UNSUPPORTED_EMAIL_DOMAIN",
+      {
+        field: "email"
+      }
+    );
   }
 
   const validatedPayload = validateCompleteProfilePayload(payload);

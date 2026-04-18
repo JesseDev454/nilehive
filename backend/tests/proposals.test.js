@@ -40,15 +40,15 @@ test("createProposal stores the expected Week 1 proposal record", async () => {
 
   const proposal = await createProposal({
     actor: {
-      id: "exec-1",
-      role: "executive",
+      id: "president-1",
+      role: "president",
       clubId: "club-1"
     },
     payload: {
       title: "Leadership Summit",
       proposed_activity: "Leadership Summit",
-      aim_objectives: "Prepare the incoming executive team for handover.",
-      description: "A planning summit for executive handover.",
+      aim_objectives: "Prepare the incoming leadership team for handover.",
+      description: "A planning summit for leadership handover.",
       event_date: "2026-05-20",
       event_time: "14:30",
       location: "Main Hall",
@@ -64,7 +64,7 @@ test("createProposal stores the expected Week 1 proposal record", async () => {
       ],
       responsible_members: [
         {
-          name: "Amina Executive",
+          name: "Tomi President",
           student_id: "NU-2023-0001",
           phone_number: "+2348012345678",
           position: "Project Lead"
@@ -75,9 +75,9 @@ test("createProposal stores the expected Week 1 proposal record", async () => {
   });
 
   assert.equal(insertedProposal.club_id, "club-1");
-  assert.equal(insertedProposal.submitted_by, "exec-1");
+  assert.equal(insertedProposal.submitted_by, "president-1");
   assert.equal(insertedProposal.status, "pending_advisor_review");
-  assert.equal(insertedProposal.aim_objectives, "Prepare the incoming executive team for handover.");
+  assert.equal(insertedProposal.aim_objectives, "Prepare the incoming leadership team for handover.");
   assert.equal(insertedProposal.proposed_activity, "Leadership Summit");
   assert.equal(insertedProposal.event_time, "14:30");
   assert.equal(insertedProposal.number_of_participants, 80);
@@ -98,8 +98,8 @@ test("createProposal rejects invalid Proposal Form 2.0 payloads", async () => {
     () =>
       createProposal({
         actor: {
-          id: "exec-1",
-          role: "executive",
+          id: "president-1",
+          role: "president",
           clubId: "club-1"
         },
         payload: {
@@ -123,8 +123,8 @@ test("createProposal rejects invalid Proposal Form 2.0 payloads", async () => {
   );
 });
 
-test("requireRole blocks non-executives from executive routes", async () => {
-  const error = await runMiddleware(requireRole("executive"), {
+test("requireRole blocks non-presidents from president routes", async () => {
+  const error = await runMiddleware(requireRole("president"), {
     user: { id: "advisor-1", role: "advisor" }
   });
 
@@ -152,3 +152,4 @@ test("auth middleware rejects invalid access tokens", async () => {
   assert.equal(error.statusCode, 401);
   assert.equal(error.code, "INVALID_TOKEN");
 });
+

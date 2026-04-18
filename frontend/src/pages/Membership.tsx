@@ -421,7 +421,7 @@ function StudentMembershipView() {
           <div className="rounded-2xl bg-white/10 p-4">
             <p className="text-xs uppercase tracking-wide text-white/60">Signed in as</p>
             <p className="font-semibold">{profile?.full_name || "Student"}</p>
-            <p className="text-sm text-white/70">{profile?.student_id || "Student ID not set"}</p>
+            <p className="text-sm text-white/70">{profile?.student_id || "University ID not set"}</p>
           </div>
         </div>
       </div>
@@ -680,7 +680,7 @@ function RequestReviewPanel({
           <div className="rounded-2xl bg-muted/60 p-4 lg:col-span-2">
             <p className="font-semibold">{request.profile?.full_name || "Student"}</p>
             <p className="text-sm text-muted-foreground">
-              {request.profile?.student_id || "No student ID"} - {request.club?.name || request.club_id}
+              {request.profile?.student_id || "No University ID"} - {request.club?.name || request.club_id}
             </p>
             <p className="mt-2 text-sm">
               Requested role: <span className="font-medium capitalize">{request.requested_role}</span>
@@ -755,6 +755,7 @@ function RequestReviewPanel({
 function ReviewerMembershipView() {
   const { role } = useRole();
   const [statusFilter, setStatusFilter] = useState<(typeof REQUEST_STATUSES)[number]>("pending");
+  const [requestTypeFilter, setRequestTypeFilter] = useState<"all" | "member" | "leadership" | "executive" | "president">("all");
   const [clubFilter, setClubFilter] = useState("all");
   const [selectedRequest, setSelectedRequest] = useState<MembershipRequestRecord | null>(null);
   const canReview = role === "president" || role === "admin";
@@ -788,6 +789,17 @@ function ReviewerMembershipView() {
     }),
     [requests]
   );
+  const filteredRequests = useMemo(() => {
+    if (requestTypeFilter === "all") {
+      return requests;
+    }
+
+    if (requestTypeFilter === "leadership") {
+      return requests.filter((request) => request.requested_role === "executive" || request.requested_role === "president");
+    }
+
+    return requests.filter((request) => request.requested_role === requestTypeFilter);
+  }, [requestTypeFilter, requests]);
 
   if (!canReview) {
     return (
@@ -861,6 +873,18 @@ function ReviewerMembershipView() {
                   </SelectContent>
                 </Select>
               ) : null}
+              <Select value={requestTypeFilter} onValueChange={(value) => setRequestTypeFilter(value as typeof requestTypeFilter)}>
+                <SelectTrigger className="w-full sm:w-[220px]">
+                  <SelectValue placeholder="Filter by request type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All request types</SelectItem>
+                  <SelectItem value="member">Ordinary members</SelectItem>
+                  <SelectItem value="leadership">Leadership requests</SelectItem>
+                  <SelectItem value="executive">Executive requests</SelectItem>
+                  <SelectItem value="president">President requests</SelectItem>
+                </SelectContent>
+              </Select>
               <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}>
                 <SelectTrigger className="w-full sm:w-[220px]">
                   <SelectValue placeholder="Filter by status" />
@@ -885,7 +909,7 @@ function ReviewerMembershipView() {
               <p className="font-medium">Unable to load membership requests</p>
               <p className="mt-1 text-sm text-muted-foreground">{getErrorMessage(error)}</p>
             </div>
-          ) : requests.length === 0 ? (
+          ) : filteredRequests.length === 0 ? (
             <div className="rounded-2xl border border-dashed p-10 text-center">
               <Crown className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
               <p className="font-medium">No requests match this view</p>
@@ -893,9 +917,9 @@ function ReviewerMembershipView() {
             </div>
           ) : (
             <div className="space-y-3">
-              {requests.map((request) => {
-                const isPresidentRole = request.requested_role === "president";
-                const presidentCannotApprove = role === "president" && isPresidentRole;
+              {filteredRequests.map((request) => {
+                const isLeadershipRole = request.requested_role === "executive" || request.requested_role === "president";
+                const presidentCannotApprove = role === "president" && isLeadershipRole;
 
                 return (
                   <div
@@ -906,12 +930,14 @@ function ReviewerMembershipView() {
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-semibold">{request.profile?.full_name || "Student"}</p>
                         <MembershipStatusBadge status={request.status} />
-                        {isPresidentRole ? (
-                          <Badge className="bg-secondary/15 text-secondary hover:bg-secondary/15">President request</Badge>
+                        {isLeadershipRole ? (
+                          <Badge className="bg-secondary/15 text-secondary hover:bg-secondary/15">
+                            Leadership request
+                          </Badge>
                         ) : null}
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {request.profile?.student_id || "No student ID"} - {request.club?.name || request.club_id}
+                        {request.profile?.student_id || "No University ID"} - {request.club?.name || request.club_id}
                       </p>
                       <p className="text-sm">
                         Wants to join as <span className="font-medium capitalize">{request.requested_role}</span>
@@ -941,7 +967,7 @@ function ReviewerMembershipView() {
                     </div>
                     {presidentCannotApprove ? (
                       <p className="text-xs text-muted-foreground lg:max-w-[220px]">
-                        President role requests require admin approval.
+                        Executive and president role requests require admin approval.
                       </p>
                     ) : null}
                   </div>

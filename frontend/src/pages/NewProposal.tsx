@@ -18,12 +18,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useRole } from "@/contexts/RoleContext";
 import {
   ApiClientError,
   createProposal,
   getClubs,
-  getExecutiveProposal,
-  updateExecutiveProposal,
+  getPresidentProposal,
+  updatePresidentProposal,
   type BudgetLineItem,
   type CreateProposalPayload,
   type ResponsibleMember
@@ -112,7 +113,7 @@ function getSubmissionErrorMessage(error: unknown) {
     const fieldMessages = details?.fields?.map((field) => field.message).filter(Boolean);
 
     if (fieldMessages?.length) {
-      return fieldMessages.join(" ");
+      return `Please complete these items: ${fieldMessages.join("; ")}`;
     }
 
     return error.message;
@@ -215,6 +216,8 @@ function toResponsibleMembers(members: ResponsibleMemberForm[]): ResponsibleMemb
 }
 
 export default function NewProposal() {
+  const { role } = useRole();
+  const canManageProposals = role === "president";
   const [searchParams] = useSearchParams();
   const editProposalId = searchParams.get("edit");
   const isEditMode = Boolean(editProposalId);
@@ -249,7 +252,7 @@ export default function NewProposal() {
 
   const { data: editProposal } = useQuery({
     queryKey: ["proposal-edit", editProposalId],
-    queryFn: () => getExecutiveProposal(editProposalId || ""),
+    queryFn: () => getPresidentProposal(editProposalId || ""),
     enabled: !!editProposalId,
     retry: false
   });
@@ -425,7 +428,7 @@ export default function NewProposal() {
       const payload = buildProposalPayload(shouldSaveDraft);
 
       if (editProposalId) {
-        await updateExecutiveProposal(editProposalId, payload);
+        await updatePresidentProposal(editProposalId, payload);
       } else {
         await createProposal(payload);
       }
@@ -447,6 +450,19 @@ export default function NewProposal() {
       setIsSavingDraft(false);
     }
   };
+
+  if (!canManageProposals) {
+    return (
+      <Card className="max-w-3xl mx-auto animate-slide-up">
+        <CardContent className="p-10 text-center">
+          <h1 className="text-2xl font-bold">Proposal Form 2.0</h1>
+          <p className="text-muted-foreground mt-2">
+            Only presidents can create or edit proposals.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-slide-up">
@@ -1113,15 +1129,13 @@ export default function NewProposal() {
           Back
         </Button>
         <div className="flex gap-2">
-          {!isEditMode && (
-            <Button
-              onClick={() => submit({ saveAsDraft: true })}
-              disabled={isSubmitting || isSavingDraft}
-              variant="outline"
-            >
-              {isSavingDraft ? "Saving..." : "Save Draft"}
-            </Button>
-          )}
+          <Button
+            onClick={() => submit({ saveAsDraft: true })}
+            disabled={isSubmitting || isSavingDraft}
+            variant="outline"
+          >
+            {isSavingDraft ? "Saving..." : "Save Draft"}
+          </Button>
           {step < steps.length - 1 ? (
             <Button className="bg-[#0d5bbc] hover:bg-[#004493]" onClick={next} disabled={isSubmitting}>
               Continue

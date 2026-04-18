@@ -10,7 +10,7 @@ function createProposalsRouter(options = {}) {
   const auth = createAuthMiddleware({ database });
   const controller = createProposalsController({ database });
 
-  router.post("/", auth, requireRole("executive"), controller.createProposal);
+  router.post("/", auth, requireRole("president"), controller.createProposal);
   router.get("/admin", auth, requireRole("admin"), controller.listAdminProposals);
   router.post(
     "/admin/:proposalId/decision",
@@ -31,14 +31,14 @@ function createProposalsRouter(options = {}) {
     requireRole("advisor"),
     controller.listPendingAdvisorProposals
   );
-  router.get("/", auth, requireRole("executive"), controller.listExecutiveProposals);
-  router.get("/:proposalId", auth, requireRole("executive"), controller.getExecutiveProposalDetail);
-  router.post("/:proposalId/edit", auth, requireRole("executive"), controller.updateExecutiveProposal);
+  router.get("/", auth, requireRole("president"), controller.listPresidentProposals);
+  router.get("/:proposalId", auth, requireRole("president"), controller.getPresidentProposalDetail);
+  router.post("/:proposalId/edit", auth, requireRole("president"), controller.updatePresidentProposal);
   router.post(
     "/:proposalId/submit",
     auth,
-    requireRole("executive"),
-    controller.submitExecutiveProposalRevision
+    requireRole("president"),
+    controller.submitPresidentProposalRevision
   );
   router.post(
     "/:proposalId/advisor-decision",

@@ -40,6 +40,7 @@ export interface ResponsibleMember {
 export interface ClubRecord {
   id: string;
   name: string;
+  description: string | null;
   code: string | null;
   advisor_id: string | null;
   created_at: string;
@@ -56,6 +57,35 @@ export interface ProfileRecord {
   onboarding_status?: string | null;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface AdminUserProfileRecord extends ProfileRecord {
+  club?: {
+    id: string;
+    name: string;
+    code: string | null;
+  } | null;
+}
+
+export interface ProfileRoleHistoryRecord {
+  id: string;
+  profile_id: string;
+  previous_role: ProfileRecord["role"] | null;
+  new_role: ProfileRecord["role"];
+  previous_club_id: string | null;
+  new_club_id: string | null;
+  changed_by: string;
+  remarks: string | null;
+  created_at: string;
+}
+
+export interface AdminRoleChangeResult {
+  profile: AdminUserProfileRecord;
+  history: ProfileRoleHistoryRecord | null;
+}
+
+export interface AdminAdvisorAssignmentResult extends AdminRoleChangeResult {
+  club: ClubRecord;
 }
 
 export interface ProfileOnboardingPayload {
@@ -99,6 +129,13 @@ export interface ProposalRecord {
     remarks: string | null;
     decided_at: string;
   } | null;
+  approval_history?: Array<{
+    reviewer_id: string;
+    reviewer_role: string;
+    decision: string;
+    remarks: string | null;
+    decided_at: string;
+  }>;
   created_at: string;
   updated_at: string;
 }
@@ -106,7 +143,8 @@ export interface ProposalRecord {
 export interface NotificationRecord {
   id: string;
   user_id: string;
-  proposal_id: string;
+  proposal_id: string | null;
+  announcement_id?: string | null;
   type: string;
   message: string;
   delivery_status: string;
@@ -182,9 +220,17 @@ export interface DashboardActivity {
 export interface ExecutiveDashboardRecord {
   role: "executive";
   club_id: string;
-  summary: DashboardSummary;
+  summary: {
+    total_tasks: number;
+    pending_tasks: number;
+    in_progress_tasks: number;
+    completed_tasks: number;
+    blocked_tasks: number;
+    upcoming_events: number;
+    reminders: number;
+  };
   action_items: DashboardActionItem[];
-  recent_proposals: DashboardProposalSummary[];
+  assigned_tasks: TaskRecord[];
   upcoming_events: ApprovedEventRecord[];
   reminders: EventReminderRecord[];
   notifications: NotificationRecord[];
@@ -533,7 +579,11 @@ export interface AnnouncementRecord {
   created_by: string;
   title: string;
   message: string;
-  audience: "all" | "club";
+  audience: "all_users" | "all_clubs" | "club" | "role";
+  priority: "low" | "normal" | "high" | "urgent";
+  target_role: ProfileRecord["role"] | null;
+  is_read: boolean;
+  read_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -542,7 +592,9 @@ export interface CreateAnnouncementPayload {
   title: string;
   message: string;
   audience?: AnnouncementRecord["audience"];
+  priority?: AnnouncementRecord["priority"];
   club_id?: string | null;
+  target_role?: ProfileRecord["role"] | null;
 }
 
 export interface FeedbackRecord {
@@ -576,6 +628,9 @@ interface ApiRequestOptions {
   body?: unknown;
 }
 
+const TOKEN_REFRESH_BUFFER_SECONDS = 60;
+export const SESSION_EXPIRED_EVENT = "nilehive:session-expired";
+
 export class ApiClientError extends Error {
   status: number;
   code?: string;
@@ -590,15 +645,51 @@ export class ApiClientError extends Error {
   }
 }
 
-async function request<T>(path: string, options: ApiRequestOptions = {}) {
-  const { method = "GET", token, body } = options;
+function dispatchSessionExpired() {
+  window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
+}
+
+async function getFreshAccessToken(explicitToken?: string, forceRefresh = false) {
+  if (explicitToken) {
+    return explicitToken;
+  }
+
+  const {
+    data: { session }
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    return "";
+  }
+
+  const expiresAt = session.expires_at ? session.expires_at * 1000 : 0;
+  const shouldRefresh =
+    forceRefresh ||
+    !expiresAt ||
+    expiresAt - Date.now() <= TOKEN_REFRESH_BUFFER_SECONDS * 1000;
+
+  if (!shouldRefresh) {
+    return session.access_token;
+  }
+
+  const { data, error } = await supabase.auth.refreshSession();
+
+  if (error || !data.session) {
+    if (expiresAt && expiresAt > Date.now()) {
+      return session.access_token;
+    }
+
+    return "";
+  }
+
+  return data.session.access_token;
+}
+
+async function executeRequest<T>(path: string, options: ApiRequestOptions, accessToken: string) {
+  const { method = "GET", body } = options;
   const headers: Record<string, string> = {
     Accept: "application/json"
   };
-  const accessToken =
-    token ||
-    (await supabase.auth.getSession()).data.session?.access_token ||
-    "";
 
   if (accessToken) {
     headers.Authorization = `Bearer ${accessToken}`;
@@ -630,6 +721,41 @@ async function request<T>(path: string, options: ApiRequestOptions = {}) {
   return responseJson as T;
 }
 
+async function request<T>(path: string, options: ApiRequestOptions = {}) {
+  const accessToken = await getFreshAccessToken(options.token);
+
+  try {
+    return await executeRequest<T>(path, options, accessToken);
+  } catch (error) {
+    if (
+      options.token ||
+      !(error instanceof ApiClientError) ||
+      error.status !== 401
+    ) {
+      throw error;
+    }
+
+    const retryToken = await getFreshAccessToken(undefined, true);
+
+    if (!retryToken || retryToken === accessToken) {
+      await supabase.auth.signOut();
+      dispatchSessionExpired();
+      throw error;
+    }
+
+    try {
+      return await executeRequest<T>(path, options, retryToken);
+    } catch (retryError) {
+      if (retryError instanceof ApiClientError && retryError.status === 401) {
+        await supabase.auth.signOut();
+        dispatchSessionExpired();
+      }
+
+      throw retryError;
+    }
+  }
+}
+
 export async function getHealth() {
   return request<HealthCheckResponse>("/api/v1/health");
 }
@@ -644,7 +770,7 @@ export async function createProposal(payload: CreateProposalPayload, token?: str
   return response.data;
 }
 
-export async function updateExecutiveProposal(proposalId: string, payload: CreateProposalPayload, token?: string) {
+export async function updatePresidentProposal(proposalId: string, payload: CreateProposalPayload, token?: string) {
   const response = await request<ApiEnvelope<ProposalRecord>>(`/api/v1/proposals/${proposalId}/edit`, {
     method: "POST",
     token,
@@ -654,7 +780,7 @@ export async function updateExecutiveProposal(proposalId: string, payload: Creat
   return response.data;
 }
 
-export async function submitExecutiveProposalRevision(proposalId: string, token?: string) {
+export async function submitPresidentProposalRevision(proposalId: string, token?: string) {
   const response = await request<ApiEnvelope<ProposalRecord>>(`/api/v1/proposals/${proposalId}/submit`, {
     method: "POST",
     token
@@ -662,6 +788,9 @@ export async function submitExecutiveProposalRevision(proposalId: string, token?
 
   return response.data;
 }
+
+export const updateExecutiveProposal = updatePresidentProposal;
+export const submitExecutiveProposalRevision = submitPresidentProposalRevision;
 
 export async function getClubs(token?: string) {
   const response = await request<ApiEnvelope<ClubRecord[]>>("/api/v1/clubs", {
@@ -719,7 +848,7 @@ export async function submitAdvisorDecision(
   return response.data;
 }
 
-export async function getExecutiveProposals(token?: string) {
+export async function getPresidentProposals(token?: string) {
   const response = await request<ApiEnvelope<ProposalRecord[]>>("/api/v1/proposals", {
     method: "GET",
     token
@@ -728,7 +857,7 @@ export async function getExecutiveProposals(token?: string) {
   return response.data;
 }
 
-export async function getExecutiveProposal(proposalId: string, token?: string) {
+export async function getPresidentProposal(proposalId: string, token?: string) {
   const response = await request<ApiEnvelope<ProposalRecord>>(`/api/v1/proposals/${proposalId}`, {
     method: "GET",
     token
@@ -736,6 +865,9 @@ export async function getExecutiveProposal(proposalId: string, token?: string) {
 
   return response.data;
 }
+
+export const getExecutiveProposals = getPresidentProposals;
+export const getExecutiveProposal = getPresidentProposal;
 
 export async function getAdvisorProposal(proposalId: string, token?: string) {
   const response = await request<ApiEnvelope<ProposalRecord>>(`/api/v1/proposals/advisor/${proposalId}`, {
@@ -775,6 +907,82 @@ export async function getAdminProposal(proposalId: string, token?: string) {
     {
       method: "GET",
       token
+    }
+  );
+
+  return response.data;
+}
+
+export async function getAdminUsers(
+  filters: { role?: string; club_id?: string; requested_role?: string; q?: string } = {},
+  token?: string
+) {
+  const params = new URLSearchParams();
+
+  if (filters.role) {
+    params.set("role", filters.role);
+  }
+
+  if (filters.club_id) {
+    params.set("club_id", filters.club_id);
+  }
+
+  if (filters.requested_role) {
+    params.set("requested_role", filters.requested_role);
+  }
+
+  if (filters.q) {
+    params.set("q", filters.q);
+  }
+
+  const query = params.toString();
+  const response = await request<ApiEnvelope<AdminUserProfileRecord[]>>(
+    `/api/v1/admin/users${query ? `?${query}` : ""}`,
+    {
+      method: "GET",
+      token
+    }
+  );
+
+  return response.data;
+}
+
+export async function updateAdminUserRole(
+  profileId: string,
+  payload: {
+    role: ProfileRecord["role"];
+    club_id?: string | null;
+    remarks?: string | null;
+  },
+  token?: string
+) {
+  const response = await request<ApiEnvelope<AdminRoleChangeResult>>(
+    `/api/v1/admin/users/${profileId}/role`,
+    {
+      method: "POST",
+      token,
+      body: payload
+    }
+  );
+
+  return response.data;
+}
+
+export async function assignAdminUserAdvisor(
+  profileId: string,
+  payload: {
+    club_id: string;
+    replace_existing?: boolean;
+    remarks?: string | null;
+  },
+  token?: string
+) {
+  const response = await request<ApiEnvelope<AdminAdvisorAssignmentResult>>(
+    `/api/v1/admin/users/${profileId}/advisor-assignment`,
+    {
+      method: "POST",
+      token,
+      body: payload
     }
   );
 
@@ -1212,7 +1420,7 @@ export async function createEventReport(payload: CreateEventReportPayload, token
 }
 
 export async function getAnnouncements(
-  filters: { audience?: string; club_id?: string } = {},
+  filters: { audience?: string; club_id?: string; priority?: string; unread?: boolean } = {},
   token?: string
 ) {
   const params = new URLSearchParams();
@@ -1225,11 +1433,65 @@ export async function getAnnouncements(
     params.set("club_id", filters.club_id);
   }
 
+  if (filters.priority) {
+    params.set("priority", filters.priority);
+  }
+
+  if (filters.unread) {
+    params.set("unread", "true");
+  }
+
   const query = params.toString();
   const response = await request<ApiEnvelope<AnnouncementRecord[]>>(
     `/api/v1/communications/announcements${query ? `?${query}` : ""}`,
     {
       method: "GET",
+      token
+    }
+  );
+
+  return response.data;
+}
+
+export async function markAnnouncementRead(announcementId: string, token?: string) {
+  const response = await request<ApiEnvelope<AnnouncementRecord>>(
+    `/api/v1/communications/announcements/${announcementId}/read`,
+    {
+      method: "POST",
+      token
+    }
+  );
+
+  return response.data;
+}
+
+export async function markAllAnnouncementsRead(
+  filters: { audience?: string; club_id?: string; priority?: string; unread?: boolean } = {},
+  token?: string
+) {
+  const params = new URLSearchParams();
+
+  if (filters.audience) {
+    params.set("audience", filters.audience);
+  }
+
+  if (filters.club_id) {
+    params.set("club_id", filters.club_id);
+  }
+
+  if (filters.priority) {
+    params.set("priority", filters.priority);
+  }
+
+  if (filters.unread) {
+    params.set("unread", "true");
+  }
+
+  const query = params.toString();
+  const response = await request<ApiEnvelope<{ marked_read: number }>>(
+    `/api/v1/communications/announcements/read-all${query ? `?${query}` : ""}`,
+    {
+      method: "POST",
       token
     }
   );

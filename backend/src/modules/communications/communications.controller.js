@@ -3,7 +3,9 @@ const {
   createAnnouncement,
   createFeedback,
   listAnnouncements,
-  listFeedback
+  listFeedback,
+  markAllAnnouncementsRead,
+  markAnnouncementRead
 } = require("./communications.service");
 
 function createCommunicationsController(options = {}) {
@@ -15,7 +17,9 @@ function createCommunicationsController(options = {}) {
         actor: req.user,
         filters: {
           audience: req.query.audience,
-          club_id: req.query.club_id
+          club_id: req.query.club_id,
+          priority: req.query.priority,
+          unread: req.query.unread
         },
         database
       });
@@ -31,6 +35,31 @@ function createCommunicationsController(options = {}) {
       });
 
       res.status(201).json({ data: announcement });
+    }),
+
+    markAnnouncementRead: asyncHandler(async (req, res) => {
+      const announcement = await markAnnouncementRead({
+        actor: req.user,
+        announcementId: req.params.announcementId,
+        database
+      });
+
+      res.status(200).json({ data: announcement });
+    }),
+
+    markAllAnnouncementsRead: asyncHandler(async (req, res) => {
+      const result = await markAllAnnouncementsRead({
+        actor: req.user,
+        filters: {
+          audience: req.query.audience,
+          club_id: req.query.club_id,
+          priority: req.query.priority,
+          unread: req.query.unread
+        },
+        database
+      });
+
+      res.status(200).json({ data: result });
     }),
 
     listFeedback: asyncHandler(async (req, res) => {

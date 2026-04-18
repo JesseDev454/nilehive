@@ -1,4 +1,5 @@
 const { db } = require("../../config/db");
+const { createEmailService } = require("../email/email.service");
 const ApiError = require("../../shared/ApiError");
 const {
   validateCreateAnnouncementPayload,
@@ -27,9 +28,262 @@ function formatAnnouncement(announcement) {
     title: announcement.title,
     message: announcement.message,
     audience: announcement.audience,
+    priority: announcement.priority ?? "normal",
+    target_role: announcement.target_role ?? null,
+    is_read: announcement.is_read ?? false,
+    read_at: announcement.read_at ?? null,
     created_at: announcement.created_at,
     updated_at: announcement.updated_at
   };
+}
+
+function uniqueIds(ids) {
+  return [...new Set(ids.filter(Boolean))];
+}
+
+function profileIds(profiles) {
+  return profiles.map((profile) => profile.id);
+}
+
+async function getClubRecipientIds(database, clubId) {
+  const [profiles, members, advisorIds] = await Promise.all([
+    database.listProfiles ? database.listProfiles({ clubId }) : [],
+    database.listClubMembers ? database.listClubMembers({ clubId, membershipStatus: "active" }) : [],
+    database.getAdvisorProfileIdsByClubId ? database.getAdvisorProfileIdsByClubId(clubId) : []
+  ]);
+
+  return uniqueIds([
+    ...profileIds(profiles),
+    ...members.map((member) => member.profile_id),
+    ...advisorIds
+  ]);
+}
+
+async function getAllClubRecipientIds(database) {
+  const [profiles, members, clubs] = await Promise.all([
+    database.listProfiles ? database.listProfiles() : [],
+    database.listClubMembers ? database.listClubMembers({ membershipStatus: "active" }) : [],
+    database.listClubs ? database.listClubs() : []
+  ]);
+
+  return uniqueIds([
+    ...profiles.filter((profile) => profile.club_id).map((profile) => profile.id),
+    ...members.map((member) => member.profile_id),
+    ...clubs.map((club) => club.advisor_id)
+  ]);
+}
+
+async function resolveAnnouncementRecipients(database, announcement) {
+  if (announcement.audience === "all_users") {
+    return profileIds(database.listProfiles ? await database.listProfiles() : []);
+  }
+
+  if (announcement.audience === "all_clubs") {
+    return getAllClubRecipientIds(database);
+  }
+
+  if (announcement.audience === "club") {
+    return getClubRecipientIds(database, announcement.club_id);
+  }
+
+  if (announcement.audience === "role") {
+    const profiles = database.listProfiles
+      ? await database.listProfiles({
+          role: announcement.target_role,
+          clubId: announcement.club_id ?? undefined
+        })
+      : [];
+
+    return profileIds(profiles);
+  }
+
+  return [];
+}
+
+function buildAnnouncementNotification(announcement) {
+  return {
+    proposal_id: null,
+    announcement_id: announcement.id,
+    type: "announcement_published",
+    message: `${announcement.priority === "urgent" ? "Urgent announcement" : "New announcement"}: ${announcement.title}`,
+    delivery_status: "stored"
+  };
+}
+
+async function createAnnouncementNotifications(database, announcement) {
+  if (typeof database.createNotifications !== "function") {
+    return [];
+  }
+
+  const recipientIds = await resolveAnnouncementRecipients(database, announcement);
+  const baseNotification = buildAnnouncementNotification(announcement);
+
+  const notifications = await database.createNotifications(
+    uniqueIds(recipientIds).map((userId) => ({
+      ...baseNotification,
+      user_id: userId
+    }))
+  );
+
+  return notifications;
+}
+
+function shouldEmailAnnouncement(announcement) {
+  return ["high", "urgent"].includes(announcement.priority);
+}
+
+function buildAnnouncementEmail(announcement, env = process.env) {
+  const appUrl = (env.FRONTEND_APP_URL || "http://localhost:8080").replace(/\/+$/, "");
+  const subjectPrefix = announcement.priority === "urgent" ? "[NileHive Urgent]" : "[NileHive]";
+  const subject = `${subjectPrefix} ${announcement.title}`;
+  const text = [
+    announcement.title,
+    "",
+    announcement.message,
+    "",
+    `Priority: ${announcement.priority}`,
+    `Open NileHive: ${appUrl}/communications`
+  ].join("\n");
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
+      <p style="font-size:12px;text-transform:uppercase;letter-spacing:0.12em;color:#0d5bbc;font-weight:700">NileHive Communication Hub</p>
+      <h1 style="font-size:22px;margin:0 0 12px">${announcement.title}</h1>
+      <p style="white-space:pre-line">${announcement.message}</p>
+      <p><strong>Priority:</strong> ${announcement.priority}</p>
+      <p><a href="${appUrl}/communications">Open this announcement in NileHive</a></p>
+      <p style="font-size:12px;color:#6b7280">This message was sent by NileHive on behalf of Nile University Club Services.</p>
+    </div>
+  `;
+
+  return { subject, text, html };
+}
+
+async function sendAnnouncementEmails(options) {
+  const {
+    announcement,
+    notifications,
+    database,
+    emailService = createEmailService({ database })
+  } = options;
+
+  if (!shouldEmailAnnouncement(announcement) || !notifications.length) {
+    return [];
+  }
+
+  if (typeof emailService.isDeliveryEnabled === "function" && !emailService.isDeliveryEnabled()) {
+    return [];
+  }
+
+  const profileIds = uniqueIds(notifications.map((notification) => notification.user_id));
+  const emailsByProfileId = typeof database.getAuthEmailsByProfileIds === "function"
+    ? await database.getAuthEmailsByProfileIds(profileIds)
+    : {};
+  const email = buildAnnouncementEmail(announcement);
+
+  return Promise.all(
+    notifications.map((notification) =>
+      emailService.sendEmail({
+        to: emailsByProfileId[notification.user_id] ?? null,
+        ...email,
+        metadata: {
+          recipient_user_id: notification.user_id,
+          announcement_id: announcement.id,
+          notification_id: notification.id ?? null
+        }
+      })
+    )
+  );
+}
+
+async function canViewAnnouncement(actor, announcement, advisorClubIds = null) {
+  if (actor.role === "admin") {
+    return true;
+  }
+
+  if (announcement.audience === "all_users") {
+    return true;
+  }
+
+  if (announcement.audience === "all_clubs") {
+    if (actor.clubId) {
+      return true;
+    }
+
+    return actor.role === "advisor" && (advisorClubIds ?? []).length > 0;
+  }
+
+  if (announcement.audience === "club") {
+    if (actor.clubId === announcement.club_id) {
+      return true;
+    }
+
+    return actor.role === "advisor" && (advisorClubIds ?? []).includes(announcement.club_id);
+  }
+
+  if (announcement.audience === "role") {
+    if (announcement.target_role !== actor.role) {
+      return false;
+    }
+
+    if (!announcement.club_id) {
+      return true;
+    }
+
+    if (actor.clubId === announcement.club_id) {
+      return true;
+    }
+
+    return actor.role === "advisor" && (advisorClubIds ?? []).includes(announcement.club_id);
+  }
+
+  return false;
+}
+
+async function getVisibleAnnouncements(actor, filters, database) {
+  const advisorClubIds = actor.role === "advisor" && database.getAdvisorClubIds
+    ? await database.getAdvisorClubIds(actor.id)
+    : [];
+
+  if (filters.club_id && actor.role !== "admin") {
+    const allowed = actor.clubId === filters.club_id || advisorClubIds.includes(filters.club_id);
+
+    if (!allowed) {
+      throw new ApiError(403, "You can only access communications for your own club", "FORBIDDEN");
+    }
+  }
+
+  const announcements = await database.listAnnouncements({
+    audience: filters.audience,
+    clubId: filters.club_id,
+    priority: filters.priority
+  });
+  const reads = database.listAnnouncementReadsByUserId
+    ? await database.listAnnouncementReadsByUserId(actor.id)
+    : [];
+  const readByAnnouncementId = reads.reduce((readMap, read) => {
+    readMap[read.announcement_id] = read;
+    return readMap;
+  }, {});
+  const visible = [];
+
+  for (const announcement of announcements) {
+    if (await canViewAnnouncement(actor, announcement, advisorClubIds)) {
+      const read = readByAnnouncementId[announcement.id];
+      const formatted = formatAnnouncement({
+        ...announcement,
+        is_read: Boolean(read),
+        read_at: read?.read_at ?? null
+      });
+
+      if (filters.unread === true && formatted.is_read) {
+        continue;
+      }
+
+      visible.push(formatted);
+    }
+  }
+
+  return visible;
 }
 
 function formatFeedback(feedback) {
@@ -76,25 +330,54 @@ async function getVisibleClubFilters(actor, requestedClubId, database) {
 }
 
 async function createAnnouncement(options) {
-  const { actor, payload, database = db } = options;
+  const { actor, payload, database = db, emailService, logger = console } = options;
   requireActor(actor);
 
-  if (!["admin", "president", "executive"].includes(actor.role)) {
+  if (!["admin", "president"].includes(actor.role)) {
     throw new ApiError(403, "This role cannot create announcements", "FORBIDDEN");
   }
 
   const validatedPayload = validateCreateAnnouncementPayload(payload);
   let clubId = validatedPayload.club_id;
   let audience = validatedPayload.audience;
+  let targetRole = validatedPayload.target_role;
 
-  if (actor.role !== "admin") {
-    audience = "club";
+  if (actor.role === "president") {
     clubId = requireClubLinkedActor(actor);
+    audience = audience === "role" ? "role" : "club";
+
+    if (audience === "role" && !["student", "executive"].includes(targetRole)) {
+      throw new ApiError(403, "Presidents can only target students or executives in their own club", "FORBIDDEN");
+    }
+
+    if (audience === "club") {
+      targetRole = null;
+    }
   } else if (audience === "club" && !clubId) {
     throw new ApiError(400, "Club announcements require a club_id", "VALIDATION_ERROR", {
       field: "club_id"
     });
-  } else if (audience === "all") {
+  } else if (audience === "role" && !targetRole) {
+    throw new ApiError(400, "Role announcements require target_role", "VALIDATION_ERROR", {
+      field: "target_role"
+    });
+  } else if (audience === "all_users" || audience === "all_clubs" || audience === "role") {
+    clubId = null;
+  }
+
+  if (actor.role === "admin" && audience === "club" && database.getClubById) {
+    const club = await database.getClubById(clubId);
+
+    if (!club) {
+      throw new ApiError(404, "Club not found", "CLUB_NOT_FOUND");
+    }
+  }
+
+  if (audience !== "role") {
+    targetRole = null;
+  }
+
+  if (audience === "all_users" || audience === "all_clubs") {
     clubId = null;
   }
 
@@ -103,8 +386,22 @@ async function createAnnouncement(options) {
     created_by: actor.id,
     title: validatedPayload.title,
     message: validatedPayload.message,
-    audience
+    audience,
+    priority: validatedPayload.priority,
+    target_role: targetRole
   });
+
+  const notifications = await createAnnouncementNotifications(database, announcement);
+  try {
+    await sendAnnouncementEmails({
+      announcement,
+      notifications,
+      database,
+      emailService
+    });
+  } catch (error) {
+    logger.warn("Announcement email delivery failed", error);
+  }
 
   return formatAnnouncement(announcement);
 }
@@ -113,13 +410,59 @@ async function listAnnouncements(options) {
   const { actor, filters = {}, database = db } = options;
   requireActor(actor);
 
-  const clubFilters = await getVisibleClubFilters(actor, filters.club_id, database);
-  const announcements = await database.listAnnouncements({
-    ...clubFilters,
-    audience: filters.audience
-  });
+  return getVisibleAnnouncements(actor, {
+    audience: filters.audience,
+    club_id: filters.club_id,
+    priority: filters.priority,
+    unread: filters.unread === true || filters.unread === "true"
+  }, database);
+}
 
-  return announcements.map(formatAnnouncement);
+async function markAnnouncementRead(options) {
+  const { actor, announcementId, database = db } = options;
+  requireActor(actor);
+
+  const visibleAnnouncements = await getVisibleAnnouncements(actor, {}, database);
+  const announcement = visibleAnnouncements.find((item) => item.id === announcementId);
+
+  if (!announcement) {
+    throw new ApiError(404, "Announcement not found", "ANNOUNCEMENT_NOT_FOUND");
+  }
+
+  if (typeof database.markAnnouncementRead !== "function") {
+    return { ...announcement, is_read: true, read_at: new Date().toISOString() };
+  }
+
+  const read = await database.markAnnouncementRead(announcementId, actor.id);
+
+  return {
+    ...announcement,
+    is_read: true,
+    read_at: read.read_at
+  };
+}
+
+async function markAllAnnouncementsRead(options) {
+  const { actor, filters = {}, database = db } = options;
+  requireActor(actor);
+
+  const visibleAnnouncements = await getVisibleAnnouncements(actor, {
+    audience: filters.audience,
+    club_id: filters.club_id,
+    priority: filters.priority,
+    unread: filters.unread === true || filters.unread === "true"
+  }, database);
+  const unreadIds = visibleAnnouncements
+    .filter((announcement) => !announcement.is_read)
+    .map((announcement) => announcement.id);
+
+  if (typeof database.markAnnouncementsRead === "function") {
+    await database.markAnnouncementsRead(unreadIds, actor.id);
+  }
+
+  return {
+    marked_read: unreadIds.length
+  };
 }
 
 async function createFeedback(options) {
@@ -188,5 +531,8 @@ module.exports = {
   createAnnouncement,
   createFeedback,
   listAnnouncements,
-  listFeedback
+  listFeedback,
+  markAllAnnouncementsRead,
+  markAnnouncementRead,
+  sendAnnouncementEmails
 };

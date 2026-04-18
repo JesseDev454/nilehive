@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { NhStudentId } from "@/components/NhStudentId";
 import { useAuth } from "@/contexts/AuthContext";
 import { getPublicClubs } from "@/lib/api";
+import { getAllowedEmailDomainLabel, isAllowedEmailDomain } from "@/lib/env";
 
 const CAMPUS_LOUNGE_IMAGE =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuBtWpjmv-aJhohYghqjIZGKpv8YmfVqo4M1_vpbn628XqWd8nC44bSnXbESgLdSk0EkQshCyBK5A1QNILkD4oAR4wJMwww7TQhzsNm5dzF2MKq4BsTDum7o8UMvLYO6PMeFeBJ0K4bWI4ijUTENADR2umL45GR3vqQ17gafeGeVmGfyUf_U77legsSkpxoSuocgzqvIuxQ4oLZ72OFiTujKX3NNCDI2sjLLfhLy6NpRQHx-RXBfUChYwniKEqg7yu6JTmVTIdyzsY7S";
@@ -20,7 +21,7 @@ export default function SignUp() {
   const [email, setEmail] = useState("");
   const [studentId, setStudentId] = useState("");
   const [clubName, setClubName] = useState("");
-  const [requestedRole, setRequestedRole] = useState("executive");
+  const [requestedRole, setRequestedRole] = useState("student");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signupError, setSignupError] = useState<string | null>(null);
@@ -41,6 +42,14 @@ export default function SignUp() {
 
     if (!clubName) {
       const message = "Please select your club before creating an account.";
+      setSignupError(message);
+      toast.error("Signup failed", { description: message });
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!isAllowedEmailDomain(email)) {
+      const message = `Please use your Nile University email address (${getAllowedEmailDomainLabel()}).`;
       setSignupError(message);
       toast.error("Signup failed", { description: message });
       setIsSubmitting(false);
@@ -130,17 +139,18 @@ export default function SignUp() {
         <div className="lg:col-span-7">
           <div className="relative overflow-hidden rounded-[2.5rem] bg-white p-8 shadow-[0_4px_30px_rgba(11,35,71,0.08)] md:p-12">
             <div className="absolute right-0 top-0 h-32 w-32 rounded-bl-full bg-[#0d5bbc]/5" />
-            <form className="relative z-10 space-y-8" onSubmit={handleSubmit}>
+            <div className="relative z-10 space-y-8">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#0d5bbc]">
                   Onboarding
                 </p>
                 <h2 className="mt-2 text-3xl font-extrabold text-[#000d27]">Create your account</h2>
                 <p className="mt-2 text-sm text-[#44474e]">
-                  Account creation is real. After login, NileHive will guide you through profile setup.
+                  Use your Nile University email. After login, NileHive will guide you through profile setup.
                 </p>
               </div>
 
+              <form className="space-y-8" onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label className="font-semibold text-[#181c1e]" htmlFor="full-name">
@@ -168,12 +178,15 @@ export default function SignUp() {
                     onChange={(event) => setEmail(event.target.value)}
                     required
                   />
+                  <p className="px-1 text-[11px] font-medium text-[#75777f]">
+                    Allowed domain: {getAllowedEmailDomainLabel()}
+                  </p>
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label className="font-semibold text-[#181c1e]" htmlFor="student-id">
-                  Student ID
+                  University ID
                 </Label>
                 <NhStudentId id="student-id" value={studentId} onChange={setStudentId} required />
               </div>
@@ -211,9 +224,9 @@ export default function SignUp() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="student">Student</SelectItem>
                         <SelectItem value="executive">Executive</SelectItem>
                         <SelectItem value="president">President</SelectItem>
-                        <SelectItem value="student">Student</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -272,7 +285,8 @@ export default function SignUp() {
                   request until Club Services approves it.
                 </p>
               </div>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
       </section>

@@ -12,13 +12,13 @@ import {
   ApiClientError,
   getAdminOperationsDashboard,
   getApprovedEvents,
-  getExecutiveDashboard,
   getEventEngagement,
   getEventReminders,
   getMyDuePayments,
   getMyMembershipRequests,
   getNotifications,
   getPresidentDashboard,
+  getTasks,
   type AdminOperationsDashboardRecord,
   type ApprovedEventRecord,
   type DashboardActivity,
@@ -28,7 +28,8 @@ import {
   type EventRsvpRecord,
   type MembershipRequestRecord,
   type NotificationRecord,
-  type ProposalRecord
+  type ProposalRecord,
+  type TaskRecord
 } from "@/lib/api";
 import {
   Activity,
@@ -393,62 +394,135 @@ function AdminEmptyState({
 }
 
 function ExecutiveDashboard() {
-  const { data: dashboard, isLoading, isError, error } = useQuery({
-    queryKey: ["executive-dashboard"],
-    queryFn: () => getExecutiveDashboard(),
+  const {
+    data: tasks = [],
+    isLoading: isTasksLoading,
+    isError: isTasksError,
+    error: tasksError
+  } = useQuery({
+    queryKey: ["executive-dashboard", "tasks"],
+    queryFn: () => getTasks(),
     retry: false
   });
-  const summary = dashboard?.summary;
+
+  const {
+    data: notifications = [],
+    isLoading: isNotificationsLoading,
+    isError: isNotificationsError,
+    error: notificationsError
+  } = useQuery({
+    queryKey: ["executive-dashboard", "notifications"],
+    queryFn: () => getNotifications(),
+    retry: false
+  });
+
+  const {
+    data: approvedEvents = [],
+    isLoading: isEventsLoading,
+    isError: isEventsError,
+    error: eventsError
+  } = useQuery({
+    queryKey: ["executive-dashboard", "approved-events"],
+    queryFn: () => getApprovedEvents(),
+    retry: false
+  });
+
+  const isLoading = isTasksLoading || isNotificationsLoading || isEventsLoading;
+  const isError = isTasksError || isNotificationsError || isEventsError;
+  const error = tasksError || notificationsError || eventsError;
+
+  const summary = useMemo(() => {
+    const pending = tasks.filter((task) => task.status === "pending").length;
+    const inProgress = tasks.filter((task) => task.status === "in_progress").length;
+    const completed = tasks.filter((task) => task.status === "completed").length;
+
+    return {
+      totalTasks: tasks.length,
+      pending,
+      inProgress,
+      completed,
+      upcomingEvents: approvedEvents.length
+    };
+  }, [approvedEvents.length, tasks]);
+
+  const prioritizedTasks = useMemo(
+    () =>
+      [...tasks]
+        .sort((first, second) => {
+          const firstDue = first.due_date ? new Date(first.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+          const secondDue = second.due_date ? new Date(second.due_date).getTime() : Number.MAX_SAFE_INTEGER;
+          return firstDue - secondDue;
+        })
+        .slice(0, 5),
+    [tasks]
+  );
+
+  const statusClassNameByTaskStatus: Record<TaskRecord["status"], string> = {
+    pending: "bg-warning/15 text-warning",
+    in_progress: "bg-primary/15 text-primary",
+    completed: "bg-success/15 text-success",
+    blocked: "bg-destructive/15 text-destructive"
+  };
 
   return (
     <div className="space-y-6 animate-slide-up">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Executive Dashboard</h1>
-          <p className="text-muted-foreground text-sm mt-1">Manage your club event proposals</p>
+          <p className="text-muted-foreground text-sm mt-1">Track your assigned tasks and upcoming events</p>
         </div>
         <Button asChild className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
-          <Link to="/proposals/new">
-            <Plus className="h-4 w-4 mr-2" />
-            New Proposal
+          <Link to="/tasks">
+            <ClipboardList className="h-4 w-4 mr-2" />
+            Open Tasks
           </Link>
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard title="Pending" value={summary?.pending_proposals ?? 0} icon={Clock} variant="warning" />
-        <StatCard title="Approved" value={summary?.approved_proposals ?? 0} icon={CheckCircle} variant="success" />
-        <StatCard title="Rejected" value={summary?.rejected_proposals ?? 0} icon={XCircle} variant="destructive" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <StatCard title="Assigned" value={summary.totalTasks} icon={ClipboardList} />
+        <StatCard title="Pending" value={summary.pending} icon={Clock} variant="warning" />
+        <StatCard title="In Progress" value={summary.inProgress} icon={Activity} />
+        <StatCard title="Completed" value={summary.completed} icon={CheckCircle} variant="success" />
+        <StatCard title="Upcoming Events" value={summary.upcomingEvents} icon={CalendarDays} />
       </div>
-
-      {dashboard?.action_items?.length ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Action Focus</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {dashboard.action_items.map((item) => (
-              <div key={item.type} className="rounded-lg bg-muted p-3 text-sm">
-                {item.label}
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      ) : null}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg">Recent Proposals</CardTitle>
+            <CardTitle className="text-lg">My Priority Tasks</CardTitle>
             <Button asChild variant="outline" size="sm">
-              <Link to="/proposals">View all</Link>
+              <Link to="/tasks">View all</Link>
             </Button>
           </CardHeader>
           <CardContent>
-            {isLoading || isError || !dashboard?.recent_proposals.length ? (
-              <ProposalListState isLoading={isLoading} isError={isError} error={error} />
+            {isLoading ? (
+              <p className="text-sm text-muted-foreground">Loading tasks...</p>
+            ) : isError ? (
+              <div className="space-y-2">
+                <p className="font-medium">Unable to load tasks</p>
+                <p className="text-sm text-muted-foreground">{getErrorMessage(error)}</p>
+              </div>
+            ) : prioritizedTasks.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No assigned tasks yet.</p>
             ) : (
-              <ProposalSummaryList proposals={dashboard.recent_proposals} />
+              <div className="space-y-3">
+                {prioritizedTasks.map((task) => (
+                  <div key={task.id} className="rounded-lg border p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium">{task.title}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {task.due_date ? `Due ${getDateLabel(task.due_date)}` : "No due date"}
+                        </p>
+                      </div>
+                      <Badge className={`${statusClassNameByTaskStatus[task.status]} capitalize`}>
+                        {task.status.replace("_", " ")}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
@@ -461,7 +535,7 @@ function ExecutiveDashboard() {
             </Button>
           </CardHeader>
           <CardContent>
-            {isLoading || isError || !dashboard?.upcoming_events.length ? (
+            {isLoading || isError || !approvedEvents.length ? (
               <ProposalListState
                 isLoading={isLoading}
                 isError={isError}
@@ -469,11 +543,31 @@ function ExecutiveDashboard() {
                 emptyMessage="No approved events yet."
               />
             ) : (
-              <UpcomingEventsList events={dashboard.upcoming_events} />
+              <UpcomingEventsList events={approvedEvents} />
             )}
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Latest Notifications</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading notifications...</p>
+          ) : notifications.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No notifications yet.</p>
+          ) : (
+            notifications.slice(0, 5).map((notification) => (
+              <div key={notification.id} className="rounded-lg bg-muted/70 p-3">
+                <p className="text-sm font-medium">{notification.message}</p>
+                <p className="text-xs text-muted-foreground mt-1">{getDateLabel(notification.created_at)}</p>
+              </div>
+            ))
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -1675,7 +1769,8 @@ export default function Dashboard() {
 
   if (role === "advisor") return <AdvisorDashboard />;
   if (role === "admin") return <PolishedAdminDashboard />;
+  if (role === "executive") return <ExecutiveDashboard />;
   if (role === "president") return <PresidentDashboard />;
   if (role === "student") return <StudentDashboard />;
-  return <ExecutiveDashboard />;
+  return <StudentDashboard />;
 }

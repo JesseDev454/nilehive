@@ -4,10 +4,11 @@ const { getEnv } = require("./env");
 const proposalSelect =
   "id, club_id, submitted_by, title, description, event_date, location, aim_objectives, proposed_activity, event_time, number_of_participants, budget_estimate, budget_line_items, responsible_members, status, submitted_at, resubmitted_at, revision_count, last_edited_at, last_edited_by, advisor_remarks, advisor_decided_at, advisor_decided_by, admin_remarks, admin_decided_at, admin_decided_by, created_at, updated_at";
 const notificationSelect =
-  "id, user_id, proposal_id, type, message, delivery_status, created_at";
+  "id, user_id, proposal_id, announcement_id, type, message, delivery_status, created_at";
 const eventReminderSelect =
   "id, user_id, proposal_id, message, remind_at, delivery_status, created_at";
 const clubSelect = "id, name, code, advisor_id, created_at";
+const publicClubSelect = "id, name, code, created_at";
 const taskSelect =
   "id, club_id, assigned_by, assigned_to, title, description, priority, status, due_date, created_at, updated_at";
 const taskStatusHistorySelect =
@@ -21,7 +22,7 @@ const clubPaymentSettingsSelect =
 const eventReportSelect =
   "id, proposal_id, club_id, submitted_by, attendance_count, summary, challenges, outcomes, budget_used, media_urls, status, submitted_at, created_at, updated_at, proposals(id, title, proposed_activity, event_date, event_time, location, status)";
 const announcementSelect =
-  "id, club_id, created_by, title, message, audience, created_at, updated_at";
+  "id, club_id, created_by, title, message, audience, priority, target_role, created_at, updated_at";
 const feedbackSelect =
   "id, club_id, proposal_id, submitted_by, category, rating, comment, status, created_at, updated_at";
 const eventRsvpSelect =
@@ -30,8 +31,14 @@ const eventAttendanceSelect =
   "id, proposal_id, club_id, user_id, attended, checked_in_by, checked_in_at, created_at, updated_at, profile:profiles!event_attendance_user_id_fkey(id, full_name, student_id, role)";
 const profileSelect =
   "id, full_name, role, club_id, student_id, requested_role, onboarding_status, created_at, updated_at";
+const profileWithClubSelect =
+  "id, full_name, role, club_id, student_id, requested_role, onboarding_status, created_at, updated_at, club:clubs!profiles_club_id_fkey(id, name, code)";
 const membershipRequestSelect =
   "id, profile_id, club_id, requested_role, status, remarks, decision_remarks, reviewed_by, reviewed_at, member_id, due_payment_id, dues_amount, academic_session, created_at, updated_at, profile:profiles!membership_requests_profile_id_fkey(id, full_name, student_id, role), club:clubs!membership_requests_club_id_fkey(id, name, code)";
+const profileRoleHistorySelect =
+  "id, profile_id, previous_role, new_role, previous_club_id, new_club_id, changed_by, remarks, created_at";
+const emailDeliverySelect =
+  "id, provider, recipient_user_id, recipient_email, subject, status, announcement_id, notification_id, proposal_id, error_message, sent_at, created_at, updated_at";
 
 function createAdminClient() {
   const env = getEnv();
@@ -121,13 +128,53 @@ function createDatabase(options = {}) {
         query = query.eq("advisor_id", filters.advisorId);
       }
 
-      const { data, error } = await query;
+      let { data, error } = await query;
+
+      if (error) {
+        let fallbackQuery = getClient()
+          .from("clubs")
+          .select("id, name, advisor_id")
+          .order("name", { ascending: true });
+
+        if (filters.ids?.length) {
+          fallbackQuery = fallbackQuery.in("id", filters.ids);
+        }
+
+        if (filters.advisorId) {
+          fallbackQuery = fallbackQuery.eq("advisor_id", filters.advisorId);
+        }
+
+        const fallback = await fallbackQuery;
+        data = fallback.data;
+        error = fallback.error;
+      }
+
+      if (error && !filters.advisorId) {
+        let minimalQuery = getClient()
+          .from("clubs")
+          .select("id, name")
+          .order("name", { ascending: true });
+
+        if (filters.ids?.length) {
+          minimalQuery = minimalQuery.in("id", filters.ids);
+        }
+
+        const minimal = await minimalQuery;
+        data = minimal.data;
+        error = minimal.error;
+      }
 
       if (error) {
         throw error;
       }
 
-      return data;
+      return (data ?? []).map((club) => ({
+        id: club.id,
+        name: club.name,
+        code: club.code ?? null,
+        advisor_id: club.advisor_id ?? null,
+        created_at: club.created_at ?? null
+      }));
     },
 
     async getClubById(clubId) {
@@ -142,6 +189,66 @@ function createDatabase(options = {}) {
       }
 
       return data ?? null;
+    },
+
+    async updateClubAdvisor(clubId, advisorId) {
+      const { data, error } = await getClient()
+        .from("clubs")
+        .update({ advisor_id: advisorId })
+        .eq("id", clubId)
+        .select(clubSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async listPublicClubs() {
+      let query = getClient()
+        .from("clubs")
+        .select(publicClubSelect)
+        .order("name", { ascending: true });
+
+      let { data, error } = await query;
+
+      if (error) {
+        const fallback = await getClient()
+          .from("clubs")
+          .select("id, name")
+          .order("name", { ascending: true });
+
+        data = fallback.data;
+        error = fallback.error;
+      }
+
+      if (error) {
+        throw error;
+      }
+
+      return (data ?? []).map((club) => ({
+        id: club.id,
+        name: club.name,
+        code: club.code ?? null,
+        advisor_id: null,
+        created_at: club.created_at ?? null
+      }));
+    },
+
+    async clearClubAdvisorAssignments(advisorId) {
+      const { data, error } = await getClient()
+        .from("clubs")
+        .update({ advisor_id: null })
+        .eq("advisor_id", advisorId)
+        .select(clubSelect);
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
     },
 
     async getProposalById(proposalId) {
@@ -178,6 +285,59 @@ function createDatabase(options = {}) {
         .update(update)
         .eq("id", profileId)
         .select(profileSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async listProfiles(filters = {}) {
+      let query = getClient()
+        .from("profiles")
+        .select(profileWithClubSelect)
+        .order("created_at", { ascending: false });
+
+      if (filters.role) {
+        query = query.eq("role", filters.role);
+      }
+
+      if (filters.roles?.length) {
+        query = query.in("role", filters.roles);
+      }
+
+      if (filters.clubId) {
+        query = query.eq("club_id", filters.clubId);
+      }
+
+      if (filters.requestedRole) {
+        query = query.eq("requested_role", filters.requestedRole);
+      }
+
+      if (filters.q) {
+        const search = filters.q.replace(/[%(),]/g, "").trim();
+
+        if (search) {
+          query = query.or(`full_name.ilike.%${search}%,student_id.ilike.%${search}%`);
+        }
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? [];
+    },
+
+    async createProfileRoleHistory(entry) {
+      const { data, error } = await getClient()
+        .from("profile_role_history")
+        .insert(entry)
+        .select(profileRoleHistorySelect)
         .single();
 
       if (error) {
@@ -522,6 +682,20 @@ function createDatabase(options = {}) {
       return data ?? null;
     },
 
+    async getApprovalsByProposalId(proposalId) {
+      const { data, error } = await getClient()
+        .from("approvals")
+        .select("proposal_id, reviewer_id, reviewer_role, decision, remarks, decided_at")
+        .eq("proposal_id", proposalId)
+        .order("decided_at", { ascending: true });
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? [];
+    },
+
     async getLatestApprovalsByProposalIds(proposalIds) {
       if (!proposalIds.length) {
         return {};
@@ -586,6 +760,55 @@ function createDatabase(options = {}) {
         .select(notificationSelect)
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async getAuthEmailsByProfileIds(profileIds) {
+      if (!profileIds.length) {
+        return {};
+      }
+
+      const entries = await Promise.all(
+        profileIds.map(async (profileId) => {
+          const { data, error } = await getClient().auth.admin.getUserById(profileId);
+
+          if (error || !data?.user) {
+            return [profileId, null];
+          }
+
+          return [profileId, data.user.email ?? null];
+        })
+      );
+
+      return Object.fromEntries(entries);
+    },
+
+    async createEmailDeliveryLog(log) {
+      const { data, error } = await getClient()
+        .from("email_deliveries")
+        .insert(log)
+        .select(emailDeliverySelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async updateEmailDeliveryLog(logId, update) {
+      const { data, error } = await getClient()
+        .from("email_deliveries")
+        .update(update)
+        .eq("id", logId)
+        .select(emailDeliverySelect)
+        .single();
 
       if (error) {
         throw error;
@@ -1117,15 +1340,23 @@ function createDatabase(options = {}) {
       }
 
       if (filters.clubId) {
-        query = query.or(`audience.eq.all,club_id.eq.${filters.clubId}`);
+        query = query.eq("club_id", filters.clubId);
       }
 
       if (filters.clubIds) {
         if (!filters.clubIds.length) {
-          query = query.eq("audience", "all");
+          return [];
         } else {
-          query = query.or(`audience.eq.all,club_id.in.(${filters.clubIds.join(",")})`);
+          query = query.in("club_id", filters.clubIds);
         }
+      }
+
+      if (filters.priority) {
+        query = query.eq("priority", filters.priority);
+      }
+
+      if (filters.targetRole) {
+        query = query.eq("target_role", filters.targetRole);
       }
 
       const { data, error } = await query;
@@ -1135,6 +1366,64 @@ function createDatabase(options = {}) {
       }
 
       return data;
+    },
+
+    async listAnnouncementReadsByUserId(userId) {
+      const { data, error } = await getClient()
+        .from("announcement_reads")
+        .select("announcement_id, user_id, read_at")
+        .eq("user_id", userId);
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? [];
+    },
+
+    async markAnnouncementRead(announcementId, userId) {
+      const { data, error } = await getClient()
+        .from("announcement_reads")
+        .upsert({
+          announcement_id: announcementId,
+          user_id: userId,
+          read_at: new Date().toISOString()
+        }, {
+          onConflict: "announcement_id,user_id"
+        })
+        .select("announcement_id, user_id, read_at")
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async markAnnouncementsRead(announcementIds, userId) {
+      if (!announcementIds.length) {
+        return [];
+      }
+
+      const now = new Date().toISOString();
+      const { data, error } = await getClient()
+        .from("announcement_reads")
+        .upsert(
+          announcementIds.map((announcementId) => ({
+            announcement_id: announcementId,
+            user_id: userId,
+            read_at: now
+          })),
+          { onConflict: "announcement_id,user_id" }
+        )
+        .select("announcement_id, user_id, read_at");
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? [];
     },
 
     async createFeedback(feedback) {

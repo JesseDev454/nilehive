@@ -28,12 +28,17 @@ function createFakeDatabase() {
   const tokens = {
     "new-user-token": {
       id: "new-user-1",
-      email: "newstudent@nilehive.test",
+      email: "newstudent@nileuniversity.edu.ng",
       user_metadata: {}
     },
     "student-token": {
       id: "student-1",
-      email: "student@nilehive.test",
+      email: "student@nileuniversity.edu.ng",
+      user_metadata: {}
+    },
+    "external-user-token": {
+      id: "external-user-1",
+      email: "external@example.com",
       user_metadata: {}
     }
   };
@@ -155,6 +160,26 @@ test("profile onboarding rejects privileged self-service roles", async (t) => {
 
   assert.equal(response.status, 400);
   assert.equal(payload.error.code, "VALIDATION_ERROR");
+});
+
+test("profile onboarding rejects non-Nile email domains", async (t) => {
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  const { response, payload } = await requestJson(
+    server.baseUrl,
+    "/api/v1/profile/onboarding",
+    "external-user-token",
+    {
+      full_name: "External User",
+      student_id: "NUN-2026-404",
+      club_id: "club-1",
+      requested_role: "student"
+    }
+  );
+
+  assert.equal(response.status, 403);
+  assert.equal(payload.error.code, "UNSUPPORTED_EMAIL_DOMAIN");
 });
 
 test("profile onboarding is blocked when profile already exists", async (t) => {

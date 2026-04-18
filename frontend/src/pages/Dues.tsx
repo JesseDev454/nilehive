@@ -69,7 +69,7 @@ export default function Dues() {
   const [accountNumber, setAccountNumber] = useState("");
   const [accountName, setAccountName] = useState("");
   const [paymentInstructions, setPaymentInstructions] = useState("");
-  const canViewDues = role === "president" || role === "executive" || role === "admin";
+  const canViewDues = role === "president" || role === "admin";
   const canManageDues = role === "president" || role === "admin";
 
   const {
@@ -286,7 +286,7 @@ export default function Dues() {
       <div className="space-y-6 animate-slide-up">
         <div>
           <h1 className="text-2xl font-bold">Dues & Payments</h1>
-          <p className="text-muted-foreground text-sm mt-1">Dues tracking is available to executives, presidents, and admins.</p>
+          <p className="text-muted-foreground text-sm mt-1">Dues tracking is available to presidents and admins.</p>
         </div>
         <Card>
           <CardContent className="p-12 text-center">
