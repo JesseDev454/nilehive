@@ -4,7 +4,7 @@ const { getEnv } = require("./env");
 const proposalSelect =
   "id, club_id, submitted_by, title, description, event_date, location, aim_objectives, proposed_activity, event_time, number_of_participants, budget_estimate, budget_line_items, responsible_members, status, submitted_at, resubmitted_at, revision_count, last_edited_at, last_edited_by, advisor_remarks, advisor_decided_at, advisor_decided_by, admin_remarks, admin_decided_at, admin_decided_by, created_at, updated_at";
 const notificationSelect =
-  "id, user_id, proposal_id, type, message, delivery_status, created_at";
+  "id, user_id, proposal_id, announcement_id, type, message, delivery_status, created_at";
 const eventReminderSelect =
   "id, user_id, proposal_id, message, remind_at, delivery_status, created_at";
 const clubSelect = "id, name, code, advisor_id, created_at";
@@ -22,7 +22,7 @@ const clubPaymentSettingsSelect =
 const eventReportSelect =
   "id, proposal_id, club_id, submitted_by, attendance_count, summary, challenges, outcomes, budget_used, media_urls, status, submitted_at, created_at, updated_at, proposals(id, title, proposed_activity, event_date, event_time, location, status)";
 const announcementSelect =
-  "id, club_id, created_by, title, message, audience, created_at, updated_at";
+  "id, club_id, created_by, title, message, audience, priority, target_role, created_at, updated_at";
 const feedbackSelect =
   "id, club_id, proposal_id, submitted_by, category, rating, comment, status, created_at, updated_at";
 const eventRsvpSelect =
@@ -126,13 +126,53 @@ function createDatabase(options = {}) {
         query = query.eq("advisor_id", filters.advisorId);
       }
 
-      const { data, error } = await query;
+      let { data, error } = await query;
+
+      if (error) {
+        let fallbackQuery = getClient()
+          .from("clubs")
+          .select("id, name, advisor_id")
+          .order("name", { ascending: true });
+
+        if (filters.ids?.length) {
+          fallbackQuery = fallbackQuery.in("id", filters.ids);
+        }
+
+        if (filters.advisorId) {
+          fallbackQuery = fallbackQuery.eq("advisor_id", filters.advisorId);
+        }
+
+        const fallback = await fallbackQuery;
+        data = fallback.data;
+        error = fallback.error;
+      }
+
+      if (error && !filters.advisorId) {
+        let minimalQuery = getClient()
+          .from("clubs")
+          .select("id, name")
+          .order("name", { ascending: true });
+
+        if (filters.ids?.length) {
+          minimalQuery = minimalQuery.in("id", filters.ids);
+        }
+
+        const minimal = await minimalQuery;
+        data = minimal.data;
+        error = minimal.error;
+      }
 
       if (error) {
         throw error;
       }
 
-      return data;
+      return (data ?? []).map((club) => ({
+        id: club.id,
+        name: club.name,
+        code: club.code ?? null,
+        advisor_id: club.advisor_id ?? null,
+        created_at: club.created_at ?? null
+      }));
     },
 
     async getClubById(clubId) {
@@ -262,6 +302,10 @@ function createDatabase(options = {}) {
         query = query.eq("role", filters.role);
       }
 
+      if (filters.roles?.length) {
+        query = query.in("role", filters.roles);
+      }
+
       if (filters.clubId) {
         query = query.eq("club_id", filters.clubId);
       }
@@ -278,53 +322,13 @@ function createDatabase(options = {}) {
         }
       }
 
-      let { data, error } = await query;
-
-      if (error) {
-        let fallbackQuery = getClient()
-          .from("clubs")
-          .select("id, name, advisor_id")
-          .order("name", { ascending: true });
-
-        if (filters.ids?.length) {
-          fallbackQuery = fallbackQuery.in("id", filters.ids);
-        }
-
-        if (filters.advisorId) {
-          fallbackQuery = fallbackQuery.eq("advisor_id", filters.advisorId);
-        }
-
-        const fallback = await fallbackQuery;
-        data = fallback.data;
-        error = fallback.error;
-      }
-
-      if (error && !filters.advisorId) {
-        let minimalQuery = getClient()
-          .from("clubs")
-          .select("id, name")
-          .order("name", { ascending: true });
-
-        if (filters.ids?.length) {
-          minimalQuery = minimalQuery.in("id", filters.ids);
-        }
-
-        const minimal = await minimalQuery;
-        data = minimal.data;
-        error = minimal.error;
-      }
+      const { data, error } = await query;
 
       if (error) {
         throw error;
       }
 
-      return (data ?? []).map((club) => ({
-        id: club.id,
-        name: club.name,
-        code: club.code ?? null,
-        advisor_id: club.advisor_id ?? null,
-        created_at: club.created_at ?? null
-      }));
+      return data ?? [];
     },
 
     async createProfileRoleHistory(entry) {
@@ -1285,15 +1289,23 @@ function createDatabase(options = {}) {
       }
 
       if (filters.clubId) {
-        query = query.or(`audience.eq.all,club_id.eq.${filters.clubId}`);
+        query = query.eq("club_id", filters.clubId);
       }
 
       if (filters.clubIds) {
         if (!filters.clubIds.length) {
-          query = query.eq("audience", "all");
+          return [];
         } else {
-          query = query.or(`audience.eq.all,club_id.in.(${filters.clubIds.join(",")})`);
+          query = query.in("club_id", filters.clubIds);
         }
+      }
+
+      if (filters.priority) {
+        query = query.eq("priority", filters.priority);
+      }
+
+      if (filters.targetRole) {
+        query = query.eq("target_role", filters.targetRole);
       }
 
       const { data, error } = await query;
@@ -1303,6 +1315,64 @@ function createDatabase(options = {}) {
       }
 
       return data;
+    },
+
+    async listAnnouncementReadsByUserId(userId) {
+      const { data, error } = await getClient()
+        .from("announcement_reads")
+        .select("announcement_id, user_id, read_at")
+        .eq("user_id", userId);
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? [];
+    },
+
+    async markAnnouncementRead(announcementId, userId) {
+      const { data, error } = await getClient()
+        .from("announcement_reads")
+        .upsert({
+          announcement_id: announcementId,
+          user_id: userId,
+          read_at: new Date().toISOString()
+        }, {
+          onConflict: "announcement_id,user_id"
+        })
+        .select("announcement_id, user_id, read_at")
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async markAnnouncementsRead(announcementIds, userId) {
+      if (!announcementIds.length) {
+        return [];
+      }
+
+      const now = new Date().toISOString();
+      const { data, error } = await getClient()
+        .from("announcement_reads")
+        .upsert(
+          announcementIds.map((announcementId) => ({
+            announcement_id: announcementId,
+            user_id: userId,
+            read_at: now
+          })),
+          { onConflict: "announcement_id,user_id" }
+        )
+        .select("announcement_id, user_id, read_at");
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? [];
     },
 
     async createFeedback(feedback) {

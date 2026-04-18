@@ -47,11 +47,30 @@ function readChoice(payload, fieldName, label, allowedValues, fallback) {
 }
 
 function validateCreateAnnouncementPayload(payload = {}) {
+  const rawAudience = readChoice(
+    payload,
+    "audience",
+    "Audience",
+    ["all", "all_users", "all_clubs", "club", "role"],
+    "club"
+  );
+  const audience = rawAudience === "all" ? "all_users" : rawAudience;
+
+  const targetRole = readOptionalString(payload, "target_role");
+
+  if (targetRole && !["student", "executive", "president", "advisor", "admin"].includes(targetRole)) {
+    throw new ApiError(400, "Target role must be one of: student, executive, president, advisor, admin", "VALIDATION_ERROR", {
+      field: "target_role"
+    });
+  }
+
   return {
     title: readRequiredString(payload, "title", "Announcement title"),
     message: readRequiredString(payload, "message", "Announcement message"),
-    audience: readChoice(payload, "audience", "Audience", ["all", "club"], "club"),
-    club_id: readOptionalString(payload, "club_id")
+    audience,
+    priority: readChoice(payload, "priority", "Priority", ["low", "normal", "high", "urgent"], "normal"),
+    club_id: readOptionalString(payload, "club_id"),
+    target_role: targetRole
   };
 }
 

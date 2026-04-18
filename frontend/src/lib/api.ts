@@ -143,7 +143,8 @@ export interface ProposalRecord {
 export interface NotificationRecord {
   id: string;
   user_id: string;
-  proposal_id: string;
+  proposal_id: string | null;
+  announcement_id?: string | null;
   type: string;
   message: string;
   delivery_status: string;
@@ -578,7 +579,11 @@ export interface AnnouncementRecord {
   created_by: string;
   title: string;
   message: string;
-  audience: "all" | "club";
+  audience: "all_users" | "all_clubs" | "club" | "role";
+  priority: "low" | "normal" | "high" | "urgent";
+  target_role: ProfileRecord["role"] | null;
+  is_read: boolean;
+  read_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -587,7 +592,9 @@ export interface CreateAnnouncementPayload {
   title: string;
   message: string;
   audience?: AnnouncementRecord["audience"];
+  priority?: AnnouncementRecord["priority"];
   club_id?: string | null;
+  target_role?: ProfileRecord["role"] | null;
 }
 
 export interface FeedbackRecord {
@@ -1413,7 +1420,7 @@ export async function createEventReport(payload: CreateEventReportPayload, token
 }
 
 export async function getAnnouncements(
-  filters: { audience?: string; club_id?: string } = {},
+  filters: { audience?: string; club_id?: string; priority?: string; unread?: boolean } = {},
   token?: string
 ) {
   const params = new URLSearchParams();
@@ -1426,11 +1433,65 @@ export async function getAnnouncements(
     params.set("club_id", filters.club_id);
   }
 
+  if (filters.priority) {
+    params.set("priority", filters.priority);
+  }
+
+  if (filters.unread) {
+    params.set("unread", "true");
+  }
+
   const query = params.toString();
   const response = await request<ApiEnvelope<AnnouncementRecord[]>>(
     `/api/v1/communications/announcements${query ? `?${query}` : ""}`,
     {
       method: "GET",
+      token
+    }
+  );
+
+  return response.data;
+}
+
+export async function markAnnouncementRead(announcementId: string, token?: string) {
+  const response = await request<ApiEnvelope<AnnouncementRecord>>(
+    `/api/v1/communications/announcements/${announcementId}/read`,
+    {
+      method: "POST",
+      token
+    }
+  );
+
+  return response.data;
+}
+
+export async function markAllAnnouncementsRead(
+  filters: { audience?: string; club_id?: string; priority?: string; unread?: boolean } = {},
+  token?: string
+) {
+  const params = new URLSearchParams();
+
+  if (filters.audience) {
+    params.set("audience", filters.audience);
+  }
+
+  if (filters.club_id) {
+    params.set("club_id", filters.club_id);
+  }
+
+  if (filters.priority) {
+    params.set("priority", filters.priority);
+  }
+
+  if (filters.unread) {
+    params.set("unread", "true");
+  }
+
+  const query = params.toString();
+  const response = await request<ApiEnvelope<{ marked_read: number }>>(
+    `/api/v1/communications/announcements/read-all${query ? `?${query}` : ""}`,
+    {
+      method: "POST",
       token
     }
   );
