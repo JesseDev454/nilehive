@@ -139,7 +139,7 @@ export default function SignUp() {
         <div className="lg:col-span-7">
           <div className="relative overflow-hidden rounded-[2.5rem] bg-white p-8 shadow-[0_4px_30px_rgba(11,35,71,0.08)] md:p-12">
             <div className="absolute right-0 top-0 h-32 w-32 rounded-bl-full bg-[#0d5bbc]/5" />
-            <form className="relative z-10 space-y-8" onSubmit={handleSubmit}>
+            <div className="relative z-10 space-y-8">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#0d5bbc]">
                   Onboarding
@@ -150,6 +150,7 @@ export default function SignUp() {
                 </p>
               </div>
 
+              <form className="space-y-8" onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label className="font-semibold text-[#181c1e]" htmlFor="full-name">
@@ -284,7 +285,8 @@ export default function SignUp() {
                   request until Club Services approves it.
                 </p>
               </div>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
       </section>

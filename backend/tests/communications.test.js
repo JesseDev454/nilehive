@@ -122,6 +122,164 @@ test("admin can create a global announcement", async () => {
   assert.ok(createdNotifications.every((notification) => notification.announcement_id === "announcement-1"));
 });
 
+test("high-priority announcements trigger best-effort email delivery", async () => {
+  const sentEmails = [];
+  const fakeDatabase = {
+    async createAnnouncement(announcement) {
+      return createAnnouncementRecord({
+        ...announcement,
+        id: "announcement-email-1",
+        club_id: null
+      });
+    },
+    async listProfiles() {
+      return [
+        { id: "student-1" },
+        { id: "president-1" }
+      ];
+    },
+    async createNotifications(notifications) {
+      return notifications.map((notification, index) => ({
+        ...notification,
+        id: `notification-${index + 1}`
+      }));
+    },
+    async getAuthEmailsByProfileIds(profileIds) {
+      assert.deepEqual(profileIds.sort(), ["president-1", "student-1"]);
+      return {
+        "student-1": "student@nileuniversity.edu.ng",
+        "president-1": "president@nileuniversity.edu.ng"
+      };
+    }
+  };
+  const fakeEmailService = {
+    async sendEmail(email) {
+      sentEmails.push(email);
+      return { status: "sent" };
+    }
+  };
+
+  await createAnnouncement({
+    actor: {
+      id: "admin-1",
+      role: "admin",
+      clubId: null
+    },
+    payload: {
+      title: "Urgent update",
+      message: "Club Services needs everyone to read this.",
+      audience: "all_users",
+      priority: "high"
+    },
+    database: fakeDatabase,
+    emailService: fakeEmailService,
+    logger: { warn() {} }
+  });
+
+  assert.equal(sentEmails.length, 2);
+  assert.ok(sentEmails.every((email) => email.subject === "[NileHive] Urgent update"));
+  assert.ok(sentEmails.every((email) => email.metadata.announcement_id === "announcement-email-1"));
+});
+
+test("normal-priority announcements do not send Outlook emails", async () => {
+  let emailAttempts = 0;
+  const fakeDatabase = {
+    async createAnnouncement(announcement) {
+      return createAnnouncementRecord({
+        ...announcement,
+        id: "announcement-normal-1",
+        club_id: null
+      });
+    },
+    async listProfiles() {
+      return [{ id: "student-1" }];
+    },
+    async createNotifications(notifications) {
+      return notifications.map((notification) => ({
+        ...notification,
+        id: "notification-1"
+      }));
+    },
+    async getAuthEmailsByProfileIds() {
+      throw new Error("Normal announcements should not resolve email recipients");
+    }
+  };
+  const fakeEmailService = {
+    async sendEmail() {
+      emailAttempts += 1;
+    }
+  };
+
+  await createAnnouncement({
+    actor: {
+      id: "admin-1",
+      role: "admin",
+      clubId: null
+    },
+    payload: {
+      title: "Normal update",
+      message: "This stays inside NileHive.",
+      audience: "all_users",
+      priority: "normal"
+    },
+    database: fakeDatabase,
+    emailService: fakeEmailService,
+    logger: { warn() {} }
+  });
+
+  assert.equal(emailAttempts, 0);
+});
+
+test("email delivery failure does not block announcement creation", async () => {
+  const fakeDatabase = {
+    async createAnnouncement(announcement) {
+      return createAnnouncementRecord({
+        ...announcement,
+        id: "announcement-failure-1",
+        club_id: null
+      });
+    },
+    async listProfiles() {
+      return [{ id: "student-1" }];
+    },
+    async createNotifications(notifications) {
+      return notifications.map((notification) => ({
+        ...notification,
+        id: "notification-1"
+      }));
+    },
+    async getAuthEmailsByProfileIds() {
+      return {
+        "student-1": "student@nileuniversity.edu.ng"
+      };
+    }
+  };
+  const fakeEmailService = {
+    async sendEmail() {
+      throw new Error("Graph unavailable");
+    }
+  };
+
+  const announcement = await createAnnouncement({
+    actor: {
+      id: "admin-1",
+      role: "admin",
+      clubId: null
+    },
+    payload: {
+      title: "Urgent but resilient",
+      message: "Email can fail without breaking this.",
+      audience: "all_users",
+      priority: "urgent"
+    },
+    database: fakeDatabase,
+    emailService: fakeEmailService,
+    logger: { warn() {} }
+  });
+
+  assert.equal(announcement.id, "announcement-failure-1");
+});
+
 test("admin can create an all-clubs announcement", async () => {
   let createdNotifications = [];
   const fakeDatabase = {

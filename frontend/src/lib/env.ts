@@ -50,3 +50,27 @@ export function getAllowedEmailDomainLabel() {
     .map((domain) => `@${domain}`)
     .join(", ");
 }
+
+export type AuthMode = "microsoft" | "password" | "mixed";
+
+export function getAuthMode(): AuthMode {
+  const configuredMode = import.meta.env.VITE_AUTH_MODE;
+
+  if (configuredMode === "microsoft" || configuredMode === "password" || configuredMode === "mixed") {
+    return configuredMode;
+  }
+
+  return "password";
+}
+
+export function isMicrosoftAuthEnabled() {
+  return getAuthMode() === "microsoft" || getAuthMode() === "mixed";
+}
+
+export function isPasswordAuthEnabled() {
+  return getAuthMode() === "password" || getAuthMode() === "mixed";
+}
+
+export function getMicrosoftPasswordHelpUrl() {
+  return import.meta.env.VITE_MICROSOFT_PASSWORD_HELP_URL || "https://passwordreset.microsoftonline.com/";
+}

@@ -37,6 +37,8 @@ const membershipRequestSelect =
   "id, profile_id, club_id, requested_role, status, remarks, decision_remarks, reviewed_by, reviewed_at, member_id, due_payment_id, dues_amount, academic_session, created_at, updated_at, profile:profiles!membership_requests_profile_id_fkey(id, full_name, student_id, role), club:clubs!membership_requests_club_id_fkey(id, name, code)";
 const profileRoleHistorySelect =
   "id, profile_id, previous_role, new_role, previous_club_id, new_club_id, changed_by, remarks, created_at";
+const emailDeliverySelect =
+  "id, provider, recipient_user_id, recipient_email, subject, status, announcement_id, notification_id, proposal_id, error_message, sent_at, created_at, updated_at";
 
 function createAdminClient() {
   const env = getEnv();
@@ -758,6 +760,55 @@ function createDatabase(options = {}) {
         .select(notificationSelect)
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async getAuthEmailsByProfileIds(profileIds) {
+      if (!profileIds.length) {
+        return {};
+      }
+
+      const entries = await Promise.all(
+        profileIds.map(async (profileId) => {
+          const { data, error } = await getClient().auth.admin.getUserById(profileId);
+
+          if (error || !data?.user) {
+            return [profileId, null];
+          }
+
+          return [profileId, data.user.email ?? null];
+        })
+      );
+
+      return Object.fromEntries(entries);
+    },
+
+    async createEmailDeliveryLog(log) {
+      const { data, error } = await getClient()
+        .from("email_deliveries")
+        .insert(log)
+        .select(emailDeliverySelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async updateEmailDeliveryLog(logId, update) {
+      const { data, error } = await getClient()
+        .from("email_deliveries")
+        .update(update)
+        .eq("id", logId)
+        .select(emailDeliverySelect)
+        .single();
 
       if (error) {
         throw error;

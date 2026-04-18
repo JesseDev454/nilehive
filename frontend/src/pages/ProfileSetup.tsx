@@ -13,7 +13,7 @@ import { completeProfileOnboarding, getPublicClubs } from "@/lib/api";
 import { getAllowedEmailDomainLabel, isAllowedEmailDomain } from "@/lib/env";
 
 export default function ProfileSetup() {
-  const { session, signOut, refreshProfile } = useAuth();
+  const { profileError, session, signOut, refreshProfile } = useAuth();
   const metadata = session?.user.user_metadata ?? {};
   const [fullName, setFullName] = useState("");
   const [studentId, setStudentId] = useState("");
@@ -108,10 +108,17 @@ export default function ProfileSetup() {
               Finish setting up your NileHive account.
             </h1>
             <p className="mt-4 text-base leading-relaxed text-[#44474e]">
-              We found your Supabase login, but NileHive still needs your app profile before
-              opening the dashboard. Real users must use a Nile University email address.
+              We found your Microsoft login, but NileHive still needs your app profile before
+              opening the dashboard. Real users must use a Nile University Outlook email address.
             </p>
           </div>
+          {profileError && (
+            <Card className="border-0 bg-[#ffdad6] shadow-sm">
+              <CardContent className="p-5 text-sm font-medium text-[#93000a]">
+                {profileError}
+              </CardContent>
+            </Card>
+          )}
           <Card className="border-0 bg-white/80 shadow-sm">
             <CardContent className="flex gap-3 p-5 text-sm text-[#44474e]">
               <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#299e5c]" />

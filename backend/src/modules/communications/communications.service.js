@@ -1,4 +1,5 @@
 const { db } = require("../../config/db");
+const { createEmailService } = require("../email/email.service");
 const ApiError = require("../../shared/ApiError");
 const {
   validateCreateAnnouncementPayload,
@@ -117,11 +118,80 @@ async function createAnnouncementNotifications(database, announcement) {
   const recipientIds = await resolveAnnouncementRecipients(database, announcement);
   const baseNotification = buildAnnouncementNotification(announcement);
 
-  return database.createNotifications(
+  const notifications = await database.createNotifications(
     uniqueIds(recipientIds).map((userId) => ({
       ...baseNotification,
       user_id: userId
     }))
+  );
+
+  return notifications;
+}
+
+function shouldEmailAnnouncement(announcement) {
+  return ["high", "urgent"].includes(announcement.priority);
+}
+
+function buildAnnouncementEmail(announcement, env = process.env) {
+  const appUrl = (env.FRONTEND_APP_URL || "http://localhost:8080").replace(/\/+$/, "");
+  const subjectPrefix = announcement.priority === "urgent" ? "[NileHive Urgent]" : "[NileHive]";
+  const subject = `${subjectPrefix} ${announcement.title}`;
+  const text = [
+    announcement.title,
+    "",
+    announcement.message,
+    "",
+    `Priority: ${announcement.priority}`,
+    `Open NileHive: ${appUrl}/communications`
+  ].join("\n");
+  const html = `
+    <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
+      <p style="font-size:12px;text-transform:uppercase;letter-spacing:0.12em;color:#0d5bbc;font-weight:700">NileHive Communication Hub</p>
+      <h1 style="font-size:22px;margin:0 0 12px">${announcement.title}</h1>
+      <p style="white-space:pre-line">${announcement.message}</p>
+      <p><strong>Priority:</strong> ${announcement.priority}</p>
+      <p><a href="${appUrl}/communications">Open this announcement in NileHive</a></p>
+      <p style="font-size:12px;color:#6b7280">This message was sent by NileHive on behalf of Nile University Club Services.</p>
+    </div>
+  `;
+
+  return { subject, text, html };
+}
+
+async function sendAnnouncementEmails(options) {
+  const {
+    announcement,
+    notifications,
+    database,
+    emailService = createEmailService({ database })
+  } = options;
+
+  if (!shouldEmailAnnouncement(announcement) || !notifications.length) {
+    return [];
+  }
+
+  if (typeof emailService.isDeliveryEnabled === "function" && !emailService.isDeliveryEnabled()) {
+    return [];
+  }
+
+  const profileIds = uniqueIds(notifications.map((notification) => notification.user_id));
+  const emailsByProfileId = typeof database.getAuthEmailsByProfileIds === "function"
+    ? await database.getAuthEmailsByProfileIds(profileIds)
+    : {};
+  const email = buildAnnouncementEmail(announcement);
+
+  return Promise.all(
+    notifications.map((notification) =>
+      emailService.sendEmail({
+        to: emailsByProfileId[notification.user_id] ?? null,
+        ...email,
+        metadata: {
+          recipient_user_id: notification.user_id,
+          announcement_id: announcement.id,
+          notification_id: notification.id ?? null
+        }
+      })
+    )
   );
 }
 
@@ -260,7 +330,7 @@ async function getVisibleClubFilters(actor, requestedClubId, database) {
 }
 
 async function createAnnouncement(options) {
-  const { actor, payload, database = db } = options;
+  const { actor, payload, database = db, emailService, logger = console } = options;
   requireActor(actor);
 
   if (!["admin", "president"].includes(actor.role)) {
@@ -321,7 +391,17 @@ async function createAnnouncement(options) {
     target_role: targetRole
   });
 
-  await createAnnouncementNotifications(database, announcement);
+  const notifications = await createAnnouncementNotifications(database, announcement);
+  try {
+    await sendAnnouncementEmails({
+      announcement,
+      notifications,
+      database,
+      emailService
+    });
+  } catch (error) {
+    logger.warn("Announcement email delivery failed", error);
+  }
 
   return formatAnnouncement(announcement);
 }
@@ -453,5 +533,6 @@ module.exports = {
   listAnnouncements,
   listFeedback,
   markAllAnnouncementsRead,
-  markAnnouncementRead
+  markAnnouncementRead,
+  sendAnnouncementEmails
 };

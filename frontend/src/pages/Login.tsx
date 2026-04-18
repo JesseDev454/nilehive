@@ -151,9 +151,7 @@ export default function Login() {
                 <Label className="font-semibold text-[#181c1e]" htmlFor="password">
                   Password
                 </Label>
-                <button className="text-xs font-bold text-[#0d5bbc] hover:underline" type="button">
-                  Forgot password?
-                </button>
+                <span className="text-xs font-bold text-[#0d5bbc]">Contact Club Services</span>
               </div>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#75777f]" />
@@ -188,7 +186,7 @@ export default function Login() {
           </form>
 
           <div className="mt-8 rounded-2xl bg-[#f1f4f7] p-4 text-sm text-[#44474e]">
-            New here?{" "}
+            New to NileHive?{" "}
             <Link className="font-bold text-[#0d5bbc] hover:underline" to="/signup">
               Request a NileHive account
             </Link>
