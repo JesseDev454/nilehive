@@ -111,6 +111,26 @@ test("post-event report requires an approved proposal", async () => {
   );
 });
 
+test("executive cannot submit a post-event report", async () => {
+  await assert.rejects(
+    () =>
+      createEventReport({
+        actor: {
+          id: "executive-1",
+          role: "executive",
+          clubId: "club-1"
+        },
+        payload: {
+          proposal_id: "proposal-1",
+          attendance_count: 75,
+          summary: "The event was completed successfully."
+        },
+        database: {}
+      }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
+});
+
 test("duplicate post-event reports are blocked", async () => {
   const fakeDatabase = {
     async getProposalById() {
@@ -215,6 +235,21 @@ test("president cannot list reports for another club", async () => {
         },
         filters: {
           club_id: "club-2"
+        },
+        database: {}
+      }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
+});
+
+test("executive cannot list event reports", async () => {
+  await assert.rejects(
+    () =>
+      listEventReports({
+        actor: {
+          id: "executive-1",
+          role: "executive",
+          clubId: "club-1"
         },
         database: {}
       }),

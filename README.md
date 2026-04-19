@@ -10,7 +10,7 @@ The app currently supports:
 
 - Supabase Auth login/session handling
 - App role/profile mapping through `profiles`
-- Executive proposal submission with rich proposal fields
+- President-owned proposal submission with rich proposal fields
 - Advisor pending proposal queue
 - Advisor approve/reject decisions with remarks
 - Admin final approve/reject decisions with remarks
@@ -205,6 +205,7 @@ Current migration order:
 ...
 0025_communication_hub.sql
 0026_email_delivery_logs.sql
+0027_production_rls_cleanup.sql
 ```
 
 Apply them in the Supabase SQL Editor, one file at a time, in numeric order.
@@ -219,9 +220,6 @@ NileHive currently uses these app roles:
 - `advisor`
 - `admin`
 - `president`
-
-Future role:
-
 - `student`
 
 Supabase Auth stores the login account. The `profiles` table stores the app role and club link.
@@ -236,6 +234,7 @@ auth.users.id = profiles.id
 
 For local end-to-end testing, create at least:
 
+- one student
 - one executive
 - one advisor
 - one admin
@@ -333,7 +332,7 @@ service OK and database reachable
 
 ## Main Manual Test Flow
 
-1. Login as executive.
+1. Login as president.
 2. Create a proposal from the frontend.
 3. Login as advisor.
 4. Open the advisor approvals page.
@@ -354,11 +353,27 @@ service OK and database reachable
 19. Open Dues.
 20. Create a dues record for a member.
 21. Mark the dues record as submitted or paid.
-22. Login as executive.
+22. Login as president.
 23. Open Reports Archive.
 24. Submit a post-event report for an approved event.
 25. Login as admin, advisor, or president.
 26. Open Reports Archive and confirm the report is visible in the correct scope.
+
+## Production Handoff
+
+Use the production hardening guide before a real deployment:
+
+```text
+docs/PRODUCTION_HANDOFF.md
+```
+
+Important production/demo setup files:
+
+```text
+backend/supabase/bootstrap_admin.sql
+backend/supabase/demo_seed.sql
+backend/supabase/migrations/0027_production_rls_cleanup.sql
+```
 
 ## Backend API Summary
 

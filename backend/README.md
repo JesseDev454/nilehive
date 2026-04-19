@@ -62,18 +62,15 @@ supabase/migrations/
 Current migrations:
 
 ```text
-0001_week1_schema.sql
-0002_week1_rls.sql
-0003_sprint_3_1_advisor_decision.sql
-0004_sprint_3_2_approval_history.sql
-0005_sprint_3_5_notifications.sql
-0006_proposal_form_2_0.sql
-0007_admin_final_verification.sql
-0008_approved_events_reminders.sql
-0009_task_delegation.sql
-0010_member_database.sql
-0011_dues_payment_tracking.sql
-0012_post_event_reports.sql
+0001_week1_schema.sql ... 0027_production_rls_cleanup.sql
+```
+
+For production setup and demo data, see:
+
+```text
+../docs/PRODUCTION_HANDOFF.md
+supabase/bootstrap_admin.sql
+supabase/demo_seed.sql
 ```
 
 ## Main Modules
@@ -111,6 +108,7 @@ Supabase access token -> auth user -> profiles row -> app role and club scope
 Current roles:
 
 ```text
+student
 executive
 advisor
 admin
