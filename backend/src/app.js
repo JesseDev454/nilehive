@@ -16,13 +16,32 @@ const { createProposalsRouter } = require("./modules/proposals/proposals.routes"
 const { createRemindersRouter } = require("./modules/reminders/reminders.routes");
 const { createReportsRouter } = require("./modules/reports/reports.routes");
 const { createTasksRouter } = require("./modules/tasks/tasks.routes");
+const { getEnv } = require("./config/env");
+
+function getAllowedOrigins() {
+  const { CORS_ALLOWED_ORIGINS, FRONTEND_APP_URL } = getEnv();
+  const origins = new Set(
+    [FRONTEND_APP_URL, ...CORS_ALLOWED_ORIGINS.split(",")]
+      .map((origin) => origin.trim().replace(/\/+$/, ""))
+      .filter(Boolean)
+  );
+
+  return origins;
+}
 
 function createApp(options = {}) {
   const { database } = options;
   const app = express();
+  const allowedOrigins = getAllowedOrigins();
 
   app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "http://localhost:8080");
+    const requestOrigin = req.headers.origin?.replace(/\/+$/, "");
+    const allowedOrigin = requestOrigin && allowedOrigins.has(requestOrigin)
+      ? requestOrigin
+      : "http://localhost:8080";
+
+    res.header("Access-Control-Allow-Origin", allowedOrigin);
+    res.header("Vary", "Origin");
     res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
     res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
 

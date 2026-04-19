@@ -123,6 +123,25 @@ VITE_MICROSOFT_PASSWORD_HELP_URL=https://passwordreset.microsoftonline.com/
 
 Frontend developers only need the Supabase URL and anon key. They should never use the service role key in frontend code.
 
+If teammates connect their frontend to a backend running on your laptop, set your backend env to listen on the network and allow their frontend origin:
+
+```env
+HOST=0.0.0.0
+CORS_ALLOWED_ORIGINS=http://localhost:8080,http://localhost:8081,http://127.0.0.1:8080,http://127.0.0.1:8081
+```
+
+Their frontend should use your current Wi-Fi IP:
+
+```env
+VITE_API_BASE_URL=http://YOUR_WIFI_IPV4:4000
+```
+
+They can confirm backend access by opening:
+
+```text
+http://YOUR_WIFI_IPV4:4000/api/v1/health
+```
+
 ## Microsoft Outlook Authentication
 
 NileHive has a dormant Microsoft/Outlook authentication foundation, but the visible app currently keeps the normal email/password login while university approval is pending.

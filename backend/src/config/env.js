@@ -22,6 +22,7 @@ function getEnv() {
 
   cachedEnv = {
     PORT: readEnv("PORT", { defaultValue: "4000" }),
+    HOST: readEnv("HOST", { defaultValue: "0.0.0.0" }),
     SUPABASE_URL: readEnv("SUPABASE_URL", { required: true }),
     SUPABASE_ANON_KEY: readEnv("SUPABASE_ANON_KEY", { required: true }),
     SUPABASE_SERVICE_ROLE_KEY: readEnv("SUPABASE_SERVICE_ROLE_KEY", { required: true }),
@@ -31,7 +32,10 @@ function getEnv() {
     MICROSOFT_CLIENT_ID: readEnv("MICROSOFT_CLIENT_ID", { defaultValue: "" }),
     MICROSOFT_CLIENT_SECRET: readEnv("MICROSOFT_CLIENT_SECRET", { defaultValue: "" }),
     MICROSOFT_SENDER_EMAIL: readEnv("MICROSOFT_SENDER_EMAIL", { defaultValue: "" }),
-    FRONTEND_APP_URL: readEnv("FRONTEND_APP_URL", { defaultValue: "http://localhost:8080" })
+    FRONTEND_APP_URL: readEnv("FRONTEND_APP_URL", { defaultValue: "http://localhost:8080" }),
+    CORS_ALLOWED_ORIGINS: readEnv("CORS_ALLOWED_ORIGINS", {
+      defaultValue: "http://localhost:8080,http://localhost:8081,http://127.0.0.1:8080,http://127.0.0.1:8081"
+    })
   };
 
   return cachedEnv;
