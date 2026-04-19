@@ -45,6 +45,7 @@ import {
   CreditCard,
   FileText,
   Gauge,
+  ListChecks,
   MapPin,
   MessageSquare,
   Plus,
@@ -393,6 +394,134 @@ function AdminEmptyState({
   );
 }
 
+function AssignedTasksProgressCard({ total, completed }: { total: number; completed: number }) {
+  const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+  
+  return (
+    <Card className="animate-fade-in border-border hover:border-secondary/20 transition-all shadow-sm">
+      <CardContent className="p-5">
+        <div className="flex justify-between items-start mb-4">
+          <div className="w-10 h-10 bg-secondary/10 rounded-xl flex items-center justify-center text-secondary">
+            <ListChecks className="w-6 h-6" />
+          </div>
+          <div className="text-[10px] font-black bg-success/15 text-success px-2 py-1 rounded-full uppercase tracking-tighter">
+            Active
+          </div>
+        </div>
+        <p className="text-muted-foreground text-sm font-medium">Assigned Tasks</p>
+        <h3 className="text-2xl font-bold mt-1 text-primary">
+          {completed} <span className="text-sm font-normal text-muted-foreground">/ {total}</span>
+        </h3>
+        <div className="mt-4 w-full bg-secondary/15 h-1.5 rounded-full overflow-hidden">
+          <div className="bg-secondary h-full transition-all duration-500 ease-in-out" style={{ width: `${percentage}%` }}></div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function PendingTasksCard({ value }: { value: number }) {
+  return (
+    <Card className="animate-fade-in border-border hover:border-secondary/20 transition-all shadow-sm">
+      <CardContent className="p-5 flex flex-col h-full">
+        <div className="flex justify-between items-start mb-4">
+          <div className="w-10 h-10 bg-warning/15 rounded-xl flex items-center justify-center text-warning">
+            <Clock className="w-6 h-6" />
+          </div>
+          <div className="text-[10px] font-black bg-destructive/15 text-destructive px-2 py-1 rounded-full uppercase tracking-tighter">
+            Urgent
+          </div>
+        </div>
+        <p className="text-muted-foreground text-sm font-medium">Pending Tasks</p>
+        <h3 className="text-2xl font-bold mt-1 text-primary">{value}</h3>
+        <div className="mt-auto pt-4">
+          <p className="text-xs text-destructive flex items-center gap-1 font-semibold">
+            <Clock className="w-3.5 h-3.5" /> Due by EOD
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function InProgressTasksCard({ total, inProgress }: { total: number; inProgress: number }) {
+  const percentage = total > 0 ? Math.round((inProgress / total) * 100) : 0;
+  
+  return (
+    <Card className="animate-fade-in border-border hover:border-primary/20 transition-all shadow-sm h-full">
+      <CardContent className="p-5 flex flex-col h-full justify-between">
+        <div>
+          <div className="flex justify-between items-start mb-4">
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+              <TrendingUp className="w-6 h-6" />
+            </div>
+          </div>
+          <p className="text-muted-foreground text-sm font-medium">In Progress</p>
+          <h3 className="text-2xl font-bold mt-1 text-primary">{percentage}%</h3>
+        </div>
+        <div className="mt-4 w-full bg-primary/10 h-1.5 rounded-full overflow-hidden">
+          <div className="bg-primary h-full transition-all duration-500 ease-in-out" style={{ width: `${percentage}%` }}></div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CompletedTasksProgressCard({ total, completed }: { total: number; completed: number }) {
+  const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+  
+  return (
+    <Card className="animate-fade-in border-border hover:border-success/20 transition-all shadow-sm h-full">
+      <CardContent className="p-5 flex flex-col h-full justify-between">
+        <div>
+          <div className="flex justify-between items-start mb-4">
+            <div className="w-10 h-10 bg-success/15 rounded-xl flex items-center justify-center text-success">
+              <CheckCircle className="w-6 h-6" />
+            </div>
+          </div>
+          <p className="text-muted-foreground text-sm font-medium">Completed</p>
+          <h3 className="text-2xl font-bold mt-1 text-success">{percentage}%</h3>
+          <p className="text-xs text-muted-foreground mt-2 font-medium">{completed} {completed === 1 ? "task" : "tasks"} out of {total} {total === 1 ? "task" : "tasks"} completed</p>
+        </div>
+        <div className="mt-4 w-full bg-success/15 h-1.5 rounded-full overflow-hidden">
+          <div className="bg-success h-full transition-all duration-500 ease-in-out" style={{ width: `${percentage}%` }}></div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function UpcomingEventsCard({ events }: { events: ApprovedEventRecord[] }) {
+  const nextEvent = events.length > 0
+    ? [...events].sort((a, b) => new Date(a.event_date).getTime() - new Date(b.event_date).getTime())[0]
+    : null;
+
+  const daysUntilNext = nextEvent
+    ? Math.max(0, Math.ceil((new Date(nextEvent.event_date).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)))
+    : 0;
+
+  return (
+    <Card className="animate-fade-in border-border hover:border-secondary/20 transition-all shadow-sm h-full">
+      <CardContent className="p-5 flex flex-col h-full">
+        <div className="flex justify-between items-start mb-4">
+          <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+            <CalendarDays className="w-6 h-6" />
+          </div>
+        </div>
+        <p className="text-muted-foreground text-sm font-medium">Upcoming Events</p>
+        <h3 className="text-2xl font-bold mt-1 text-primary">
+          {daysUntilNext} <span className="text-sm font-normal text-muted-foreground">Days</span>
+        </h3>
+        <div className="mt-auto pt-4">
+          <p className="text-xs text-muted-foreground font-medium italic">
+            {nextEvent ? `Next: ${nextEvent.title}` : "There are no upcoming events yet"}
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function ExecutiveDashboard() {
   const {
     data: tasks = [],
@@ -466,25 +595,38 @@ function ExecutiveDashboard() {
 
   return (
     <div className="space-y-6 animate-slide-up">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Executive Dashboard</h1>
-          <p className="text-muted-foreground text-sm mt-1">Track your assigned tasks and upcoming events</p>
+      <div className="relative overflow-hidden p-8 rounded-3xl bg-gradient-to-br from-primary to-[#0b2347] text-white shadow-xl">
+        <div className="absolute -right-20 -top-20 w-64 h-64 bg-warning opacity-20 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+          <div>
+            <h2 className="text-3xl font-black mb-2 tracking-tight">Executive Control Panel</h2>
+            <p className="text-white/80 max-w-md">
+              Welcome back. You have {summary.pending === 0 ? "no" : summary.pending} urgent {summary.pending === 1 ? "task" : "tasks"} requiring action and {summary.upcomingEvents === 0 ? "no" : summary.upcomingEvents} approved {summary.upcomingEvents === 1 ? "event" : "events"} to manage.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Button asChild variant="outline" className="bg-white text-primary border-transparent hover:bg-white/90 font-bold px-6 py-6 rounded-xl shadow-sm hover:-translate-y-0.5 transition-transform">
+              <Link to="/events">
+                <Plus className="w-5 h-5 mr-2" />
+                Create Event
+              </Link>
+            </Button>
+            <Button asChild className="bg-secondary text-white hover:bg-secondary/90 font-bold px-6 py-6 rounded-xl shadow-sm">
+              <Link to="/tasks">
+                <ClipboardList className="w-5 h-5 mr-2" />
+                Open Tasks
+              </Link>
+            </Button>
+          </div>
         </div>
-        <Button asChild className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
-          <Link to="/tasks">
-            <ClipboardList className="h-4 w-4 mr-2" />
-            Open Tasks
-          </Link>
-        </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <StatCard title="Assigned" value={summary.totalTasks} icon={ClipboardList} />
-        <StatCard title="Pending" value={summary.pending} icon={Clock} variant="warning" />
-        <StatCard title="In Progress" value={summary.inProgress} icon={Activity} />
-        <StatCard title="Completed" value={summary.completed} icon={CheckCircle} variant="success" />
-        <StatCard title="Upcoming Events" value={summary.upcomingEvents} icon={CalendarDays} />
+        <AssignedTasksProgressCard total={summary.totalTasks} completed={summary.completed} />
+        <PendingTasksCard value={summary.pending} />
+        <InProgressTasksCard total={summary.totalTasks} inProgress={summary.inProgress} />
+        <CompletedTasksProgressCard total={summary.totalTasks} completed={summary.completed} />
+        <UpcomingEventsCard events={approvedEvents} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
