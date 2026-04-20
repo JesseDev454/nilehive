@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Bell, CalendarDays, CheckCircle2, Clock, Loader2, MapPin, MessageSquare, Users } from "lucide-react";
-import { toast } from "sonner";
+import { NeoPageHeader } from "@/components/NeoBrutal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import {
   type EventReminderRecord,
   type EventRsvpRecord
 } from "@/lib/api";
+import { actionError, actionSuccess } from "@/lib/notify";
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -74,13 +75,11 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
     mutationFn: (status: EventRsvpRecord["status"]) =>
       submitEventRsvp(event.proposal_id, { status }),
     onSuccess: async () => {
-      toast.success("RSVP updated");
+      actionSuccess("RSVP updated", "Your event response has been saved.");
       await queryClient.invalidateQueries({ queryKey: ["event-engagement", event.proposal_id] });
     },
     onError: (mutationError) => {
-      toast.error("Could not update RSVP", {
-        description: getErrorMessage(mutationError)
-      });
+      actionError("Could not update RSVP", mutationError, getErrorMessage(mutationError));
     }
   });
   const attendanceMutation = useMutation({
@@ -90,13 +89,11 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
         attended: true
       }),
     onSuccess: async () => {
-      toast.success("Attendance marked");
+      actionSuccess("Attendance marked", "Attendance has been saved for this event.");
       await queryClient.invalidateQueries({ queryKey: ["event-engagement", event.proposal_id] });
     },
     onError: (mutationError) => {
-      toast.error("Could not mark attendance", {
-        description: getErrorMessage(mutationError)
-      });
+      actionError("Could not mark attendance", mutationError, getErrorMessage(mutationError));
     }
   });
   const feedbackMutation = useMutation({
@@ -109,14 +106,12 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
         comment: feedback
       }),
     onSuccess: () => {
-      toast.success("Feedback submitted");
+      actionSuccess("Feedback submitted", "Thank you for helping improve club events.");
       setFeedback("");
       setRating("5");
     },
     onError: (mutationError) => {
-      toast.error("Could not submit feedback", {
-        description: getErrorMessage(mutationError)
-      });
+      actionError("Could not submit feedback", mutationError, getErrorMessage(mutationError));
     }
   });
   const attendanceUserIds = new Set((engagement?.attendance || []).filter((record) => record.attended).map((record) => record.user_id));
@@ -162,19 +157,19 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
   return (
     <div className="space-y-4 border-t pt-4">
       <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-        <div className="rounded-xl bg-muted/60 p-3">
+        <div className="nh-card-soft p-3">
           <p className="text-muted-foreground">Going</p>
           <p className="text-lg font-bold">{engagement?.summary.going ?? 0}</p>
         </div>
-        <div className="rounded-xl bg-muted/60 p-3">
+        <div className="nh-card-soft p-3">
           <p className="text-muted-foreground">Interested</p>
           <p className="text-lg font-bold">{engagement?.summary.interested ?? 0}</p>
         </div>
-        <div className="rounded-xl bg-muted/60 p-3">
+        <div className="nh-card-soft p-3">
           <p className="text-muted-foreground">Attendance</p>
           <p className="text-lg font-bold">{engagement?.summary.attended ?? 0}</p>
         </div>
-        <div className="rounded-xl bg-muted/60 p-3">
+        <div className="nh-card-soft p-3">
           <p className="text-muted-foreground">My RSVP</p>
           <div className="mt-1">
             <RsvpBadge status={engagement?.current_user_rsvp?.status} />
@@ -183,7 +178,7 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
       </div>
 
       {isStudent ? (
-        <div className="space-y-3 rounded-xl bg-primary/5 p-4">
+        <div className="space-y-3 border-2 border-foreground bg-primary/5 p-4">
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
@@ -266,7 +261,7 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
           ) : (
             <div className="space-y-2">
               {engagement.rsvps.map((rsvp) => (
-                <div key={rsvp.id} className="flex flex-col gap-2 rounded-xl border p-3 sm:flex-row sm:items-center sm:justify-between">
+                <div key={rsvp.id} className="nh-list-card flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="font-medium">{rsvp.profile?.full_name || "Student"}</p>
                     <p className="text-xs text-muted-foreground">{rsvp.profile?.student_id || "No student ID"}</p>
@@ -307,7 +302,7 @@ function EventCard({ event }: { event: ApprovedEventRecord }) {
           <div className="space-y-3">
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="font-semibold">{event.title}</h3>
+                <h3 className="text-lg font-black uppercase">{event.title}</h3>
                 <Badge className="bg-success/15 text-success hover:bg-success/15">Approved</Badge>
               </div>
               <p className="text-sm text-muted-foreground mt-1">{event.description}</p>
@@ -348,9 +343,9 @@ function EventCard({ event }: { event: ApprovedEventRecord }) {
 
 function ReminderCard({ reminder }: { reminder: EventReminderRecord }) {
   return (
-    <div className="rounded-lg border bg-card p-3">
+    <div className="nh-list-card">
       <div className="flex items-start gap-3">
-        <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center border-2 border-foreground bg-accent text-accent-foreground">
           <Bell className="h-4 w-4" />
         </div>
         <div>
@@ -387,13 +382,12 @@ export default function EventCalendar() {
   });
 
   return (
-    <div className="space-y-6 animate-slide-up">
-      <div>
-        <h1 className="text-2xl font-bold">Approved Events</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Only events with final admin approval appear here.
-        </p>
-      </div>
+    <div className="nh-page">
+      <NeoPageHeader
+        eyebrow="Official Events"
+        title="Approved Events"
+        description="Only events with final Club Services approval appear here."
+      />
 
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6">
         <div className="space-y-4">
@@ -405,14 +399,14 @@ export default function EventCalendar() {
               {eventsLoading ? (
                 <p className="text-sm text-muted-foreground">Loading approved events...</p>
               ) : eventsError ? (
-                <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+                <div className="nh-empty border-destructive bg-destructive/5">
                   <p className="font-medium">Unable to load approved events</p>
                   <p className="text-sm text-muted-foreground mt-1">
                     {getErrorMessage(eventsErrorValue)}
                   </p>
                 </div>
               ) : events.length === 0 ? (
-                <div className="rounded-lg border border-dashed p-8 text-center">
+                <div className="nh-empty">
                   <CalendarDays className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
                   <p className="font-medium">No approved events yet</p>
                   <p className="text-sm text-muted-foreground mt-1">
@@ -434,7 +428,7 @@ export default function EventCalendar() {
             {remindersLoading ? (
               <p className="text-sm text-muted-foreground">Loading reminders...</p>
             ) : remindersError ? (
-              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+              <div className="nh-empty border-destructive bg-destructive/5">
                 <p className="font-medium">Unable to load reminders</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   {getErrorMessage(remindersErrorValue)}

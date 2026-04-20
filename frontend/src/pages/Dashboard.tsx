@@ -85,8 +85,8 @@ function StatCard({
       <CardContent className="p-5">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="text-2xl font-bold mt-1">{value}</p>
+            <p className="nh-panel-title text-muted-foreground">{title}</p>
+            <p className="mt-2 text-3xl font-black">{value}</p>
           </div>
           <Icon className={`h-8 w-8 ${colors[variant || "default"]} opacity-80`} />
         </div>
@@ -161,7 +161,7 @@ function ProposalSummaryList({
     <div className="space-y-3">
       {proposals.slice(0, 4).map((proposal) => (
         <Link key={proposal.id} to={`/proposals/${proposal.id}`} className="block">
-          <div className="flex items-center justify-between p-3 rounded-lg hover:bg-accent transition-colors gap-3">
+          <div className="nh-list-card flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
               <div className="min-w-0">
@@ -184,7 +184,7 @@ function UpcomingEventsList({ events }: { events: ApprovedEventRecord[] }) {
     <div className="space-y-3">
       {events.slice(0, 4).map((event) => (
         <Link key={event.id} to={`/proposals/${event.proposal_id}`} className="block">
-          <div className="flex items-center justify-between p-3 rounded-lg hover:bg-accent transition-colors gap-3">
+          <div className="nh-list-card flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <CalendarDays className="h-4 w-4 text-success shrink-0" />
               <div className="min-w-0">
@@ -207,7 +207,7 @@ function RecentActivityList({ activity }: { activity: DashboardActivity[] }) {
     <div className="space-y-3">
       {activity.slice(0, 5).map((item) => (
         <Link key={item.id} to={`/proposals/${item.proposal_id}`} className="block">
-          <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
+          <div className="nh-list-card flex items-start gap-3">
             <Activity className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
             <div className="min-w-0">
               <p className="text-sm font-medium truncate">{item.title}</p>

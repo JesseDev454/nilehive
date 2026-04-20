@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Bell } from "lucide-react";
 import { toast } from "sonner";
+import { NeoMetricCard, NeoPageHeader } from "@/components/NeoBrutal";
 
 export default function Analytics() {
   const total = mockProposals.length;
@@ -19,44 +20,24 @@ export default function Analytics() {
   };
 
   return (
-    <div className="space-y-6 animate-slide-up">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Analytics</h1>
-          <p className="text-muted-foreground text-sm mt-1">Approval pipeline overview</p>
-        </div>
-        <Button onClick={triggerReminders} variant="outline"
-          className="text-warning border-warning/30 hover:bg-warning/10">
+    <div className="nh-page">
+      <NeoPageHeader
+        eyebrow="Operations"
+        title="Analytics"
+        description="Approval pipeline overview."
+        actions={(
+          <Button onClick={triggerReminders} variant="outline" className="text-warning">
           <Bell className="h-4 w-4 mr-2" />
           Trigger Reminders
-        </Button>
-      </div>
+          </Button>
+        )}
+      />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-5 text-center">
-            <p className="text-3xl font-bold">{total}</p>
-            <p className="text-sm text-muted-foreground mt-1">Total Proposals</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5 text-center">
-            <p className="text-3xl font-bold text-success">{approved}</p>
-            <p className="text-sm text-muted-foreground mt-1">Approved</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5 text-center">
-            <p className="text-3xl font-bold text-warning">{pending}</p>
-            <p className="text-sm text-muted-foreground mt-1">Pending</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5 text-center">
-            <p className="text-3xl font-bold text-destructive">{rejected}</p>
-            <p className="text-sm text-muted-foreground mt-1">Rejected</p>
-          </CardContent>
-        </Card>
+      <div className="nh-metric-grid">
+        <NeoMetricCard title="Total Proposals" value={total} tone="navy" />
+        <NeoMetricCard title="Approved" value={approved} tone="green" />
+        <NeoMetricCard title="Pending" value={pending} tone="gold" />
+        <NeoMetricCard title="Rejected" value={rejected} tone="red" />
       </div>
 
       <Card>
@@ -69,8 +50,8 @@ export default function Analytics() {
               <span className="text-muted-foreground">Overall approval rate</span>
               <span className="font-medium">{approvalRate}%</span>
             </div>
-            <div className="h-3 bg-muted rounded-full overflow-hidden">
-              <div className="h-full bg-success rounded-full transition-all" style={{ width: `${approvalRate}%` }} />
+            <div className="h-4 overflow-hidden border-2 border-foreground bg-muted">
+              <div className="h-full bg-success transition-all" style={{ width: `${approvalRate}%` }} />
             </div>
           </div>
 
@@ -82,11 +63,11 @@ export default function Analytics() {
               { label: "Rejected", count: rejected, color: "bg-destructive" },
             ].map((item) => (
               <div key={item.label} className="flex items-center gap-3">
-                <div className={`h-3 w-3 rounded-full ${item.color}`} />
+                <div className={`h-3 w-3 border border-foreground ${item.color}`} />
                 <span className="text-sm flex-1">{item.label}</span>
                 <span className="text-sm font-medium">{item.count}</span>
-                <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                  <div className={`h-full ${item.color} rounded-full`}
+                <div className="h-3 w-24 overflow-hidden border border-foreground bg-muted">
+                  <div className={`h-full ${item.color}`}
                     style={{ width: `${total > 0 ? (item.count / total) * 100 : 0}%` }} />
                 </div>
               </div>

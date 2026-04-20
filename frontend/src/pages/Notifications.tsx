@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Bell, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { ApiClientError, getNotifications } from "@/lib/api";
 
 function getErrorMessage(error: unknown) {
@@ -28,36 +29,19 @@ export default function Notifications() {
   });
 
   return (
-    <div className="space-y-6 animate-slide-up">
-      <div>
-        <h1 className="text-2xl font-bold">Notifications</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Workflow updates for your Club Services account
-        </p>
-      </div>
+    <div className="nh-page">
+      <NeoPageHeader
+        eyebrow="Inbox"
+        title="Notifications"
+        description="Workflow updates for your Club Services account."
+      />
 
       {isLoading ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">Loading notifications...</p>
-          </CardContent>
-        </Card>
+        <NeoStateCard icon={Bell} title="Loading notifications" message="We are getting your latest updates." />
       ) : isError ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Bell className="h-12 w-12 text-destructive mx-auto mb-3" />
-            <p className="font-medium">Unable to load notifications</p>
-            <p className="text-sm text-muted-foreground mt-2">{getErrorMessage(error)}</p>
-          </CardContent>
-        </Card>
+        <NeoStateCard icon={Bell} title="Unable to load notifications" message={getErrorMessage(error)} tone="danger" />
       ) : notifications.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">No notifications yet.</p>
-          </CardContent>
-        </Card>
+        <NeoStateCard icon={Bell} title="No notifications yet" message="Important workflow and announcement updates will appear here." />
       ) : (
         <div className="space-y-3">
           {notifications.map((notification) => (
@@ -65,7 +49,7 @@ export default function Notifications() {
               <CardContent className="p-4">
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                   <div className="flex gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-foreground bg-accent text-accent-foreground">
                       <FileText className="h-5 w-5" />
                     </div>
                     <div>

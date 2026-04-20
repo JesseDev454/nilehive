@@ -59,6 +59,82 @@ export function NeoMetricCard({
   );
 }
 
+export function NeoCommandPanel({
+  eyebrow,
+  title,
+  description,
+  stats,
+  actions
+}: {
+  eyebrow?: string;
+  title: string;
+  description?: string;
+  stats?: Array<{ label: string; value: ReactNode }>;
+  actions?: ReactNode;
+}) {
+  return (
+    <section className="nh-command-panel">
+      <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          {eyebrow ? <p className="nh-eyebrow text-primary-foreground/70">{eyebrow}</p> : null}
+          <h1 className="mt-2 text-4xl font-black uppercase leading-none md:text-5xl">{title}</h1>
+          {description ? <p className="mt-3 max-w-3xl text-sm text-primary-foreground/75 md:text-base">{description}</p> : null}
+        </div>
+        {stats?.length ? (
+          <div className="grid min-w-[280px] grid-cols-2 gap-3">
+            {stats.map((stat) => (
+              <div key={stat.label} className="border-2 border-primary-foreground/40 bg-primary-foreground/10 p-4">
+                <p className="text-2xl font-black">{stat.value}</p>
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-primary-foreground/70">{stat.label}</p>
+              </div>
+            ))}
+          </div>
+        ) : null}
+        {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
+      </div>
+    </section>
+  );
+}
+
+export function NeoActionCard({
+  icon: Icon,
+  title,
+  description,
+  children,
+  tone = "default"
+}: {
+  icon?: ElementType;
+  title: string;
+  description?: ReactNode;
+  children?: ReactNode;
+  tone?: "default" | "navy" | "green" | "gold" | "danger";
+}) {
+  const toneClass = {
+    default: "bg-card text-card-foreground",
+    navy: "bg-primary text-primary-foreground",
+    green: "bg-secondary text-secondary-foreground",
+    gold: "bg-accent text-accent-foreground",
+    danger: "bg-destructive text-destructive-foreground"
+  }[tone];
+
+  return (
+    <div className={cn("nh-card p-5", toneClass)}>
+      <div className="flex items-start gap-4">
+        {Icon ? (
+          <div className="border-2 border-current bg-background/20 p-3">
+            <Icon className="h-5 w-5" />
+          </div>
+        ) : null}
+        <div className="min-w-0 flex-1">
+          <h3 className="nh-panel-title">{title}</h3>
+          {description ? <div className="mt-2 text-sm opacity-80">{description}</div> : null}
+          {children ? <div className="mt-4">{children}</div> : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function NeoStateCard({
   icon: Icon,
   title,
@@ -88,4 +164,3 @@ export function NeoStateCard({
     </div>
   );
 }
-

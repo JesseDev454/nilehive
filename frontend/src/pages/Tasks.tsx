@@ -1,8 +1,8 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ClipboardList, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { ClipboardList, Loader2, Target, UserCheck } from "lucide-react";
+import { NeoMetricCard, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +20,7 @@ import {
   type CreateTaskPayload,
   type TaskRecord
 } from "@/lib/api";
+import { actionError, actionSuccess } from "@/lib/notify";
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -64,12 +65,12 @@ function TaskCard({
   isUpdating: boolean;
 }) {
   return (
-    <Card>
+    <div className="nh-list-card">
       <CardContent className="p-4">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="font-semibold">{task.title}</h3>
+              <h3 className="text-lg font-black uppercase">{task.title}</h3>
               <TaskBadge status={task.status} />
               <PriorityBadge priority={task.priority} />
             </div>
@@ -100,7 +101,7 @@ function TaskCard({
           ) : null}
         </div>
       </CardContent>
-    </Card>
+    </div>
   );
 }
 
@@ -142,9 +143,7 @@ export default function Tasks() {
         due_date: dueDate || null
       }),
     onSuccess: async () => {
-      toast.success("Task assigned", {
-        description: "The executive can now see this task."
-      });
+      actionSuccess("Task assigned", "The executive can now see this task.");
       setAssignedTo("");
       setTitle("");
       setDescription("");
@@ -157,9 +156,7 @@ export default function Tasks() {
       ]);
     },
     onError: (mutationError) => {
-      toast.error("Could not assign task", {
-        description: getErrorMessage(mutationError)
-      });
+      actionError("Could not assign task", mutationError, getErrorMessage(mutationError));
     }
   });
   const updateMutation = useMutation({
@@ -169,7 +166,7 @@ export default function Tasks() {
         remarks: `Status changed to ${getTaskStatusLabel(status)}`
       }),
     onSuccess: async () => {
-      toast.success("Task updated");
+      actionSuccess("Task updated", "Progress has been saved.");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["tasks"] }),
         queryClient.invalidateQueries({ queryKey: ["president-dashboard"] }),
@@ -177,9 +174,7 @@ export default function Tasks() {
       ]);
     },
     onError: (mutationError) => {
-      toast.error("Could not update task", {
-        description: getErrorMessage(mutationError)
-      });
+      actionError("Could not update task", mutationError, getErrorMessage(mutationError));
     }
   });
 
@@ -198,30 +193,37 @@ export default function Tasks() {
 
   if (!canUseTasks) {
     return (
-      <div className="space-y-6 animate-slide-up">
-        <div>
-          <h1 className="text-2xl font-bold">Tasks</h1>
-          <p className="text-muted-foreground text-sm mt-1">Task delegation is available to presidents and executives.</p>
-        </div>
-        <Card>
-          <CardContent className="p-12 text-center">
-            <ClipboardList className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">This role does not use task delegation yet.</p>
-          </CardContent>
-        </Card>
+      <div className="nh-page">
+        <NeoPageHeader
+          eyebrow="Operations"
+          title="Tasks"
+          description="Task delegation is available to club presidents and executives."
+        />
+        <NeoStateCard
+          icon={ClipboardList}
+          title="Task access is restricted"
+          message="This role does not use task delegation yet."
+        />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 animate-slide-up">
-      <div>
-        <h1 className="text-2xl font-bold">{role === "president" ? "Task Delegation" : "My Tasks"}</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          {role === "president"
-            ? "Assign work to executives and track progress."
-            : "Track and update tasks assigned by your president."}
-        </p>
+    <div className="nh-page">
+      <NeoPageHeader
+        eyebrow="Operations"
+        title={role === "president" ? "Task Delegation" : "My Tasks"}
+        description={
+          role === "president"
+            ? "Assign work to executives and track progress from one club operations board."
+            : "Track what your president assigned and keep your progress visible."
+        }
+      />
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <NeoMetricCard title="Total Tasks" value={tasks.length} icon={ClipboardList} tone="navy" />
+        <NeoMetricCard title="In Progress" value={tasks.filter((task) => task.status === "in_progress").length} icon={Target} tone="gold" />
+        <NeoMetricCard title="Completed" value={tasks.filter((task) => task.status === "completed").length} icon={UserCheck} tone="green" />
       </div>
 
       {role === "president" ? (
@@ -230,7 +232,7 @@ export default function Tasks() {
             <CardTitle className="text-lg">Assign A Task</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleCreateTask} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <form onSubmit={handleCreateTask} className="nh-form-grid">
               <div className="space-y-2">
                 <Label htmlFor="assigned_to">Executive</Label>
                 <Select value={assignedTo} onValueChange={setAssignedTo}>
@@ -313,12 +315,12 @@ export default function Tasks() {
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Loading tasks...</p>
           ) : isError ? (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+            <div className="nh-empty border-destructive bg-destructive/5">
               <p className="font-medium">Unable to load tasks</p>
               <p className="text-sm text-muted-foreground mt-1">{getErrorMessage(error)}</p>
             </div>
           ) : tasks.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-8 text-center">
+            <div className="nh-empty">
               <ClipboardList className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
               <p className="font-medium">No tasks yet</p>
               <p className="text-sm text-muted-foreground mt-1">

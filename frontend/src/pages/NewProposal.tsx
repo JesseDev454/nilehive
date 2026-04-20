@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { useRole } from "@/contexts/RoleContext";
 import {
   ApiClientError,
@@ -453,38 +454,31 @@ export default function NewProposal() {
 
   if (!canManageProposals) {
     return (
-      <Card className="max-w-3xl mx-auto animate-slide-up">
-        <CardContent className="p-10 text-center">
-          <h1 className="text-2xl font-bold">Proposal Form 2.0</h1>
-          <p className="text-muted-foreground mt-2">
-            Club proposals are created and resubmitted by club presidents. Executives use tasks and approved events for their work.
-          </p>
-        </CardContent>
-      </Card>
+      <div className="nh-page max-w-3xl">
+        <NeoStateCard
+          icon={Building2}
+          title="President proposal area"
+          message="Club proposals are created and resubmitted by club presidents. Executives use tasks and approved events for their work."
+        />
+      </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-slide-up">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#0d5bbc]">Proposal Form 2.0</p>
-          <h1 className="text-3xl font-extrabold tracking-tight text-[#000d27]">
-            {isEditMode ? "Edit Proposal" : "Create Proposal"}
-          </h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            {isEditMode
-              ? "Update a draft or rejected proposal before resubmission."
-              : "Capture club details, activity plans, budget estimates, and responsible members."}
-          </p>
-        </div>
-        <div className="rounded-full bg-[#8af9ae]/35 px-4 py-2 text-xs font-bold text-[#00210e]">
-          Max {MAX_RESPONSIBLE_MEMBERS} responsible members
-        </div>
-      </div>
+    <div className="nh-page max-w-6xl">
+      <NeoPageHeader
+        eyebrow="Proposal Form"
+        title={isEditMode ? "Edit Proposal" : "Create Proposal"}
+        description={
+          isEditMode
+            ? "Update a draft or returned proposal before sending it back for review."
+            : "Capture club details, activity plans, budget estimates, and responsible members."
+        }
+        actions={<span className="nh-status border-secondary bg-secondary text-secondary-foreground">Max {MAX_RESPONSIBLE_MEMBERS} members</span>}
+      />
 
       <div className="relative">
-        <div className="absolute left-0 top-5 hidden h-px w-full bg-[#ebeef1] sm:block" />
+        <div className="absolute left-0 top-5 hidden h-1 w-full bg-foreground sm:block" />
         <div className="relative grid grid-cols-5 gap-2">
           {steps.map((label, index) => (
             <button
@@ -499,15 +493,15 @@ export default function NewProposal() {
             >
               <span
                 className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold transition-colors",
-                  index < step && "bg-[#299e5c] text-white",
-                  index === step && "bg-[#0d5bbc] text-white shadow-md shadow-[#0d5bbc]/20",
-                  index > step && "bg-[#e5e8eb] text-[#44474e]"
+                  "flex h-10 w-10 items-center justify-center border-2 border-foreground text-sm font-black transition-colors",
+                  index < step && "bg-secondary text-secondary-foreground",
+                  index === step && "bg-primary text-primary-foreground shadow-[4px_4px_0_hsl(var(--foreground))]",
+                  index > step && "bg-muted text-muted-foreground"
                 )}
               >
                 {index < step ? <Check className="h-4 w-4" /> : index + 1}
               </span>
-              <span className="hidden text-xs font-semibold text-[#000d27] sm:block">{label}</span>
+              <span className="hidden text-xs font-black uppercase tracking-[0.12em] text-foreground sm:block">{label}</span>
             </button>
           ))}
         </div>
@@ -516,7 +510,7 @@ export default function NewProposal() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="lg:col-span-8 space-y-6">
           {step === 0 && (
-            <Card className="border-0 shadow-sm">
+            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-lg">
                   <Building2 className="h-5 w-5 text-[#0d5bbc]" />
@@ -573,7 +567,7 @@ export default function NewProposal() {
           )}
 
           {step === 1 && (
-            <Card className="border-0 shadow-sm">
+            <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-lg">
                   <Rocket className="h-5 w-5 text-[#0d5bbc]" />
@@ -763,7 +757,7 @@ export default function NewProposal() {
           )}
 
           {step === 2 && (
-            <Card className="border-0 shadow-sm">
+            <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-3 text-lg">
                   <WalletCards className="h-5 w-5 text-[#0d5bbc]" />
@@ -776,7 +770,7 @@ export default function NewProposal() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {budgetItems.map((item, index) => (
-                  <div key={item.id} className="grid grid-cols-1 gap-3 rounded-2xl bg-[#f1f4f7] p-4 md:grid-cols-12">
+                  <div key={item.id} className="nh-card-soft grid grid-cols-1 gap-3 p-4 md:grid-cols-12">
                     <div className="space-y-2 md:col-span-3">
                       <Label>Items</Label>
                       <Input
@@ -840,7 +834,7 @@ export default function NewProposal() {
           )}
 
           {step === 3 && (
-            <Card className="border-0 shadow-sm">
+            <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-3 text-lg">
                   <Users className="h-5 w-5 text-[#0d5bbc]" />
@@ -858,7 +852,7 @@ export default function NewProposal() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {responsibleMembers.map((member, index) => (
-                  <div key={member.id} className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-[#ebeef1]">
+                  <div key={member.id} className="nh-card-soft p-4">
                     <div className="mb-4 flex items-center justify-between">
                       <p className="font-bold text-[#000d27]">Responsible Member {index + 1}</p>
                       <Button
@@ -953,7 +947,7 @@ export default function NewProposal() {
           )}
 
           {step === 4 && (
-            <Card className="border-0 shadow-sm">
+            <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Review Your Proposal Package</CardTitle>
                 <p className="text-xs text-muted-foreground mt-1">Please review all details before submitting.</p>
@@ -967,7 +961,7 @@ export default function NewProposal() {
                     <ReviewItem label="Club Name" value={getClubDisplayName() || "-"} />
                     <ReviewItem label="Organization Type" value="Club" />
                   </div>
-                  <div className="rounded-2xl bg-[#f1f4f7] p-4 mt-3">
+                  <div className="nh-card-soft mt-3 p-4">
                     <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Aim &amp; Objectives of the Event</p>
                     <p className="mt-2 leading-relaxed">{form.aimObjectives || "-"}</p>
                   </div>
@@ -1005,7 +999,7 @@ export default function NewProposal() {
                     />
                     <ReviewItem label="Expected No. of Participants" value={form.numberOfParticipants || "-"} />
                   </div>
-                  <div className="rounded-2xl bg-[#f1f4f7] p-4 mt-3">
+                  <div className="nh-card-soft mt-3 p-4">
                     <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Detailed Description</p>
                     <p className="mt-2 leading-relaxed">{form.description || "-"}</p>
                   </div>
@@ -1060,7 +1054,7 @@ export default function NewProposal() {
                   {toResponsibleMembers(responsibleMembers).length > 0 ? (
                     <div className="space-y-3">
                       {toResponsibleMembers(responsibleMembers).map((member, i) => (
-                        <div key={i} className="rounded-2xl bg-[#f1f4f7] p-4">
+                        <div key={i} className="nh-card-soft p-4">
                           <p className="font-bold text-[#000d27] mb-2">Responsible Member {i + 1}</p>
                           <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
                             <span className="text-muted-foreground">Name</span>
@@ -1157,7 +1151,7 @@ export default function NewProposal() {
 
 function ReviewItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl bg-[#f1f4f7] p-4">
+    <div className="nh-card-soft p-4">
       <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
       <p className="mt-2 font-semibold text-[#000d27]">{value}</p>
     </div>

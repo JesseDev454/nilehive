@@ -3,6 +3,7 @@ import type { ChangeEvent, FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText, ImageIcon, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +20,7 @@ import {
   type EventReportRecord
 } from "@/lib/api";
 import { uploadStorageFile } from "@/lib/storage";
+import { actionError, actionSuccess } from "@/lib/notify";
 
 const MAX_REPORT_MEDIA_IMAGES = 10;
 
@@ -79,11 +81,11 @@ function ReportCard({ report }: { report: EventReportRecord }) {
         <p className="text-sm text-muted-foreground line-clamp-3">{report.summary}</p>
 
         <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="rounded-lg bg-muted/50 p-3">
+          <div className="nh-card-soft p-3">
             <p className="text-xs text-muted-foreground">Attendance</p>
             <p className="font-semibold">{report.attendance_count}</p>
           </div>
-          <div className="rounded-lg bg-muted/50 p-3">
+          <div className="nh-card-soft p-3">
             <p className="text-xs text-muted-foreground">Budget Used</p>
             <p className="font-semibold">{formatCurrency(report.budget_used)}</p>
           </div>
@@ -158,7 +160,7 @@ export default function MediaArchive() {
         media_urls: uploadedMediaUrls
       }),
     onSuccess: async () => {
-      toast.success("Post-event report submitted");
+      actionSuccess("Post-event report submitted", "The completed event is now in the archive.");
       setProposalId("");
       setAttendanceCount("");
       setSummary("");
@@ -173,9 +175,7 @@ export default function MediaArchive() {
       ]);
     },
     onError: (mutationError) => {
-      toast.error("Could not submit report", {
-        description: getErrorMessage(mutationError)
-      });
+      actionError("Could not submit report", mutationError, getErrorMessage(mutationError));
     }
   });
 
@@ -263,29 +263,24 @@ export default function MediaArchive() {
 
   if (!canViewReports) {
     return (
-      <div className="space-y-6 animate-slide-up">
-        <div>
-          <h1 className="text-2xl font-bold">Reports & Media Archive</h1>
-          <p className="text-muted-foreground text-sm mt-1">This role does not use reports yet.</p>
-        </div>
-        <Card>
-          <CardContent className="p-12 text-center">
-            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">No report access for this role.</p>
-          </CardContent>
-        </Card>
+      <div className="nh-page">
+        <NeoPageHeader
+          eyebrow="Archive"
+          title="Reports & Media Archive"
+          description="Post-event reports are available to presidents, advisors, and Club Services admins."
+        />
+        <NeoStateCard icon={FileText} title="Report access is restricted" message="No report access for this role." />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 animate-slide-up">
-      <div>
-        <h1 className="text-2xl font-bold">Reports & Media Archive</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Document completed approved events and keep a central Club Services record.
-        </p>
-      </div>
+    <div className="nh-page">
+      <NeoPageHeader
+        eyebrow="Archive"
+        title="Reports & Media Archive"
+        description="Document completed approved events and keep a central Club Services record."
+      />
 
       {canSubmitReports ? (
         <Card>
@@ -293,7 +288,7 @@ export default function MediaArchive() {
             <CardTitle className="text-lg">Submit Post-Event Report</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmitReport} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <form onSubmit={handleSubmitReport} className="nh-form-grid">
               <div className="space-y-2 lg:col-span-2">
                 <Label htmlFor="proposal_id">Approved Event</Label>
                 <Select value={proposalId} onValueChange={setProposalId}>
@@ -425,12 +420,12 @@ export default function MediaArchive() {
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Loading event reports...</p>
           ) : isError ? (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+            <div className="nh-empty border-destructive bg-destructive/5">
               <p className="font-medium">Unable to load reports</p>
               <p className="text-sm text-muted-foreground mt-1">{getErrorMessage(error)}</p>
             </div>
           ) : reports.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-8 text-center">
+            <div className="nh-empty">
               <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
               <p className="font-medium">No event reports yet</p>
               <p className="text-sm text-muted-foreground mt-1">

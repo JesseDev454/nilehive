@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CreditCard, Landmark, Loader2 } from "lucide-react";
+import { CreditCard, Landmark, Loader2, Receipt, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
+import { NeoMetricCard, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +24,7 @@ import {
   type DuePaymentRecord
 } from "@/lib/api";
 import { resolveStorageFileUrl, uploadStorageFile } from "@/lib/storage";
+import { actionError, actionSuccess } from "@/lib/notify";
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -168,7 +170,7 @@ export default function Dues() {
         status
       }),
     onSuccess: async () => {
-      toast.success("Dues record saved");
+      actionSuccess("Dues record saved", "The payment record is now visible in the dues list.");
       setMemberId("");
       setSelectedClubId("");
       setAmount("");
@@ -179,9 +181,7 @@ export default function Dues() {
       await queryClient.invalidateQueries({ queryKey: ["dues"] });
     },
     onError: (mutationError) => {
-      toast.error("Could not save dues record", {
-        description: getErrorMessage(mutationError)
-      });
+      actionError("Could not save dues record", mutationError, getErrorMessage(mutationError));
     }
   });
   const saveSettingsMutation = useMutation({
@@ -194,15 +194,11 @@ export default function Dues() {
         payment_instructions: paymentInstructions || null
       }),
     onSuccess: async () => {
-      toast.success("Payment details saved", {
-        description: "Students can now see where to pay their dues."
-      });
+      actionSuccess("Payment details saved", "Students can now see where to pay their dues.");
       await queryClient.invalidateQueries({ queryKey: ["club-payment-settings"] });
     },
     onError: (mutationError) => {
-      toast.error("Could not save payment details", {
-        description: getErrorMessage(mutationError)
-      });
+      actionError("Could not save payment details", mutationError, getErrorMessage(mutationError));
     }
   });
   const updateMutation = useMutation({
@@ -211,13 +207,11 @@ export default function Dues() {
         status: nextStatus
       }),
     onSuccess: async () => {
-      toast.success("Dues status updated");
+      actionSuccess("Dues status updated", "The member payment status has been saved.");
       await queryClient.invalidateQueries({ queryKey: ["dues"] });
     },
     onError: (mutationError) => {
-      toast.error("Could not update dues status", {
-        description: getErrorMessage(mutationError)
-      });
+      actionError("Could not update dues status", mutationError, getErrorMessage(mutationError));
     }
   });
 
@@ -283,55 +277,34 @@ export default function Dues() {
 
   if (!canViewDues) {
     return (
-      <div className="space-y-6 animate-slide-up">
-        <div>
-          <h1 className="text-2xl font-bold">Dues & Payments</h1>
-          <p className="text-muted-foreground text-sm mt-1">Dues tracking is available to presidents and admins.</p>
-        </div>
-        <Card>
-          <CardContent className="p-12 text-center">
-            <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">This role does not use dues tracking yet.</p>
-          </CardContent>
-        </Card>
+      <div className="nh-page">
+        <NeoPageHeader
+          eyebrow="Finance"
+          title="Dues & Payments"
+          description="Dues tracking is available to club presidents and Club Services admins."
+        />
+        <NeoStateCard
+          icon={CreditCard}
+          title="Dues access is restricted"
+          message="This role does not use dues tracking yet."
+        />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 animate-slide-up">
-      <div>
-        <h1 className="text-2xl font-bold">Dues & Payment Tracking</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Track member dues manually for now. No payment gateway is connected yet.
-        </p>
-      </div>
+    <div className="nh-page">
+      <NeoPageHeader
+        eyebrow="Finance"
+        title="Dues & Payment Tracking"
+        description="Track dues, publish payment instructions, and verify submitted proof without leaving Club Services."
+      />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground">Expected</p>
-            <p className="text-2xl font-bold mt-1">{formatCurrency(duesData?.summary.expected_amount ?? 0)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground">Collected</p>
-            <p className="text-2xl font-bold text-success mt-1">{formatCurrency(duesData?.summary.collected_amount ?? 0)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground">Paid</p>
-            <p className="text-2xl font-bold mt-1">{duesData?.summary.paid ?? 0}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground">Collection Rate</p>
-            <p className="text-2xl font-bold mt-1">{duesData?.summary.collection_rate ?? 0}%</p>
-          </CardContent>
-        </Card>
+      <div className="nh-metric-grid">
+        <NeoMetricCard title="Expected" value={formatCurrency(duesData?.summary.expected_amount ?? 0)} icon={CreditCard} tone="navy" />
+        <NeoMetricCard title="Collected" value={formatCurrency(duesData?.summary.collected_amount ?? 0)} icon={Receipt} tone="green" />
+        <NeoMetricCard title="Paid" value={duesData?.summary.paid ?? 0} icon={Landmark} tone="gold" />
+        <NeoMetricCard title="Collection Rate" value={`${duesData?.summary.collection_rate ?? 0}%`} icon={TrendingUp} />
       </div>
 
       {canManageDues ? (
@@ -343,7 +316,7 @@ export default function Dues() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSavePaymentSettings} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <form onSubmit={handleSavePaymentSettings} className="nh-form-grid">
               {role === "admin" ? (
                 <div className="space-y-2 lg:col-span-2">
                   <Label htmlFor="settings_club_id">Club</Label>
@@ -423,7 +396,7 @@ export default function Dues() {
             <CardTitle className="text-lg">Create Dues Record</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleCreatePayment} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <form onSubmit={handleCreatePayment} className="nh-form-grid">
               {role === "admin" ? (
                 <div className="space-y-2">
                   <Label htmlFor="club_id">Club</Label>
@@ -551,12 +524,12 @@ export default function Dues() {
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Loading dues records...</p>
           ) : isError ? (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+            <div className="nh-empty border-destructive bg-destructive/5">
               <p className="font-medium">Unable to load dues</p>
               <p className="text-sm text-muted-foreground mt-1">{getErrorMessage(error)}</p>
             </div>
           ) : !duesData?.payments.length ? (
-            <div className="rounded-lg border border-dashed p-8 text-center">
+            <div className="nh-empty">
               <CreditCard className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
               <p className="font-medium">No dues records yet</p>
               <p className="text-sm text-muted-foreground mt-1">
@@ -564,19 +537,19 @@ export default function Dues() {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="nh-table-wrap">
+              <table className="nh-table">
                 <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="text-left p-3 font-medium text-muted-foreground">Member</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Amount</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground hidden md:table-cell">Session</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
+                  <tr>
+                    <th>Member</th>
+                    <th>Amount</th>
+                    <th className="hidden md:table-cell">Session</th>
+                    <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {duesData.payments.map((payment) => (
-                    <tr key={payment.id} className="border-b hover:bg-accent/50 transition-colors">
+                    <tr key={payment.id} className="transition-colors hover:bg-accent/50">
                       <td className="p-3">
                         <p className="font-medium">{memberNameById[payment.member_id] || "Unknown member"}</p>
                         <p className="text-xs text-muted-foreground">{payment.payment_reference || "No reference"}</p>

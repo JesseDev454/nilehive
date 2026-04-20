@@ -131,6 +131,10 @@
     @apply border-2 border-foreground bg-card shadow-[6px_6px_0_hsl(var(--foreground))];
   }
 
+  .nh-card-soft {
+    @apply border-2 border-foreground bg-background shadow-[4px_4px_0_hsl(var(--foreground))];
+  }
+
   .nh-card-dark {
     @apply border-2 border-foreground bg-primary text-primary-foreground shadow-[6px_6px_0_hsl(var(--foreground))];
   }
@@ -143,8 +147,34 @@
     @apply border-2 border-foreground bg-primary p-4 text-primary-foreground shadow-[6px_6px_0_hsl(var(--foreground))];
   }
 
+  .nh-command-panel {
+    @apply relative overflow-hidden border-2 border-foreground bg-primary p-6 text-primary-foreground shadow-[8px_8px_0_hsl(var(--foreground))];
+  }
+
+  .nh-command-panel::after {
+    content: "";
+    @apply pointer-events-none absolute -right-10 -top-10 h-32 w-32 border-2 border-primary-foreground/25 bg-accent/25;
+    transform: rotate(10deg);
+  }
+
+  .nh-section-grid {
+    @apply grid gap-6 xl:grid-cols-[420px_1fr];
+  }
+
+  .nh-metric-grid {
+    @apply grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4;
+  }
+
   .nh-mobile-card {
     @apply border-2 border-foreground bg-card p-4 shadow-[4px_4px_0_hsl(var(--foreground))];
+  }
+
+  .nh-list-card {
+    @apply border-2 border-foreground bg-card p-4 shadow-[4px_4px_0_hsl(var(--foreground))] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_hsl(var(--foreground))];
+  }
+
+  .nh-empty {
+    @apply border-2 border-dashed border-foreground bg-background p-8 text-center shadow-[4px_4px_0_hsl(var(--foreground))];
   }
 
   .nh-status {
@@ -153,6 +183,22 @@
 
   .nh-table-wrap {
     @apply overflow-x-auto border-2 border-foreground bg-card shadow-[6px_6px_0_hsl(var(--foreground))];
+  }
+
+  .nh-table {
+    @apply w-full text-sm;
+  }
+
+  .nh-table th {
+    @apply border-b-2 border-foreground bg-primary p-3 text-left text-xs font-black uppercase tracking-[0.14em] text-primary-foreground;
+  }
+
+  .nh-table td {
+    @apply border-b border-foreground/20 p-3 align-top;
+  }
+
+  .nh-form-grid {
+    @apply grid grid-cols-1 gap-4 lg:grid-cols-2;
   }
 }
 

@@ -1,7 +1,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, CheckCircle2, Filter, Megaphone, MessageSquare, Send, Users } from "lucide-react";
-import { toast } from "sonner";
+import { NeoCommandPanel } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +22,7 @@ import {
   markAllAnnouncementsRead,
   markAnnouncementRead
 } from "@/lib/api";
+import { actionError, actionSuccess } from "@/lib/notify";
 
 type AnnouncementAudience = AnnouncementRecord["audience"];
 type AnnouncementPriority = AnnouncementRecord["priority"];
@@ -197,7 +198,7 @@ export default function Communications() {
       return createAnnouncement(payload);
     },
     onSuccess: () => {
-      toast.success("Announcement published");
+      actionSuccess("Announcement sent", "Recipients will see it in their Communication Hub.");
       setAnnouncementTitle("");
       setAnnouncementMessage("");
       setAnnouncementPriority("normal");
@@ -208,9 +209,7 @@ export default function Communications() {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
     onError: (error) => {
-      toast.error("Announcement failed", {
-        description: getErrorMessage(error)
-      });
+      actionError("Announcement failed", error, getErrorMessage(error));
     }
   });
 
@@ -221,23 +220,19 @@ export default function Communications() {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
     onError: (error) => {
-      toast.error("Could not mark announcement as read", {
-        description: getErrorMessage(error)
-      });
+      actionError("Could not mark announcement as read", error, getErrorMessage(error));
     }
   });
 
   const markAllReadMutation = useMutation({
     mutationFn: () => markAllAnnouncementsRead(),
     onSuccess: (result) => {
-      toast.success(result.marked_read ? "Announcements marked as read" : "No unread announcements");
+      actionSuccess(result.marked_read ? "Announcements marked as read" : "No unread announcements");
       queryClient.invalidateQueries({ queryKey: ["announcements"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
     },
     onError: (error) => {
-      toast.error("Could not update announcements", {
-        description: getErrorMessage(error)
-      });
+      actionError("Could not update announcements", error, getErrorMessage(error));
     }
   });
 
@@ -249,16 +244,14 @@ export default function Communications() {
         comment: feedbackComment
       }),
     onSuccess: () => {
-      toast.success("Feedback submitted");
+      actionSuccess("Feedback submitted", "Club Services can now review it.");
       setFeedbackCategory("general");
       setFeedbackRating("");
       setFeedbackComment("");
       queryClient.invalidateQueries({ queryKey: ["feedback"] });
     },
     onError: (error) => {
-      toast.error("Feedback failed", {
-        description: getErrorMessage(error)
-      });
+      actionError("Feedback failed", error, getErrorMessage(error));
     }
   });
 
@@ -275,30 +268,16 @@ export default function Communications() {
   const roleOptions = role === "president" ? presidentRoleOptions : adminRoleOptions;
 
   return (
-    <div className="space-y-6 animate-slide-up">
-      <div className="rounded-3xl border bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 p-6 text-white shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <Badge className="mb-3 border-white/20 bg-white/10 text-white hover:bg-white/10">
-              Club Services Communication Hub
-            </Badge>
-            <h1 className="text-3xl font-bold tracking-tight">Announcements and Feedback</h1>
-            <p className="mt-2 max-w-2xl text-sm text-white/75">
-              Publish official updates, track who has seen them, and keep club feedback in one place before Outlook delivery is added later.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-3 sm:min-w-[340px]">
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
-              <p className="text-2xl font-semibold">{unreadCount}</p>
-              <p className="text-xs text-white/70">Unread announcements</p>
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/10 p-4">
-              <p className="text-2xl font-semibold">{urgentCount}</p>
-              <p className="text-xs text-white/70">High priority updates</p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className="nh-page">
+      <NeoCommandPanel
+        eyebrow="Communication Hub"
+        title="Announcements and Feedback"
+        description="Publish official updates, track who has seen them, and keep club feedback in one place before Outlook delivery is added later."
+        stats={[
+          { label: "Unread", value: unreadCount },
+          { label: "High Priority", value: urgentCount }
+        ]}
+      />
 
       <div className="flex flex-wrap gap-2">
         <Button
@@ -320,11 +299,11 @@ export default function Communications() {
       </div>
 
       {activeTab === "announcements" ? (
-        <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
+        <div className="nh-section-grid">
           <div className="space-y-6">
             {canCreateAnnouncement ? (
               <Card className="overflow-hidden">
-                <CardHeader className="bg-muted/40">
+                <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">
                     <Send className="h-5 w-5 text-primary" />
                     Publish Announcement
@@ -530,13 +509,13 @@ export default function Communications() {
               {isLoadingAnnouncements ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((item) => (
-                    <div key={item} className="h-28 animate-pulse rounded-2xl bg-muted" />
+                    <div key={item} className="h-28 animate-pulse border-2 border-foreground bg-muted shadow-[4px_4px_0_hsl(var(--foreground))]" />
                   ))}
                 </div>
               ) : isAnnouncementsError ? (
                 <p className="text-sm text-destructive">{getErrorMessage(announcementsError)}</p>
               ) : filteredAnnouncements.length === 0 ? (
-                <div className="rounded-2xl border border-dashed p-8 text-center">
+                <div className="nh-empty">
                   <Megaphone className="mx-auto h-8 w-8 text-muted-foreground" />
                   <p className="mt-3 font-medium">No announcements here yet.</p>
                   <p className="mt-1 text-sm text-muted-foreground">
@@ -550,8 +529,8 @@ export default function Communications() {
                   return (
                     <div
                       key={announcement.id}
-                      className={`rounded-2xl border p-4 transition ${
-                        announcement.is_read ? "bg-card" : "border-primary/30 bg-primary/5"
+                      className={`nh-list-card ${
+                        announcement.is_read ? "bg-card" : "border-primary bg-primary/5"
                       }`}
                     >
                       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
@@ -593,7 +572,7 @@ export default function Communications() {
           </Card>
         </div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
+        <div className="nh-section-grid">
           {canSubmitFeedback ? (
             <Card>
               <CardHeader>
@@ -675,7 +654,7 @@ export default function Communications() {
                 <p className="text-sm text-muted-foreground">No feedback yet.</p>
               ) : (
                 feedback.map((entry) => (
-                  <div key={entry.id} className="rounded-2xl border p-4">
+                  <div key={entry.id} className="nh-list-card">
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge variant="outline" className="capitalize">
                         {entry.category}

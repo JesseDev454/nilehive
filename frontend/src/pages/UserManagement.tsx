@@ -1,7 +1,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, ShieldCheck, UserCog, Users } from "lucide-react";
-import { toast } from "sonner";
+import { NeoMetricCard, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +19,7 @@ import {
   type AdminUserProfileRecord,
   type ProfileRecord
 } from "@/lib/api";
+import { actionError, actionSuccess } from "@/lib/notify";
 
 const ROLE_OPTIONS: ProfileRecord["role"][] = ["student", "executive", "president", "advisor", "admin"];
 
@@ -71,16 +72,12 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
         remarks: remarks || null
       }),
     onSuccess: async () => {
-      toast.success("User role updated", {
-        description: `${user.full_name || "User"} is now ${role}.`
-      });
+      actionSuccess("User role updated", `${user.full_name || "User"} is now ${role}.`);
       await queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       onClose();
     },
     onError: (error) => {
-      toast.error("Could not update role", {
-        description: getErrorMessage(error)
-      });
+      actionError("Could not update role", error, getErrorMessage(error));
     }
   });
   const advisorMutation = useMutation({
@@ -91,9 +88,7 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
         remarks: remarks || null
       }),
     onSuccess: async () => {
-      toast.success("Advisor assigned", {
-        description: `${user.full_name || "User"} is now assigned as club advisor.`
-      });
+      actionSuccess("Advisor assigned", `${user.full_name || "User"} is now assigned as club advisor.`);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-users"] }),
         queryClient.invalidateQueries({ queryKey: ["public-clubs"] })
@@ -101,9 +96,7 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
       onClose();
     },
     onError: (error) => {
-      toast.error("Could not assign advisor", {
-        description: getErrorMessage(error)
-      });
+      actionError("Could not assign advisor", error, getErrorMessage(error));
     }
   });
   const requiresClub = role === "executive" || role === "president" || role === "advisor";
@@ -136,8 +129,8 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
         </div>
       </CardHeader>
       <CardContent>
-        <form className="grid gap-4 lg:grid-cols-2" onSubmit={handleSubmit}>
-          <div className="rounded-2xl bg-muted/60 p-4 lg:col-span-2">
+        <form className="nh-form-grid" onSubmit={handleSubmit}>
+          <div className="nh-card-soft p-4 lg:col-span-2">
             <p className="font-semibold">{user.full_name || "Unnamed user"}</p>
             <p className="text-sm text-muted-foreground">
               {user.student_id || "University ID not set"} - Current role: <span className="capitalize">{user.role}</span>
@@ -181,7 +174,7 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
           </div>
 
           {role === "advisor" ? (
-            <label className="flex items-center gap-2 rounded-xl border p-3 text-sm lg:col-span-2">
+            <label className="flex items-center gap-2 border-2 border-foreground bg-background p-3 text-sm lg:col-span-2">
               <input
                 type="checkbox"
                 checked={replaceExisting}
@@ -255,50 +248,29 @@ export default function UserManagement() {
 
   if (role !== "admin") {
     return (
-      <Card>
-        <CardContent className="p-12 text-center">
-          <ShieldCheck className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-          <p className="font-medium">User Management is only available to Club Services admins.</p>
-        </CardContent>
-      </Card>
+      <div className="nh-page">
+        <NeoStateCard
+          icon={ShieldCheck}
+          title="Admin area"
+          message="User Management is only available to Club Services admins."
+        />
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6 animate-slide-up">
-      <div>
-        <Badge className="mb-3 bg-primary/15 text-primary hover:bg-primary/15">Admin Controls</Badge>
-        <h1 className="text-3xl font-bold">User Management</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Approve leadership access, promote trusted users, and assign advisors without opening Supabase.
-        </p>
-      </div>
+    <div className="nh-page">
+      <NeoPageHeader
+        eyebrow="Admin Controls"
+        title="User Management"
+        description="Approve leadership access, promote trusted users, and assign advisors without opening Supabase."
+      />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card>
-          <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground">Visible Users</p>
-            <p className="mt-1 text-2xl font-bold">{summary.total}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground">Students</p>
-            <p className="mt-1 text-2xl font-bold">{summary.students}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground">Leadership Requests</p>
-            <p className="mt-1 text-2xl font-bold text-primary">{summary.leadershipRequests}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground">Advisors</p>
-            <p className="mt-1 text-2xl font-bold text-secondary">{summary.advisors}</p>
-          </CardContent>
-        </Card>
+      <div className="nh-metric-grid">
+        <NeoMetricCard title="Visible Users" value={summary.total} icon={Users} tone="navy" />
+        <NeoMetricCard title="Students" value={summary.students} icon={UserCog} tone="gold" />
+        <NeoMetricCard title="Leadership Requests" value={summary.leadershipRequests} icon={ShieldCheck} tone="green" />
+        <NeoMetricCard title="Advisors" value={summary.advisors} icon={Users} />
       </div>
 
       {selectedUser ? <UserActionPanel user={selectedUser} onClose={() => setSelectedUser(null)} /> : null}
@@ -347,12 +319,12 @@ export default function UserManagement() {
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Loading users...</p>
           ) : isError ? (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+            <div className="nh-empty border-destructive bg-destructive/5">
               <p className="font-medium">Unable to load users</p>
               <p className="mt-1 text-sm text-muted-foreground">{getErrorMessage(error)}</p>
             </div>
           ) : users.length === 0 ? (
-            <div className="rounded-2xl border border-dashed p-10 text-center">
+            <div className="nh-empty">
               <UserCog className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
               <p className="font-medium">No users match this view</p>
               <p className="mt-1 text-sm text-muted-foreground">Try another role filter or search term.</p>
@@ -362,7 +334,7 @@ export default function UserManagement() {
               {users.map((user) => (
                 <div
                   key={user.id}
-                  className="flex flex-col gap-4 rounded-2xl border bg-card p-4 lg:flex-row lg:items-center lg:justify-between"
+                  className="nh-list-card flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
                 >
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2">

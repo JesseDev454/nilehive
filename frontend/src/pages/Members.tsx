@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Users } from "lucide-react";
-import { toast } from "sonner";
+import { NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +18,7 @@ import {
   updateClubMember,
   type ClubMemberRecord
 } from "@/lib/api";
+import { actionError, actionSuccess } from "@/lib/notify";
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -91,9 +92,7 @@ export default function Members() {
         membership_status: membershipStatus
       }),
     onSuccess: async () => {
-      toast.success("Member added", {
-        description: "The club member database has been updated."
-      });
+      actionSuccess("Member added", "The club member database has been updated.");
       setFullName("");
       setStudentId("");
       setEmail("");
@@ -107,9 +106,7 @@ export default function Members() {
       ]);
     },
     onError: (mutationError) => {
-      toast.error("Could not add member", {
-        description: getErrorMessage(mutationError)
-      });
+      actionError("Could not add member", mutationError, getErrorMessage(mutationError));
     }
   });
   const updateMutation = useMutation({
@@ -121,16 +118,14 @@ export default function Members() {
       patch: Partial<Pick<ClubMemberRecord, "club_role" | "membership_status">>;
     }) => updateClubMember(member.id, patch),
     onSuccess: async () => {
-      toast.success("Member updated");
+      actionSuccess("Member updated", "The member record has been saved.");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["club-members"] }),
         queryClient.invalidateQueries({ queryKey: ["president-dashboard"] })
       ]);
     },
     onError: (mutationError) => {
-      toast.error("Could not update member", {
-        description: getErrorMessage(mutationError)
-      });
+      actionError("Could not update member", mutationError, getErrorMessage(mutationError));
     }
   });
 
@@ -141,29 +136,24 @@ export default function Members() {
 
   if (!canViewMembers) {
     return (
-      <div className="space-y-6 animate-slide-up">
-        <div>
-          <h1 className="text-2xl font-bold">Member Database</h1>
-          <p className="text-muted-foreground text-sm mt-1">Member records are available to executives, presidents, and admins.</p>
-        </div>
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">This role does not use the member database yet.</p>
-          </CardContent>
-        </Card>
+      <div className="nh-page">
+        <NeoPageHeader
+          eyebrow="Club Records"
+          title="Member Database"
+          description="Member records are available to executives, presidents, and Club Services admins."
+        />
+        <NeoStateCard icon={Users} title="Member access is restricted" message="This role does not use the member database yet." />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 animate-slide-up">
-      <div>
-        <h1 className="text-2xl font-bold">Member Database</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          View club members and keep the executive team structure organized.
-        </p>
-      </div>
+    <div className="nh-page">
+      <NeoPageHeader
+        eyebrow="Club Records"
+        title="Member Database"
+        description="View club members and keep the executive team structure organized."
+      />
 
       {canManageMembers ? (
         <Card>
@@ -171,7 +161,7 @@ export default function Members() {
             <CardTitle className="text-lg">Add Member</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleAddMember} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <form onSubmit={handleAddMember} className="nh-form-grid">
               <div className="space-y-2">
                 <Label htmlFor="full_name">Full Name</Label>
                 <Input
@@ -282,12 +272,12 @@ export default function Members() {
           {isLoading ? (
             <p className="text-sm text-muted-foreground">Loading members...</p>
           ) : isError ? (
-            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+            <div className="nh-empty border-destructive bg-destructive/5">
               <p className="font-medium">Unable to load members</p>
               <p className="text-sm text-muted-foreground mt-1">{getErrorMessage(error)}</p>
             </div>
           ) : members.length === 0 ? (
-            <div className="rounded-lg border border-dashed p-8 text-center">
+            <div className="nh-empty">
               <Users className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
               <p className="font-medium">No member records yet</p>
               <p className="text-sm text-muted-foreground mt-1">
@@ -295,20 +285,20 @@ export default function Members() {
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="nh-table-wrap">
+              <table className="nh-table">
                 <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="text-left p-3 font-medium text-muted-foreground">Name</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground hidden md:table-cell">Student ID</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground hidden lg:table-cell">Contact</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Role</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
+                  <tr>
+                    <th>Name</th>
+                    <th className="hidden md:table-cell">Student ID</th>
+                    <th className="hidden lg:table-cell">Contact</th>
+                    <th>Role</th>
+                    <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   {members.map((member) => (
-                    <tr key={member.id} className="border-b hover:bg-accent/50 transition-colors">
+                    <tr key={member.id} className="transition-colors hover:bg-accent/50">
                       <td className="p-3">
                         <p className="font-medium">{member.full_name}</p>
                         <p className="text-xs text-muted-foreground md:hidden">{member.student_id}</p>
