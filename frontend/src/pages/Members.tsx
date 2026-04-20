@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Users } from "lucide-react";
@@ -19,6 +19,7 @@ import {
   type ClubMemberRecord
 } from "@/lib/api";
 import { actionError, actionSuccess } from "@/lib/notify";
+import { isValidStudentId, normalizeStudentId, STUDENT_ID_ERROR_MESSAGE, STUDENT_ID_PLACEHOLDER } from "@/lib/studentId";
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -58,6 +59,7 @@ export default function Members() {
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [selectedClubId, setSelectedClubId] = useState("");
+  const [memberClubFilter, setMemberClubFilter] = useState("all");
   const [clubRole, setClubRole] = useState<ClubMemberRecord["club_role"]>("member");
   const [membershipStatus, setMembershipStatus] = useState<ClubMemberRecord["membership_status"]>("active");
   const canViewMembers = role === "president" || role === "executive" || role === "admin";
@@ -69,8 +71,11 @@ export default function Members() {
     isError,
     error
   } = useQuery({
-    queryKey: ["club-members", role],
-    queryFn: () => getClubMembers(),
+    queryKey: ["club-members", role, memberClubFilter],
+    queryFn: () =>
+      getClubMembers({
+        club_id: role === "admin" && memberClubFilter !== "all" ? memberClubFilter : undefined
+      }),
     enabled: canViewMembers,
     retry: false
   });
@@ -80,6 +85,37 @@ export default function Members() {
     enabled: role === "admin",
     retry: false
   });
+  const clubNameById = useMemo(
+    () => new Map(clubs.map((club) => [club.id, club.name])),
+    [clubs]
+  );
+  const groupedMembers = useMemo(() => {
+    if (role !== "admin") {
+      return [];
+    }
+
+    const groups = new Map<string, { id: string; name: string; code: string | null; members: ClubMemberRecord[] }>();
+
+    members.forEach((member) => {
+      const clubId = member.club_id || "unknown";
+      const existing = groups.get(clubId);
+      const clubName = member.club?.name || clubNameById.get(member.club_id) || "Unassigned club";
+
+      if (existing) {
+        existing.members.push(member);
+        return;
+      }
+
+      groups.set(clubId, {
+        id: clubId,
+        name: clubName,
+        code: member.club?.code ?? null,
+        members: [member]
+      });
+    });
+
+    return Array.from(groups.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [clubNameById, members, role]);
   const createMutation = useMutation({
     mutationFn: () =>
       createClubMember({
@@ -131,7 +167,102 @@ export default function Members() {
 
   function handleAddMember(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (!isValidStudentId(studentId)) {
+      actionError("Check student ID", new Error(STUDENT_ID_ERROR_MESSAGE), STUDENT_ID_ERROR_MESSAGE);
+      return;
+    }
+
     createMutation.mutate();
+  }
+
+  function renderMembersTable(memberList: ClubMemberRecord[]) {
+    return (
+      <div className="nh-table-wrap">
+        <table className="nh-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th className="hidden md:table-cell">Student ID</th>
+              <th className="hidden lg:table-cell">Contact</th>
+              <th>Club</th>
+              <th>Role</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {memberList.map((member) => (
+              <tr key={member.id} className="transition-colors hover:bg-accent/50">
+                <td>
+                  <p className="font-medium">{member.full_name}</p>
+                  <p className="text-xs text-muted-foreground md:hidden">{member.student_id}</p>
+                  <p className="text-xs text-muted-foreground lg:hidden">{member.email || member.phone_number || "No contact"}</p>
+                </td>
+                <td className="hidden md:table-cell text-muted-foreground">{member.student_id}</td>
+                <td className="hidden lg:table-cell text-muted-foreground">
+                  <p>{member.email || "-"}</p>
+                  <p className="text-xs">{member.phone_number || ""}</p>
+                </td>
+                <td>
+                  <p className="font-medium">{member.club?.name || clubNameById.get(member.club_id) || "Unknown club"}</p>
+                  <p className="text-xs text-muted-foreground">{member.club?.code || "No code"}</p>
+                </td>
+                <td>
+                  {canManageMembers ? (
+                    <Select
+                      value={member.club_role}
+                      disabled={updateMutation.isPending}
+                      onValueChange={(value) =>
+                        updateMutation.mutate({
+                          member,
+                          patch: { club_role: value as ClubMemberRecord["club_role"] }
+                        })
+                      }
+                    >
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="member">Member</SelectItem>
+                        <SelectItem value="executive">Executive</SelectItem>
+                        <SelectItem value="president">President</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <RoleBadge role={member.club_role} />
+                  )}
+                </td>
+                <td>
+                  {canManageMembers ? (
+                    <Select
+                      value={member.membership_status}
+                      disabled={updateMutation.isPending}
+                      onValueChange={(value) =>
+                        updateMutation.mutate({
+                          member,
+                          patch: { membership_status: value as ClubMemberRecord["membership_status"] }
+                        })
+                      }
+                    >
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                        <SelectItem value="alumni">Alumni</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <StatusBadge status={member.membership_status} />
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
   }
 
   if (!canViewMembers) {
@@ -154,6 +285,51 @@ export default function Members() {
         title="Member Database"
         description="View club members and keep the executive team structure organized."
       />
+
+      {role === "admin" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Club Services Member View</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Filter and review members across all registered clubs.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-[320px_1fr] md:items-end">
+              <div className="space-y-2">
+                <Label htmlFor="member_club_filter">Club filter</Label>
+                <Select value={memberClubFilter} onValueChange={setMemberClubFilter}>
+                  <SelectTrigger id="member_club_filter">
+                    <SelectValue placeholder="All clubs" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All clubs</SelectItem>
+                    {clubs.map((club) => (
+                      <SelectItem key={club.id} value={club.id}>
+                        {club.name}{club.code ? ` (${club.code})` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="nh-card-soft p-3">
+                  <p className="nh-panel-title text-muted-foreground">Visible Members</p>
+                  <p className="mt-1 text-2xl font-black">{members.length}</p>
+                </div>
+                <div className="nh-card-soft p-3">
+                  <p className="nh-panel-title text-muted-foreground">Active</p>
+                  <p className="mt-1 text-2xl font-black">{members.filter((member) => member.membership_status === "active").length}</p>
+                </div>
+                <div className="nh-card-soft p-3">
+                  <p className="nh-panel-title text-muted-foreground">Clubs Shown</p>
+                  <p className="mt-1 text-2xl font-black">{groupedMembers.length}</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {canManageMembers ? (
         <Card>
@@ -193,11 +369,15 @@ export default function Members() {
                 <Label htmlFor="student_id">Student ID</Label>
                 <Input
                   id="student_id"
+                  inputMode="numeric"
+                  maxLength={9}
+                  pattern="[0-9]{9}"
                   value={studentId}
-                  onChange={(event) => setStudentId(event.target.value)}
-                  placeholder="NILE-001"
+                  onChange={(event) => setStudentId(normalizeStudentId(event.target.value))}
+                  placeholder={STUDENT_ID_PLACEHOLDER}
                   required
                 />
+                <p className="text-xs text-muted-foreground">Enter exactly 9 digits.</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -284,85 +464,30 @@ export default function Members() {
                 Add the first member above to start building the club database.
               </p>
             </div>
-          ) : (
-            <div className="nh-table-wrap">
-              <table className="nh-table">
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th className="hidden md:table-cell">Student ID</th>
-                    <th className="hidden lg:table-cell">Contact</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {members.map((member) => (
-                    <tr key={member.id} className="transition-colors hover:bg-accent/50">
-                      <td className="p-3">
-                        <p className="font-medium">{member.full_name}</p>
-                        <p className="text-xs text-muted-foreground md:hidden">{member.student_id}</p>
-                      </td>
-                      <td className="p-3 hidden md:table-cell text-muted-foreground">{member.student_id}</td>
-                      <td className="p-3 hidden lg:table-cell text-muted-foreground">
-                        <p>{member.email || "-"}</p>
-                        <p className="text-xs">{member.phone_number || ""}</p>
-                      </td>
-                      <td className="p-3">
-                        {canManageMembers ? (
-                          <Select
-                            value={member.club_role}
-                            disabled={updateMutation.isPending}
-                            onValueChange={(value) =>
-                              updateMutation.mutate({
-                                member,
-                                patch: { club_role: value as ClubMemberRecord["club_role"] }
-                              })
-                            }
-                          >
-                            <SelectTrigger className="w-[140px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="member">Member</SelectItem>
-                              <SelectItem value="executive">Executive</SelectItem>
-                              <SelectItem value="president">President</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <RoleBadge role={member.club_role} />
-                        )}
-                      </td>
-                      <td className="p-3">
-                        {canManageMembers ? (
-                          <Select
-                            value={member.membership_status}
-                            disabled={updateMutation.isPending}
-                            onValueChange={(value) =>
-                              updateMutation.mutate({
-                                member,
-                                patch: { membership_status: value as ClubMemberRecord["membership_status"] }
-                              })
-                            }
-                          >
-                            <SelectTrigger className="w-[140px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="active">Active</SelectItem>
-                              <SelectItem value="inactive">Inactive</SelectItem>
-                              <SelectItem value="alumni">Alumni</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        ) : (
-                          <StatusBadge status={member.membership_status} />
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          ) : role === "admin" ? (
+            <div className="space-y-6">
+              {groupedMembers.map((group) => {
+                const activeCount = group.members.filter((member) => member.membership_status === "active").length;
+
+                return (
+                  <section key={group.id} className="space-y-3">
+                    <div className="flex flex-col gap-2 border-2 border-foreground bg-primary p-4 text-primary-foreground shadow-[4px_4px_0_hsl(var(--foreground))] sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="nh-panel-title text-primary-foreground/70">{group.code || "No code"}</p>
+                        <h3 className="text-xl font-black uppercase">{group.name}</h3>
+                      </div>
+                      <div className="flex gap-3 text-sm font-black uppercase tracking-[0.12em]">
+                        <span>{group.members.length} member(s)</span>
+                        <span>{activeCount} active</span>
+                      </div>
+                    </div>
+                    {renderMembersTable(group.members)}
+                  </section>
+                );
+              })}
             </div>
+          ) : (
+            renderMembersTable(members)
           )}
         </CardContent>
       </Card>

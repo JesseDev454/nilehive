@@ -30,10 +30,11 @@ import {
   type CreateProposalPayload,
   type ResponsibleMember
 } from "@/lib/api";
+import { normalizeStudentId, STUDENT_ID_PLACEHOLDER } from "@/lib/studentId";
 import { cn } from "@/lib/utils";
 
 const steps = ["Club Info", "Activity", "Budget", "Members", "Review"];
-const MAX_RESPONSIBLE_MEMBERS = 5;
+const MAX_RESPONSIBLE_MEMBERS = 10;
 
 const PRESET_CLUB_NAMES = [
   "NILE GDG CLUB",
@@ -307,7 +308,7 @@ export default function NewProposal() {
             return {
               id: crypto.randomUUID(),
               name: member.name,
-              studentId: member.student_id,
+              studentId: normalizeStudentId(member.student_id),
               phoneNumber: member.phone_number,
               position: usesPresetPosition ? member.position : "other",
               positionOther: usesPresetPosition ? "" : member.position
@@ -884,14 +885,17 @@ export default function NewProposal() {
                         <Input
                           className="rounded-xl bg-[#f1f4f7]"
                           inputMode="numeric"
-                          placeholder="e.g. 20230001"
+                          maxLength={9}
+                          pattern="[0-9]{9}"
+                          placeholder={`e.g. ${STUDENT_ID_PLACEHOLDER}`}
                           value={member.studentId}
                           onChange={(event) =>
                             updateResponsibleMember(member.id, {
-                              studentId: event.target.value.replace(/\D/g, "")
+                              studentId: normalizeStudentId(event.target.value)
                             })
                           }
                         />
+                        <p className="text-xs text-muted-foreground">Use the 9-digit Nile student ID.</p>
                       </div>
                       <div className="space-y-2">
                         <Label>Phone Number</Label>

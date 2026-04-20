@@ -1,4 +1,5 @@
 const ApiError = require("../../shared/ApiError");
+const { readStudentId } = require("../../shared/studentId");
 
 const CLUB_MEMBER_ROLES = new Set(["member", "executive", "president"]);
 const MEMBERSHIP_STATUSES = new Set(["active", "inactive", "alumni"]);
@@ -37,7 +38,7 @@ function validateCreateMemberPayload(payload = {}) {
     club_id: readOptionalString(payload, "club_id"),
     profile_id: readOptionalString(payload, "profile_id"),
     full_name: readRequiredString(payload, "full_name", "Full name"),
-    student_id: readRequiredString(payload, "student_id", "Student ID"),
+    student_id: readStudentId(payload, "student_id", "Student ID"),
     email: readOptionalString(payload, "email"),
     phone_number: readOptionalString(payload, "phone_number"),
     club_role: readEnum(payload, "club_role", CLUB_MEMBER_ROLES, "member"),
@@ -53,7 +54,7 @@ function validateUpdateMemberPayload(payload = {}) {
   }
 
   if (Object.prototype.hasOwnProperty.call(payload, "student_id")) {
-    update.student_id = readRequiredString(payload, "student_id", "Student ID");
+    update.student_id = readStudentId(payload, "student_id", "Student ID");
   }
 
   if (Object.prototype.hasOwnProperty.call(payload, "email")) {

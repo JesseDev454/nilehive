@@ -12,7 +12,7 @@ function createProfile(overrides = {}) {
     full_name: "Ada Student",
     role: "student",
     club_id: "club-1",
-    student_id: "NUN-001",
+    student_id: "020232255",
     requested_role: "president",
     onboarding_status: "complete",
     created_at: "2026-04-15T10:00:00.000Z",

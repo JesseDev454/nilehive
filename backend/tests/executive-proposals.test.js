@@ -197,7 +197,7 @@ function createRichProposalPayload(overrides = {}) {
     responsible_members: [
       {
         name: "Tomi President",
-        student_id: "24-2120-109",
+        student_id: "242124563",
         phone_number: "08012345678",
         position: "Executive"
       }
@@ -591,7 +591,7 @@ test("president can resubmit a rejected proposal for advisor review", async () =
         responsible_members: [
           {
             name: "Tomi President",
-            student_id: "24-2120-109",
+            student_id: "242124563",
             phone_number: "08012345678",
             position: "Executive"
           }

@@ -365,6 +365,11 @@ export interface ClubMemberRecord {
   phone_number: string | null;
   club_role: "member" | "executive" | "president";
   membership_status: "active" | "inactive" | "alumni";
+  club?: {
+    id: string;
+    name: string;
+    code: string | null;
+  } | null;
   created_at: string;
   updated_at: string;
 }

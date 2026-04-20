@@ -1,4 +1,7 @@
 const ApiError = require("../../shared/ApiError");
+const { isValidStudentId, STUDENT_ID_ERROR_MESSAGE } = require("../../shared/studentId");
+
+const MAX_RESPONSIBLE_MEMBERS = 10;
 
 function normalizeString(value) {
   return typeof value === "string" ? value.trim() : "";
@@ -116,10 +119,10 @@ function normalizeResponsibleMembers(value, fieldErrors) {
     return [];
   }
 
-  if (value.length > 5) {
+  if (value.length > MAX_RESPONSIBLE_MEMBERS) {
     fieldErrors.push({
       field: "responsible_members",
-      message: "a proposal can have at most 5 responsible members"
+      message: `a proposal can have at most ${MAX_RESPONSIBLE_MEMBERS} responsible members`
     });
   }
 
@@ -149,6 +152,11 @@ function normalizeResponsibleMembers(value, fieldErrors) {
         fieldErrors.push({
           field: `responsible_members[${index}].student_id`,
           message: "responsible member student_id is required"
+        });
+      } else if (!isValidStudentId(studentId)) {
+        fieldErrors.push({
+          field: `responsible_members[${index}].student_id`,
+          message: STUDENT_ID_ERROR_MESSAGE
         });
       }
 

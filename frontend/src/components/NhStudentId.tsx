@@ -1,6 +1,12 @@
 import { useRef, useState } from "react";
 import type { ChangeEvent, ClipboardEvent } from "react";
 import { AlertCircle, BadgeCheck, IdCard } from "lucide-react";
+import {
+  isValidStudentId,
+  normalizeStudentId,
+  STUDENT_ID_LENGTH,
+  STUDENT_ID_PLACEHOLDER
+} from "@/lib/studentId";
 import { cn } from "@/lib/utils";
 
 interface NhStudentIdProps {
@@ -12,42 +18,20 @@ interface NhStudentIdProps {
   className?: string;
 }
 
-const RAW_LEN = 9;
-const STUDENT_ID_PATTERN = /^(\d{2})(\d{4})(\d{3})$/;
-
-function formatStudentId(raw: string) {
-  const digits = raw.replace(/\D/g, "").slice(0, RAW_LEN);
-
-  if (digits.length <= 2) {
-    return digits;
-  }
-
-  if (digits.length <= 6) {
-    return `${digits.slice(0, 2)}-${digits.slice(2)}`;
-  }
-
-  return `${digits.slice(0, 2)}-${digits.slice(2, 6)}-${digits.slice(6)}`;
-}
-
-function isValidStudentId(value: string) {
-  return STUDENT_ID_PATTERN.test(value.replace(/\D/g, ""));
-}
-
 export function NhStudentId({ value, onChange, id, required, disabled, className }: NhStudentIdProps) {
   const [touched, setTouched] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const displayValue = formatStudentId(value);
-  const digits = value.replace(/\D/g, "");
-  const isValid = isValidStudentId(displayValue);
+  const displayValue = normalizeStudentId(value);
+  const digits = displayValue;
+  const isValid = isValidStudentId(digits);
   const showError = touched && digits.length > 0 && !isValid;
   const showSuccess = touched && isValid;
 
   function handleChange(event: ChangeEvent<HTMLInputElement>) {
     const position = event.target.selectionStart ?? 0;
     const rawValue = event.target.value;
-    const nextDigits = rawValue.replace(/\D/g, "").slice(0, RAW_LEN);
-    const nextDisplayValue = formatStudentId(nextDigits);
+    const nextDigits = normalizeStudentId(rawValue);
 
     onChange(nextDigits);
 
@@ -58,7 +42,7 @@ export function NhStudentId({ value, onChange, id, required, disabled, className
         return;
       }
 
-      const shift = nextDisplayValue.length - rawValue.length;
+      const shift = nextDigits.length - rawValue.length;
       const nextPosition = Math.max(0, position + shift);
       input.setSelectionRange(nextPosition, nextPosition);
     });
@@ -66,7 +50,7 @@ export function NhStudentId({ value, onChange, id, required, disabled, className
 
   function handlePaste(event: ClipboardEvent<HTMLInputElement>) {
     event.preventDefault();
-    onChange(event.clipboardData.getData("text").replace(/\D/g, "").slice(0, RAW_LEN));
+    onChange(normalizeStudentId(event.clipboardData.getData("text")));
   }
 
   return (
@@ -87,11 +71,12 @@ export function NhStudentId({ value, onChange, id, required, disabled, className
           disabled={disabled}
           id={id}
           inputMode="numeric"
-          maxLength={11}
+          maxLength={STUDENT_ID_LENGTH}
           onBlur={() => setTouched(true)}
           onChange={handleChange}
           onPaste={handlePaste}
-          placeholder="24-2120-109"
+          pattern="[0-9]{9}"
+          placeholder={STUDENT_ID_PLACEHOLDER}
           required={required}
           type="text"
           value={displayValue}
@@ -112,8 +97,8 @@ export function NhStudentId({ value, onChange, id, required, disabled, className
         {showSuccess
           ? "Valid University ID"
           : showError
-            ? `Needs ${RAW_LEN} digits; you have ${digits.length}`
-            : "Format: YY-XXXX-XXX (e.g. 24-2120-109)"}
+            ? `Needs ${STUDENT_ID_LENGTH} digits; you have ${digits.length}`
+            : `Enter exactly ${STUDENT_ID_LENGTH} digits, for example ${STUDENT_ID_PLACEHOLDER}.`}
       </p>
     </div>
   );

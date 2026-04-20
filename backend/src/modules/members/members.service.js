@@ -50,6 +50,13 @@ function formatMember(member) {
     phone_number: member.phone_number,
     club_role: member.club_role,
     membership_status: member.membership_status,
+    club: member.club
+      ? {
+          id: member.club.id,
+          name: member.club.name,
+          code: member.club.code
+        }
+      : null,
     created_at: member.created_at,
     updated_at: member.updated_at
   };

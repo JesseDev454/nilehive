@@ -11,6 +11,7 @@ import { NhStudentId } from "@/components/NhStudentId";
 import { useAuth } from "@/contexts/AuthContext";
 import { getPublicClubs } from "@/lib/api";
 import { getAllowedEmailDomainLabel, isAllowedEmailDomain } from "@/lib/env";
+import { isValidStudentId, STUDENT_ID_ERROR_MESSAGE } from "@/lib/studentId";
 
 export default function SignUp() {
   const { signUp, session, isLoading } = useAuth();
@@ -49,6 +50,13 @@ export default function SignUp() {
       const message = `Please use your Nile University email address (${getAllowedEmailDomainLabel()}).`;
       setSignupError(message);
       toast.error("Signup failed", { description: message });
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!isValidStudentId(studentId)) {
+      setSignupError(STUDENT_ID_ERROR_MESSAGE);
+      toast.error("Signup failed", { description: STUDENT_ID_ERROR_MESSAGE });
       setIsSubmitting(false);
       return;
     }
@@ -234,4 +242,3 @@ export default function SignUp() {
     </main>
   );
 }
-

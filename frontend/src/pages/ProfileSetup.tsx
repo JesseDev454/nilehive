@@ -11,6 +11,7 @@ import { NhStudentId } from "@/components/NhStudentId";
 import { useAuth } from "@/contexts/AuthContext";
 import { completeProfileOnboarding, getPublicClubs } from "@/lib/api";
 import { getAllowedEmailDomainLabel, isAllowedEmailDomain } from "@/lib/env";
+import { isValidStudentId, normalizeStudentId, STUDENT_ID_ERROR_MESSAGE } from "@/lib/studentId";
 
 export default function ProfileSetup() {
   const { profileError, session, signOut, refreshProfile } = useAuth();
@@ -29,7 +30,7 @@ export default function ProfileSetup() {
 
   useEffect(() => {
     setFullName(typeof metadata.full_name === "string" ? metadata.full_name : "");
-    setStudentId(typeof metadata.student_id === "string" ? metadata.student_id : "");
+    setStudentId(typeof metadata.student_id === "string" ? normalizeStudentId(metadata.student_id) : "");
 
     if (metadata.requested_role === "executive" || metadata.requested_role === "president") {
       setRequestedRole(metadata.requested_role);
@@ -60,6 +61,13 @@ export default function ProfileSetup() {
     if (!clubId) {
       toast.error("Select your club", {
         description: "Your Club Services profile must be linked to a club."
+      });
+      return;
+    }
+
+    if (!isValidStudentId(studentId)) {
+      toast.error("Check your University ID", {
+        description: STUDENT_ID_ERROR_MESSAGE
       });
       return;
     }

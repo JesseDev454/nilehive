@@ -98,7 +98,7 @@ test("advisor can fetch proposal detail for assigned clubs", async () => {
         responsible_members: [
           {
             name: "Amina Executive",
-            student_id: "NU-2023-0001",
+            student_id: "020232255",
             phone_number: "+2348012345678",
             position: "Project Lead"
           }

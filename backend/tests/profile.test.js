@@ -18,7 +18,7 @@ function createFakeDatabase() {
       full_name: "Ada Student",
       role: "student",
       club_id: "club-1",
-      student_id: "NUN-001",
+      student_id: "020232255",
       requested_role: "student",
       onboarding_status: "complete",
       created_at: "2026-04-15T10:00:00.000Z",
@@ -130,7 +130,7 @@ test("new user can complete student profile onboarding", async (t) => {
     "new-user-token",
     {
       full_name: "New Student",
-      student_id: "NUN-2026-001",
+      student_id: "020303344",
       club_id: "club-1",
       requested_role: "executive"
     }
@@ -152,7 +152,7 @@ test("profile onboarding rejects privileged self-service roles", async (t) => {
     "new-user-token",
     {
       full_name: "New Admin",
-      student_id: "NUN-2026-999",
+      student_id: "242124563",
       club_id: "club-1",
       requested_role: "admin"
     }
@@ -160,6 +160,27 @@ test("profile onboarding rejects privileged self-service roles", async (t) => {
 
   assert.equal(response.status, 400);
   assert.equal(payload.error.code, "VALIDATION_ERROR");
+});
+
+test("profile onboarding rejects student IDs that are not exactly 9 digits", async (t) => {
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  const { response, payload } = await requestJson(
+    server.baseUrl,
+    "/api/v1/profile/onboarding",
+    "new-user-token",
+    {
+      full_name: "New Student",
+      student_id: "NUN-2026-001",
+      club_id: "club-1",
+      requested_role: "student"
+    }
+  );
+
+  assert.equal(response.status, 400);
+  assert.equal(payload.error.code, "VALIDATION_ERROR");
+  assert.equal(payload.error.message, "Student ID must be exactly 9 digits");
 });
 
 test("profile onboarding rejects non-Nile email domains", async (t) => {
@@ -172,7 +193,7 @@ test("profile onboarding rejects non-Nile email domains", async (t) => {
     "external-user-token",
     {
       full_name: "External User",
-      student_id: "NUN-2026-404",
+      student_id: "020303345",
       club_id: "club-1",
       requested_role: "student"
     }
@@ -192,7 +213,7 @@ test("profile onboarding is blocked when profile already exists", async (t) => {
     "student-token",
     {
       full_name: "Ada Student",
-      student_id: "NUN-001",
+      student_id: "020232255",
       club_id: "club-1",
       requested_role: "student"
     }

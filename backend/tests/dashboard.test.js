@@ -177,7 +177,7 @@ function createFakeDatabase() {
           club_id: "club-1",
           profile_id: "student-1",
           full_name: "Ada Student",
-          student_id: "NUN-001",
+          student_id: "020232255",
           membership_status: "active"
         },
         {
@@ -185,7 +185,7 @@ function createFakeDatabase() {
           club_id: "club-1",
           profile_id: "student-2",
           full_name: "Bola Student",
-          student_id: "NUN-002",
+          student_id: "020303344",
           membership_status: "inactive"
         }
       ];

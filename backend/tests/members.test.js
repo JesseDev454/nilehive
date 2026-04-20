@@ -13,11 +13,16 @@ function createMemberRecord(overrides = {}) {
     club_id: "club-1",
     profile_id: null,
     full_name: "Amina Member",
-    student_id: "NILE-001",
+    student_id: "020232255",
     email: "amina@nileuniversity.edu.ng",
     phone_number: "08000000000",
     club_role: "member",
     membership_status: "active",
+    club: {
+      id: "club-1",
+      name: "Nile Innovators Club",
+      code: "NIC"
+    },
     created_at: "2026-04-12T10:00:00.000Z",
     updated_at: "2026-04-12T10:00:00.000Z",
     ...overrides
@@ -41,7 +46,7 @@ test("president can add a member to their club", async () => {
     },
     payload: {
       full_name: "Amina Member",
-      student_id: "NILE-001",
+      student_id: "020232255",
       email: "amina@nileuniversity.edu.ng",
       phone_number: "08000000000",
       club_role: "member"
@@ -66,11 +71,30 @@ test("president cannot add members to another club", async () => {
         payload: {
           club_id: "club-2",
           full_name: "Wrong Club Member",
-          student_id: "NILE-002"
+          student_id: "020303344"
         },
         database: {}
       }),
     (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
+});
+
+test("member creation rejects student IDs that are not exactly 9 digits", async () => {
+  await assert.rejects(
+    () =>
+      createMember({
+        actor: {
+          id: "president-1",
+          role: "president",
+          clubId: "club-1"
+        },
+        payload: {
+          full_name: "Invalid ID Member",
+          student_id: "NILE-001"
+        },
+        database: {}
+      }),
+    (error) => error.statusCode === 400 && error.code === "VALIDATION_ERROR"
   );
 });
 
@@ -97,6 +121,45 @@ test("executive can list members in their club", async () => {
 
   assert.equal(members.length, 1);
   assert.equal(members[0].club_id, "club-1");
+});
+
+test("admin can list all members with club details", async () => {
+  const fakeDatabase = {
+    async listClubMembers(filters) {
+      assert.deepEqual(filters, {
+        clubId: null,
+        clubRoles: undefined,
+        membershipStatus: undefined
+      });
+      return [
+        createMemberRecord(),
+        createMemberRecord({
+          id: "member-2",
+          club_id: "club-2",
+          full_name: "Bala Member",
+          student_id: "020303344",
+          club: {
+            id: "club-2",
+            name: "Nile Business Club",
+            code: "NBC"
+          }
+        })
+      ];
+    }
+  };
+
+  const members = await listMembers({
+    actor: {
+      id: "admin-1",
+      role: "admin",
+      clubId: null
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(members.length, 2);
+  assert.equal(members[0].club.name, "Nile Innovators Club");
+  assert.equal(members[1].club.name, "Nile Business Club");
 });
 
 test("president can list executive team members", async () => {

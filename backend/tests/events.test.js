@@ -33,7 +33,7 @@ function createRsvp(overrides = {}) {
     profile: {
       id: "student-1",
       full_name: "Ada Student",
-      student_id: "NUN-001",
+      student_id: "020232255",
       role: "student"
     },
     created_at: "2026-04-15T10:00:00.000Z",
@@ -54,7 +54,7 @@ function createAttendance(overrides = {}) {
     profile: {
       id: "student-1",
       full_name: "Ada Student",
-      student_id: "NUN-001",
+      student_id: "020232255",
       role: "student"
     },
     created_at: "2026-04-15T10:00:00.000Z",
@@ -155,7 +155,7 @@ function createFakeDatabase() {
             profile: {
               id: "student-2",
               full_name: "Bola Student",
-              student_id: "NUN-002",
+              student_id: "020303344",
               role: "student"
             }
           })

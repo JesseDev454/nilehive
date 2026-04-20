@@ -1,4 +1,5 @@
 const ApiError = require("../../shared/ApiError");
+const { readStudentId } = require("../../shared/studentId");
 
 const SELF_SERVICE_REQUESTED_ROLES = new Set(["student", "executive", "president"]);
 
@@ -29,7 +30,7 @@ function validateCompleteProfilePayload(payload = {}) {
 
   return {
     full_name: readRequiredString(payload, "full_name", "Full name"),
-    student_id: readRequiredString(payload, "student_id", "Student ID"),
+    student_id: readStudentId(payload, "student_id", "Student ID"),
     club_id: readRequiredString(payload, "club_id", "Club"),
     requested_role: requestedRole
   };

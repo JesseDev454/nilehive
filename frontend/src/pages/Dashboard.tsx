@@ -1183,6 +1183,9 @@ function PolishedAdminDashboard() {
                   <p className="mt-1 text-sm text-muted-foreground">
                     A quick read on activity, dues, reports, and accountability.
                   </p>
+                  <p className="mt-2 text-xs font-black uppercase tracking-[0.16em] text-primary">
+                    Showing {dashboard?.club_performance.length ?? 0} of {summary?.total_clubs ?? dashboard?.club_performance.length ?? 0} clubs
+                  </p>
                 </div>
                 <Button asChild variant="outline" size="sm">
                   <Link to="/members">Members</Link>
@@ -1198,26 +1201,26 @@ function PolishedAdminDashboard() {
                     />
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm">
-                      <thead className="bg-muted/70 text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                  <div className="nh-table-wrap">
+                    <table className="nh-table text-left">
+                      <thead>
                         <tr>
-                          <th className="px-6 py-4 font-semibold">Club</th>
-                          <th className="px-4 py-4 font-semibold">Members</th>
-                          <th className="px-4 py-4 font-semibold">Pending</th>
-                          <th className="px-4 py-4 font-semibold">Dues</th>
-                          <th className="px-4 py-4 font-semibold">Reports</th>
-                          <th className="px-6 py-4 font-semibold">Pulse</th>
+                          <th>Club</th>
+                          <th>Members</th>
+                          <th>Pending</th>
+                          <th>Dues</th>
+                          <th>Reports</th>
+                          <th>Pulse</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {dashboard.club_performance.slice(0, 7).map((club) => {
+                        {dashboard.club_performance.map((club) => {
                           const pulse = getClubPulse(club);
                           return (
-                            <tr key={club.club_id} className="border-t transition-colors hover:bg-muted/40">
-                              <td className="px-6 py-4">
+                            <tr key={club.club_id} className="transition-colors hover:bg-muted/40">
+                              <td>
                                 <div className="flex items-center gap-3">
-                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-xs font-black text-primary-foreground">
+                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-foreground bg-primary text-xs font-black text-primary-foreground">
                                     {getClubInitials(club.club_name)}
                                   </div>
                                   <div>
@@ -1228,34 +1231,34 @@ function PolishedAdminDashboard() {
                                   </div>
                                 </div>
                               </td>
-                              <td className="px-4 py-4">
+                              <td>
                                 <p className="font-semibold">{club.active_members}/{club.total_members}</p>
                                 <p className="text-xs text-muted-foreground">active</p>
                               </td>
-                              <td className="px-4 py-4">
+                              <td>
                                 <p className="font-semibold">{club.pending_proposals}</p>
                                 <p className="text-xs text-muted-foreground">{club.open_tasks} open task(s)</p>
                               </td>
-                              <td className="px-4 py-4">
+                              <td>
                                 <div className="min-w-24">
                                   <div className="mb-1 flex justify-between text-xs">
                                     <span>{club.dues_collection_rate}%</span>
                                     <span>{formatCurrency(club.dues_collected_amount)}</span>
                                   </div>
-                                  <div className="h-2 overflow-hidden rounded-full bg-muted">
+                                  <div className="h-2 overflow-hidden border border-foreground bg-muted">
                                     <div
-                                      className="h-full rounded-full bg-success"
+                                      className="h-full bg-success"
                                       style={{ width: `${Math.min(100, club.dues_collection_rate)}%` }}
                                     />
                                   </div>
                                 </div>
                               </td>
-                              <td className="px-4 py-4">
+                              <td>
                                 <p className="font-semibold">{club.reports_submitted}</p>
                                 <p className="text-xs text-muted-foreground">{club.feedback_count} feedback</p>
                               </td>
-                              <td className="px-6 py-4">
-                                <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${pulse.className}`}>
+                              <td>
+                                <span className={`nh-status ${pulse.className}`}>
                                   {pulse.label}
                                 </span>
                               </td>

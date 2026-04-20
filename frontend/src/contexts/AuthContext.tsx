@@ -3,6 +3,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { SESSION_EXPIRED_EVENT } from "@/lib/api";
 import { getAllowedEmailDomainLabel, isAllowedEmailDomain, isPasswordAuthEnabled } from "@/lib/env";
 import { queryClient } from "@/lib/queryClient";
+import { isValidStudentId, normalizeStudentId, STUDENT_ID_ERROR_MESSAGE } from "@/lib/studentId";
 import { supabase } from "@/lib/supabase";
 
 export type AppRole = "executive" | "advisor" | "admin" | "president" | "student";
@@ -248,6 +249,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           throw new Error(`Please use your Nile University email address (${getAllowedEmailDomainLabel()}).`);
         }
 
+        const normalizedStudentId = normalizeStudentId(studentId);
+
+        if (!isValidStudentId(normalizedStudentId)) {
+          throw new Error(STUDENT_ID_ERROR_MESSAGE);
+        }
+
         const { error } = await supabase.auth.signUp({
           email: normalizedEmail,
           password,
@@ -256,7 +263,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               full_name: fullName.trim(),
               requested_role: requestedRole,
               requested_club: clubName.trim(),
-              student_id: studentId.trim()
+              student_id: normalizedStudentId
             }
           }
         });
