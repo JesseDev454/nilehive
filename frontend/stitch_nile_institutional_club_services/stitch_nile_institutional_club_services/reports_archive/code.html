@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Reports Archive - Nile Club Services</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&amp;family=Work+Sans:wght@700;800;900&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-dim": "#dfdacc",
+                      "on-secondary": "#ffffff",
+                      "on-tertiary-fixed-variant": "#5f4100",
+                      "outline": "#74777e",
+                      "on-secondary-container": "#187255",
+                      "secondary-fixed-dim": "#85d7b4",
+                      "on-surface": "#1d1c13",
+                      "tertiary-fixed": "#ffdeaa",
+                      "primary-fixed-dim": "#b4c7ec",
+                      "on-primary": "#ffffff",
+                      "on-primary-fixed": "#051b38",
+                      "surface-bright": "#fff9eb",
+                      "error-container": "#ffdad6",
+                      "surface-container-low": "#f9f3e5",
+                      "outline-variant": "#c4c6ce",
+                      "on-error-container": "#93000a",
+                      "secondary": "#0c6b4f",
+                      "error": "#ba1a1a",
+                      "on-primary-fixed-variant": "#354766",
+                      "inverse-on-surface": "#f6f0e2",
+                      "background": "#fff9eb",
+                      "surface-container-highest": "#e8e2d4",
+                      "on-secondary-fixed-variant": "#00513b",
+                      "surface-variant": "#e8e2d4",
+                      "on-primary-container": "#7386a8",
+                      "surface-container-high": "#eee8da",
+                      "on-background": "#1d1c13",
+                      "tertiary-fixed-dim": "#f5bd58",
+                      "tertiary-container": "#291a00",
+                      "on-tertiary": "#ffffff",
+                      "on-surface-variant": "#44474d",
+                      "inverse-primary": "#b4c7ec",
+                      "secondary-fixed": "#a0f3cf",
+                      "primary-fixed": "#d6e3ff",
+                      "tertiary": "#040200",
+                      "surface-container-lowest": "#ffffff",
+                      "secondary-container": "#a0f3cf",
+                      "on-secondary-fixed": "#002116",
+                      "surface-container": "#f3eddf",
+                      "inverse-surface": "#333027",
+                      "primary-container": "#071d3a",
+                      "surface-tint": "#4c5f7f",
+                      "primary": "#00030c",
+                      "surface": "#fff9eb",
+                      "on-tertiary-container": "#ac7c1a",
+                      "on-error": "#ffffff",
+                      "on-tertiary-fixed": "#271900"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0px",
+                      "lg": "0px",
+                      "xl": "0px",
+                      "full": "0px"
+              },
+              "spacing": {},
+              "fontFamily": {
+                      "headline": [
+                              "Work Sans"
+                      ],
+                      "body": [
+                              "Inter"
+                      ],
+                      "label": [
+                              "Inter"
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        /* Base specific overrides enforcing the design system */
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4, h5, h6, .font-headline { font-family: 'Work Sans', sans-serif; }
+        
+        /* Hard Shadows Utility (fallback if arbitrary classes fail) */
+        .shadow-brutal { box-shadow: 4px 4px 0px 0px #00030c; }
+        .shadow-brutal-sm { box-shadow: 2px 2px 0px 0px #00030c; }
+        .shadow-brutal-hover:hover { box-shadow: 4px 4px 0px 0px #00030c; transform: translate(-2px, -2px); }
+        .shadow-brutal-active:active { box-shadow: 0px 0px 0px 0px #00030c; transform: translate(2px, 2px); }
+    </style>
+</head>
+<body class="bg-surface-bright text-on-surface min-h-screen flex flex-col md:flex-row selection:bg-secondary selection:text-white">
+<!-- TopAppBar (Shared Component) -->
+<nav class="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 h-20 bg-[#fff9eb] border-b-4 border-[#00030c] dark:bg-[#00030c]">
+<div class="flex items-center gap-4">
+<span class="text-2xl font-black border-2 border-[#00030c] px-3 py-1 bg-[#0c6b4f] text-white font-headline uppercase tracking-tighter">
+                NILE CLUB SERVICES
+            </span>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex border-2 border-primary bg-surface-container-lowest px-3 py-1 items-center">
+<span class="material-symbols-outlined text-primary mr-2" style="font-variation-settings: 'FILL' 0;">search</span>
+<input class="bg-transparent border-none outline-none text-sm font-bold w-48 text-primary placeholder:text-outline focus:ring-0" placeholder="Search archive..." type="text"/>
+</div>
+<div class="flex items-center gap-4 text-[#00030c] dark:text-[#fff9eb]">
+<button aria-label="notifications" class="material-symbols-outlined hover:bg-[#0c6b4f] hover:text-white transition-colors duration-100 cursor-pointer active:translate-y-1 p-2">notifications</button>
+<button aria-label="history_edu" class="material-symbols-outlined hover:bg-[#0c6b4f] hover:text-white transition-colors duration-100 cursor-pointer active:translate-y-1 p-2">history_edu</button>
+<button aria-label="account_circle" class="material-symbols-outlined hover:bg-[#0c6b4f] hover:text-white transition-colors duration-100 cursor-pointer active:translate-y-1 p-2">account_circle</button>
+</div>
+</div>
+</nav>
+<!-- SideNavBar (Shared Component) - Hidden on Mobile -->
+<aside class="hidden md:flex flex-col fixed left-0 top-0 h-screen w-72 border-r-4 border-[#00030c] bg-[#fff9eb] dark:bg-[#071d3a] z-40 pt-24 pb-6 justify-between shadow-[4px_0px_0px_0px_#00030c]">
+<div>
+<div class="px-6 mb-8 flex flex-col">
+<span class="font-black text-xl mb-1 text-primary dark:text-white font-headline tracking-tighter">INSTITUTIONAL ARCHITECT</span>
+<span class="text-xs font-bold uppercase tracking-widest text-outline">Club Services Portal</span>
+</div>
+<button class="mx-6 mb-8 w-[calc(100%-3rem)] bg-primary text-white border-2 border-primary py-3 font-bold text-sm uppercase tracking-widest hover:bg-primary-container transition-all shadow-[4px_4px_0px_0px_#00030c] active:translate-y-[2px] active:translate-x-[2px] active:shadow-[0px_0px_0px_0px_#00030c]">
+                Compose Announcement
+            </button>
+<nav class="flex flex-col gap-1 font-['Work_Sans'] font-bold text-sm uppercase tracking-widest">
+<a class="flex items-center gap-3 text-[#00030c] dark:text-white opacity-80 hover:opacity-100 px-6 py-3 hover:bg-[#e8e2d4] dark:hover:bg-[#00030c] hover:border-2 hover:border-[#00030c] transition-all duration-75 ease-in-out border-2 border-transparent" href="#">
+<span class="material-symbols-outlined">forum</span> Comm Hub
+                </a>
+<a class="flex items-center gap-3 bg-[#0c6b4f] text-white border-2 border-[#00030c] shadow-[4px_4px_0px_0px_#00030c] mx-2 px-4 py-3 transition-all duration-75 ease-in-out" href="#">
+<span class="material-symbols-outlined">inventory_2</span> Reports Archive
+                </a>
+<a class="flex items-center gap-3 text-[#00030c] dark:text-white opacity-80 hover:opacity-100 px-6 py-3 hover:bg-[#e8e2d4] dark:hover:bg-[#00030c] hover:border-2 hover:border-[#00030c] transition-all duration-75 ease-in-out border-2 border-transparent" href="#">
+<span class="material-symbols-outlined">groups</span> Club Directory
+                </a>
+<a class="flex items-center gap-3 text-[#00030c] dark:text-white opacity-80 hover:opacity-100 px-6 py-3 hover:bg-[#e8e2d4] dark:hover:bg-[#00030c] hover:border-2 hover:border-[#00030c] transition-all duration-75 ease-in-out border-2 border-transparent" href="#">
+<span class="material-symbols-outlined">shield_person</span> Admin Panel
+                </a>
+</nav>
+</div>
+<div class="mt-auto font-['Work_Sans'] font-bold text-sm uppercase tracking-widest border-t-2 border-outline-variant pt-4">
+<a class="flex items-center gap-3 text-[#00030c] dark:text-white opacity-80 hover:opacity-100 px-6 py-2 hover:bg-[#e8e2d4] dark:hover:bg-[#00030c] hover:border-2 hover:border-[#00030c] transition-all duration-75 ease-in-out border-2 border-transparent" href="#">
+<span class="material-symbols-outlined">settings</span> Settings
+            </a>
+<a class="flex items-center gap-3 text-[#00030c] dark:text-white opacity-80 hover:opacity-100 px-6 py-2 hover:bg-[#e8e2d4] dark:hover:bg-[#00030c] hover:border-2 hover:border-[#00030c] transition-all duration-75 ease-in-out border-2 border-transparent" href="#">
+<span class="material-symbols-outlined">logout</span> Log Out
+            </a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 pt-28 pb-24 md:pl-80 px-4 md:px-8 max-w-[1600px] w-full mx-auto relative">
+<!-- Page Header -->
+<header class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b-4 border-primary pb-6">
+<div>
+<h1 class="font-headline text-4xl md:text-5xl lg:text-6xl font-black uppercase tracking-tighter text-primary leading-none">Reports Archive</h1>
+<p class="font-body text-outline font-bold uppercase tracking-widest mt-3 text-sm">Post-Event Report Repository</p>
+</div>
+<button class="bg-primary text-on-primary border-2 border-primary px-6 py-3 font-bold uppercase tracking-widest text-sm shadow-[4px_4px_0px_0px_#00030c] hover:bg-primary-container active:translate-y-1 active:translate-x-1 active:shadow-none transition-all w-full md:w-auto text-center flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">download</span> Export Ledger
+            </button>
+</header>
+<!-- Filters & Urgent Actions Row -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-10">
+<!-- Filter Bar -->
+<div class="lg:col-span-8 bg-surface-container-low border-2 border-primary p-6 shadow-[4px_4px_0px_0px_#00030c]">
+<h2 class="font-headline font-bold text-lg uppercase tracking-tight text-primary mb-4 flex items-center gap-2 border-b-2 border-primary pb-2">
+<span class="material-symbols-outlined">filter_alt</span> Refine Ledger
+                </h2>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="flex flex-col">
+<label class="font-label text-xs font-bold uppercase tracking-widest text-outline mb-1">Club Identity</label>
+<select class="bg-surface-bright border-2 border-primary py-2 px-3 font-bold text-primary focus:ring-0 focus:border-secondary shadow-[2px_2px_0px_0px_#00030c]">
+<option>All Recognized Clubs</option>
+<option>Robotics Society</option>
+<option>Debate Union</option>
+<option>Cinema Club</option>
+</select>
+</div>
+<div class="flex flex-col">
+<label class="font-label text-xs font-bold uppercase tracking-widest text-outline mb-1">Academic Term</label>
+<select class="bg-surface-bright border-2 border-primary py-2 px-3 font-bold text-primary focus:ring-0 focus:border-secondary shadow-[2px_2px_0px_0px_#00030c]">
+<option>Fall 2023</option>
+<option>Spring 2024</option>
+<option>Custom Range</option>
+</select>
+</div>
+<div class="flex flex-col">
+<label class="font-label text-xs font-bold uppercase tracking-widest text-outline mb-1">Status</label>
+<select class="bg-surface-bright border-2 border-primary py-2 px-3 font-bold text-primary focus:ring-0 focus:border-secondary shadow-[2px_2px_0px_0px_#00030c]">
+<option>All Statuses</option>
+<option>Approved</option>
+<option>Pending Review</option>
+</select>
+</div>
+</div>
+</div>
+<!-- Missing Reports Prompt (High Priority Alert) -->
+<div class="lg:col-span-4 bg-error text-on-error border-2 border-primary p-6 shadow-[4px_4px_0px_0px_#00030c] flex flex-col justify-between relative overflow-hidden group cursor-pointer hover:bg-error-container hover:text-on-error-container transition-colors">
+<!-- Decorative background element -->
+<span class="material-symbols-outlined absolute -right-4 -bottom-4 text-[120px] opacity-20 pointer-events-none group-hover:scale-110 transition-transform duration-500" style="font-variation-settings: 'FILL' 1;">warning</span>
+<div class="relative z-10">
+<div class="flex justify-between items-start mb-2">
+<h2 class="font-headline font-black text-2xl uppercase tracking-tighter">Action Required</h2>
+<span class="bg-primary text-on-primary font-bold px-2 py-1 text-sm border-2 border-primary shadow-[2px_2px_0px_0px_#ffffff]">3</span>
+</div>
+<p class="font-body font-bold text-sm mb-6">You have outstanding documentation blocking club funding.</p>
+</div>
+<div class="relative z-10 flex items-center justify-between border-t-2 border-current pt-4">
+<span class="font-label font-bold uppercase tracking-widest text-xs">Review Report Missing</span>
+<span class="material-symbols-outlined">arrow_forward</span>
+</div>
+</div>
+</div>
+<!-- Reports Grid (Bento Layout) -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+<!-- Report Card 1 -->
+<article class="bg-surface-container-highest border-2 border-primary flex flex-col shadow-brutal-hover transition-all duration-200">
+<div class="border-b-2 border-primary p-4 bg-surface-bright flex justify-between items-start">
+<div>
+<span class="inline-block bg-primary text-on-primary font-bold text-[10px] uppercase tracking-widest px-2 py-1 mb-2">Debate Union</span>
+<h3 class="font-headline font-bold text-xl text-primary leading-tight">National Invitational Tournament</h3>
+</div>
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;" title="Approved">verified</span>
+</div>
+<div class="p-5 flex-1 flex flex-col justify-between gap-6">
+<div class="grid grid-cols-2 gap-4">
+<div>
+<p class="font-label text-[10px] font-bold uppercase tracking-widest text-outline">Date</p>
+<p class="font-body font-bold text-primary">Oct 12, 2023</p>
+</div>
+<div>
+<p class="font-label text-[10px] font-bold uppercase tracking-widest text-outline">Attendance</p>
+<p class="font-body font-black text-xl text-primary">145</p>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-end mb-1">
+<p class="font-label text-[10px] font-bold uppercase tracking-widest text-outline">Budget Used</p>
+<p class="font-body font-bold text-primary text-sm">$1,200 / $1,500</p>
+</div>
+<div class="w-full h-3 border-2 border-primary bg-surface-bright">
+<div class="h-full bg-secondary border-r-2 border-primary w-[80%]"></div>
+</div>
+</div>
+<button class="mt-4 w-full bg-surface border-2 border-primary py-2 font-bold text-primary text-sm uppercase tracking-widest hover:bg-primary hover:text-on-primary transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">visibility</span> Post-Event Report
+                    </button>
+</div>
+</article>
+<!-- Report Card 2 -->
+<article class="bg-surface-container-highest border-2 border-primary flex flex-col shadow-brutal-hover transition-all duration-200">
+<div class="border-b-2 border-primary p-4 bg-surface-bright flex justify-between items-start">
+<div>
+<span class="inline-block bg-tertiary text-on-tertiary font-bold text-[10px] uppercase tracking-widest px-2 py-1 mb-2">Robotics Society</span>
+<h3 class="font-headline font-bold text-xl text-primary leading-tight">Autonomous Drone Showcase</h3>
+</div>
+<span class="material-symbols-outlined text-outline" title="Pending Review">pending</span>
+</div>
+<div class="p-5 flex-1 flex flex-col justify-between gap-6">
+<div class="grid grid-cols-2 gap-4">
+<div>
+<p class="font-label text-[10px] font-bold uppercase tracking-widest text-outline">Date</p>
+<p class="font-body font-bold text-primary">Nov 05, 2023</p>
+</div>
+<div>
+<p class="font-label text-[10px] font-bold uppercase tracking-widest text-outline">Attendance</p>
+<p class="font-body font-black text-xl text-primary">85</p>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-end mb-1">
+<p class="font-label text-[10px] font-bold uppercase tracking-widest text-outline">Budget Used</p>
+<p class="font-body font-bold text-primary text-sm">$450 / $500</p>
+</div>
+<div class="w-full h-3 border-2 border-primary bg-surface-bright">
+<div class="h-full bg-tertiary-fixed-dim border-r-2 border-primary w-[90%]"></div>
+</div>
+</div>
+<button class="mt-4 w-full bg-surface border-2 border-primary py-2 font-bold text-primary text-sm uppercase tracking-widest hover:bg-primary hover:text-on-primary transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">visibility</span> Post-Event Report
+                    </button>
+</div>
+</article>
+<!-- Report Card 3 (Missing Info State) -->
+<article class="bg-surface-container-highest border-2 border-primary flex flex-col shadow-brutal-hover transition-all duration-200 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-16 h-16 bg-error border-l-2 border-b-2 border-primary flex items-center justify-center z-10 transform translate-x-2 -translate-y-2 rotate-12 shadow-[2px_2px_0px_0px_#00030c]">
+<span class="material-symbols-outlined text-on-error transform -rotate-12">warning</span>
+</div>
+<div class="border-b-2 border-primary p-4 bg-surface-bright flex justify-between items-start opacity-70">
+<div>
+<span class="inline-block bg-primary text-on-primary font-bold text-[10px] uppercase tracking-widest px-2 py-1 mb-2">Cinema Club</span>
+<h3 class="font-headline font-bold text-xl text-primary leading-tight">Winter Film Festival</h3>
+</div>
+</div>
+<div class="p-5 flex-1 flex flex-col justify-between gap-6 opacity-70">
+<div class="grid grid-cols-2 gap-4">
+<div>
+<p class="font-label text-[10px] font-bold uppercase tracking-widest text-outline">Date</p>
+<p class="font-body font-bold text-primary">Dec 01, 2023</p>
+</div>
+<div>
+<p class="font-label text-[10px] font-bold uppercase tracking-widest text-outline">Attendance</p>
+<p class="font-body font-black text-xl text-primary">--</p>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-end mb-1">
+<p class="font-label text-[10px] font-bold uppercase tracking-widest text-outline">Budget Used</p>
+<p class="font-body font-bold text-primary text-sm">Pending Data</p>
+</div>
+<div class="w-full h-3 border-2 border-primary bg-surface-bright bg-[repeating-linear-gradient(45deg,transparent,transparent_4px,#c4c6ce_4px,#c4c6ce_8px)]">
+</div>
+</div>
+<button class="mt-4 w-full bg-error text-on-error border-2 border-primary py-2 font-bold text-sm uppercase tracking-widest hover:bg-error-container hover:text-on-error-container transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">edit_document</span> Report Missing
+                    </button>
+</div>
+</article>
+<!-- Report Card 4 -->
+<article class="bg-surface-container-highest border-2 border-primary flex flex-col shadow-brutal-hover transition-all duration-200">
+<div class="border-b-2 border-primary p-4 bg-surface-bright flex justify-between items-start">
+<div>
+<span class="inline-block bg-primary text-on-primary font-bold text-[10px] uppercase tracking-widest px-2 py-1 mb-2">Debate Union</span>
+<h3 class="font-headline font-bold text-xl text-primary leading-tight">Regional Qualifiers</h3>
+</div>
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;" title="Approved">verified</span>
+</div>
+<div class="p-5 flex-1 flex flex-col justify-between gap-6">
+<div class="grid grid-cols-2 gap-4">
+<div>
+<p class="font-label text-[10px] font-bold uppercase tracking-widest text-outline">Date</p>
+<p class="font-body font-bold text-primary">Sep 20, 2023</p>
+</div>
+<div>
+<p class="font-label text-[10px] font-bold uppercase tracking-widest text-outline">Attendance</p>
+<p class="font-body font-black text-xl text-primary">60</p>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-end mb-1">
+<p class="font-label text-[10px] font-bold uppercase tracking-widest text-outline">Budget Used</p>
+<p class="font-body font-bold text-primary text-sm">$300 / $300</p>
+</div>
+<div class="w-full h-3 border-2 border-primary bg-surface-bright">
+<div class="h-full bg-secondary border-r-2 border-primary w-[100%]"></div>
+</div>
+</div>
+<button class="mt-4 w-full bg-surface border-2 border-primary py-2 font-bold text-primary text-sm uppercase tracking-widest hover:bg-primary hover:text-on-primary transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">visibility</span> Post-Event Report
+                    </button>
+</div>
+</article>
+</div>
+</main>
+<!-- BottomNavBar (Shared Component) - Hidden on Desktop -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full h-16 flex justify-around items-stretch overflow-hidden border-t-4 border-[#00030c] bg-[#fff9eb] dark:bg-[#00030c] z-50">
+<a class="flex flex-col items-center justify-center text-[#00030c] dark:text-white opacity-70 hover:bg-[#f9f3e5] active:scale-95 transition-transform flex-1" href="#">
+<span class="material-symbols-outlined">campaign</span>
+<span class="font-['Inter'] font-bold text-[10px] uppercase mt-1">Hub</span>
+</a>
+<a class="bg-[#0c6b4f] text-white flex flex-col items-center justify-center h-full border-x-2 border-[#00030c] active:scale-95 transition-transform flex-1" href="#">
+<span class="material-symbols-outlined">archive</span>
+<span class="font-['Inter'] font-bold text-[10px] uppercase mt-1">Archive</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#00030c] dark:text-white opacity-70 hover:bg-[#f9f3e5] active:scale-95 transition-transform flex-1" href="#">
+<span class="material-symbols-outlined">add_box</span>
+<span class="font-['Inter'] font-bold text-[10px] uppercase mt-1">Compose</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#00030c] dark:text-white opacity-70 hover:bg-[#f9f3e5] active:scale-95 transition-transform flex-1" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-['Inter'] font-bold text-[10px] uppercase mt-1">Profile</span>
+</a>
+</nav>
+</body></html>

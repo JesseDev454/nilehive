@@ -4,51 +4,51 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 215 50% 18%;
+    --background: 42 52% 93%;
+    --foreground: 222 45% 9%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 215 50% 18%;
+    --card: 44 62% 96%;
+    --card-foreground: 222 45% 9%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 215 50% 18%;
+    --popover: 44 62% 96%;
+    --popover-foreground: 222 45% 9%;
 
-    --primary: 215 55% 23%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 214 78% 13%;
+    --primary-foreground: 44 62% 96%;
 
-    --secondary: 160 84% 30%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 158 78% 22%;
+    --secondary-foreground: 44 62% 96%;
 
-    --muted: 210 20% 95%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 42 26% 87%;
+    --muted-foreground: 220 10% 37%;
 
-    --accent: 210 20% 93%;
-    --accent-foreground: 215 50% 18%;
+    --accent: 40 68% 63%;
+    --accent-foreground: 222 45% 9%;
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 70% 42%;
+    --destructive-foreground: 44 62% 96%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning: 39 72% 55%;
+    --warning-foreground: 222 45% 9%;
 
-    --success: 160 84% 30%;
-    --success-foreground: 0 0% 100%;
+    --success: 158 78% 22%;
+    --success-foreground: 44 62% 96%;
 
-    --border: 214 20% 90%;
-    --input: 214 20% 90%;
-    --ring: 215 55% 23%;
+    --border: 222 45% 9%;
+    --input: 222 45% 9%;
+    --ring: 39 72% 55%;
 
-    --radius: 0.625rem;
+    --radius: 0.125rem;
 
-    --sidebar-background: 215 55% 23%;
-    --sidebar-foreground: 210 40% 90%;
-    --sidebar-primary: 210 40% 98%;
-    --sidebar-primary-foreground: 215 55% 23%;
-    --sidebar-accent: 215 50% 30%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 215 45% 30%;
-    --sidebar-ring: 210 40% 98%;
-    --sidebar-muted: 215 40% 35%;
+    --sidebar-background: 214 78% 13%;
+    --sidebar-foreground: 44 62% 92%;
+    --sidebar-primary: 44 62% 96%;
+    --sidebar-primary-foreground: 214 78% 13%;
+    --sidebar-accent: 158 78% 22%;
+    --sidebar-accent-foreground: 44 62% 96%;
+    --sidebar-border: 222 45% 9%;
+    --sidebar-ring: 39 72% 55%;
+    --sidebar-muted: 214 46% 23%;
   }
 
   .dark {
@@ -93,14 +93,66 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-image:
+      radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.08) 1px, transparent 0),
+      linear-gradient(135deg, hsl(var(--accent) / 0.10), transparent 34%);
+    background-size: 22px 22px, 100% 100%;
+    font-family: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
   }
 
   h1,
   h2,
   h3,
   h4 {
-    font-family: 'Manrope', 'Inter', system-ui, sans-serif;
+    font-family: 'Arial Black', 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
+    letter-spacing: -0.04em;
+  }
+}
+
+@layer components {
+  .nh-page {
+    @apply mx-auto w-full max-w-7xl space-y-6 animate-slide-up;
+  }
+
+  .nh-page-header {
+    @apply border-l-4 border-secondary pl-5;
+  }
+
+  .nh-eyebrow {
+    @apply text-xs font-black uppercase tracking-[0.24em] text-muted-foreground;
+  }
+
+  .nh-title {
+    @apply text-4xl font-black uppercase leading-none text-foreground md:text-5xl;
+    text-shadow: 2px 2px 0 hsl(var(--accent) / 0.35);
+  }
+
+  .nh-card {
+    @apply border-2 border-foreground bg-card shadow-[6px_6px_0_hsl(var(--foreground))];
+  }
+
+  .nh-card-dark {
+    @apply border-2 border-foreground bg-primary text-primary-foreground shadow-[6px_6px_0_hsl(var(--foreground))];
+  }
+
+  .nh-panel-title {
+    @apply text-sm font-black uppercase tracking-[0.18em];
+  }
+
+  .nh-action-strip {
+    @apply border-2 border-foreground bg-primary p-4 text-primary-foreground shadow-[6px_6px_0_hsl(var(--foreground))];
+  }
+
+  .nh-mobile-card {
+    @apply border-2 border-foreground bg-card p-4 shadow-[4px_4px_0_hsl(var(--foreground))];
+  }
+
+  .nh-status {
+    @apply inline-flex items-center border-2 border-current px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em];
+  }
+
+  .nh-table-wrap {
+    @apply overflow-x-auto border-2 border-foreground bg-card shadow-[6px_6px_0_hsl(var(--foreground))];
   }
 }
 

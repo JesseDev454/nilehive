@@ -59,7 +59,7 @@ export default function ProfileSetup() {
 
     if (!clubId) {
       toast.error("Select your club", {
-        description: "Your NileHive profile must be linked to a club."
+        description: "Your Club Services profile must be linked to a club."
       });
       return;
     }
@@ -98,17 +98,17 @@ export default function ProfileSetup() {
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0b2347] text-white">
               <Network className="h-5 w-5" />
             </div>
-            <span className="text-2xl font-extrabold tracking-tight text-[#000d27]">NileHive</span>
+            <span className="text-2xl font-extrabold tracking-tight text-[#000d27]">Club Services</span>
           </div>
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#0d5bbc]">
               Profile Onboarding
             </p>
             <h1 className="mt-3 text-4xl font-extrabold leading-tight text-[#000d27] md:text-5xl">
-              Finish setting up your NileHive account.
+              Finish setting up your Club Services account.
             </h1>
             <p className="mt-4 text-base leading-relaxed text-[#44474e]">
-              We found your Microsoft login, but NileHive still needs your app profile before
+              We found your login, but Club Services still needs your app profile before
               opening the dashboard. Real users must use a Nile University Outlook email address.
             </p>
           </div>

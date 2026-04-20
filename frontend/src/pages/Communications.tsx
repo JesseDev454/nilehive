@@ -88,7 +88,7 @@ function getAudienceHelp(audience: AnnouncementAudience, role: string | null) {
   }
 
   if (audience === "all_users") {
-    return "Every NileHive user will receive this announcement.";
+    return "Every Club Services user will receive this announcement.";
   }
 
   if (audience === "all_clubs") {
@@ -280,7 +280,7 @@ export default function Communications() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <Badge className="mb-3 border-white/20 bg-white/10 text-white hover:bg-white/10">
-              NileHive Communication Hub
+              Club Services Communication Hub
             </Badge>
             <h1 className="text-3xl font-bold tracking-tight">Announcements and Feedback</h1>
             <p className="mt-2 max-w-2xl text-sm text-white/75">

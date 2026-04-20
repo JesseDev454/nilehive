@@ -32,7 +32,7 @@ export default function Notifications() {
       <div>
         <h1 className="text-2xl font-bold">Notifications</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Workflow updates for your NileHive account
+          Workflow updates for your Club Services account
         </p>
       </div>
 

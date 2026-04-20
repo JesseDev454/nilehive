@@ -1115,7 +1115,7 @@ export default function NewProposal() {
                 <div>
                   <p className="font-semibold text-[#000d27]">Pro Tip</p>
                   <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                    Detailed budget items and verified member IDs make the advisor/admin review much easier.
+                    Detailed budget items and verified member IDs make the advisor and Club Services review much easier.
                   </p>
                 </div>
               </div>

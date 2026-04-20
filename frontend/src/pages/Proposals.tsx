@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { FileText } from "lucide-react";
+import { FileText, Plus } from "lucide-react";
+import { NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -52,31 +53,46 @@ export default function Proposals() {
   const pageCopy = useMemo(() => {
     if (isAdmin) {
       return {
-        title: "All Proposals",
-        description: "Review real proposal data across clubs"
+        eyebrow: "Club Services Review",
+        title: "Final Review",
+        description: "Review proposal movement across clubs without changing president-owned proposal access."
       };
     }
 
     if (isPresident) {
       return {
+        eyebrow: "Club Leadership",
         title: "Club Proposals",
-        description: "Track proposals submitted by the club president"
+        description: "Create, continue, resubmit, and track proposals submitted by the club president."
       };
     }
 
     return {
+      eyebrow: "Restricted",
       title: "Proposals",
       description: "Proposal list access is not available for this role yet"
     };
   }, [isAdmin, isPresident]);
 
   return (
-    <div className="space-y-6 animate-slide-up">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">{pageCopy.title}</h1>
-          <p className="text-muted-foreground text-sm mt-1">{pageCopy.description}</p>
-        </div>
+    <div className="nh-page">
+      <NeoPageHeader
+        eyebrow={pageCopy.eyebrow}
+        title={pageCopy.title}
+        description={pageCopy.description}
+        actions={
+          isPresident ? (
+            <Button asChild>
+              <Link to="/proposals/new">
+                <Plus className="h-4 w-4" />
+                Create Proposal
+              </Link>
+            </Button>
+          ) : null
+        }
+      />
+
+      <div className="flex justify-end">
         {isAdmin && (
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-full sm:w-[220px]">
@@ -86,7 +102,7 @@ export default function Proposals() {
               <SelectItem value="all">All statuses</SelectItem>
               <SelectItem value="draft">Draft</SelectItem>
               <SelectItem value="pending_advisor_review">Pending advisor review</SelectItem>
-              <SelectItem value="pending_admin_review">Pending admin review</SelectItem>
+              <SelectItem value="pending_admin_review">Awaiting Club Services final review</SelectItem>
               <SelectItem value="advisor_rejected">Advisor rejected</SelectItem>
               <SelectItem value="admin_rejected">Admin rejected</SelectItem>
               <SelectItem value="approved">Approved</SelectItem>
@@ -96,70 +112,51 @@ export default function Proposals() {
       </div>
 
       {!canFetch ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">
-              Use the advisor approvals queue or the role dashboard for this account.
-            </p>
-          </CardContent>
-        </Card>
+        <NeoStateCard
+          icon={FileText}
+          title="Proposal access is restricted"
+          message="Use the advisor review queue or your role dashboard for this account."
+        />
       ) : isLoading ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">Loading proposals...</p>
-          </CardContent>
-        </Card>
+        <NeoStateCard icon={FileText} title="Loading proposals" message="We are getting the latest proposal records." />
       ) : isError ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <FileText className="h-12 w-12 text-destructive mx-auto mb-3" />
-            <p className="font-medium">Unable to load proposals</p>
-            <p className="text-sm text-muted-foreground mt-2">{getErrorMessage(error)}</p>
-          </CardContent>
-        </Card>
+        <NeoStateCard icon={FileText} title="Unable to load proposals" message={getErrorMessage(error)} tone="danger" />
       ) : proposals.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">No proposals found.</p>
-          </CardContent>
-        </Card>
+        <NeoStateCard icon={FileText} title="No proposals found" message="Proposal records will appear here once the club president starts a proposal." />
       ) : (
         <Card>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="text-left p-3 font-medium text-muted-foreground">Title</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground hidden md:table-cell">
+                  <tr className="border-b-2 border-foreground bg-primary text-primary-foreground">
+                    <th className="p-4 text-left text-xs font-black uppercase tracking-[0.14em]">Title</th>
+                    <th className="hidden p-4 text-left text-xs font-black uppercase tracking-[0.14em] md:table-cell">
                       {isAdmin ? "Club ID" : "Currently With"}
                     </th>
-                    <th className="text-left p-3 font-medium text-muted-foreground hidden sm:table-cell">Date</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Actions</th>
+                    <th className="hidden p-4 text-left text-xs font-black uppercase tracking-[0.14em] sm:table-cell">Date</th>
+                    <th className="p-4 text-left text-xs font-black uppercase tracking-[0.14em]">Status</th>
+                    <th className="p-4 text-left text-xs font-black uppercase tracking-[0.14em]">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {proposals.map((proposal: ProposalRecord) => (
-                    <tr key={proposal.id} className="border-b hover:bg-accent/50 transition-colors">
-                      <td className="p-3">
-                        <Link to={`/proposals/${proposal.id}`} className="font-medium hover:underline">
+                    <tr key={proposal.id} className="border-b-2 border-foreground transition-colors hover:bg-accent/25">
+                      <td className="p-4">
+                        <Link to={`/proposals/${proposal.id}`} className="font-black hover:underline">
                           {proposal.title}
                         </Link>
                       </td>
-                      <td className="p-3 hidden md:table-cell text-muted-foreground">
+                      <td className="hidden p-4 text-muted-foreground md:table-cell">
                         {isAdmin ? proposal.club_id ?? "-" : getProposalOwnerLabel(proposal.current_owner_role)}
                       </td>
-                      <td className="p-3 hidden sm:table-cell text-muted-foreground">
+                      <td className="hidden p-4 text-muted-foreground sm:table-cell">
                         {getDateLabel(proposal.event_date)}
                       </td>
-                      <td className="p-3">
+                      <td className="p-4">
                         <StatusBadge status={proposal.status} />
                       </td>
-                      <td className="p-3">
+                      <td className="p-4">
                         <Button asChild variant="outline" size="sm">
                           <Link
                             to={
@@ -179,6 +176,37 @@ export default function Proposals() {
                   ))}
                 </tbody>
               </table>
+            </div>
+            <div className="space-y-4 p-4 md:hidden">
+              {proposals.map((proposal: ProposalRecord) => (
+                <div key={proposal.id} className="nh-mobile-card">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">
+                        {getDateLabel(proposal.event_date)}
+                      </p>
+                      <Link to={`/proposals/${proposal.id}`} className="mt-2 block text-lg font-black hover:underline">
+                        {proposal.title}
+                      </Link>
+                    </div>
+                    <StatusBadge status={proposal.status} />
+                  </div>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    {isAdmin ? `Club ${proposal.club_id ?? "-"}` : getProposalOwnerLabel(proposal.current_owner_role)}
+                  </p>
+                  <Button asChild variant="outline" size="sm" className="mt-4 w-full">
+                    <Link
+                      to={
+                        isPresident && isProposalEditable(proposal.status)
+                          ? `/proposals/new?edit=${proposal.id}`
+                          : `/proposals/${proposal.id}`
+                      }
+                    >
+                      {isPresident ? getProposalPrimaryActionLabel(proposal.status) : "View"}
+                    </Link>
+                  </Button>
+                </div>
+              ))}
             </div>
           </CardContent>
         </Card>

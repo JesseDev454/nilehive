@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Clock, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { ApprovalStepper } from "@/components/ApprovalStepper";
+import { NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -97,7 +98,7 @@ function buildApprovalSteps(proposal: ProposalRecord) {
       timestamp: getDateTimeLabel(advisorDecision?.decided_at ?? proposal.advisor_decided_at)
     },
     {
-      label: "Admin Review",
+      label: "Club Services Final Review",
       status: adminStepStatus as "completed" | "current" | "pending" | "rejected",
       remarks: adminDecision?.remarks ?? proposal.admin_remarks ?? undefined,
       timestamp: getDateTimeLabel(adminDecision?.decided_at ?? proposal.admin_decided_at)
@@ -139,19 +140,15 @@ export default function ProposalDetail() {
 
   if (isUnsupportedRole) {
     return (
-      <div className="max-w-3xl mx-auto space-y-6 animate-slide-up">
+      <div className="nh-page max-w-4xl">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-muted-foreground">
           <ArrowLeft className="h-4 w-4 mr-1" /> Back
         </Button>
-        <Card>
-          <CardContent className="p-12 text-center">
-            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="font-medium">Proposal detail is not available for this role yet.</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              This proposal detail route is currently available for presidents, advisors, and admins.
-            </p>
-          </CardContent>
-        </Card>
+        <NeoStateCard
+          icon={FileText}
+          title="Proposal access is restricted"
+          message="This proposal detail route is available for club presidents, advisors, and Club Services admins."
+        />
       </div>
     );
   }
@@ -218,42 +215,31 @@ export default function ProposalDetail() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 animate-slide-up">
+    <div className="nh-page">
       <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-muted-foreground">
         <ArrowLeft className="h-4 w-4 mr-1" /> Back
       </Button>
 
       {isLoading ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">Loading proposal details...</p>
-          </CardContent>
-        </Card>
+        <NeoStateCard icon={Clock} title="Loading proposal" message="We are getting the latest workflow status." />
       ) : isError || !proposal ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <FileText className="h-12 w-12 text-destructive mx-auto mb-3" />
-            <p className="font-medium">Proposal not found</p>
-            <p className="text-sm text-muted-foreground mt-2">{getErrorMessage(error)}</p>
-          </CardContent>
-        </Card>
+        <NeoStateCard icon={FileText} title="Proposal not found" message={getErrorMessage(error)} tone="danger" />
       ) : (
         <>
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-bold">{proposal.title}</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                {role === "admin" || role === "advisor" ? `Submitted by the club president for club ${proposal.club_id ?? "-"}` : "Club proposal"} -{" "}
-                {getDateLabel(proposal.created_at)}
-              </p>
-            </div>
-            <StatusBadge status={proposal.status} />
-          </div>
+          <NeoPageHeader
+            eyebrow={role === "admin" ? "Club Services Final Review" : role === "advisor" ? "Advisor Review" : "Club Proposal"}
+            title={proposal.title}
+            description={`${
+              role === "admin" || role === "advisor"
+                ? `Submitted by the club president for club ${proposal.club_id ?? "-"}`
+                : "President-owned club proposal"
+            } - ${getDateLabel(proposal.created_at)}`}
+            actions={<StatusBadge status={proposal.status} />}
+          />
 
-          <Card className="border-0 bg-[#000d27] text-white shadow-xl">
+          <Card className="nh-card-dark text-white">
             <CardHeader>
-              <CardTitle className="text-base text-white">Workflow Status</CardTitle>
+              <CardTitle className="nh-panel-title text-white">Workflow Status</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
               <div>
@@ -272,15 +258,15 @@ export default function ProposalDetail() {
                 <p className="text-xs font-bold uppercase tracking-wide text-white/50">Last Updated</p>
                 <p className="mt-1 font-semibold">{getDateLabel(proposal.updated_at)}</p>
               </div>
-              <div className="rounded-2xl bg-white/10 p-4 sm:col-span-2 lg:col-span-4">
+              <div className="border-2 border-primary-foreground/30 bg-white/10 p-4 sm:col-span-2 lg:col-span-4">
                 <p className="text-xs font-bold uppercase tracking-wide text-[#F5B942]">Next Action</p>
                 <p className="mt-1 text-white/90">{getProposalNextAction(proposal.status)}</p>
               </div>
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2 space-y-4">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div className="space-y-4 lg:col-span-2">
               {role === "president" && isProposalEditable(proposal.status) && (
                   <Card>
                     <CardHeader>
@@ -301,11 +287,7 @@ export default function ProposalDetail() {
                         >
                           {getProposalPrimaryActionLabel(proposal.status)}
                         </Button>
-                        <Button
-                          className="bg-[#0d5bbc] hover:bg-[#004493] text-white"
-                          disabled={isResubmitting}
-                          onClick={handleResubmit}
-                        >
+                        <Button disabled={isResubmitting} onClick={handleResubmit}>
                           {isResubmitting ? "Resubmitting..." : "Submit for Advisor Review"}
                         </Button>
                       </div>
@@ -406,7 +388,7 @@ export default function ProposalDetail() {
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm">
                     {proposal.budget_line_items.map((item, index) => (
-                      <div key={`${item.item}-${index}`} className="rounded-xl bg-muted p-3">
+                      <div key={`${item.item}-${index}`} className="border-2 border-foreground bg-muted p-3">
                         <div className="flex items-center justify-between gap-3">
                           <p className="font-medium">{item.item}</p>
                           <p className="font-mono font-semibold">{formatCurrency(item.amount)}</p>
@@ -426,7 +408,7 @@ export default function ProposalDetail() {
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm">
                     {proposal.responsible_members.map((member, index) => (
-                      <div key={`${member.student_id}-${index}`} className="rounded-xl bg-muted p-3">
+                      <div key={`${member.student_id}-${index}`} className="border-2 border-foreground bg-muted p-3">
                         <p className="font-medium">{member.name}</p>
                         <p className="text-muted-foreground mt-1">
                           {member.position} - {member.student_id}
@@ -451,19 +433,10 @@ export default function ProposalDetail() {
                       onChange={(event) => setAdminRemarks(event.target.value)}
                     />
                     <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
-                      <Button
-                        className="bg-success hover:bg-success/90 text-success-foreground"
-                        disabled={adminDecision !== null}
-                        onClick={() => handleAdminDecision("approve")}
-                      >
+                      <Button variant="secondary" disabled={adminDecision !== null} onClick={() => handleAdminDecision("approve")}>
                         {adminDecision === "approve" ? "Approving..." : "Approve Final"}
                       </Button>
-                      <Button
-                        variant="outline"
-                        className="text-destructive border-destructive/30 hover:bg-destructive/10"
-                        disabled={adminDecision !== null}
-                        onClick={() => handleAdminDecision("reject")}
-                      >
+                      <Button variant="destructive" disabled={adminDecision !== null} onClick={() => handleAdminDecision("reject")}>
                         {adminDecision === "reject" ? "Rejecting..." : "Reject"}
                       </Button>
                     </div>
@@ -478,7 +451,7 @@ export default function ProposalDetail() {
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm">
                     {proposal.advisor_remarks && (
-                      <div className="rounded-xl bg-muted p-3">
+                      <div className="border-2 border-foreground bg-muted p-3">
                         <span className="font-medium">Advisor remarks</span>
                         <p className="mt-1">{proposal.advisor_remarks}</p>
                         {proposal.advisor_decided_at && (
@@ -487,7 +460,7 @@ export default function ProposalDetail() {
                       </div>
                     )}
                     {proposal.admin_remarks && (
-                      <div className="rounded-xl bg-muted p-3">
+                      <div className="border-2 border-foreground bg-muted p-3">
                         <span className="font-medium">Club Services admin remarks</span>
                         <p className="mt-1">{proposal.admin_remarks}</p>
                         {proposal.admin_decided_at && (
@@ -496,7 +469,7 @@ export default function ProposalDetail() {
                       </div>
                     )}
                     {proposal.latest_approval && (
-                      <div className="rounded-xl border p-3">
+                      <div className="border-2 border-foreground p-3">
                         <span className="font-medium">Latest decision</span>
                         <p className="mt-1">
                           {proposal.latest_approval.reviewer_role} {proposal.latest_approval.decision} on{" "}
@@ -513,9 +486,9 @@ export default function ProposalDetail() {
             </div>
 
             <div>
-              <Card>
+              <Card className="sticky top-4">
                 <CardHeader>
-                  <CardTitle className="text-base">Approval Chain</CardTitle>
+                  <CardTitle className="nh-panel-title">Approval Timeline</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ApprovalStepper steps={buildApprovalSteps(proposal)} />

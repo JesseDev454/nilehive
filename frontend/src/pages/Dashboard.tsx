@@ -810,7 +810,7 @@ function AdminDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard title="Clubs" value={summary?.total_clubs ?? 0} icon={Users} />
             <StatCard title="Members" value={summary?.total_members ?? 0} icon={UserPlus} />
-            <StatCard title="Admin Reviews" value={pendingAdminCount} icon={Clock} variant="warning" />
+            <StatCard title="Club Services Reviews" value={pendingAdminCount} icon={Clock} variant="warning" />
             <StatCard title="Missing Reports" value={summary?.missing_reports ?? 0} icon={AlertTriangle} variant="destructive" />
           </div>
 
@@ -1065,7 +1065,7 @@ function PolishedAdminDashboard() {
               variant="blue"
             />
             <AdminMetricCard
-              title="Admin Reviews"
+              title="Club Services Reviews"
               value={formatNumber(summary?.pending_admin_proposals)}
               detail="Proposal decisions waiting for Club Services final verification."
               icon={Clock}
@@ -1567,7 +1567,7 @@ function StudentDashboard() {
           <StudentQuickLink title="Find clubs" description="Discover clubs and request to join." to="/membership" icon={UserPlus} />
           <StudentQuickLink title="Approved events" description="See official events and RSVP." to="/events" icon={CalendarDays} />
           <StudentQuickLink title="Announcements" description="Catch updates from clubs and admins." to="/communications" icon={MessageSquare} />
-          <StudentQuickLink title="Notifications" description="Review your latest NileHive alerts." to="/notifications" icon={Bell} />
+          <StudentQuickLink title="Notifications" description="Review your latest Club Services alerts." to="/notifications" icon={Bell} />
         </div>
       </section>
 

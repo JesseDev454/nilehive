@@ -35,7 +35,7 @@ function ProtectedRoutes() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">
-        Loading NileHive...
+        Loading Club Services...
       </div>
     );
   }
