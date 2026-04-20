@@ -147,7 +147,7 @@ export default function ProposalDetail() {
         <NeoStateCard
           icon={FileText}
           title="Proposal access is restricted"
-          message="This proposal detail route is available for club presidents, advisors, and Club Services admins."
+          message="Executives use tasks and approved events. Proposal creation and review belong to presidents, advisors, and Club Services."
         />
       </div>
     );

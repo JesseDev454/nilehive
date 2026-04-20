@@ -2,10 +2,16 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 
 export function AppLayout() {
   const { profile, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  async function handleSignOut() {
+    await signOut();
+    navigate("/login", { replace: true });
+  }
 
   return (
     <SidebarProvider>
@@ -26,7 +32,7 @@ export function AppLayout() {
               <span className="hidden text-xs font-bold text-muted-foreground md:inline">
                 {profile?.full_name ?? "Club Services User"}
               </span>
-              <Button variant="outline" size="sm" onClick={() => signOut()}>
+              <Button variant="outline" size="sm" onClick={handleSignOut}>
                 Logout
               </Button>
             </div>

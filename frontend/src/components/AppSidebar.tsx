@@ -78,7 +78,7 @@ export function AppSidebar() {
     student: studentItems,
   };
 
-  const items = itemsMap[role];
+  const items = role ? itemsMap[role] : [];
 
   return (
     <Sidebar collapsible="icon" className="border-r-2 border-foreground">
@@ -91,7 +91,7 @@ export function AppSidebar() {
             <div>
               <h2 className="text-sm font-black uppercase tracking-[0.16em] text-sidebar-primary">Club Services</h2>
               <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-sidebar-foreground/70">
-                {roleLabels[role]} View
+                {role ? roleLabels[role] : "Loading"} View
               </p>
             </div>
           </div>

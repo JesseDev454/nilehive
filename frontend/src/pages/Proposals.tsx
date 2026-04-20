@@ -115,7 +115,7 @@ export default function Proposals() {
         <NeoStateCard
           icon={FileText}
           title="Proposal access is restricted"
-          message="Use the advisor review queue or your role dashboard for this account."
+          message="Executives use tasks and approved events. Proposal creation and review belong to presidents, advisors, and Club Services."
         />
       ) : isLoading ? (
         <NeoStateCard icon={FileText} title="Loading proposals" message="We are getting the latest proposal records." />

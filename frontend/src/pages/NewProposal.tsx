@@ -457,7 +457,7 @@ export default function NewProposal() {
         <CardContent className="p-10 text-center">
           <h1 className="text-2xl font-bold">Proposal Form 2.0</h1>
           <p className="text-muted-foreground mt-2">
-            Only presidents can create or edit proposals.
+            Club proposals are created and resubmitted by club presidents. Executives use tasks and approved events for their work.
           </p>
         </CardContent>
       </Card>

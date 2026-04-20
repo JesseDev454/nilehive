@@ -4,12 +4,12 @@ import { useAuth } from "@/contexts/AuthContext";
 export type Role = "executive" | "advisor" | "admin" | "president" | "student";
 
 interface RoleContextType {
-  role: Role;
+  role: Role | null;
   setRole: (role: Role) => void;
 }
 
 const RoleContext = createContext<RoleContextType>({
-  role: "executive",
+  role: null,
   setRole: () => {},
 });
 
@@ -17,11 +17,10 @@ export const useRole = () => useContext(RoleContext);
 
 export const RoleProvider = ({ children }: { children: React.ReactNode }) => {
   const { role: authenticatedRole } = useAuth();
-  const role = authenticatedRole ?? "executive";
   const setRole = () => {};
 
   return (
-    <RoleContext.Provider value={{ role, setRole }}>
+    <RoleContext.Provider value={{ role: authenticatedRole, setRole }}>
       {children}
     </RoleContext.Provider>
   );

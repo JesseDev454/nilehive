@@ -8,6 +8,18 @@ import { Label } from "@/components/ui/label";
 import { NhStudentId } from "@/components/NhStudentId";
 import { useAuth } from "@/contexts/AuthContext";
 
+function isRoleSensitivePath(pathname: string) {
+  return (
+    pathname === "/proposals" ||
+    pathname === "/proposals/new" ||
+    pathname.startsWith("/proposals/") ||
+    pathname === "/approvals" ||
+    pathname === "/dues" ||
+    pathname === "/archive" ||
+    pathname === "/user-management"
+  );
+}
+
 export default function Login() {
   const { signIn, session, isLoading } = useAuth();
   const location = useLocation();
@@ -16,7 +28,8 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const redirectTo = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || "/";
+  const requestedRedirect = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || "/";
+  const redirectTo = isRoleSensitivePath(requestedRedirect) ? "/" : requestedRedirect;
 
   if (!isLoading && session) {
     return <Navigate to={redirectTo} replace />;
@@ -164,4 +177,3 @@ export default function Login() {
     </main>
   );
 }
-

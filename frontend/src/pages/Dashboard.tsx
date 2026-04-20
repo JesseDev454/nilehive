@@ -1925,5 +1925,9 @@ export default function Dashboard() {
   if (role === "executive") return <ExecutiveDashboard />;
   if (role === "president") return <PresidentDashboard />;
   if (role === "student") return <StudentDashboard />;
-  return <StudentDashboard />;
+  return (
+    <div className="flex min-h-[50vh] items-center justify-center text-sm text-muted-foreground">
+      Loading your dashboard...
+    </div>
+  );
 }

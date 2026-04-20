@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { SESSION_EXPIRED_EVENT } from "@/lib/api";
 import { getAllowedEmailDomainLabel, isAllowedEmailDomain, isPasswordAuthEnabled } from "@/lib/env";
+import { queryClient } from "@/lib/queryClient";
 import { supabase } from "@/lib/supabase";
 
 export type AppRole = "executive" | "advisor" | "admin" | "president" | "student";
@@ -62,6 +63,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<AppProfile | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const currentUserIdRef = useRef<string | null>(null);
+
+  function clearAuthState() {
+    currentUserIdRef.current = null;
+    queryClient.clear();
+    setSession(null);
+    setProfile(null);
+    setProfileError(null);
+    setIsLoading(false);
+  }
+
+  function prepareForSession(nextSession: Session | null) {
+    const nextUserId = nextSession?.user?.id ?? null;
+    const userChanged = currentUserIdRef.current !== nextUserId;
+
+    if (currentUserIdRef.current && userChanged) {
+      queryClient.clear();
+    }
+
+    currentUserIdRef.current = nextUserId;
+    setSession(nextSession);
+
+    if (userChanged) {
+      setProfile(null);
+      setProfileError(null);
+    }
+  }
 
   async function loadProfileForSession(nextSession: Session | null) {
     if (!nextSession?.user) {
@@ -100,7 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      setSession(currentSession);
+      prepareForSession(currentSession);
 
       await loadProfileForSession(currentSession);
 
@@ -116,16 +144,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription }
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
       setIsLoading(true);
 
       if (!nextSession?.user) {
-        setProfile(null);
-        setProfileError(null);
-        setIsLoading(false);
+        clearAuthState();
         return;
       }
 
+      prepareForSession(nextSession);
       loadProfileForSession(nextSession).finally(() => setIsLoading(false));
     });
 
@@ -136,13 +162,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    function clearAuthState() {
-      setSession(null);
-      setProfile(null);
-      setProfileError(null);
-      setIsLoading(false);
-    }
-
     function handleSessionExpired() {
       clearAuthState();
       void supabase.auth.signOut();
@@ -249,6 +268,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await supabase.auth.signOut();
       },
       async signOut() {
+        clearAuthState();
         await supabase.auth.signOut();
       },
       getAccessToken() {
