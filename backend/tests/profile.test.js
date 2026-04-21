@@ -132,17 +132,17 @@ test("new user can complete student profile onboarding", async (t) => {
       full_name: "New Student",
       student_id: "020303344",
       club_id: "club-1",
-      requested_role: "executive"
+      requested_role: "student"
     }
   );
 
   assert.equal(response.status, 201);
   assert.equal(payload.data.role, "student");
-  assert.equal(payload.data.requested_role, "executive");
+  assert.equal(payload.data.requested_role, "student");
   assert.equal(payload.data.club_id, "club-1");
 });
 
-test("profile onboarding rejects privileged self-service roles", async (t) => {
+test("profile onboarding rejects leadership self-service roles", async (t) => {
   const server = await createTestServer(createFakeDatabase());
   t.after(() => server.close());
 
@@ -154,7 +154,7 @@ test("profile onboarding rejects privileged self-service roles", async (t) => {
       full_name: "New Admin",
       student_id: "242124563",
       club_id: "club-1",
-      requested_role: "admin"
+      requested_role: "executive"
     }
   );
 

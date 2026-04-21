@@ -164,3 +164,33 @@ export function NeoStateCard({
     </div>
   );
 }
+
+export function NeoLoadingState({
+  title = "Loading Club Services",
+  message = "Preparing the latest workspace data.",
+  compact = false
+}: {
+  title?: string;
+  message?: string;
+  compact?: boolean;
+}) {
+  return (
+    <div className={cn("nh-card overflow-hidden bg-background", compact ? "p-5" : "p-8")}>
+      <div className="mb-5 h-3 border-2 border-foreground bg-primary" />
+      <div className="flex flex-col gap-5 md:flex-row md:items-center">
+        <div className="flex gap-2">
+          <span className="h-12 w-5 animate-pulse border-2 border-foreground bg-accent shadow-[3px_3px_0_#181c1e]" />
+          <span className="h-12 w-5 animate-pulse border-2 border-foreground bg-secondary shadow-[3px_3px_0_#181c1e] [animation-delay:140ms]" />
+          <span className="h-12 w-5 animate-pulse border-2 border-foreground bg-primary shadow-[3px_3px_0_#181c1e] [animation-delay:280ms]" />
+        </div>
+        <div>
+          <p className="nh-eyebrow">Please wait</p>
+          <h2 className={cn("font-black uppercase leading-tight", compact ? "text-xl" : "text-2xl md:text-3xl")}>
+            {title}
+          </h2>
+          <p className="mt-2 max-w-xl text-sm text-muted-foreground">{message}</p>
+        </div>
+      </div>
+    </div>
+  );
+}

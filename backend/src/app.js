@@ -8,6 +8,7 @@ const { createCommunicationsRouter } = require("./modules/communications/communi
 const { createDashboardRouter } = require("./modules/dashboard/dashboard.routes");
 const { createDuesRouter } = require("./modules/dues/dues.routes");
 const { createEventsRouter } = require("./modules/events/events.routes");
+const { createLeadershipApplicationsRouter } = require("./modules/leadership-applications/leadership-applications.routes");
 const { createMembersRouter } = require("./modules/members/members.routes");
 const { createMembershipRequestsRouter } = require("./modules/membership-requests/membership-requests.routes");
 const { createNotificationsRouter } = require("./modules/notifications/notifications.routes");
@@ -69,6 +70,7 @@ function createApp(options = {}) {
   app.use("/api/v1/dashboard", createDashboardRouter({ database }));
   app.use("/api/v1/dues", createDuesRouter({ database }));
   app.use("/api/v1/events", createEventsRouter({ database }));
+  app.use("/api/v1/leadership-applications", createLeadershipApplicationsRouter({ database }));
   app.use("/api/v1/members", createMembersRouter({ database }));
   app.use("/api/v1/membership-requests", createMembershipRequestsRouter({ database }));
   app.use("/api/v1/notifications", createNotificationsRouter({ database }));

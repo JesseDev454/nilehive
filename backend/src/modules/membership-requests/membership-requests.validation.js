@@ -1,6 +1,6 @@
 const ApiError = require("../../shared/ApiError");
 
-const REQUESTED_MEMBER_ROLES = new Set(["member", "executive", "president"]);
+const REQUESTED_MEMBER_ROLES = new Set(["member"]);
 const REQUEST_STATUSES = new Set(["pending", "approved_pending_dues", "active", "rejected", "cancelled"]);
 
 function readString(payload, fieldName) {
@@ -39,7 +39,7 @@ function validateCreateMembershipRequestPayload(payload = {}) {
   const requestedRole = readOptionalString(payload, "requested_role") || "member";
 
   if (!REQUESTED_MEMBER_ROLES.has(requestedRole)) {
-    throw new ApiError(400, "requested_role is invalid", "VALIDATION_ERROR", {
+    throw new ApiError(400, "Membership requests are only for ordinary club membership. Use leadership applications for executive or president roles.", "VALIDATION_ERROR", {
       field: "requested_role"
     });
   }

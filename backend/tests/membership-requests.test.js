@@ -104,7 +104,7 @@ test("student can create a membership request", async () => {
     },
     payload: {
       club_id: "club-1",
-      requested_role: "executive",
+      requested_role: "member",
       remarks: "I want to help run events."
     },
     database: fakeDatabase
@@ -112,7 +112,39 @@ test("student can create a membership request", async () => {
 
   assert.equal(createdRequest.profile_id, "student-1");
   assert.equal(createdRequest.status, "pending");
-  assert.equal(request.requested_role, "executive");
+  assert.equal(request.requested_role, "member");
+});
+
+test("membership request creation rejects leadership roles", async () => {
+  const fakeDatabase = {
+    async getClubById() {
+      return { id: "club-1", name: "Nile Innovators Club" };
+    },
+    async getClubMemberByProfileAndClub() {
+      return null;
+    },
+    async getOpenMembershipRequest() {
+      return null;
+    }
+  };
+
+  await assert.rejects(
+    () =>
+      createMembershipRequest({
+        actor: {
+          id: "student-1",
+          role: "student",
+          clubId: "club-1"
+        },
+        payload: {
+          club_id: "club-1",
+          requested_role: "executive",
+          remarks: "I want to help run events."
+        },
+        database: fakeDatabase
+      }),
+    (error) => error.statusCode === 400 && error.code === "VALIDATION_ERROR"
+  );
 });
 
 test("president approval creates inactive member and unpaid dues record", async () => {
