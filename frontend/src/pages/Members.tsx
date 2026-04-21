@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Users } from "lucide-react";
-import { NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -450,7 +450,7 @@ export default function Members() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading members...</p>
+            <NeoLoadingState title="Loading member database" message="We are organizing club member records." compact />
           ) : isError ? (
             <div className="nh-empty border-destructive bg-destructive/5">
               <p className="font-medium">Unable to load members</p>

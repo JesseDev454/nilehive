@@ -275,9 +275,9 @@ function DuesConfirmationCard({
         </p>
       </div>
 
-      <div className="rounded-xl bg-white p-4 shadow-sm">
+      <div className="nh-card-soft p-4">
         {isLoadingSettings ? (
-          <p className="text-muted-foreground">Loading payment details...</p>
+          <NeoLoadingState title="Loading payment details" message="We are checking the club bank instructions." compact />
         ) : settings ? (
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
@@ -471,7 +471,7 @@ function StudentMembershipView() {
 
   return (
     <div className="space-y-6 animate-slide-up">
-      <div className="rounded-3xl bg-gradient-to-br from-[#000d27] via-[#003a70] to-[#0b6b3a] p-6 text-white shadow-lg">
+      <div className="border-2 border-foreground bg-[#000d27] p-6 text-white shadow-[8px_8px_0_hsl(var(--foreground))]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <Badge className="mb-3 bg-white/15 text-white hover:bg-white/15">Student Membership</Badge>
@@ -480,7 +480,7 @@ function StudentMembershipView() {
               Request to join a Nile University club. You become an official member only after your request is approved and dues are verified.
             </p>
           </div>
-          <div className="rounded-2xl bg-white/10 p-4">
+          <div className="border-2 border-white/25 bg-white/10 p-4">
             <p className="text-xs uppercase tracking-wide text-white/60">Signed in as</p>
             <p className="font-semibold">{profile?.full_name || "Student"}</p>
             <p className="text-sm text-white/70">{profile?.student_id || "University ID not set"}</p>
@@ -504,7 +504,7 @@ function StudentMembershipView() {
               <p className="mt-1 text-sm text-muted-foreground">{getErrorMessage(requestsError)}</p>
             </div>
           ) : myRequests.length === 0 ? (
-            <div className="rounded-2xl border border-dashed p-8 text-center">
+            <div className="nh-empty">
               <UserPlus className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
               <p className="font-medium">No membership request yet</p>
               <p className="mt-1 text-sm text-muted-foreground">Choose a club below and submit your first request.</p>
@@ -512,7 +512,7 @@ function StudentMembershipView() {
           ) : (
             <div className="grid gap-4 lg:grid-cols-2">
               {myRequests.map((request) => (
-                <div key={request.id} className="rounded-2xl border bg-card p-4">
+                <div key={request.id} className="nh-list-card">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <p className="font-semibold">{getClubName(request.club_id, clubs, request)}</p>
@@ -523,11 +523,11 @@ function StudentMembershipView() {
                     <MembershipStatusBadge status={request.status} />
                   </div>
                   <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-                    <div className="rounded-xl bg-muted/60 p-3">
+                    <div className="nh-card-soft p-3">
                       <p className="text-xs uppercase tracking-wide text-muted-foreground">Submitted</p>
                       <p className="font-medium">{formatDate(request.created_at)}</p>
                     </div>
-                    <div className="rounded-xl bg-muted/60 p-3">
+                    <div className="nh-card-soft p-3">
                       <p className="text-xs uppercase tracking-wide text-muted-foreground">Dues</p>
                       <p className="font-medium">{request.dues_amount ? formatCurrency(request.dues_amount) : "Not set yet"}</p>
                     </div>
@@ -536,7 +536,7 @@ function StudentMembershipView() {
                     <DuesConfirmationCard request={request} payment={paymentById.get(request.due_payment_id || "")} />
                   ) : null}
                   {request.decision_remarks ? (
-                    <p className="mt-4 rounded-xl bg-muted p-3 text-sm text-muted-foreground">
+                    <p className="mt-4 border-2 border-foreground bg-muted p-3 text-sm text-muted-foreground">
                       {request.decision_remarks}
                     </p>
                   ) : null}
@@ -588,7 +588,7 @@ function StudentMembershipView() {
 
             return (
               <Card key={club.id} className="overflow-hidden">
-                <CardHeader className="bg-gradient-to-br from-primary/10 to-success/10">
+                <CardHeader className="border-b-2 border-foreground bg-primary/10">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <CardTitle className="text-lg">{club.name}</CardTitle>

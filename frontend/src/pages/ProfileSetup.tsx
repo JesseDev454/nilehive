@@ -96,7 +96,7 @@ export default function ProfileSetup() {
       <section className="relative z-10 mx-auto grid min-h-[calc(100vh-6rem)] w-full max-w-5xl items-center gap-10 lg:grid-cols-12">
         <div className="space-y-6 lg:col-span-5">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0b2347] text-white">
+            <div className="flex h-11 w-11 items-center justify-center border-2 border-foreground bg-[#0b2347] text-white shadow-[3px_3px_0_hsl(var(--foreground))]">
               <Network className="h-5 w-5" />
             </div>
             <span className="text-2xl font-extrabold tracking-tight text-[#000d27]">Club Services</span>
@@ -114,13 +114,13 @@ export default function ProfileSetup() {
             </p>
           </div>
           {profileError && (
-            <Card className="border-0 bg-[#ffdad6] shadow-sm">
+            <Card className="bg-[#ffdad6]">
               <CardContent className="p-5 text-sm font-medium text-[#93000a]">
                 {profileError}
               </CardContent>
             </Card>
           )}
-          <Card className="border-0 bg-white/80 shadow-sm">
+          <Card className="bg-white/80">
             <CardContent className="flex gap-3 p-5 text-sm text-[#44474e]">
               <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#299e5c]" />
               <p>
@@ -133,7 +133,7 @@ export default function ProfileSetup() {
 
         <div className="lg:col-span-7">
           <form
-            className="relative overflow-hidden rounded-[2.25rem] bg-white p-7 shadow-[0_4px_30px_rgba(11,35,71,0.08)] md:p-10"
+            className="relative overflow-hidden border-2 border-foreground bg-white p-7 shadow-[8px_8px_0_hsl(var(--foreground))] md:p-10"
             onSubmit={handleSubmit}
           >
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -141,7 +141,7 @@ export default function ProfileSetup() {
                 <Label htmlFor="profile-full-name">Full Name</Label>
                 <Input
                   id="profile-full-name"
-                  className="rounded-2xl border-0 bg-[#f1f4f7] px-5 py-6"
+                  className="border-2 border-foreground bg-[#f1f4f7] px-5 py-6"
                   value={fullName}
                   onChange={(event) => setFullName(event.target.value)}
                   required
@@ -160,7 +160,7 @@ export default function ProfileSetup() {
 
               <div className="space-y-2">
                 <Label>Starting Access</Label>
-                <div className="rounded-2xl bg-[#f1f4f7] px-5 py-4 text-sm font-bold text-[#000d27]">
+                <div className="border-2 border-foreground bg-[#f1f4f7] px-5 py-4 text-sm font-bold text-[#000d27]">
                   Student
                 </div>
                 <p className="text-xs text-[#44474e]">
@@ -171,7 +171,7 @@ export default function ProfileSetup() {
               <div className="space-y-2 md:col-span-2">
                 <Label>Club</Label>
                 <Select disabled={isLoadingClubs} value={clubId} onValueChange={setClubId}>
-                  <SelectTrigger className="rounded-2xl border-0 bg-[#f1f4f7] py-6">
+                  <SelectTrigger className="border-2 border-foreground bg-[#f1f4f7] py-6">
                     <SelectValue placeholder={isLoadingClubs ? "Loading clubs..." : "Select your club"} />
                   </SelectTrigger>
                   <SelectContent>
@@ -187,14 +187,14 @@ export default function ProfileSetup() {
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <Button
-                className="h-12 flex-1 rounded-2xl bg-[#0d5bbc] font-bold text-white hover:bg-[#004493]"
+                className="h-12 flex-1 bg-[#0d5bbc] font-bold text-white hover:bg-[#004493]"
                 disabled={isSubmitting}
                 type="submit"
               >
                 {isSubmitting ? "Saving profile..." : "Complete Profile"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
-              <Button className="h-12 rounded-2xl" type="button" variant="outline" onClick={signOut}>
+              <Button className="h-12" type="button" variant="outline" onClick={signOut}>
                 Sign out
               </Button>
             </div>

@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { NeoEmptyState, NeoErrorState, NeoLoadingState } from "@/components/NeoBrutal";
 import {
   ApiClientError,
   getAdminOperationsDashboard,
@@ -135,19 +136,14 @@ function ProposalListState({
   emptyMessage?: string;
 }) {
   if (isLoading) {
-    return <p className="text-sm text-muted-foreground">Loading proposals...</p>;
+    return <NeoLoadingState title="Loading proposal records" message="We are checking the latest workflow state." compact />;
   }
 
   if (isError) {
-    return (
-      <div className="space-y-2">
-        <p className="font-medium">Unable to load proposals</p>
-        <p className="text-sm text-muted-foreground">{getErrorMessage(error)}</p>
-      </div>
-    );
+    return <NeoErrorState title="Unable to load proposals" message={getErrorMessage(error)} />;
   }
 
-  return <p className="text-sm text-muted-foreground">{emptyMessage || "No proposals found yet."}</p>;
+  return <NeoEmptyState title="No proposals found yet" message={emptyMessage || "Proposal records will appear here once work starts."} />;
 }
 
 function ProposalSummaryList({
@@ -235,10 +231,10 @@ function AdminActivityList({
   };
 
   return (
-    <div className="relative space-y-5 before:absolute before:left-4 before:top-2 before:bottom-2 before:w-px before:bg-border">
+    <div className="relative space-y-5 before:absolute before:bottom-2 before:left-4 before:top-2 before:w-0.5 before:bg-foreground">
       {activity.slice(0, 6).map((item) => (
         <div key={item.id} className="relative flex items-start gap-3 pl-10">
-          <div className="absolute left-0 top-0 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
+          <div className="absolute left-0 top-0 z-10 flex h-8 w-8 items-center justify-center border-2 border-foreground bg-primary text-primary-foreground shadow-[2px_2px_0_hsl(var(--foreground))]">
             {(() => {
               const Icon = activityIcons[item.type] || Activity;
               return <Icon className="h-4 w-4" />;
@@ -335,7 +331,7 @@ function AdminMetricCard({
   };
 
   return (
-    <Card className="overflow-hidden border-0 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+    <Card className="overflow-hidden transition-all hover:-translate-y-0.5">
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -343,7 +339,7 @@ function AdminMetricCard({
             <p className="mt-3 text-3xl font-black tracking-tight text-primary">{value}</p>
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{detail}</p>
           </div>
-          <div className={`rounded-2xl p-3 ${variants[variant]}`}>
+          <div className={`border-2 border-foreground p-3 shadow-[3px_3px_0_hsl(var(--foreground))] ${variants[variant]}`}>
             <Icon className="h-5 w-5" />
           </div>
         </div>
@@ -354,18 +350,10 @@ function AdminMetricCard({
 
 function AdminLoadingSkeleton() {
   return (
-    <div className="space-y-6 animate-pulse">
-      <div className="h-40 rounded-[2rem] bg-muted" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="h-32 rounded-2xl bg-muted" />
-        ))}
-      </div>
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="xl:col-span-2 h-80 rounded-2xl bg-muted" />
-        <div className="h-80 rounded-2xl bg-muted" />
-      </div>
-    </div>
+    <NeoLoadingState
+      title="Loading Club Services controls"
+      message="We are preparing dashboards, queues, dues records, and club health data."
+    />
   );
 }
 
@@ -381,9 +369,9 @@ function AdminEmptyState({
   action?: { label: string; to: string };
 }) {
   return (
-    <div className="rounded-2xl bg-muted/60 p-6 text-center">
+    <div className="nh-empty">
       <Icon className="mx-auto h-8 w-8 text-muted-foreground" />
-      <p className="mt-3 font-semibold">{title}</p>
+      <p className="mt-3 font-black uppercase">{title}</p>
       <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">{message}</p>
       {action ? (
         <Button asChild variant="outline" size="sm" className="mt-4">
@@ -398,13 +386,13 @@ function AssignedTasksProgressCard({ total, completed }: { total: number; comple
   const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   return (
-    <Card className="animate-fade-in border-border shadow-sm transition-all hover:border-secondary/20">
+    <Card className="animate-fade-in transition-all hover:-translate-y-0.5">
       <CardContent className="p-5">
         <div className="mb-4 flex items-start justify-between">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/10 text-secondary">
+          <div className="flex h-10 w-10 items-center justify-center border-2 border-foreground bg-secondary/10 text-secondary shadow-[3px_3px_0_hsl(var(--foreground))]">
             <ListChecks className="h-6 w-6" />
           </div>
-          <div className="rounded-full bg-success/15 px-2 py-1 text-[10px] font-black uppercase tracking-tight text-success">
+          <div className="border-2 border-foreground bg-success/15 px-2 py-1 text-[10px] font-black uppercase tracking-tight text-success">
             Active
           </div>
         </div>
@@ -412,7 +400,7 @@ function AssignedTasksProgressCard({ total, completed }: { total: number; comple
         <h3 className="mt-1 text-2xl font-bold text-primary">
           {completed} <span className="text-sm font-normal text-muted-foreground">/ {total}</span>
         </h3>
-        <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-secondary/15">
+        <div className="mt-4 h-1.5 w-full overflow-hidden border border-foreground bg-secondary/15">
           <div className="h-full bg-secondary transition-all duration-500 ease-in-out" style={{ width: `${percentage}%` }} />
         </div>
       </CardContent>
@@ -422,13 +410,13 @@ function AssignedTasksProgressCard({ total, completed }: { total: number; comple
 
 function PendingTasksCard({ value }: { value: number }) {
   return (
-    <Card className="animate-fade-in border-border shadow-sm transition-all hover:border-warning/20">
+    <Card className="animate-fade-in transition-all hover:-translate-y-0.5">
       <CardContent className="flex h-full flex-col p-5">
         <div className="mb-4 flex items-start justify-between">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-warning/15 text-warning">
+          <div className="flex h-10 w-10 items-center justify-center border-2 border-foreground bg-warning/15 text-warning shadow-[3px_3px_0_hsl(var(--foreground))]">
             <Clock className="h-6 w-6" />
           </div>
-          <div className="rounded-full bg-warning/15 px-2 py-1 text-[10px] font-black uppercase tracking-tight text-warning">
+          <div className="border-2 border-foreground bg-warning/15 px-2 py-1 text-[10px] font-black uppercase tracking-tight text-warning">
             Open
           </div>
         </div>
@@ -448,18 +436,18 @@ function InProgressTasksCard({ total, inProgress }: { total: number; inProgress:
   const percentage = total > 0 ? Math.round((inProgress / total) * 100) : 0;
 
   return (
-    <Card className="h-full animate-fade-in border-border shadow-sm transition-all hover:border-primary/20">
+    <Card className="h-full animate-fade-in transition-all hover:-translate-y-0.5">
       <CardContent className="flex h-full flex-col justify-between p-5">
         <div>
           <div className="mb-4 flex items-start justify-between">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <div className="flex h-10 w-10 items-center justify-center border-2 border-foreground bg-primary/10 text-primary shadow-[3px_3px_0_hsl(var(--foreground))]">
               <TrendingUp className="h-6 w-6" />
             </div>
           </div>
           <p className="text-sm font-medium text-muted-foreground">In Progress</p>
           <h3 className="mt-1 text-2xl font-bold text-primary">{percentage}%</h3>
         </div>
-        <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-primary/10">
+        <div className="mt-4 h-1.5 w-full overflow-hidden border border-foreground bg-primary/10">
           <div className="h-full bg-primary transition-all duration-500 ease-in-out" style={{ width: `${percentage}%` }} />
         </div>
       </CardContent>
@@ -471,11 +459,11 @@ function CompletedTasksProgressCard({ total, completed }: { total: number; compl
   const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   return (
-    <Card className="h-full animate-fade-in border-border shadow-sm transition-all hover:border-success/20">
+    <Card className="h-full animate-fade-in transition-all hover:-translate-y-0.5">
       <CardContent className="flex h-full flex-col justify-between p-5">
         <div>
           <div className="mb-4 flex items-start justify-between">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-success/15 text-success">
+            <div className="flex h-10 w-10 items-center justify-center border-2 border-foreground bg-success/15 text-success shadow-[3px_3px_0_hsl(var(--foreground))]">
               <CheckCircle className="h-6 w-6" />
             </div>
           </div>
@@ -485,7 +473,7 @@ function CompletedTasksProgressCard({ total, completed }: { total: number; compl
             {completed} {completed === 1 ? "task" : "tasks"} out of {total} {total === 1 ? "task" : "tasks"} completed
           </p>
         </div>
-        <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-success/15">
+        <div className="mt-4 h-1.5 w-full overflow-hidden border border-foreground bg-success/15">
           <div className="h-full bg-success transition-all duration-500 ease-in-out" style={{ width: `${percentage}%` }} />
         </div>
       </CardContent>
@@ -503,10 +491,10 @@ function UpcomingEventsCard({ events }: { events: ApprovedEventRecord[] }) {
     : null;
 
   return (
-    <Card className="h-full animate-fade-in border-border shadow-sm transition-all hover:border-secondary/20">
+    <Card className="h-full animate-fade-in transition-all hover:-translate-y-0.5">
       <CardContent className="flex h-full flex-col p-5">
         <div className="mb-4 flex items-start justify-between">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <div className="flex h-10 w-10 items-center justify-center border-2 border-foreground bg-primary/10 text-primary shadow-[3px_3px_0_hsl(var(--foreground))]">
             <CalendarDays className="h-6 w-6" />
           </div>
         </div>
@@ -600,8 +588,8 @@ function ExecutiveDashboard() {
 
   return (
     <div className="space-y-6 animate-slide-up">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-[#0b2347] p-8 text-white shadow-xl">
-        <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-warning opacity-20 blur-3xl" />
+      <div className="relative overflow-hidden border-2 border-foreground bg-primary p-8 text-primary-foreground shadow-[8px_8px_0_hsl(var(--foreground))]">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 border-2 border-primary-foreground/20 bg-warning opacity-20" />
         <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div>
             <h1 className="mb-2 text-3xl font-black tracking-tight">Executive Dashboard</h1>
@@ -612,17 +600,13 @@ function ExecutiveDashboard() {
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
-            <Button
-              asChild
-              variant="outline"
-              className="rounded-xl border-transparent bg-white px-6 py-6 font-bold text-primary shadow-sm transition-transform hover:-translate-y-0.5 hover:bg-white/90"
-            >
+            <Button asChild variant="secondary" className="px-6 py-6 font-bold">
               <Link to="/events">
                 <CalendarDays className="mr-2 h-5 w-5" />
                 View Events
               </Link>
             </Button>
-            <Button asChild className="rounded-xl bg-secondary px-6 py-6 font-bold text-white shadow-sm hover:bg-secondary/90">
+            <Button asChild className="px-6 py-6 font-bold">
               <Link to="/tasks">
                 <ClipboardList className="mr-2 h-5 w-5" />
                 Open Tasks
@@ -650,7 +634,7 @@ function ExecutiveDashboard() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <p className="text-sm text-muted-foreground">Loading tasks...</p>
+              <NeoLoadingState title="Preparing task board" message="We are loading assigned work." compact />
             ) : isError ? (
               <div className="space-y-2">
                 <p className="font-medium">Unable to load tasks</p>
@@ -661,7 +645,7 @@ function ExecutiveDashboard() {
             ) : (
               <div className="space-y-3">
                 {prioritizedTasks.map((task) => (
-                  <div key={task.id} className="rounded-lg border p-3">
+                  <div key={task.id} className="nh-list-card">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-sm font-medium">{task.title}</p>
@@ -708,12 +692,12 @@ function ExecutiveDashboard() {
         </CardHeader>
         <CardContent className="space-y-3">
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading notifications...</p>
+            <NeoLoadingState title="Loading notifications" message="We are checking your latest updates." compact />
           ) : notifications.length === 0 ? (
             <p className="text-sm text-muted-foreground">No notifications yet.</p>
           ) : (
             notifications.slice(0, 5).map((notification) => (
-              <div key={notification.id} className="rounded-lg bg-muted/70 p-3">
+              <div key={notification.id} className="nh-list-card">
                 <p className="text-sm font-medium">{notification.message}</p>
                 <p className="text-xs text-muted-foreground mt-1">{getDateLabel(notification.created_at)}</p>
               </div>
@@ -748,7 +732,7 @@ function AdvisorDashboard() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading advisor queue...</p>
+            <NeoLoadingState title="Loading advisor review queue" message="We are getting proposals assigned to your club." compact />
           ) : isError ? (
             <div className="space-y-2">
               <p className="font-medium">Unable to load advisor queue</p>
@@ -761,7 +745,7 @@ function AdvisorDashboard() {
           ) : (
             <div className="space-y-3">
               {pending.slice(0, 4).map((proposal) => (
-                <div key={proposal.id} className="flex items-center justify-between p-3 rounded-lg gap-3">
+                <div key={proposal.id} className="nh-list-card flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-sm font-medium truncate">{proposal.title}</p>
                     <p className="text-xs text-muted-foreground">
@@ -831,13 +815,13 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading operations queue...</p>
+                  <NeoLoadingState title="Loading operations queue" message="We are checking pending Club Services actions." compact />
                 ) : !dashboard?.pending_actions.length ? (
                   <p className="text-sm text-muted-foreground">No pending operational actions right now.</p>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {dashboard.pending_actions.map((action) => (
-                      <div key={action.type} className="rounded-xl border bg-card p-4">
+                      <div key={action.type} className="nh-list-card">
                         <p className="text-2xl font-bold">{action.count}</p>
                         <p className="text-sm text-muted-foreground mt-1">{action.label}</p>
                       </div>
@@ -853,7 +837,7 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading proposal states...</p>
+                  <NeoLoadingState title="Loading proposal states" message="We are checking workflow bottlenecks." compact />
                 ) : (
                   <div className="space-y-3">
                     {dashboard?.proposal_bottlenecks.map((item) => (
@@ -875,13 +859,13 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading club performance...</p>
+                  <NeoLoadingState title="Loading club performance" message="We are calculating club activity health." compact />
                 ) : !dashboard?.club_performance.length ? (
                   <p className="text-sm text-muted-foreground">No club records available yet.</p>
                 ) : (
                   <div className="space-y-3">
                     {dashboard.club_performance.slice(0, 6).map((club) => (
-                      <div key={club.club_id} className="rounded-xl border p-4">
+                      <div key={club.club_id} className="nh-list-card">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                           <div>
                             <p className="font-semibold">{club.club_name}</p>
@@ -921,18 +905,18 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {isLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading snapshot...</p>
+                  <NeoLoadingState title="Loading institution snapshot" message="We are preparing the latest totals." compact />
                 ) : (
                   <>
-                    <div className="rounded-lg bg-muted p-3">
+                    <div className="nh-card-soft p-3">
                       <p className="text-xs text-muted-foreground">Dues collected</p>
                       <p className="text-xl font-bold">{formatCurrency(summary?.dues_collected_amount)}</p>
                     </div>
-                    <div className="rounded-lg bg-muted p-3">
+                    <div className="nh-card-soft p-3">
                       <p className="text-xs text-muted-foreground">Attendance rate</p>
                       <p className="text-xl font-bold">{formatNumber(summary?.attendance_rate)}%</p>
                     </div>
-                    <div className="rounded-lg bg-muted p-3">
+                    <div className="nh-card-soft p-3">
                       <p className="text-xs text-muted-foreground">Feedback received</p>
                       <p className="text-xl font-bold">{formatNumber(summary?.feedback_count)}</p>
                     </div>
@@ -952,14 +936,14 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <p className="text-sm text-muted-foreground">Checking report gaps...</p>
+                  <NeoLoadingState title="Checking report gaps" message="We are finding approved events that need documentation." compact />
                 ) : !dashboard?.missing_reports.length ? (
                   <p className="text-sm text-muted-foreground">No past approved events are missing reports.</p>
                 ) : (
                   <div className="space-y-3">
                     {dashboard.missing_reports.map((report) => (
                       <Link key={report.proposal_id} to={`/proposals/${report.proposal_id}`} className="block">
-                        <div className="rounded-lg border p-3 hover:bg-accent transition-colors">
+                        <div className="nh-list-card transition-colors hover:bg-accent">
                           <p className="text-sm font-medium">{report.title}</p>
                           <p className="text-xs text-muted-foreground mt-1">
                             Event {getDateLabel(report.event_date)} - {report.days_since_event} day(s) overdue
@@ -978,7 +962,7 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading recent activity...</p>
+                  <NeoLoadingState title="Loading recent movement" message="We are checking the latest operations activity." compact />
                 ) : !dashboard?.recent_activity.length ? (
                   <p className="text-sm text-muted-foreground">No recent operations activity yet.</p>
                 ) : (
@@ -1010,9 +994,9 @@ function PolishedAdminDashboard() {
 
   return (
     <div className="space-y-7 animate-slide-up">
-      <section className="relative overflow-hidden rounded-[2rem] bg-primary p-6 text-primary-foreground shadow-xl md:p-8">
-        <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-warning/20 blur-3xl" />
-        <div className="absolute bottom-0 right-10 h-24 w-24 rounded-full bg-success/10 blur-2xl" />
+      <section className="relative overflow-hidden border-2 border-foreground bg-primary p-6 text-primary-foreground shadow-[8px_8px_0_hsl(var(--foreground))] md:p-8">
+        <div className="absolute -right-16 -top-16 h-48 w-48 border-2 border-primary-foreground/20 bg-warning/20" />
+        <div className="absolute bottom-0 right-10 h-24 w-24 border-2 border-primary-foreground/10 bg-success/10" />
         <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white/80">
@@ -1026,15 +1010,15 @@ function PolishedAdminDashboard() {
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3 lg:min-w-[420px]">
-            <div className="rounded-2xl bg-white/10 p-4 backdrop-blur">
+            <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
               <p className="text-xs text-white/60">Needs attention</p>
               <p className="mt-2 text-2xl font-black">{formatNumber(totalPending)}</p>
             </div>
-            <div className="rounded-2xl bg-white/10 p-4 backdrop-blur">
+            <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
               <p className="text-xs text-white/60">Attendance rate</p>
               <p className="mt-2 text-2xl font-black">{formatNumber(summary?.attendance_rate)}%</p>
             </div>
-            <div className="col-span-2 rounded-2xl bg-white/10 p-4 backdrop-blur sm:col-span-1">
+            <div className="col-span-2 border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4 sm:col-span-1">
               <p className="text-xs text-white/60">Dues collected</p>
               <p className="mt-2 text-2xl font-black">{formatCurrency(summary?.dues_collected_amount)}</p>
             </div>
@@ -1088,7 +1072,7 @@ function PolishedAdminDashboard() {
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            <Card className="xl:col-span-2 border-0 shadow-sm">
+            <Card className="xl:col-span-2">
               <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle className="text-lg">What needs attention</CardTitle>
@@ -1114,9 +1098,9 @@ function PolishedAdminDashboard() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {dashboard.pending_actions.map((action) => (
                       <Link key={action.type} to={getAdminActionLink(action.type)} className="group block">
-                        <div className="flex items-center justify-between gap-4 rounded-2xl bg-muted/60 p-4 transition-all hover:-translate-y-0.5 hover:bg-accent hover:shadow-sm">
+                        <div className="nh-list-card flex items-center justify-between gap-4 transition-all hover:-translate-y-0.5 hover:bg-accent">
                           <div className="flex items-center gap-4">
-                            <div className="rounded-2xl bg-background p-3 text-primary shadow-sm">
+                            <div className="border-2 border-foreground bg-background p-3 text-primary shadow-[3px_3px_0_hsl(var(--foreground))]">
                               {(() => {
                                 const Icon = getAdminActionIcon(action.type);
                                 return <Icon className="h-5 w-5" />;
@@ -1139,7 +1123,7 @@ function PolishedAdminDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-sm">
+            <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Proposal bottlenecks</CardTitle>
                 <p className="text-sm text-muted-foreground">Where proposals are sitting right now.</p>
@@ -1153,9 +1137,9 @@ function PolishedAdminDashboard() {
                           <StatusBadge status={item.status} />
                           <span className="text-sm font-semibold">{item.count}</span>
                         </div>
-                        <div className="h-2 overflow-hidden rounded-full bg-muted">
+                        <div className="h-2 overflow-hidden border border-foreground bg-muted">
                           <div
-                            className="h-full rounded-full bg-primary"
+                            className="h-full bg-primary"
                             style={{
                               width: `${totalProposalBottlenecks > 0 ? Math.max(6, (item.count / totalProposalBottlenecks) * 100) : 0}%`
                             }}
@@ -1176,7 +1160,7 @@ function PolishedAdminDashboard() {
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            <Card className="xl:col-span-2 overflow-hidden border-0 shadow-sm">
+            <Card className="xl:col-span-2 overflow-hidden">
               <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle className="text-lg">Club performance matrix</CardTitle>
@@ -1272,13 +1256,13 @@ function PolishedAdminDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-sm">
+            <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Institution snapshot</CardTitle>
                 <p className="text-sm text-muted-foreground">Numbers that help you sense the system at a glance.</p>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="rounded-2xl bg-muted/70 p-4">
+                <div className="nh-card-soft p-4">
                   <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                     <Banknote className="h-4 w-4" />
                     Dues collected
@@ -1286,7 +1270,7 @@ function PolishedAdminDashboard() {
                   <p className="text-2xl font-black text-primary">{formatCurrency(summary?.dues_collected_amount)}</p>
                   <p className="mt-1 text-xs text-muted-foreground">Across all tracked club payment records.</p>
                 </div>
-                <div className="rounded-2xl bg-muted/70 p-4">
+                <div className="nh-card-soft p-4">
                   <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                     <TrendingUp className="h-4 w-4" />
                     Attendance health
@@ -1296,7 +1280,7 @@ function PolishedAdminDashboard() {
                     {formatNumber(summary?.event_attendance_count)} attendance marks from {formatNumber(summary?.event_rsvp_count)} RSVP records.
                   </p>
                 </div>
-                <div className="rounded-2xl bg-muted/70 p-4">
+                <div className="nh-card-soft p-4">
                   <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                     <MessageSquare className="h-4 w-4" />
                     Student feedback
@@ -1309,7 +1293,7 @@ function PolishedAdminDashboard() {
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <Card className="overflow-hidden border-0 bg-primary text-primary-foreground shadow-xl">
+            <Card className="overflow-hidden bg-primary text-primary-foreground">
               <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle className="text-lg text-primary-foreground">Reports to chase</CardTitle>
@@ -1323,7 +1307,7 @@ function PolishedAdminDashboard() {
               </CardHeader>
               <CardContent>
                 {!dashboard?.missing_reports.length ? (
-                  <div className="rounded-2xl bg-white/10 p-6 text-center">
+                  <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-6 text-center">
                     <CheckCircle className="mx-auto h-8 w-8 text-success" />
                     <p className="mt-3 font-semibold">No missing reports right now</p>
                     <p className="mt-1 text-sm text-primary-foreground/70">
@@ -1334,7 +1318,7 @@ function PolishedAdminDashboard() {
                   <div className="space-y-3">
                     {dashboard.missing_reports.map((report) => (
                       <Link key={report.proposal_id} to={`/proposals/${report.proposal_id}`} className="block">
-                        <div className="rounded-2xl bg-white/10 p-4 transition-colors hover:bg-white/15">
+                        <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4 transition-colors hover:bg-primary-foreground/15">
                           <div className="flex items-start justify-between gap-3">
                             <div>
                               <p className="font-semibold">{report.title}</p>
@@ -1342,7 +1326,7 @@ function PolishedAdminDashboard() {
                                 Event date {getDateLabel(report.event_date)}
                               </p>
                             </div>
-                            <span className="rounded-full bg-destructive px-2.5 py-1 text-xs font-bold text-destructive-foreground">
+                            <span className="border-2 border-foreground bg-destructive px-2.5 py-1 text-xs font-bold text-destructive-foreground">
                               {report.days_since_event}d overdue
                             </span>
                           </div>
@@ -1354,7 +1338,7 @@ function PolishedAdminDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="border-0 shadow-sm">
+            <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="text-lg">Recent movement</CardTitle>
@@ -1416,8 +1400,8 @@ function StudentQuickLink({
 }) {
   return (
     <Link to={to} className="group block">
-      <div className="flex h-full items-start gap-4 rounded-2xl bg-white/10 p-4 text-primary-foreground backdrop-blur transition-all hover:-translate-y-0.5 hover:bg-white/15">
-        <div className="rounded-2xl bg-white/15 p-3">
+      <div className="flex h-full items-start gap-4 border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4 text-primary-foreground transition-all hover:-translate-y-0.5 hover:bg-primary-foreground/15">
+        <div className="border-2 border-primary-foreground/25 bg-primary-foreground/15 p-3">
           <Icon className="h-5 w-5" />
         </div>
         <div className="min-w-0">
@@ -1439,7 +1423,7 @@ function StudentEventCard({
 }) {
   return (
     <Link to="/events" className="block">
-      <div className="rounded-2xl border bg-card p-4 transition-all hover:-translate-y-0.5 hover:bg-accent hover:shadow-sm">
+      <div className="nh-list-card transition-all hover:-translate-y-0.5 hover:bg-accent">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="font-semibold">{event.title}</p>
@@ -1461,7 +1445,7 @@ function StudentEventCard({
             {event.location || "Venue TBC"}
           </span>
         </div>
-        <div className="mt-4 flex items-center justify-between gap-3 rounded-xl bg-muted/70 p-3">
+        <div className="mt-4 flex items-center justify-between gap-3 border-2 border-foreground bg-muted/70 p-3">
           <p className="text-xs text-muted-foreground">Your RSVP</p>
           <Badge variant={rsvp?.status ? "default" : "outline"} className={rsvp?.status ? "capitalize" : ""}>
             {rsvp?.status ? rsvp.status.replace("_", " ") : "Not selected"}
@@ -1547,9 +1531,9 @@ function StudentDashboard() {
 
   return (
     <div className="space-y-7 animate-slide-up">
-      <section className="relative overflow-hidden rounded-[2rem] bg-primary p-6 text-primary-foreground shadow-xl md:p-8">
-        <div className="absolute -right-20 -top-20 h-56 w-56 rounded-full bg-warning/20 blur-3xl" />
-        <div className="absolute -bottom-16 left-1/2 h-40 w-40 rounded-full bg-success/10 blur-3xl" />
+      <section className="relative overflow-hidden border-2 border-foreground bg-primary p-6 text-primary-foreground shadow-[8px_8px_0_hsl(var(--foreground))] md:p-8">
+        <div className="absolute -right-20 -top-20 h-56 w-56 border-2 border-primary-foreground/20 bg-warning/20" />
+        <div className="absolute -bottom-16 left-1/2 h-40 w-40 border-2 border-primary-foreground/10 bg-success/10" />
         <div className="relative grid gap-6 lg:grid-cols-[1.3fr_0.7fr] lg:items-end">
           <div>
             <Badge className="mb-4 bg-white/15 text-white hover:bg-white/15">Student Home</Badge>
@@ -1560,7 +1544,7 @@ function StudentDashboard() {
               Track your club membership, dues, approved events, RSVP choices, and reminders from one simple home base.
             </p>
           </div>
-          <div className="rounded-2xl bg-white/10 p-4 backdrop-blur">
+          <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
             <p className="text-xs uppercase tracking-[0.18em] text-white/60">Student profile</p>
             <p className="mt-2 font-semibold">{profile?.full_name || "Student"}</p>
             <p className="text-sm text-white/70">{profile?.student_id || "Student ID not set"}</p>
@@ -1618,7 +1602,7 @@ function StudentDashboard() {
 
       <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
         <div className="space-y-6">
-          <Card className="border-0 shadow-sm">
+          <Card>
             <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <CardTitle className="text-lg">Membership journey</CardTitle>
@@ -1646,7 +1630,7 @@ function StudentDashboard() {
                     const payment = request.due_payment_id ? duesById.get(request.due_payment_id) : undefined;
 
                     return (
-                      <div key={request.id} className="rounded-2xl border bg-card p-4">
+                      <div key={request.id} className="nh-list-card">
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <p className="font-semibold">{request.club?.name || "Selected club"}</p>
@@ -1655,16 +1639,16 @@ function StudentDashboard() {
                           <MembershipStatusPill status={request.status} />
                         </div>
                         <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
-                          <div className="rounded-xl bg-success/10 p-2 text-success">Submitted</div>
-                          <div className={`rounded-xl p-2 ${request.status === "pending" ? "bg-warning/15 text-warning" : "bg-success/10 text-success"}`}>
+                          <div className="border-2 border-foreground bg-success/10 p-2 text-success">Submitted</div>
+                          <div className={`border-2 border-foreground p-2 ${request.status === "pending" ? "bg-warning/15 text-warning" : "bg-success/10 text-success"}`}>
                             Reviewed
                           </div>
-                          <div className={`rounded-xl p-2 ${request.status === "active" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
+                          <div className={`border-2 border-foreground p-2 ${request.status === "active" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
                             Active
                           </div>
                         </div>
                         {request.status === "approved_pending_dues" ? (
-                          <div className="mt-4 rounded-xl bg-primary/5 p-3 text-sm">
+                          <div className="mt-4 border-2 border-foreground bg-primary/5 p-3 text-sm">
                             <p className="font-medium text-primary">Dues payment is the next step.</p>
                             <p className="mt-1 text-muted-foreground">
                               {request.dues_amount ? formatCurrency(request.dues_amount) : "Dues amount pending"} for {request.academic_session || "this session"}.
@@ -1686,7 +1670,7 @@ function StudentDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-sm">
+          <Card>
             <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <CardTitle className="text-lg">Approved events for you</CardTitle>
@@ -1698,7 +1682,7 @@ function StudentDashboard() {
             </CardHeader>
             <CardContent>
               {eventsLoading ? (
-                <p className="text-sm text-muted-foreground">Loading approved events...</p>
+                <NeoLoadingState title="Loading approved events" message="We are preparing the student event feed." compact />
               ) : upcomingEvents.length === 0 ? (
                 <AdminEmptyState
                   icon={CalendarDays}
@@ -1721,16 +1705,16 @@ function StudentDashboard() {
         </div>
 
         <div className="space-y-6">
-          <Card className="overflow-hidden border-0 bg-primary text-primary-foreground shadow-xl">
+          <Card className="overflow-hidden bg-primary text-primary-foreground">
             <CardHeader>
               <CardTitle className="text-lg text-primary-foreground">Dues and activation</CardTitle>
               <p className="text-sm text-primary-foreground/70">Paying dues is what turns approval into official membership.</p>
             </CardHeader>
             <CardContent>
               {duesLoading ? (
-                <p className="text-sm text-primary-foreground/70">Checking dues records...</p>
+                <NeoLoadingState title="Checking dues records" message="We are checking your membership payment status." compact />
               ) : firstDuesRequest ? (
-                <div className="rounded-2xl bg-white/10 p-4">
+                <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
                   <p className="font-semibold">{firstDuesRequest.club?.name || "Selected club"}</p>
                   <p className="mt-1 text-sm text-primary-foreground/70">
                     {firstDuesRequest.dues_amount ? formatCurrency(firstDuesRequest.dues_amount) : "Dues amount pending"}
@@ -1746,19 +1730,19 @@ function StudentDashboard() {
                   </Button>
                 </div>
               ) : submittedDues.length > 0 ? (
-                <div className="rounded-2xl bg-white/10 p-4">
+                <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
                   <p className="font-semibold">Payment confirmation submitted</p>
                   <p className="mt-1 text-sm text-primary-foreground/70">Your club leadership or admin can now verify it.</p>
                 </div>
               ) : (
-                <div className="rounded-2xl bg-white/10 p-4 text-sm text-primary-foreground/75">
+                <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4 text-sm text-primary-foreground/75">
                   No dues action is waiting from you right now.
                 </div>
               )}
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-sm">
+          <Card>
             <CardHeader>
               <CardTitle className="text-lg">Reminders</CardTitle>
             </CardHeader>
@@ -1767,7 +1751,7 @@ function StudentDashboard() {
                 <p className="text-sm text-muted-foreground">No event reminders yet.</p>
               ) : (
                 reminders.slice(0, 3).map((reminder: EventReminderRecord) => (
-                  <div key={reminder.id} className="rounded-2xl bg-muted/70 p-3">
+                  <div key={reminder.id} className="nh-list-card">
                     <p className="text-sm font-medium">{reminder.message}</p>
                     <p className="mt-1 text-xs text-muted-foreground">Reminder date {getDateLabel(reminder.remind_at)}</p>
                   </div>
@@ -1776,7 +1760,7 @@ function StudentDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-sm">
+          <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">Latest notifications</CardTitle>
               <Button asChild variant="ghost" size="sm">
@@ -1788,7 +1772,7 @@ function StudentDashboard() {
                 <p className="text-sm text-muted-foreground">No notifications yet.</p>
               ) : (
                 notifications.slice(0, 4).map((notification: NotificationRecord) => (
-                  <div key={notification.id} className="rounded-2xl bg-muted/70 p-3">
+                  <div key={notification.id} className="nh-list-card">
                     <p className="text-sm font-medium">{notification.message}</p>
                     <p className="mt-1 text-xs text-muted-foreground">{getDateLabel(notification.created_at)}</p>
                   </div>
@@ -1881,9 +1865,11 @@ function PresidentDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading || !dashboard?.executive_team.length ? (
-                  <p className="text-sm text-muted-foreground">
-                    {isLoading ? "Loading executive team..." : "No executives are linked to this club yet."}
-                  </p>
+                  isLoading ? (
+                    <NeoLoadingState title="Loading executive team" message="We are checking club leadership records." compact />
+                  ) : (
+                    <NeoEmptyState title="No executives linked yet" message="Executives connected to this club will appear here." />
+                  )
                 ) : (
                   <div className="space-y-3">
                     {dashboard.executive_team.map((executive) => (
@@ -1905,9 +1891,11 @@ function PresidentDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading || !dashboard?.recent_activity.length ? (
-                  <p className="text-sm text-muted-foreground">
-                    {isLoading ? "Loading activity..." : "No proposal activity yet."}
-                  </p>
+                  isLoading ? (
+                    <NeoLoadingState title="Loading recent movement" message="We are checking proposal activity." compact />
+                  ) : (
+                    <NeoEmptyState title="No proposal activity yet" message="Proposal updates will appear here once the club starts submitting." />
+                  )
                 ) : (
                   <RecentActivityList activity={dashboard.recent_activity} />
                 )}
@@ -1929,8 +1917,8 @@ export default function Dashboard() {
   if (role === "president") return <PresidentDashboard />;
   if (role === "student") return <StudentDashboard />;
   return (
-    <div className="flex min-h-[50vh] items-center justify-center text-sm text-muted-foreground">
-      Loading your dashboard...
+    <div className="flex min-h-[50vh] items-center justify-center">
+      <NeoLoadingState title="Opening your Club Services workspace" message="We are loading your profile and dashboard access." />
     </div>
   );
 }

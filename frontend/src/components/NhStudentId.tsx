@@ -61,7 +61,7 @@ export function NhStudentId({ value, onChange, id, required, disabled, className
           ref={inputRef}
           autoComplete="off"
           className={cn(
-            "w-full rounded-2xl border-0 bg-[#f1f4f7] py-6 pl-12 pr-12 text-sm font-semibold tracking-wider text-[#181c1e]",
+            "w-full border-2 border-foreground bg-card py-6 pl-12 pr-12 text-sm font-semibold tracking-wider text-[#181c1e] shadow-[3px_3px_0_hsl(var(--foreground))]",
             "placeholder:font-normal placeholder:tracking-normal placeholder:text-[#c4c6cf]",
             "transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0d5bbc]/30",
             showSuccess && "bg-white ring-2 ring-[#299e5c]/30",

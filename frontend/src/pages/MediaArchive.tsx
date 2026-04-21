@@ -3,7 +3,7 @@ import type { ChangeEvent, FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText, ImageIcon, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -418,7 +418,7 @@ export default function MediaArchive() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading event reports...</p>
+            <NeoLoadingState title="Loading report archive" message="We are gathering post-event records." compact />
           ) : isError ? (
             <div className="nh-empty border-destructive bg-destructive/5">
               <p className="font-medium">Unable to load reports</p>

@@ -3,7 +3,7 @@ import type { ChangeEvent, FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CreditCard, Landmark, Loader2, Receipt, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
-import { NeoMetricCard, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { NeoLoadingState, NeoMetricCard, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -522,7 +522,7 @@ export default function Dues() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading dues records...</p>
+            <NeoLoadingState title="Loading dues records" message="We are checking payment status and receipts." compact />
           ) : isError ? (
             <div className="nh-empty border-destructive bg-destructive/5">
               <p className="font-medium">Unable to load dues</p>

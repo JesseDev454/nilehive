@@ -1273,9 +1273,9 @@ export default function NewProposal() {
         </div>
 
         <aside className="lg:col-span-4 space-y-5">
-          <Card className="overflow-hidden border-0 bg-[#000d27] text-white shadow-xl">
+          <Card className="overflow-hidden bg-[#000d27] text-white">
             <CardContent className="relative p-7">
-              <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[#F5B942]/20 blur-2xl" />
+              <div className="absolute -right-8 -top-8 h-32 w-32 border-2 border-white/20 bg-[#F5B942]/20" />
               <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#F5B942]">Budget Estimation</p>
               <div className="mt-6 space-y-3">
                 {toBudgetLineItems(budgetItems).slice(0, 4).map((item) => (
@@ -1295,7 +1295,7 @@ export default function NewProposal() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 bg-[#e5e8eb]/50">
+          <Card className="bg-[#e5e8eb]/50">
             <CardContent className="p-5">
               <div className="flex gap-3">
                 <Lightbulb className="h-5 w-5 shrink-0 text-[#0d5bbc]" />

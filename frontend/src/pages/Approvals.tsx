@@ -1,5 +1,5 @@
 import { StatusBadge } from "@/components/StatusBadge";
-import { NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -55,7 +55,7 @@ export default function Approvals() {
       />
 
       {isLoading ? (
-        <NeoStateCard icon={Clock} title="Loading approvals" message="We are getting proposals assigned to your club." />
+        <NeoLoadingState title="Loading approvals" message="We are getting proposals assigned to your club." />
       ) : isError ? (
         <NeoStateCard
           icon={Clock}

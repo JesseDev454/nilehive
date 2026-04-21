@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ClipboardList, Loader2, Target, UserCheck } from "lucide-react";
-import { NeoMetricCard, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { NeoLoadingState, NeoMetricCard, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -313,7 +313,7 @@ export default function Tasks() {
         </CardHeader>
         <CardContent className="space-y-3">
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading tasks...</p>
+            <NeoLoadingState title="Preparing task board" message="We are loading assigned work and progress updates." compact />
           ) : isError ? (
             <div className="nh-empty border-destructive bg-destructive/5">
               <p className="font-medium">Unable to load tasks</p>

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { FileText, Plus } from "lucide-react";
-import { NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -118,7 +118,7 @@ export default function Proposals() {
           message="Executives use tasks and approved events. Proposal creation and review belong to presidents, advisors, and Club Services."
         />
       ) : isLoading ? (
-        <NeoStateCard icon={FileText} title="Loading proposals" message="We are getting the latest proposal records." />
+        <NeoLoadingState title="Loading proposal records" message="We are getting the latest proposal records." />
       ) : isError ? (
         <NeoStateCard icon={FileText} title="Unable to load proposals" message={getErrorMessage(error)} tone="danger" />
       ) : proposals.length === 0 ? (

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Bell, CalendarDays, CheckCircle2, Clock, Loader2, MapPin, MessageSquare, Users } from "lucide-react";
-import { NeoPageHeader } from "@/components/NeoBrutal";
+import { NeoLoadingState, NeoPageHeader } from "@/components/NeoBrutal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -142,7 +142,7 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
   }
 
   if (isLoading) {
-    return <p className="text-sm text-muted-foreground">Loading event engagement...</p>;
+    return <NeoLoadingState title="Loading event engagement" message="We are checking RSVPs and feedback." compact />;
   }
 
   if (isError) {
@@ -397,7 +397,7 @@ export default function EventCalendar() {
             </CardHeader>
             <CardContent className="space-y-3">
               {eventsLoading ? (
-                <p className="text-sm text-muted-foreground">Loading approved events...</p>
+                <NeoLoadingState title="Loading approved events" message="We are preparing the official event calendar." compact />
               ) : eventsError ? (
                 <div className="nh-empty border-destructive bg-destructive/5">
                   <p className="font-medium">Unable to load approved events</p>
@@ -426,7 +426,7 @@ export default function EventCalendar() {
           </CardHeader>
           <CardContent className="space-y-3">
             {remindersLoading ? (
-              <p className="text-sm text-muted-foreground">Loading reminders...</p>
+              <NeoLoadingState title="Loading reminders" message="We are checking upcoming approved events." compact />
             ) : remindersError ? (
               <div className="nh-empty border-destructive bg-destructive/5">
                 <p className="font-medium">Unable to load reminders</p>

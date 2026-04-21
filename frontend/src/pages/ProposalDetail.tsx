@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Clock, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { ApprovalStepper } from "@/components/ApprovalStepper";
-import { NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -221,7 +221,7 @@ export default function ProposalDetail() {
       </Button>
 
       {isLoading ? (
-        <NeoStateCard icon={Clock} title="Loading proposal" message="We are getting the latest workflow status." />
+        <NeoLoadingState title="Loading proposal" message="We are getting the latest workflow status." />
       ) : isError || !proposal ? (
         <NeoStateCard icon={FileText} title="Proposal not found" message={getErrorMessage(error)} tone="danger" />
       ) : (

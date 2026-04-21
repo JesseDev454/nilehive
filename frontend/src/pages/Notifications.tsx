@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Bell, FileText } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { ApiClientError, getNotifications } from "@/lib/api";
 
 function getErrorMessage(error: unknown) {
@@ -37,7 +37,7 @@ export default function Notifications() {
       />
 
       {isLoading ? (
-        <NeoStateCard icon={Bell} title="Loading notifications" message="We are getting your latest updates." />
+        <NeoLoadingState title="Loading notifications" message="We are getting your latest updates." />
       ) : isError ? (
         <NeoStateCard icon={Bell} title="Unable to load notifications" message={getErrorMessage(error)} tone="danger" />
       ) : notifications.length === 0 ? (

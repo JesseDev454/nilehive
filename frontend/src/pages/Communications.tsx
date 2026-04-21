@@ -1,7 +1,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, CheckCircle2, Filter, Megaphone, MessageSquare, Send, Users } from "lucide-react";
-import { NeoCommandPanel } from "@/components/NeoBrutal";
+import { NeoCommandPanel, NeoLoadingState } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -647,7 +647,7 @@ export default function Communications() {
             </CardHeader>
             <CardContent className="space-y-3">
               {isLoadingFeedback ? (
-                <p className="text-sm text-muted-foreground">Loading feedback...</p>
+                <NeoLoadingState title="Loading feedback" message="We are checking recent club feedback." compact />
               ) : isFeedbackError ? (
                 <p className="text-sm text-destructive">{getErrorMessage(feedbackError)}</p>
               ) : feedback.length === 0 ? (

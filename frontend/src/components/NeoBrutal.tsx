@@ -165,6 +165,103 @@ export function NeoStateCard({
   );
 }
 
+export function NeoPanel({
+  title,
+  description,
+  eyebrow,
+  actions,
+  children,
+  tone = "default",
+  className
+}: {
+  title?: string;
+  description?: ReactNode;
+  eyebrow?: string;
+  actions?: ReactNode;
+  children?: ReactNode;
+  tone?: "default" | "navy" | "green" | "gold";
+  className?: string;
+}) {
+  const toneClass = {
+    default: "bg-card text-card-foreground",
+    navy: "bg-primary text-primary-foreground",
+    green: "bg-secondary text-secondary-foreground",
+    gold: "bg-accent text-accent-foreground"
+  }[tone];
+
+  return (
+    <section className={cn("nh-card overflow-hidden", toneClass, className)}>
+      {(title || description || eyebrow || actions) ? (
+        <div className="flex flex-col gap-3 border-b-2 border-current p-5 md:flex-row md:items-start md:justify-between">
+          <div>
+            {eyebrow ? <p className="nh-eyebrow opacity-75">{eyebrow}</p> : null}
+            {title ? <h2 className="text-xl font-black uppercase leading-tight">{title}</h2> : null}
+            {description ? <div className="mt-2 text-sm opacity-75">{description}</div> : null}
+          </div>
+          {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+        </div>
+      ) : null}
+      {children ? <div className="p-5">{children}</div> : null}
+    </section>
+  );
+}
+
+export function NeoEmptyState({
+  icon: Icon,
+  title,
+  message,
+  children
+}: {
+  icon?: ElementType;
+  title: string;
+  message?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="nh-empty">
+      {Icon ? <Icon className="mx-auto mb-4 h-10 w-10" /> : null}
+      <h3 className="text-xl font-black uppercase">{title}</h3>
+      {message ? <p className="mx-auto mt-2 max-w-lg text-sm text-muted-foreground">{message}</p> : null}
+      {children ? <div className="mt-5">{children}</div> : null}
+    </div>
+  );
+}
+
+export function NeoErrorState({
+  icon: Icon,
+  title = "Unable to load this section",
+  message,
+  children
+}: {
+  icon?: ElementType;
+  title?: string;
+  message?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="nh-card border-destructive bg-destructive/10 p-5">
+      <div className="flex items-start gap-4">
+        {Icon ? <Icon className="mt-1 h-6 w-6 shrink-0 text-destructive" /> : null}
+        <div>
+          <h3 className="font-black uppercase text-destructive">{title}</h3>
+          {message ? <p className="mt-1 text-sm text-muted-foreground">{message}</p> : null}
+          {children ? <div className="mt-4">{children}</div> : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function NeoListItem({
+  children,
+  className
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return <div className={cn("nh-list-card", className)}>{children}</div>;
+}
+
 export function NeoLoadingState({
   title = "Loading Club Services",
   message = "Preparing the latest workspace data.",
