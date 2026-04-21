@@ -19,7 +19,6 @@ export default function SignUp() {
   const [email, setEmail] = useState("");
   const [studentId, setStudentId] = useState("");
   const [clubName, setClubName] = useState("");
-  const [requestedRole, setRequestedRole] = useState("student");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signupError, setSignupError] = useState<string | null>(null);
@@ -66,7 +65,7 @@ export default function SignUp() {
         email,
         password,
         fullName,
-        requestedRole,
+        requestedRole: "student",
         clubName,
         studentId
       });
@@ -102,7 +101,7 @@ export default function SignUp() {
             <p className="nh-eyebrow text-primary-foreground/70">New Profile</p>
             <h2 className="mt-3 text-5xl font-black uppercase leading-none md:text-6xl">Join an official club workspace.</h2>
             <p className="mt-5 border-l-4 border-secondary pl-4 text-primary-foreground/80">
-              Create your account, pick your club, and request the role that matches your real responsibility.
+              Create your account, pick your club, and start with safe student access. Leadership applications happen after dues verification.
             </p>
           </div>
 
@@ -115,7 +114,7 @@ export default function SignUp() {
             <div className="nh-card p-5">
               <Users className="h-7 w-7 text-secondary" />
               <h3 className="mt-4 font-black uppercase">Club context</h3>
-              <p className="mt-2 text-sm text-muted-foreground">Your club selection helps route membership and leadership requests.</p>
+              <p className="mt-2 text-sm text-muted-foreground">Your club selection helps route your first membership request.</p>
             </div>
           </div>
         </aside>
@@ -182,17 +181,13 @@ export default function SignUp() {
             </div>
 
             <div className="space-y-2">
-              <Label className="font-black uppercase tracking-[0.12em]">Requested Role</Label>
-              <Select value={requestedRole} onValueChange={setRequestedRole}>
-                <SelectTrigger className="border-2 border-input bg-card">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="student">Student</SelectItem>
-                  <SelectItem value="executive">Executive</SelectItem>
-                  <SelectItem value="president">President</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label className="font-black uppercase tracking-[0.12em]">Starting Access</Label>
+              <div className="border-2 border-input bg-card px-4 py-3 text-sm font-black uppercase">
+                Student
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Executive and president applications open after your membership is active.
+              </p>
             </div>
 
             <div className="space-y-2 md:col-span-2">
@@ -226,7 +221,7 @@ export default function SignUp() {
             <div className="flex items-start gap-3 border-2 border-foreground bg-muted p-4 text-sm">
               <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-secondary" />
               <p>
-                Executive or president access remains a request until Club Services approves it. Advisor and admin roles are not self-service.
+                Everyone starts safely as a student. Advisor and admin roles are assigned by Club Services.
               </p>
             </div>
 

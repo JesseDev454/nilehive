@@ -19,7 +19,6 @@ export default function ProfileSetup() {
   const [fullName, setFullName] = useState("");
   const [studentId, setStudentId] = useState("");
   const [clubId, setClubId] = useState("");
-  const [requestedRole, setRequestedRole] = useState<"student" | "executive" | "president">("student");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { data: clubs = [], isLoading: isLoadingClubs } = useQuery({
@@ -32,10 +31,7 @@ export default function ProfileSetup() {
     setFullName(typeof metadata.full_name === "string" ? metadata.full_name : "");
     setStudentId(typeof metadata.student_id === "string" ? normalizeStudentId(metadata.student_id) : "");
 
-    if (metadata.requested_role === "executive" || metadata.requested_role === "president") {
-      setRequestedRole(metadata.requested_role);
-    }
-  }, [metadata.full_name, metadata.requested_role, metadata.student_id]);
+  }, [metadata.full_name, metadata.student_id]);
 
   useEffect(() => {
     const requestedClub = typeof metadata.requested_club === "string" ? metadata.requested_club : "";
@@ -79,14 +75,11 @@ export default function ProfileSetup() {
         full_name: fullName,
         student_id: studentId,
         club_id: clubId,
-        requested_role: requestedRole
+        requested_role: "student"
       });
       await refreshProfile();
       toast.success("Profile setup complete", {
-        description:
-          requestedRole === "student"
-            ? "You can now access the student event feed."
-            : "Your account is active as a student while your requested club role awaits approval."
+        description: "You can now request membership and apply for leadership after your dues are active."
       });
     } catch (error) {
       toast.error("Profile setup failed", {
@@ -131,8 +124,8 @@ export default function ProfileSetup() {
             <CardContent className="flex gap-3 p-5 text-sm text-[#44474e]">
               <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#299e5c]" />
               <p>
-                For safety, self-service onboarding activates users as students first. Requested
-                executive or president access can be approved later by Club Services.
+                For safety, self-service onboarding activates users as students first. Executive
+                and president applications open after membership and dues verification.
               </p>
             </CardContent>
           </Card>
@@ -166,17 +159,13 @@ export default function ProfileSetup() {
               </div>
 
               <div className="space-y-2">
-                <Label>Requested Role</Label>
-                <Select value={requestedRole} onValueChange={(value) => setRequestedRole(value as typeof requestedRole)}>
-                  <SelectTrigger className="rounded-2xl border-0 bg-[#f1f4f7] py-6">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="student">Student</SelectItem>
-                    <SelectItem value="executive">Executive</SelectItem>
-                    <SelectItem value="president">President</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>Starting Access</Label>
+                <div className="rounded-2xl bg-[#f1f4f7] px-5 py-4 text-sm font-bold text-[#000d27]">
+                  Student
+                </div>
+                <p className="text-xs text-[#44474e]">
+                  Club leadership applications are handled inside the app after your membership is active.
+                </p>
               </div>
 
               <div className="space-y-2 md:col-span-2">

@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { RoleProvider } from "@/contexts/RoleContext";
 import { AppLayout } from "@/components/AppLayout";
+import { NeoLoadingState } from "@/components/NeoBrutal";
 import Dashboard from "@/pages/Dashboard";
 import ForgotPassword from "@/pages/ForgotPassword";
 import Login from "@/pages/Login";
@@ -35,8 +36,13 @@ function ProtectedRoutes() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">
-        Loading Club Services...
+      <div className="flex min-h-screen items-center justify-center bg-background p-6">
+        <div className="w-full max-w-xl">
+          <NeoLoadingState
+            title="Opening your Club Services workspace"
+            message="We are checking your session and preparing the right dashboard for your role."
+          />
+        </div>
       </div>
     );
   }

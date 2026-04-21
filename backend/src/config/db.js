@@ -35,6 +35,8 @@ const profileWithClubSelect =
   "id, full_name, role, club_id, student_id, requested_role, onboarding_status, created_at, updated_at, club:clubs!profiles_club_id_fkey(id, name, code)";
 const membershipRequestSelect =
   "id, profile_id, club_id, requested_role, status, remarks, decision_remarks, reviewed_by, reviewed_at, member_id, due_payment_id, dues_amount, academic_session, created_at, updated_at, profile:profiles!membership_requests_profile_id_fkey(id, full_name, student_id, role), club:clubs!membership_requests_club_id_fkey(id, name, code)";
+const leadershipApplicationSelect =
+  "id, profile_id, club_id, current_app_role, requested_role, status, reason, experience, goals, availability, reviewed_by, reviewed_at, decision_remarks, created_at, updated_at, profile:profiles!leadership_applications_profile_id_fkey(id, full_name, student_id, role), club:clubs!leadership_applications_club_id_fkey(id, name, code)";
 const profileRoleHistorySelect =
   "id, profile_id, previous_role, new_role, previous_club_id, new_club_id, changed_by, remarks, created_at";
 const emailDeliverySelect =
@@ -1233,6 +1235,115 @@ function createDatabase(options = {}) {
         .update(update)
         .eq("id", requestId)
         .select(membershipRequestSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async createLeadershipApplication(application) {
+      const { data, error } = await getClient()
+        .from("leadership_applications")
+        .insert(application)
+        .select(leadershipApplicationSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async getLeadershipApplicationById(applicationId) {
+      const { data, error } = await getClient()
+        .from("leadership_applications")
+        .select(leadershipApplicationSelect)
+        .eq("id", applicationId)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? null;
+    },
+
+    async getOpenLeadershipApplication(profileId, clubId) {
+      const { data, error } = await getClient()
+        .from("leadership_applications")
+        .select(leadershipApplicationSelect)
+        .eq("profile_id", profileId)
+        .eq("club_id", clubId)
+        .in("status", ["pending", "needs_more_info"])
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? null;
+    },
+
+    async getLatestRejectedLeadershipApplication(profileId, clubId) {
+      const { data, error } = await getClient()
+        .from("leadership_applications")
+        .select(leadershipApplicationSelect)
+        .eq("profile_id", profileId)
+        .eq("club_id", clubId)
+        .eq("status", "rejected")
+        .order("reviewed_at", { ascending: false, nullsFirst: false })
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? null;
+    },
+
+    async listLeadershipApplications(filters = {}) {
+      let query = getClient()
+        .from("leadership_applications")
+        .select(leadershipApplicationSelect)
+        .order("created_at", { ascending: false });
+
+      if (filters.profileId) {
+        query = query.eq("profile_id", filters.profileId);
+      }
+
+      if (filters.clubId) {
+        query = query.eq("club_id", filters.clubId);
+      }
+
+      if (filters.status) {
+        query = query.eq("status", filters.status);
+      }
+
+      if (filters.requestedRole) {
+        query = query.eq("requested_role", filters.requestedRole);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? [];
+    },
+
+    async updateLeadershipApplication(applicationId, update) {
+      const { data, error } = await getClient()
+        .from("leadership_applications")
+        .update(update)
+        .eq("id", applicationId)
+        .select(leadershipApplicationSelect)
         .single();
 
       if (error) {

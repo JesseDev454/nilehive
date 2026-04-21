@@ -1,7 +1,7 @@
 const ApiError = require("../../shared/ApiError");
 const { readStudentId } = require("../../shared/studentId");
 
-const SELF_SERVICE_REQUESTED_ROLES = new Set(["student", "executive", "president"]);
+const SELF_SERVICE_REQUESTED_ROLES = new Set(["student"]);
 
 function readString(payload, fieldName) {
   return typeof payload[fieldName] === "string" ? payload[fieldName].trim() : "";

@@ -92,7 +92,7 @@ export interface ProfileOnboardingPayload {
   full_name: string;
   student_id: string;
   club_id: string;
-  requested_role?: "student" | "executive" | "president";
+  requested_role?: "student";
 }
 
 export interface ProposalRecord {
@@ -591,6 +591,43 @@ export interface AnnouncementRecord {
   read_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface LeadershipApplicationRecord {
+  id: string;
+  profile_id: string;
+  club_id: string;
+  current_role: ProfileRecord["role"];
+  requested_role: "executive" | "president";
+  status: "pending" | "needs_more_info" | "approved" | "rejected" | "cancelled";
+  reason: string;
+  experience: string | null;
+  goals: string | null;
+  availability: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  decision_remarks: string | null;
+  profile?: {
+    id: string;
+    full_name: string | null;
+    student_id: string | null;
+    role: ProfileRecord["role"];
+  } | null;
+  club?: {
+    id: string;
+    name: string;
+    code: string | null;
+  } | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface LeadershipApplicationDecisionResult {
+  application: LeadershipApplicationRecord;
+  profile: ProfileRecord | null;
+  member: ClubMemberRecord | null;
+  history: ProfileRoleHistoryRecord | null;
+  demoted_presidents: ProfileRecord[];
 }
 
 export interface CreateAnnouncementPayload {
@@ -1275,6 +1312,89 @@ export async function decideMembershipRequest(
 ) {
   const response = await request<ApiEnvelope<MembershipRequestDecisionResult>>(
     `/api/v1/membership-requests/${requestId}/decision`,
+    {
+      method: "POST",
+      token,
+      body: payload
+    }
+  );
+
+  return response.data;
+}
+
+export async function createLeadershipApplication(
+  payload: {
+    club_id: string;
+    requested_role: LeadershipApplicationRecord["requested_role"];
+    reason: string;
+    experience?: string | null;
+    goals?: string | null;
+    availability?: string | null;
+  },
+  token?: string
+) {
+  const response = await request<ApiEnvelope<LeadershipApplicationRecord>>("/api/v1/leadership-applications", {
+    method: "POST",
+    token,
+    body: payload
+  });
+
+  return response.data;
+}
+
+export async function getMyLeadershipApplications(token?: string) {
+  const response = await request<ApiEnvelope<LeadershipApplicationRecord[]>>(
+    "/api/v1/leadership-applications/me",
+    {
+      method: "GET",
+      token
+    }
+  );
+
+  return response.data;
+}
+
+export async function getLeadershipApplications(
+  filters: { status?: string; club_id?: string; requested_role?: string } = {},
+  token?: string
+) {
+  const params = new URLSearchParams();
+
+  if (filters.status) {
+    params.set("status", filters.status);
+  }
+
+  if (filters.club_id) {
+    params.set("club_id", filters.club_id);
+  }
+
+  if (filters.requested_role) {
+    params.set("requested_role", filters.requested_role);
+  }
+
+  const query = params.toString();
+  const response = await request<ApiEnvelope<LeadershipApplicationRecord[]>>(
+    `/api/v1/leadership-applications${query ? `?${query}` : ""}`,
+    {
+      method: "GET",
+      token
+    }
+  );
+
+  return response.data;
+}
+
+export async function decideLeadershipApplication(
+  applicationId: string,
+  payload: {
+    decision: "approve" | "reject" | "needs_more_info";
+    remarks?: string;
+    replace_existing_president?: boolean;
+  },
+  token?: string
+) {
+  const response = await request<ApiEnvelope<LeadershipApplicationDecisionResult>>(
+    `/api/v1/leadership-applications/${applicationId}/decision`,
     {
       method: "POST",
       token,

@@ -77,15 +77,13 @@ async function completeProfileOnboarding(options) {
   });
 
   if (database.createMembershipRequest && database.getOpenMembershipRequest) {
-    const requestedRole =
-      validatedPayload.requested_role === "student" ? "member" : validatedPayload.requested_role;
     const existingRequest = await database.getOpenMembershipRequest(authUser.id, validatedPayload.club_id);
 
     if (!existingRequest) {
       await database.createMembershipRequest({
         profile_id: authUser.id,
         club_id: validatedPayload.club_id,
-        requested_role: requestedRole,
+        requested_role: "member",
         status: "pending",
         remarks: "Created during profile onboarding."
       });

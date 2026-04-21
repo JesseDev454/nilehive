@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Crown, Loader2, Search, ShieldCheck, UserPlus, Users, WalletCards } from "lucide-react";
+import { Crown, Loader2, Search, ShieldCheck, UserCheck, UserPlus, Users, WalletCards } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,13 +10,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { NeoLoadingState } from "@/components/NeoBrutal";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/contexts/RoleContext";
 import {
   ApiClientError,
+  createLeadershipApplication,
   createMembershipRequest,
+  decideLeadershipApplication,
   decideMembershipRequest,
+  getLeadershipApplications,
   getClubPaymentSettings,
+  getMyLeadershipApplications,
   getMembershipRequests,
   getMyDuePayments,
   getMyMembershipRequests,
@@ -25,6 +30,7 @@ import {
   type ClubMemberRecord,
   type ClubRecord,
   type DuePaymentRecord,
+  type LeadershipApplicationRecord,
   type MembershipRequestRecord
 } from "@/lib/api";
 import { resolveStorageFileUrl, uploadStorageFile } from "@/lib/storage";
@@ -37,6 +43,7 @@ const REQUEST_STATUSES = [
   "rejected",
   "cancelled"
 ] as const;
+const LEADERSHIP_STATUSES = ["all", "pending", "needs_more_info", "approved", "rejected", "cancelled"] as const;
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -84,6 +91,28 @@ function MembershipStatusBadge({ status }: { status: MembershipRequestRecord["st
   }[status];
 
   return <Badge className={className}>{getStatusLabel(status)}</Badge>;
+}
+
+function getLeadershipStatusLabel(status: LeadershipApplicationRecord["status"]) {
+  return {
+    pending: "Under Club Services Review",
+    needs_more_info: "Needs More Information",
+    approved: "Approved",
+    rejected: "Rejected",
+    cancelled: "Cancelled"
+  }[status];
+}
+
+function LeadershipStatusBadge({ status }: { status: LeadershipApplicationRecord["status"] }) {
+  const className = {
+    pending: "bg-primary/15 text-primary hover:bg-primary/15",
+    needs_more_info: "bg-warning/15 text-warning hover:bg-warning/15",
+    approved: "bg-success/15 text-success hover:bg-success/15",
+    rejected: "bg-destructive/15 text-destructive hover:bg-destructive/15",
+    cancelled: "bg-muted text-muted-foreground hover:bg-muted"
+  }[status];
+
+  return <Badge className={className}>{getLeadershipStatusLabel(status)}</Badge>;
 }
 
 function getClubName(clubId: string, clubs: ClubRecord[], request?: MembershipRequestRecord) {
@@ -340,8 +369,8 @@ function DuesConfirmationCard({
 function StudentMembershipView() {
   const queryClient = useQueryClient();
   const { profile } = useAuth();
+  const { role } = useRole();
   const [search, setSearch] = useState("");
-  const [selectedRoleByClub, setSelectedRoleByClub] = useState<Record<string, ClubMemberRecord["club_role"]>>({});
   const [remarksByClub, setRemarksByClub] = useState<Record<string, string>>({});
   const {
     data: clubs = [],
@@ -368,6 +397,16 @@ function StudentMembershipView() {
     queryFn: () => getMyDuePayments(),
     retry: false
   });
+  const {
+    data: leadershipApplications = [],
+    isLoading: isLoadingLeadershipApplications,
+    isError: leadershipApplicationsFailed,
+    error: leadershipApplicationsError
+  } = useQuery({
+    queryKey: ["my-leadership-applications"],
+    queryFn: () => getMyLeadershipApplications(),
+    retry: false
+  });
   const paymentById = useMemo(
     () => new Map((myDuesData?.payments || []).map((payment) => [payment.id, payment])),
     [myDuesData?.payments]
@@ -391,7 +430,7 @@ function StudentMembershipView() {
     mutationFn: (clubId: string) =>
       createMembershipRequest({
         club_id: clubId,
-        requested_role: selectedRoleByClub[clubId] || "member",
+        requested_role: "member",
         remarks: remarksByClub[clubId] || undefined
       }),
     onSuccess: async () => {
@@ -406,6 +445,29 @@ function StudentMembershipView() {
       });
     }
   });
+  const activeMembershipClubs = useMemo(() => {
+    const activeClubs = myRequests
+      .filter((request) => request.status === "active")
+      .map((request) => ({
+        id: request.club_id,
+        name: getClubName(request.club_id, clubs, request),
+        code: request.club?.code || clubs.find((club) => club.id === request.club_id)?.code || null
+      }));
+
+    if (profile?.club_id && (role === "executive" || role === "president")) {
+      const profileClub = clubs.find((club) => club.id === profile.club_id);
+
+      if (profileClub && !activeClubs.some((club) => club.id === profileClub.id)) {
+        activeClubs.push({
+          id: profileClub.id,
+          name: profileClub.name,
+          code: profileClub.code
+        });
+      }
+    }
+
+    return activeClubs;
+  }, [clubs, myRequests, profile?.club_id, role]);
 
   return (
     <div className="space-y-6 animate-slide-up">
@@ -435,7 +497,7 @@ function StudentMembershipView() {
         </CardHeader>
         <CardContent>
           {isLoadingRequests ? (
-            <p className="text-sm text-muted-foreground">Loading your membership requests...</p>
+            <NeoLoadingState title="Checking club membership status" message="We are loading your current requests and dues steps." compact />
           ) : requestsFailed ? (
             <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
               <p className="font-medium">Unable to load your membership requests</p>
@@ -502,9 +564,7 @@ function StudentMembershipView() {
       </div>
 
       {isLoadingClubs ? (
-        <Card>
-          <CardContent className="p-8 text-sm text-muted-foreground">Loading clubs...</CardContent>
-        </Card>
+        <NeoLoadingState title="Checking club membership status" message="We are loading available clubs." compact />
       ) : clubsFailed ? (
         <Card>
           <CardContent className="p-8">
@@ -550,25 +610,13 @@ function StudentMembershipView() {
                       }}
                     >
                       <div className="space-y-2">
-                        <Label>Requested role</Label>
-                        <Select
-                          value={selectedRoleByClub[club.id] || "member"}
-                          onValueChange={(value) =>
-                            setSelectedRoleByClub((current) => ({
-                              ...current,
-                              [club.id]: value as ClubMemberRecord["club_role"]
-                            }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="member">Member</SelectItem>
-                            <SelectItem value="executive">Executive</SelectItem>
-                            <SelectItem value="president">President</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Label>Request type</Label>
+                        <div className="rounded-xl border-2 border-foreground bg-muted/60 p-3 text-sm font-semibold">
+                          Join as Member
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Leadership applications unlock after your membership and dues are active.
+                        </p>
                       </div>
                       <div className="space-y-2">
                         <Label>Reason or note</Label>
@@ -606,7 +654,217 @@ function StudentMembershipView() {
           })}
         </div>
       )}
+      <LeadershipApplicationPanel
+        activeClubs={activeMembershipClubs}
+        applications={leadershipApplications}
+        isLoading={isLoadingLeadershipApplications}
+        isError={leadershipApplicationsFailed}
+        error={leadershipApplicationsError}
+      />
     </div>
+  );
+}
+
+function LeadershipApplicationPanel({
+  activeClubs,
+  applications,
+  isLoading,
+  isError,
+  error
+}: {
+  activeClubs: Array<{ id: string; name: string; code: string | null }>;
+  applications: LeadershipApplicationRecord[];
+  isLoading: boolean;
+  isError: boolean;
+  error: unknown;
+}) {
+  const queryClient = useQueryClient();
+  const { role } = useRole();
+  const [clubId, setClubId] = useState("");
+  const [requestedRole, setRequestedRole] = useState<LeadershipApplicationRecord["requested_role"]>("executive");
+  const [reason, setReason] = useState("");
+  const [experience, setExperience] = useState("");
+  const [goals, setGoals] = useState("");
+  const [availability, setAvailability] = useState("");
+  const selectedClub = activeClubs.find((club) => club.id === clubId);
+  const hasOpenApplication = applications.some(
+    (application) => application.club_id === clubId && ["pending", "needs_more_info"].includes(application.status)
+  );
+  const createMutation = useMutation({
+    mutationFn: () =>
+      createLeadershipApplication({
+        club_id: clubId,
+        requested_role: requestedRole,
+        reason,
+        experience: experience || null,
+        goals: goals || null,
+        availability: availability || null
+      }),
+    onSuccess: async () => {
+      toast.success("Leadership application submitted", {
+        description: "Club Services can now review your application."
+      });
+      setReason("");
+      setExperience("");
+      setGoals("");
+      setAvailability("");
+      await queryClient.invalidateQueries({ queryKey: ["my-leadership-applications"] });
+    },
+    onError: (mutationError) => {
+      toast.error("Could not submit leadership application", {
+        description: getErrorMessage(mutationError)
+      });
+    }
+  });
+
+  useEffect(() => {
+    if (!clubId && activeClubs.length) {
+      setClubId(activeClubs[0].id);
+    }
+  }, [activeClubs, clubId]);
+
+  useEffect(() => {
+    if (role === "executive" && requestedRole !== "president") {
+      setRequestedRole("president");
+    }
+  }, [requestedRole, role]);
+
+  return (
+    <Card className="border-2 border-foreground shadow-[6px_6px_0_#181c1e]">
+      <CardHeader className="border-b-2 border-foreground bg-accent">
+        <CardTitle className="flex items-center gap-2 text-lg uppercase">
+          <UserCheck className="h-5 w-5" />
+          Leadership Applications
+        </CardTitle>
+        <p className="text-sm text-accent-foreground/80">
+          Apply for executive or president only after your membership and dues are active.
+        </p>
+      </CardHeader>
+      <CardContent className="grid gap-6 p-5 lg:grid-cols-[1fr_1.1fr]">
+        <div className="space-y-4">
+          {activeClubs.length === 0 ? (
+            <div className="rounded-2xl border-2 border-dashed border-foreground p-5 text-sm text-muted-foreground">
+              Join a club and complete dues verification first. Leadership applications will appear here after your membership is active.
+            </div>
+          ) : (
+            <form
+              className="space-y-4"
+              onSubmit={(event) => {
+                event.preventDefault();
+                createMutation.mutate();
+              }}
+            >
+              <div className="rounded-xl border-2 border-foreground bg-primary p-4 text-primary-foreground">
+                <p className="text-sm font-bold uppercase">Important</p>
+                <p className="mt-1 text-sm text-primary-foreground/80">
+                  Leadership requests are reviewed by Club Services. Repeated careless requests may be rejected.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>Active club</Label>
+                <Select value={clubId} onValueChange={setClubId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose active club" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {activeClubs.map((club) => (
+                      <SelectItem key={club.id} value={club.id}>
+                        {club.name}{club.code ? ` (${club.code})` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Role you want to apply for</Label>
+                <Select value={requestedRole} onValueChange={(value) => setRequestedRole(value as typeof requestedRole)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {role !== "executive" ? <SelectItem value="executive">Executive</SelectItem> : null}
+                    <SelectItem value="president">President</SelectItem>
+                  </SelectContent>
+                </Select>
+                {requestedRole === "president" ? (
+                  <p className="text-xs text-warning">
+                    President applications are reviewed carefully because each club should only have one active president.
+                  </p>
+                ) : null}
+              </div>
+              <div className="space-y-2">
+                <Label>Why do you want this role?</Label>
+                <Textarea value={reason} onChange={(event) => setReason(event.target.value)} rows={4} required minLength={20} />
+              </div>
+              <div className="space-y-2">
+                <Label>What have you helped with before?</Label>
+                <Textarea value={experience} onChange={(event) => setExperience(event.target.value)} rows={3} />
+              </div>
+              <div className="space-y-2">
+                <Label>What are your goals for the club?</Label>
+                <Textarea value={goals} onChange={(event) => setGoals(event.target.value)} rows={3} />
+              </div>
+              <div className="space-y-2">
+                <Label>How available are you this semester?</Label>
+                <Textarea value={availability} onChange={(event) => setAvailability(event.target.value)} rows={2} />
+              </div>
+              <Button className="w-full" type="submit" disabled={!selectedClub || hasOpenApplication || createMutation.isPending}>
+                {createMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending application...
+                  </>
+                ) : hasOpenApplication ? (
+                  "Application Already Open"
+                ) : (
+                  "Apply for Leadership"
+                )}
+              </Button>
+            </form>
+          )}
+        </div>
+
+        <div className="space-y-3">
+          <h3 className="font-black uppercase">Your leadership status</h3>
+          {isLoading ? (
+            <NeoLoadingState title="Checking leadership applications" message="We are loading your application history." compact />
+          ) : isError ? (
+            <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4">
+              <p className="font-medium">Unable to load leadership applications</p>
+              <p className="mt-1 text-sm text-muted-foreground">{getErrorMessage(error)}</p>
+            </div>
+          ) : applications.length === 0 ? (
+            <div className="rounded-xl border-2 border-dashed border-foreground p-5 text-sm text-muted-foreground">
+              No leadership applications yet.
+            </div>
+          ) : (
+            applications.map((application) => (
+              <div key={application.id} className="rounded-xl border-2 border-foreground bg-card p-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="font-bold">{application.club?.name || application.club_id}</p>
+                    <p className="text-sm capitalize text-muted-foreground">
+                      Applying for {application.requested_role}
+                    </p>
+                  </div>
+                  <LeadershipStatusBadge status={application.status} />
+                </div>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                  {["Submitted", "Under Review", "Needs Info", "Decision"].map((step) => (
+                    <div key={step} className="border border-foreground bg-muted p-2 font-bold uppercase">
+                      {step}
+                    </div>
+                  ))}
+                </div>
+                {application.decision_remarks ? (
+                  <p className="mt-3 rounded-lg bg-muted p-3 text-sm text-muted-foreground">{application.decision_remarks}</p>
+                ) : null}
+              </div>
+            ))
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -752,6 +1010,258 @@ function RequestReviewPanel({
   );
 }
 
+function LeadershipDecisionPanel({
+  application,
+  onClose
+}: {
+  application: LeadershipApplicationRecord;
+  onClose: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const [decision, setDecision] = useState<"approve" | "reject" | "needs_more_info">("approve");
+  const [remarks, setRemarks] = useState("");
+  const [replacePresident, setReplacePresident] = useState(false);
+  const decisionMutation = useMutation({
+    mutationFn: () =>
+      decideLeadershipApplication(application.id, {
+        decision,
+        remarks: remarks || undefined,
+        replace_existing_president: replacePresident
+      }),
+    onSuccess: async () => {
+      toast.success(
+        decision === "approve"
+          ? "Leadership application approved"
+          : decision === "needs_more_info"
+          ? "More information requested"
+          : "Leadership application rejected",
+        {
+          description: "The application queue has been updated."
+        }
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["leadership-applications"] }),
+        queryClient.invalidateQueries({ queryKey: ["admin-users"] }),
+        queryClient.invalidateQueries({ queryKey: ["club-members"] })
+      ]);
+      onClose();
+    },
+    onError: (mutationError) => {
+      toast.error("Could not review leadership application", {
+        description: getErrorMessage(mutationError)
+      });
+    }
+  });
+
+  return (
+    <Card className="border-2 border-foreground">
+      <CardHeader className="border-b-2 border-foreground bg-accent">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <CardTitle className="text-lg uppercase">Review Leadership Application</CardTitle>
+            <p className="mt-1 text-sm text-accent-foreground/80">
+              Club Services makes the final decision for executive and president roles.
+            </p>
+          </div>
+          <Button type="button" variant="outline" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <form
+          className="grid gap-4 lg:grid-cols-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            decisionMutation.mutate();
+          }}
+        >
+          <div className="rounded-2xl border-2 border-foreground bg-muted/60 p-4 lg:col-span-2">
+            <p className="font-semibold">{application.profile?.full_name || "Applicant"}</p>
+            <p className="text-sm text-muted-foreground">
+              {application.profile?.student_id || "No University ID"} - {application.club?.name || application.club_id}
+            </p>
+            <p className="mt-2 text-sm capitalize">
+              Current role: <span className="font-medium">{application.current_role}</span> - Requested role:{" "}
+              <span className="font-medium">{application.requested_role}</span>
+            </p>
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <p className="text-sm"><span className="font-semibold">Reason:</span> {application.reason}</p>
+              {application.experience ? <p className="text-sm"><span className="font-semibold">Experience:</span> {application.experience}</p> : null}
+              {application.goals ? <p className="text-sm"><span className="font-semibold">Goals:</span> {application.goals}</p> : null}
+              {application.availability ? <p className="text-sm"><span className="font-semibold">Availability:</span> {application.availability}</p> : null}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Decision</Label>
+            <Select value={decision} onValueChange={(value) => setDecision(value as typeof decision)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="approve">Approve</SelectItem>
+                <SelectItem value="needs_more_info">Needs More Information</SelectItem>
+                <SelectItem value="reject">Reject</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {application.requested_role === "president" && decision === "approve" ? (
+            <label className="flex items-center gap-3 rounded-xl border-2 border-foreground bg-warning/10 p-3 text-sm">
+              <input
+                type="checkbox"
+                checked={replacePresident}
+                onChange={(event) => setReplacePresident(event.target.checked)}
+              />
+              Confirm president replacement if this club already has a president
+            </label>
+          ) : null}
+          <div className="space-y-2 lg:col-span-2">
+            <Label>Decision remarks</Label>
+            <Textarea
+              value={remarks}
+              onChange={(event) => setRemarks(event.target.value)}
+              placeholder="Give the applicant a clear update..."
+              rows={3}
+            />
+          </div>
+          <div className="flex justify-end lg:col-span-2">
+            <Button type="submit" disabled={decisionMutation.isPending}>
+              {decisionMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Decision"
+              )}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}
+
+function AdminLeadershipApplicationsQueue({ clubs }: { clubs: ClubRecord[] }) {
+  const [statusFilter, setStatusFilter] = useState<(typeof LEADERSHIP_STATUSES)[number]>("pending");
+  const [roleFilter, setRoleFilter] = useState<"all" | "executive" | "president">("all");
+  const [clubFilter, setClubFilter] = useState("all");
+  const [selectedApplication, setSelectedApplication] = useState<LeadershipApplicationRecord | null>(null);
+  const {
+    data: applications = [],
+    isLoading,
+    isError,
+    error
+  } = useQuery({
+    queryKey: ["leadership-applications", statusFilter, roleFilter, clubFilter],
+    queryFn: () =>
+      getLeadershipApplications({
+        status: statusFilter === "all" ? undefined : statusFilter,
+        requested_role: roleFilter === "all" ? undefined : roleFilter,
+        club_id: clubFilter === "all" ? undefined : clubFilter
+      }),
+    retry: false
+  });
+
+  return (
+    <div className="space-y-4">
+      {selectedApplication ? (
+        <LeadershipDecisionPanel application={selectedApplication} onClose={() => setSelectedApplication(null)} />
+      ) : null}
+      <Card className="border-2 border-foreground shadow-[6px_6px_0_#181c1e]">
+        <CardHeader className="border-b-2 border-foreground bg-primary text-primary-foreground">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <CardTitle className="text-lg uppercase">Leadership Applications</CardTitle>
+              <p className="mt-1 text-sm text-primary-foreground/75">
+                Review executive and president applications separately from ordinary membership.
+              </p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Select value={clubFilter} onValueChange={setClubFilter}>
+                <SelectTrigger className="bg-background text-foreground">
+                  <SelectValue placeholder="Club" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All clubs</SelectItem>
+                  {clubs.map((club) => (
+                    <SelectItem key={club.id} value={club.id}>
+                      {club.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={roleFilter} onValueChange={(value) => setRoleFilter(value as typeof roleFilter)}>
+                <SelectTrigger className="bg-background text-foreground">
+                  <SelectValue placeholder="Role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All roles</SelectItem>
+                  <SelectItem value="executive">Executive</SelectItem>
+                  <SelectItem value="president">President</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as typeof statusFilter)}>
+                <SelectTrigger className="bg-background text-foreground">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  <SelectItem value="pending">Under Review</SelectItem>
+                  <SelectItem value="needs_more_info">Needs Info</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-5">
+          {isLoading ? (
+            <NeoLoadingState title="Loading Club Services controls" message="We are checking leadership applications." compact />
+          ) : isError ? (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+              <p className="font-medium">Unable to load leadership applications</p>
+              <p className="mt-1 text-sm text-muted-foreground">{getErrorMessage(error)}</p>
+            </div>
+          ) : applications.length === 0 ? (
+            <div className="rounded-2xl border-2 border-dashed border-foreground p-10 text-center">
+              <Crown className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+              <p className="font-medium">No leadership applications match this view</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {applications.map((application) => (
+                <div key={application.id} className="flex flex-col gap-4 rounded-2xl border-2 border-foreground bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold">{application.profile?.full_name || "Applicant"}</p>
+                      <LeadershipStatusBadge status={application.status} />
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {application.profile?.student_id || "No University ID"} - {application.club?.name || application.club_id}
+                    </p>
+                    <p className="mt-1 text-sm capitalize">
+                      Wants to become <span className="font-medium">{application.requested_role}</span>
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <p className="text-xs text-muted-foreground">{formatDate(application.created_at)}</p>
+                    <Button type="button" onClick={() => setSelectedApplication(application)}>
+                      {["pending", "needs_more_info"].includes(application.status) ? "Review" : "View"}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function ReviewerMembershipView() {
   const { role } = useRole();
   const [statusFilter, setStatusFilter] = useState<(typeof REQUEST_STATUSES)[number]>("pending");
@@ -852,6 +1362,7 @@ function ReviewerMembershipView() {
       </div>
 
       {selectedRequest ? <RequestReviewPanel request={selectedRequest} onClose={() => setSelectedRequest(null)} /> : null}
+      {role === "admin" ? <AdminLeadershipApplicationsQueue clubs={clubs} /> : null}
 
       <Card>
         <CardHeader>
@@ -903,7 +1414,7 @@ function ReviewerMembershipView() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading membership requests...</p>
+            <NeoLoadingState title="Checking club membership status" message="We are loading membership requests." compact />
           ) : isError ? (
             <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
               <p className="font-medium">Unable to load membership requests</p>
@@ -1001,7 +1512,7 @@ function ReviewerMembershipView() {
 export default function Membership() {
   const { role } = useRole();
 
-  if (role === "student") {
+  if (role === "student" || role === "executive") {
     return <StudentMembershipView />;
   }
 
