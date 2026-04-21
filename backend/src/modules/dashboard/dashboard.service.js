@@ -344,9 +344,40 @@ function formatTaskSummary(task) {
     priority: task.priority,
     status: task.status,
     due_date: task.due_date,
+    assigned_by_profile: task.assigned_by_profile ?? null,
+    assigned_to_profile: task.assigned_to_profile ?? null,
     created_at: task.created_at,
     updated_at: task.updated_at
   };
+}
+
+function summarizeTasks(tasks) {
+  return {
+    total_tasks: tasks.length,
+    pending_tasks: tasks.filter((task) => task.status === "pending").length,
+    in_progress_tasks: tasks.filter((task) => task.status === "in_progress").length,
+    completed_tasks: tasks.filter((task) => task.status === "completed").length,
+    blocked_tasks: tasks.filter((task) => task.status === "blocked").length,
+    open_tasks: tasks.filter((task) => task.status !== "completed").length
+  };
+}
+
+function summarizeFeedback(feedback) {
+  const ratedFeedback = feedback.filter((item) => Number.isFinite(Number(item.rating)));
+
+  return {
+    feedback_count: feedback.length,
+    average_rating: ratedFeedback.length > 0
+      ? Math.round((ratedFeedback.reduce((sum, item) => sum + Number(item.rating), 0) / ratedFeedback.length) * 10) / 10
+      : null
+  };
+}
+
+function buildClubDetailActivity(records) {
+  return records
+    .filter((item) => item.created_at)
+    .sort((first, second) => new Date(second.created_at) - new Date(first.created_at))
+    .slice(0, 12);
 }
 
 async function getDashboardClub(actor, database) {
@@ -552,7 +583,124 @@ async function getAdminOperationsDashboard(options) {
   };
 }
 
+async function getAdminClubDashboard(options) {
+  const { actor, clubId, database = db } = options;
+
+  if (!actor) {
+    throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
+  }
+
+  if (actor.role !== "admin") {
+    throw new ApiError(403, "Only admins can view club operations dashboards", "FORBIDDEN");
+  }
+
+  const club = database.getClubById ? await database.getClubById(clubId) : null;
+
+  if (!club) {
+    throw new ApiError(404, "Club not found", "CLUB_NOT_FOUND");
+  }
+
+  const [
+    proposals,
+    members,
+    duePayments,
+    membershipRequests,
+    reports,
+    approvedEvents,
+    tasks,
+    feedback,
+    rsvps,
+    attendance
+  ] = await Promise.all([
+    database.listProposalsByClubId ? database.listProposalsByClubId(clubId) : [],
+    database.listClubMembers ? database.listClubMembers({ clubId }) : [],
+    database.listDuePayments ? database.listDuePayments({ clubId }) : [],
+    database.listMembershipRequests ? database.listMembershipRequests({ clubId }) : [],
+    database.listEventReports ? database.listEventReports({ clubId }) : [],
+    database.listApprovedProposals ? database.listApprovedProposals({ clubIds: [clubId] }) : [],
+    database.listTasks ? database.listTasks({ clubId }) : [],
+    database.listFeedback ? database.listFeedback({ clubId }) : [],
+    database.listEventRsvps ? database.listEventRsvps({ clubId }) : [],
+    database.listEventAttendance ? database.listEventAttendance({ clubId }) : []
+  ]);
+  const approvedEventIdsWithReports = new Set(reports.map((report) => report.proposal_id));
+  const missingReports = approvedEvents
+    .filter((event) => isPastEvent(event))
+    .filter((event) => !approvedEventIdsWithReports.has(event.id));
+  const attendedCount = attendance.filter((record) => record.attended).length;
+  const goingCount = rsvps.filter((rsvp) => rsvp.status === "going").length;
+  const paidDues = duePayments.filter((payment) => payment.status === "paid");
+  const performance = buildClubPerformance({
+    clubs: [club],
+    proposals,
+    members,
+    duePayments,
+    reports,
+    rsvps,
+    attendance,
+    membershipRequests,
+    feedback,
+    tasks
+  })[0];
+
+  return {
+    role: "admin",
+    club,
+    performance,
+    summary: {
+      ...summarizeProposals(proposals),
+      total_members: members.length,
+      active_members: members.filter((member) => member.membership_status === "active").length,
+      pending_membership_requests: membershipRequests.filter((request) => request.status === "pending").length,
+      dues_collected_amount: paidDues.reduce((sum, payment) => sum + Number(payment.amount || 0), 0),
+      dues_collection_rate: duePayments.length > 0 ? Math.round((paidDues.length / duePayments.length) * 100) : 0,
+      approved_events: approvedEvents.length,
+      reports_submitted: reports.length,
+      missing_reports: missingReports.length,
+      event_attendance_count: attendedCount,
+      event_rsvp_count: rsvps.length,
+      attendance_rate: calculateAttendanceRate(attendedCount, goingCount),
+      ...summarizeTasks(tasks),
+      ...summarizeFeedback(feedback)
+    },
+    tasks: tasks.slice(0, 10).map(formatTaskSummary),
+    recent_proposals: proposals.slice(0, 8).map(formatProposalSummary),
+    recent_members: members.slice(0, 8),
+    recent_reports: reports.slice(0, 8),
+    approved_events: approvedEvents.slice(0, 8).map(formatEventSummary),
+    missing_reports: missingReports.slice(0, 8).map((event) => ({
+      proposal_id: event.id,
+      club_id: event.club_id,
+      title: event.proposed_activity || event.title,
+      event_date: event.event_date,
+      days_since_event: Math.max(
+        0,
+        Math.floor((Date.now() - new Date(event.event_date).getTime()) / (1000 * 60 * 60 * 24))
+      )
+    })),
+    recent_activity: buildClubDetailActivity([
+      ...buildRecentActivity({
+        proposals,
+        membershipRequests,
+        duePayments,
+        reports,
+        feedback,
+        tasks
+      }),
+      ...members.map((member) => ({
+        id: `member-${member.id}`,
+        type: "member",
+        club_id: member.club_id,
+        title: member.full_name || "Club member",
+        message: `${(member.club_role || "member").replace(/_/g, " ")} is ${member.membership_status}.`,
+        created_at: member.updated_at || member.created_at
+      }))
+    ])
+  };
+}
+
 module.exports = {
+  getAdminClubDashboard,
   getAdminOperationsDashboard,
   getExecutiveDashboard,
   getPresidentDashboard,

@@ -18,6 +18,7 @@ import Proposals from "@/pages/Proposals";
 import ProposalDetail from "@/pages/ProposalDetail";
 import Approvals from "@/pages/Approvals";
 import Analytics from "@/pages/Analytics";
+import AdminClubDashboard from "@/pages/AdminClubDashboard";
 import Communications from "@/pages/Communications";
 import Dues from "@/pages/Dues";
 import EventCalendar from "@/pages/EventCalendar";
@@ -85,6 +86,7 @@ const App = () => (
                   <Route path="/dues" element={<Dues />} />
                   <Route path="/communications" element={<Communications />} />
                   <Route path="/tasks" element={<Tasks />} />
+                  <Route path="/clubs/:clubId/dashboard" element={<AdminClubDashboard />} />
                   <Route path="/user-management" element={<UserManagement />} />
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/archive" element={<MediaArchive />} />

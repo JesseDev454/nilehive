@@ -28,6 +28,8 @@ function formatTask(task, history = null) {
     priority: task.priority,
     status: task.status,
     due_date: task.due_date,
+    assigned_by_profile: task.assigned_by_profile ?? null,
+    assigned_to_profile: task.assigned_to_profile ?? null,
     created_at: task.created_at,
     updated_at: task.updated_at,
     status_history: history
@@ -96,6 +98,15 @@ async function listVisibleTasks(options) {
     return tasks.map((task) => formatTask(task));
   }
 
+  if (actor.role === "admin") {
+    const tasks = await database.listTasks({
+      clubId: filters.club_id,
+      status: filters.status
+    });
+
+    return tasks.map((task) => formatTask(task));
+  }
+
   if (actor.role === "executive") {
     const tasks = await database.listTasks({
       assignedTo: actor.id,
@@ -119,6 +130,7 @@ async function getTaskDetail(options) {
   }
 
   const canView =
+    actor.role === "admin" ||
     (actor.role === "executive" && task.assigned_to === actor.id) ||
     (actor.role === "president" && actor.clubId && task.club_id === actor.clubId);
 

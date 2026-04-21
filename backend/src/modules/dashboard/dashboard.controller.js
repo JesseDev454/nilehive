@@ -1,5 +1,6 @@
 const asyncHandler = require("../../shared/asyncHandler");
 const {
+  getAdminClubDashboard,
   getAdminOperationsDashboard,
   getExecutiveDashboard,
   getPresidentDashboard
@@ -30,6 +31,16 @@ function createDashboardController(options = {}) {
     getAdminOperationsDashboard: asyncHandler(async (req, res) => {
       const dashboard = await getAdminOperationsDashboard({
         actor: req.user,
+        database
+      });
+
+      res.status(200).json({ data: dashboard });
+    }),
+
+    getAdminClubDashboard: asyncHandler(async (req, res) => {
+      const dashboard = await getAdminClubDashboard({
+        actor: req.user,
+        clubId: req.params.clubId,
         database
       });
 

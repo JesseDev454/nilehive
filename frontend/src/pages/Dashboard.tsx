@@ -1224,7 +1224,12 @@ function PolishedAdminDashboard() {
                                     {getClubInitials(club.club_name)}
                                   </div>
                                   <div>
-                                    <p className="font-semibold">{club.club_name}</p>
+                                    <Link
+                                      to={`/clubs/${club.club_id}/dashboard`}
+                                      className="font-semibold underline-offset-4 hover:underline"
+                                    >
+                                      {club.club_name}
+                                    </Link>
                                     <p className="text-xs text-muted-foreground">
                                       {club.club_code || "No code"} - Last activity {getDateLabel(club.last_activity_at ?? undefined)}
                                     </p>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ClipboardList, Loader2, Target, UserCheck } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { NeoLoadingState, NeoMetricCard, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { useRole } from "@/contexts/RoleContext";
 import {
   ApiClientError,
   createTask,
+  getClubs,
   getPresidentDashboard,
   getTasks,
   updateTaskStatus,
@@ -78,7 +80,10 @@ function TaskCard({
               <p className="text-sm text-muted-foreground">{task.description}</p>
             ) : null}
             <p className="text-xs text-muted-foreground">
-              Due: {getDateLabel(task.due_date)} · Updated: {getDateLabel(task.updated_at)}
+              Due: {getDateLabel(task.due_date)} - Updated: {getDateLabel(task.updated_at)}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Assigned to {task.assigned_to_profile?.full_name || task.assigned_to}
             </p>
           </div>
 
@@ -108,12 +113,14 @@ function TaskCard({
 export default function Tasks() {
   const { role } = useRole();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [assignedTo, setAssignedTo] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<CreateTaskPayload["priority"]>("medium");
   const [dueDate, setDueDate] = useState("");
-  const canUseTasks = role === "president" || role === "executive";
+  const adminClubId = searchParams.get("club_id") || "all";
+  const canUseTasks = role === "president" || role === "executive" || role === "admin";
 
   const {
     data: tasks = [],
@@ -121,9 +128,18 @@ export default function Tasks() {
     isError,
     error
   } = useQuery({
-    queryKey: ["tasks", role],
-    queryFn: () => getTasks(),
+    queryKey: ["tasks", role, adminClubId],
+    queryFn: () =>
+      getTasks({
+        club_id: role === "admin" && adminClubId !== "all" ? adminClubId : undefined
+      }),
     enabled: canUseTasks,
+    retry: false
+  });
+  const { data: clubs = [] } = useQuery({
+    queryKey: ["clubs", "tasks-admin-filter"],
+    queryFn: () => getClubs(),
+    enabled: role === "admin",
     retry: false
   });
   const { data: presidentDashboard } = useQuery({
@@ -197,7 +213,7 @@ export default function Tasks() {
         <NeoPageHeader
           eyebrow="Operations"
           title="Tasks"
-          description="Task delegation is available to club presidents and executives."
+          description="Task delegation is available to club presidents, executives, and Club Services oversight."
         />
         <NeoStateCard
           icon={ClipboardList}
@@ -212,9 +228,11 @@ export default function Tasks() {
     <div className="nh-page">
       <NeoPageHeader
         eyebrow="Operations"
-        title={role === "president" ? "Task Delegation" : "My Tasks"}
+        title={role === "admin" ? "All Club Tasks" : role === "president" ? "Task Delegation" : "My Tasks"}
         description={
-          role === "president"
+          role === "admin"
+            ? "Read-only task oversight across clubs. Presidents assign tasks and executives update progress."
+            : role === "president"
             ? "Assign work to executives and track progress from one club operations board."
             : "Track what your president assigned and keep your progress visible."
         }
@@ -307,9 +325,50 @@ export default function Tasks() {
         </Card>
       ) : null}
 
+      {role === "admin" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Club Filter</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Filter task oversight by club. This board is view-only for Club Services admins.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <Select
+              value={adminClubId}
+              onValueChange={(value) => {
+                const nextParams = new URLSearchParams(searchParams);
+
+                if (value === "all") {
+                  nextParams.delete("club_id");
+                } else {
+                  nextParams.set("club_id", value);
+                }
+
+                setSearchParams(nextParams);
+              }}
+            >
+              <SelectTrigger className="max-w-md">
+                <SelectValue placeholder="All clubs" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All clubs</SelectItem>
+                {clubs.map((club) => (
+                  <SelectItem key={club.id} value={club.id}>
+                    {club.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">{role === "president" ? "Club Task Board" : "Assigned Tasks"}</CardTitle>
+          <CardTitle className="text-lg">
+            {role === "admin" ? "Club Services Task Oversight" : role === "president" ? "Club Task Board" : "Assigned Tasks"}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           {isLoading ? (
@@ -326,6 +385,8 @@ export default function Tasks() {
               <p className="text-sm text-muted-foreground mt-1">
                 {role === "president"
                   ? "Assign the first task to an executive above."
+                  : role === "admin"
+                  ? "No tasks match this club filter yet."
                   : "Assigned tasks from your president will appear here."}
               </p>
             </div>

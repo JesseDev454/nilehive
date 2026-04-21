@@ -10,7 +10,7 @@ const eventReminderSelect =
 const clubSelect = "id, name, code, advisor_id, created_at";
 const publicClubSelect = "id, name, code, created_at";
 const taskSelect =
-  "id, club_id, assigned_by, assigned_to, title, description, priority, status, due_date, created_at, updated_at";
+  "id, club_id, assigned_by, assigned_to, title, description, priority, status, due_date, created_at, updated_at, assigned_by_profile:profiles!tasks_assigned_by_fkey(id, full_name, student_id, role), assigned_to_profile:profiles!tasks_assigned_to_fkey(id, full_name, student_id, role)";
 const taskStatusHistorySelect =
   "id, task_id, changed_by, old_status, new_status, remarks, created_at";
 const clubMemberSelect =
@@ -476,6 +476,10 @@ function createDatabase(options = {}) {
         query = query.eq("proposal_id", filters.proposalId);
       }
 
+      if (filters.clubId) {
+        query = query.eq("club_id", filters.clubId);
+      }
+
       if (filters.userId) {
         query = query.eq("user_id", filters.userId);
       }
@@ -511,6 +515,10 @@ function createDatabase(options = {}) {
 
       if (filters.proposalId) {
         query = query.eq("proposal_id", filters.proposalId);
+      }
+
+      if (filters.clubId) {
+        query = query.eq("club_id", filters.clubId);
       }
 
       if (filters.userId) {

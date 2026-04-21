@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const { createApp } = require("../src/app");
 const {
   createTask,
+  getTaskDetail,
   listVisibleTasks,
   updateTaskStatus
 } = require("../src/modules/tasks/tasks.service");
@@ -146,6 +147,144 @@ test("president can list club tasks", async () => {
   });
 
   assert.equal(tasks.length, 1);
+});
+
+test("admin can list all club tasks", async () => {
+  const fakeDatabase = {
+    async listTasks(filters) {
+      assert.deepEqual(filters, {
+        clubId: undefined,
+        status: undefined
+      });
+      return [
+        createTaskRecord(),
+        createTaskRecord({
+          id: "task-2",
+          club_id: "club-2",
+          assigned_to: "executive-2"
+        })
+      ];
+    }
+  };
+
+  const tasks = await listVisibleTasks({
+    actor: {
+      id: "admin-1",
+      role: "admin"
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(tasks.length, 2);
+});
+
+test("admin can list tasks filtered by club", async () => {
+  const fakeDatabase = {
+    async listTasks(filters) {
+      assert.deepEqual(filters, {
+        clubId: "club-2",
+        status: undefined
+      });
+      return [
+        createTaskRecord({
+          id: "task-2",
+          club_id: "club-2",
+          assigned_to: "executive-2"
+        })
+      ];
+    }
+  };
+
+  const tasks = await listVisibleTasks({
+    actor: {
+      id: "admin-1",
+      role: "admin"
+    },
+    filters: {
+      club_id: "club-2"
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(tasks.length, 1);
+  assert.equal(tasks[0].club_id, "club-2");
+});
+
+test("admin can view task detail and history", async () => {
+  const fakeDatabase = {
+    async getTaskById(taskId) {
+      assert.equal(taskId, "task-1");
+      return createTaskRecord();
+    },
+    async listTaskStatusHistory(taskId) {
+      assert.equal(taskId, "task-1");
+      return [
+        {
+          id: "history-1",
+          task_id: "task-1",
+          changed_by: "president-1",
+          old_status: null,
+          new_status: "pending",
+          remarks: "Task assigned",
+          created_at: "2026-04-11T10:00:00.000Z"
+        }
+      ];
+    }
+  };
+
+  const task = await getTaskDetail({
+    actor: {
+      id: "admin-1",
+      role: "admin"
+    },
+    taskId: "task-1",
+    database: fakeDatabase
+  });
+
+  assert.equal(task.id, "task-1");
+  assert.equal(task.status_history.length, 1);
+});
+
+test("admin cannot assign tasks", async () => {
+  await assert.rejects(
+    () =>
+      createTask({
+        actor: {
+          id: "admin-1",
+          role: "admin"
+        },
+        payload: {
+          assigned_to: "executive-1",
+          title: "Prepare budget breakdown"
+        },
+        database: {}
+      }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
+});
+
+test("admin cannot update task status", async () => {
+  const fakeDatabase = {
+    async getTaskById() {
+      return createTaskRecord();
+    }
+  };
+
+  await assert.rejects(
+    () =>
+      updateTaskStatus({
+        actor: {
+          id: "admin-1",
+          role: "admin"
+        },
+        taskId: "task-1",
+        payload: {
+          status: "in_progress"
+        },
+        database: fakeDatabase
+      }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
 });
 
 test("executive can update assigned task status and history is recorded", async () => {

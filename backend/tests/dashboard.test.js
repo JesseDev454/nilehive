@@ -421,6 +421,59 @@ test("admin can fetch operations dashboard data", async (t) => {
   assert.ok(payload.data.recent_activity.length > 0);
 });
 
+test("admin can fetch one club operations dashboard", async (t) => {
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  const { response, payload } = await getDashboard(
+    server.baseUrl,
+    "/api/v1/dashboard/admin-operations/clubs/club-1",
+    "admin-token"
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.role, "admin");
+  assert.equal(payload.data.club.id, "club-1");
+  assert.equal(payload.data.summary.total_members, 2);
+  assert.equal(payload.data.summary.open_tasks, 1);
+  assert.equal(payload.data.tasks.length, 1);
+  assert.equal(payload.data.recent_proposals.length, 3);
+  assert.equal(payload.data.recent_activity.length > 0, true);
+});
+
+test("non-admin cannot fetch one club operations dashboard", async (t) => {
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  const { response, payload } = await getDashboard(
+    server.baseUrl,
+    "/api/v1/dashboard/admin-operations/clubs/club-1",
+    "president-token"
+  );
+
+  assert.equal(response.status, 403);
+  assert.equal(payload.error.code, "FORBIDDEN");
+});
+
+test("missing club operations dashboard returns 404", async (t) => {
+  const database = createFakeDatabase();
+  database.getClubById = async (clubId) => {
+    assert.equal(clubId, "missing-club");
+    return null;
+  };
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const { response, payload } = await getDashboard(
+    server.baseUrl,
+    "/api/v1/dashboard/admin-operations/clubs/missing-club",
+    "admin-token"
+  );
+
+  assert.equal(response.status, 404);
+  assert.equal(payload.error.code, "CLUB_NOT_FOUND");
+});
+
 test("admin attendance rate is capped at 100 percent", async (t) => {
   const database = createFakeDatabase();
   database.listEventAttendance = async () => [

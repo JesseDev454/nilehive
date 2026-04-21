@@ -345,6 +345,18 @@ export interface TaskRecord {
   priority: "low" | "medium" | "high";
   status: "pending" | "in_progress" | "completed" | "blocked";
   due_date: string | null;
+  assigned_by_profile?: {
+    id: string;
+    full_name: string | null;
+    student_id: string | null;
+    role: ProfileRecord["role"];
+  } | null;
+  assigned_to_profile?: {
+    id: string;
+    full_name: string | null;
+    student_id: string | null;
+    role: ProfileRecord["role"];
+  } | null;
   created_at: string;
   updated_at: string;
   status_history?: TaskStatusHistoryRecord[] | null;
@@ -569,6 +581,45 @@ export interface EventReportRecord {
     location: string | null;
     status: string;
   } | null;
+}
+
+export interface AdminClubDashboardRecord {
+  role: "admin";
+  club: ClubRecord;
+  performance: AdminOperationsDashboardRecord["club_performance"][number];
+  summary: {
+    total_proposals: number;
+    pending_proposals: number;
+    approved_proposals: number;
+    rejected_proposals: number;
+    approval_rate: number;
+    total_members: number;
+    active_members: number;
+    pending_membership_requests: number;
+    dues_collected_amount: number;
+    dues_collection_rate: number;
+    approved_events: number;
+    reports_submitted: number;
+    missing_reports: number;
+    event_attendance_count: number;
+    event_rsvp_count: number;
+    attendance_rate: number;
+    feedback_count: number;
+    total_tasks: number;
+    pending_tasks: number;
+    in_progress_tasks: number;
+    completed_tasks: number;
+    blocked_tasks: number;
+    open_tasks: number;
+    average_rating: number | null;
+  };
+  tasks: TaskRecord[];
+  recent_proposals: DashboardProposalSummary[];
+  recent_members: ClubMemberRecord[];
+  recent_reports: EventReportRecord[];
+  approved_events: ApprovedEventRecord[];
+  missing_reports: AdminOperationsDashboardRecord["missing_reports"];
+  recent_activity: AdminOperationsDashboardRecord["recent_activity"];
 }
 
 export interface CreateEventReportPayload {
@@ -1102,11 +1153,15 @@ export async function getPresidentDashboard(token?: string) {
   return response.data;
 }
 
-export async function getTasks(filters: { status?: string } = {}, token?: string) {
+export async function getTasks(filters: { status?: string; club_id?: string } = {}, token?: string) {
   const params = new URLSearchParams();
 
   if (filters.status) {
     params.set("status", filters.status);
+  }
+
+  if (filters.club_id) {
+    params.set("club_id", filters.club_id);
   }
 
   const query = params.toString();
@@ -1202,6 +1257,18 @@ export async function updateClubMember(
 export async function getAdminOperationsDashboard(token?: string) {
   const response = await request<ApiEnvelope<AdminOperationsDashboardRecord>>(
     "/api/v1/dashboard/admin-operations",
+    {
+      method: "GET",
+      token
+    }
+  );
+
+  return response.data;
+}
+
+export async function getAdminClubDashboard(clubId: string, token?: string) {
+  const response = await request<ApiEnvelope<AdminClubDashboardRecord>>(
+    `/api/v1/dashboard/admin-operations/clubs/${clubId}`,
     {
       method: "GET",
       token

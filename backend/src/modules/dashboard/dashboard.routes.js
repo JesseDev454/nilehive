@@ -12,6 +12,7 @@ function createDashboardRouter(options = {}) {
 
   router.get("/executive", auth, requireRole("executive"), controller.getExecutiveDashboard);
   router.get("/president", auth, requireRole("president"), controller.getPresidentDashboard);
+  router.get("/admin-operations/clubs/:clubId", auth, requireRole("admin"), controller.getAdminClubDashboard);
   router.get("/admin-operations", auth, requireRole("admin"), controller.getAdminOperationsDashboard);
 
   return router;

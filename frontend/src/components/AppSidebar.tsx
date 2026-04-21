@@ -42,6 +42,7 @@ export function AppSidebar() {
     { title: "Final Review", url: "/proposals", icon: FileText },
     { title: "Membership", url: "/membership", icon: UserPlus },
     { title: "Members", url: "/members", icon: Users },
+    { title: "Tasks", url: "/tasks", icon: ClipboardList },
     { title: "Dues", url: "/dues", icon: CreditCard },
     { title: "Announcements", url: "/communications", icon: MessageSquare },
     { title: "Approved Events", url: "/events", icon: CalendarDays },

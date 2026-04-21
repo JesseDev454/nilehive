@@ -24,7 +24,8 @@ function createTasksController(options = {}) {
       const tasks = await listVisibleTasks({
         actor: req.user,
         filters: {
-          status: req.query.status
+          status: req.query.status,
+          club_id: req.query.club_id
         },
         database
       });
