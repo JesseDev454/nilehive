@@ -4,6 +4,9 @@ const {
   validateCreateMembershipRequestPayload,
   validateMembershipRequestDecisionPayload
 } = require("./membership-requests.validation");
+const {
+  updateMemberStatus
+} = require("../members/member-status");
 
 function requireActor(actor) {
   if (!actor) {
@@ -259,9 +262,25 @@ async function activateMembershipAfterPaidDues(options) {
     return null;
   }
 
-  const member = await database.updateClubMember(payment.member_id, {
-    membership_status: "active"
-  });
+  const existingMember = database.getClubMemberById
+    ? await database.getClubMemberById(payment.member_id)
+    : null;
+
+  if (existingMember?.membership_status === "alumni") {
+    return null;
+  }
+
+  const member = existingMember
+    ? await updateMemberStatus({
+        database,
+        member: existingMember,
+        actor,
+        nextStatus: "active",
+        reason: `Dues verified for ${payment.academic_session}`
+      })
+    : await database.updateClubMember(payment.member_id, {
+        membership_status: "active"
+      });
 
   if (["executive", "president"].includes(request.requested_role)) {
     await database.updateProfile(request.profile_id, {

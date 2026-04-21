@@ -128,6 +128,113 @@ test("president can verify a submitted payment as paid", async () => {
   assert.equal(payment.status, "paid");
 });
 
+test("paid current-session dues activate an inactive member", async () => {
+  let memberUpdate;
+  let historyEntry;
+  const fakeDatabase = {
+    async getDuePaymentById() {
+      return createPayment({
+        status: "submitted",
+        academic_session: "2025/2026"
+      });
+    },
+    async updateDuePayment(paymentId, update) {
+      return createPayment({
+        id: paymentId,
+        academic_session: "2025/2026",
+        ...update
+      });
+    },
+    async getClubMemberById() {
+      return createMember({
+        id: "member-1",
+        membership_status: "inactive"
+      });
+    },
+    async updateClubMember(memberId, update) {
+      assert.equal(memberId, "member-1");
+      memberUpdate = update;
+      return createMember({
+        id: memberId,
+        ...update
+      });
+    },
+    async createClubMemberStatusHistory(entry) {
+      historyEntry = entry;
+      return entry;
+    }
+  };
+
+  await updateDuePayment({
+    actor: {
+      id: "president-1",
+      role: "president",
+      clubId: "club-1"
+    },
+    paymentId: "payment-1",
+    payload: {
+      status: "paid"
+    },
+    database: fakeDatabase
+  });
+
+  assert.deepEqual(memberUpdate, {
+    membership_status: "active"
+  });
+  assert.equal(historyEntry.previous_status, "inactive");
+  assert.equal(historyEntry.new_status, "active");
+});
+
+test("unpaid or rejected current-session dues keep a member inactive", async () => {
+  let memberUpdate;
+  const fakeDatabase = {
+    async getDuePaymentById() {
+      return createPayment({
+        status: "paid",
+        academic_session: "2025/2026"
+      });
+    },
+    async updateDuePayment(paymentId, update) {
+      return createPayment({
+        id: paymentId,
+        academic_session: "2025/2026",
+        ...update
+      });
+    },
+    async getClubMemberById() {
+      return createMember({
+        id: "member-1",
+        membership_status: "active"
+      });
+    },
+    async updateClubMember(memberId, update) {
+      assert.equal(memberId, "member-1");
+      memberUpdate = update;
+      return createMember({
+        id: memberId,
+        ...update
+      });
+    }
+  };
+
+  await updateDuePayment({
+    actor: {
+      id: "admin-1",
+      role: "admin",
+      clubId: null
+    },
+    paymentId: "payment-1",
+    payload: {
+      status: "rejected"
+    },
+    database: fakeDatabase
+  });
+
+  assert.deepEqual(memberUpdate, {
+    membership_status: "inactive"
+  });
+});
+
 test("student can list own dues payments", async () => {
   const fakeDatabase = {
     async listDuePaymentsForProfile(profileId) {

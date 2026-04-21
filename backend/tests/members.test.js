@@ -56,6 +56,7 @@ test("president can add a member to their club", async () => {
 
   assert.equal(createdMember.club_id, "club-1");
   assert.equal(createdMember.club_role, "member");
+  assert.equal(createdMember.membership_status, "inactive");
   assert.equal(member.full_name, "Amina Member");
 });
 
@@ -207,6 +208,18 @@ test("president can update member role and status", async () => {
         membership_status: "active"
       });
       return createMemberRecord(update);
+    },
+    async listDuePayments(filters) {
+      assert.deepEqual(filters, {
+        memberId: "member-1",
+        status: "paid"
+      });
+      return [
+        {
+          academic_session: "2025/2026",
+          status: "paid"
+        }
+      ];
     }
   };
 
@@ -225,6 +238,95 @@ test("president can update member role and status", async () => {
   });
 
   assert.equal(member.club_role, "executive");
+});
+
+test("president cannot mark a member active without current-session paid dues", async () => {
+  const fakeDatabase = {
+    async getClubMemberById() {
+      return createMemberRecord({
+        membership_status: "inactive"
+      });
+    },
+    async listDuePayments() {
+      return [];
+    }
+  };
+
+  await assert.rejects(
+    () =>
+      updateMember({
+        actor: {
+          id: "president-1",
+          role: "president",
+          clubId: "club-1"
+        },
+        memberId: "member-1",
+        payload: {
+          membership_status: "active"
+        },
+        database: fakeDatabase
+      }),
+    (error) => error.statusCode === 409 && error.code === "DUES_NOT_VERIFIED"
+  );
+});
+
+test("only admin can mark a member as alumni", async () => {
+  const presidentDatabase = {
+    async getClubMemberById() {
+      return createMemberRecord();
+    }
+  };
+
+  await assert.rejects(
+    () =>
+      updateMember({
+        actor: {
+          id: "president-1",
+          role: "president",
+          clubId: "club-1"
+        },
+        memberId: "member-1",
+        payload: {
+          membership_status: "alumni"
+        },
+        database: presidentDatabase
+      }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
+
+  let historyEntry;
+  const adminDatabase = {
+    async getClubMemberById() {
+      return createMemberRecord();
+    },
+    async updateClubMember(memberId, update) {
+      assert.equal(memberId, "member-1");
+      return createMemberRecord(update);
+    },
+    async createClubMemberStatusHistory(entry) {
+      historyEntry = entry;
+      return entry;
+    }
+  };
+
+  const member = await updateMember({
+    actor: {
+      id: "admin-1",
+      role: "admin",
+      clubId: null
+    },
+    memberId: "member-1",
+    payload: {
+      membership_status: "alumni",
+      status_change_reason: "Graduated"
+    },
+    database: adminDatabase
+  });
+
+  assert.equal(member.membership_status, "alumni");
+  assert.equal(historyEntry.previous_status, "active");
+  assert.equal(historyEntry.new_status, "alumni");
+  assert.equal(historyEntry.reason, "Graduated");
 });
 
 test("advisor cannot manage club members", async () => {

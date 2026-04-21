@@ -62,6 +62,7 @@ import {
   getAdvisorPendingProposalsErrorMessage,
   useAdvisorPendingProposals
 } from "@/hooks/use-advisor-pending-proposals";
+import { canViewProposalDetails } from "@/lib/roleAccess";
 
 function StatCard({
   title,
@@ -175,11 +176,17 @@ function ProposalSummaryList({
   );
 }
 
-function UpcomingEventsList({ events }: { events: ApprovedEventRecord[] }) {
+function UpcomingEventsList({
+  events,
+  canOpenProposal
+}: {
+  events: ApprovedEventRecord[];
+  canOpenProposal: boolean;
+}) {
   return (
     <div className="space-y-3">
-      {events.slice(0, 4).map((event) => (
-        <Link key={event.id} to={`/proposals/${event.proposal_id}`} className="block">
+      {events.slice(0, 4).map((event) => {
+        const content = (
           <div className="nh-list-card flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <CalendarDays className="h-4 w-4 text-success shrink-0" />
@@ -192,8 +199,16 @@ function UpcomingEventsList({ events }: { events: ApprovedEventRecord[] }) {
             </div>
             <StatusBadge status="approved" />
           </div>
-        </Link>
-      ))}
+        );
+
+        return canOpenProposal ? (
+          <Link key={event.id} to={`/proposals/${event.proposal_id}`} className="block">
+            {content}
+          </Link>
+        ) : (
+          <div key={event.id}>{content}</div>
+        );
+      })}
     </div>
   );
 }
@@ -680,7 +695,7 @@ function ExecutiveDashboard() {
                 emptyMessage="No approved events yet."
               />
             ) : (
-              <UpcomingEventsList events={approvedEvents} />
+              <UpcomingEventsList events={approvedEvents} canOpenProposal={canViewProposalDetails("executive")} />
             )}
           </CardContent>
         </Card>
@@ -1852,7 +1867,7 @@ function PresidentDashboard() {
                     emptyMessage="No approved events yet."
                   />
                 ) : (
-                  <UpcomingEventsList events={dashboard.upcoming_events} />
+                  <UpcomingEventsList events={dashboard.upcoming_events} canOpenProposal={canViewProposalDetails("president")} />
                 )}
               </CardContent>
             </Card>

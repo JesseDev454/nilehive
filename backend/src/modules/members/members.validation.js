@@ -42,7 +42,7 @@ function validateCreateMemberPayload(payload = {}) {
     email: readOptionalString(payload, "email"),
     phone_number: readOptionalString(payload, "phone_number"),
     club_role: readEnum(payload, "club_role", CLUB_MEMBER_ROLES, "member"),
-    membership_status: readEnum(payload, "membership_status", MEMBERSHIP_STATUSES, "active")
+    membership_status: readEnum(payload, "membership_status", MEMBERSHIP_STATUSES, "inactive")
   };
 }
 

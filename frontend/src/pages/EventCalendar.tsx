@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRole } from "@/contexts/RoleContext";
+import { canViewProposalDetails } from "@/lib/roleAccess";
 import {
   ApiClientError,
   createFeedback,
@@ -295,6 +296,9 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
 }
 
 function EventCard({ event }: { event: ApprovedEventRecord }) {
+  const { role } = useRole();
+  const showProposalLink = canViewProposalDetails(role);
+
   return (
     <Card>
       <CardContent className="space-y-4 p-4">
@@ -331,9 +335,11 @@ function EventCard({ event }: { event: ApprovedEventRecord }) {
             ) : null}
           </div>
 
-          <Button asChild variant="outline" size="sm">
-            <Link to={`/proposals/${event.proposal_id}`}>View proposal</Link>
-          </Button>
+          {showProposalLink ? (
+            <Button asChild variant="outline" size="sm">
+              <Link to={`/proposals/${event.proposal_id}`}>View proposal</Link>
+            </Button>
+          ) : null}
         </div>
         <EventEngagementPanel event={event} />
       </CardContent>

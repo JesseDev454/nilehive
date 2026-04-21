@@ -61,7 +61,7 @@ export default function Members() {
   const [selectedClubId, setSelectedClubId] = useState("");
   const [memberClubFilter, setMemberClubFilter] = useState("all");
   const [clubRole, setClubRole] = useState<ClubMemberRecord["club_role"]>("member");
-  const [membershipStatus, setMembershipStatus] = useState<ClubMemberRecord["membership_status"]>("active");
+  const [membershipStatus, setMembershipStatus] = useState<ClubMemberRecord["membership_status"]>("inactive");
   const canViewMembers = role === "president" || role === "executive" || role === "admin";
   const canManageMembers = role === "president" || role === "admin";
 
@@ -135,7 +135,7 @@ export default function Members() {
       setPhoneNumber("");
       setSelectedClubId("");
       setClubRole("member");
-      setMembershipStatus("active");
+      setMembershipStatus("inactive");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["club-members"] }),
         queryClient.invalidateQueries({ queryKey: ["president-dashboard"] })
@@ -250,7 +250,7 @@ export default function Members() {
                       <SelectContent>
                         <SelectItem value="active">Active</SelectItem>
                         <SelectItem value="inactive">Inactive</SelectItem>
-                        <SelectItem value="alumni">Alumni</SelectItem>
+                        {role === "admin" ? <SelectItem value="alumni">Alumni</SelectItem> : null}
                       </SelectContent>
                     </Select>
                   ) : (
@@ -335,6 +335,10 @@ export default function Members() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Add Member</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              New members start inactive until dues are verified for the current academic session.
+              Alumni status is controlled by Club Services admins.
+            </p>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleAddMember} className="nh-form-grid">
@@ -421,9 +425,8 @@ export default function Members() {
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="alumni">Alumni</SelectItem>
+                    {role === "admin" ? <SelectItem value="alumni">Alumni</SelectItem> : null}
                   </SelectContent>
                 </Select>
               </div>

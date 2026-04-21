@@ -4,6 +4,11 @@ const {
   validateCreateMemberPayload,
   validateUpdateMemberPayload
 } = require("./members.validation");
+const {
+  getCurrentAcademicSession,
+  hasVerifiedCurrentSessionDues,
+  recordMemberStatusHistory
+} = require("./member-status");
 
 function requireActor(actor) {
   if (!actor) {
@@ -100,6 +105,18 @@ async function createMember(options) {
     }
   }
 
+  if (validatedPayload.membership_status === "active") {
+    throw new ApiError(
+      409,
+      `Members become active only after dues are verified for ${getCurrentAcademicSession()}`,
+      "DUES_NOT_VERIFIED"
+    );
+  }
+
+  if (validatedPayload.membership_status === "alumni" && actor.role !== "admin") {
+    throw new ApiError(403, "Only Club Services admins can create alumni member records", "FORBIDDEN");
+  }
+
   const member = await database.createClubMember({
     club_id: clubId,
     profile_id: validatedPayload.profile_id,
@@ -129,7 +146,36 @@ async function updateMember(options) {
   getScopedClubId(actor, member.club_id);
 
   const update = validateUpdateMemberPayload(payload);
+  const requestedStatus = update.membership_status;
+
+  if (requestedStatus === "alumni" && actor.role !== "admin") {
+    throw new ApiError(403, "Only Club Services admins can mark members as alumni", "FORBIDDEN");
+  }
+
+  if (requestedStatus === "active") {
+    const hasCurrentPaidDues = await hasVerifiedCurrentSessionDues(member.id, database);
+
+    if (!hasCurrentPaidDues) {
+      throw new ApiError(
+        409,
+        `Member can only be active after dues are verified for ${getCurrentAcademicSession()}`,
+        "DUES_NOT_VERIFIED"
+      );
+    }
+  }
+
   const updatedMember = await database.updateClubMember(memberId, update);
+
+  if (requestedStatus && requestedStatus !== member.membership_status) {
+    await recordMemberStatusHistory({
+      database,
+      member,
+      actor,
+      previousStatus: member.membership_status,
+      newStatus: requestedStatus,
+      reason: payload.status_change_reason || `Manual member status update to ${requestedStatus}`
+    });
+  }
 
   return formatMember(updatedMember);
 }

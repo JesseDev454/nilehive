@@ -9,6 +9,9 @@ const {
 const {
   activateMembershipAfterPaidDues
 } = require("../membership-requests/membership-requests.service");
+const {
+  syncMemberStatusFromDuePayment
+} = require("../members/member-status");
 
 function requireActor(actor) {
   if (!actor) {
@@ -169,6 +172,20 @@ async function createDuePayment(options) {
     verified_at: validatedPayload.status === "paid" ? new Date().toISOString() : null
   });
 
+  await syncMemberStatusFromDuePayment({
+    payment,
+    actor,
+    database
+  });
+
+  if (payment.status === "paid") {
+    await activateMembershipAfterPaidDues({
+      payment,
+      actor,
+      database
+    });
+  }
+
   return formatDuePayment(payment);
 }
 
@@ -198,6 +215,12 @@ async function updateDuePayment(options) {
   }
 
   const updatedPayment = await database.updateDuePayment(paymentId, update);
+
+  await syncMemberStatusFromDuePayment({
+    payment: updatedPayment,
+    actor,
+    database
+  });
 
   if (updatedPayment.status === "paid") {
     await activateMembershipAfterPaidDues({
