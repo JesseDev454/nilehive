@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NhStudentId } from "@/components/NhStudentId";
 import { useAuth } from "@/contexts/AuthContext";
+import { getMicrosoftPasswordHelpUrl, isPasswordAuthEnabled } from "@/lib/env";
 
 function isRoleSensitivePath(pathname: string) {
   return (
@@ -30,6 +31,7 @@ export default function Login() {
 
   const requestedRedirect = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || "/";
   const redirectTo = isRoleSensitivePath(requestedRedirect) ? "/" : requestedRedirect;
+  const passwordAuthEnabled = isPasswordAuthEnabled();
 
   if (!isLoading && session) {
     return <Navigate to={redirectTo} replace />;
@@ -136,7 +138,20 @@ export default function Login() {
                     <Label className="font-black uppercase tracking-[0.12em]" htmlFor="password">
                       Password
                     </Label>
-                    <span className="text-xs font-bold text-muted-foreground">Contact Club Services for support</span>
+                    {passwordAuthEnabled ? (
+                      <Link className="text-xs font-black text-foreground underline underline-offset-4" to="/forgot-password">
+                        Forgot password?
+                      </Link>
+                    ) : (
+                      <a
+                        className="text-xs font-black text-foreground underline underline-offset-4"
+                        href={getMicrosoftPasswordHelpUrl()}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        Microsoft password help
+                      </a>
+                    )}
                   </div>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/contexts/RoleContext";
 import {
   ApiClientError,
@@ -30,18 +31,19 @@ import {
   type CreateProposalPayload,
   type ResponsibleMember
 } from "@/lib/api";
+import {
+  clearProposalDraft,
+  formatProposalDraftSavedAt,
+  readProposalDraft,
+  writeProposalDraft,
+  type ProposalDraftMode
+} from "@/lib/proposalDraftStorage";
 import { normalizeStudentId, STUDENT_ID_PLACEHOLDER } from "@/lib/studentId";
 import { cn } from "@/lib/utils";
 
-const steps = ["Club Info", "Activity", "Budget", "Members", "Review"];
+const steps = ["Club Context", "Activity", "Budget", "Members", "Review"];
 const MAX_RESPONSIBLE_MEMBERS = 10;
-
-const PRESET_CLUB_NAMES = [
-  "NILE GDG CLUB",
-  "NILE GAMES CLUB",
-  "NILE CREATIVE ARTS CLUB",
-  "NILE BOOK CLUB"
-];
+const PROPOSAL_AUTOSAVE_DELAY_MS = 1000;
 
 const PRESET_VENUES = [
   "STUDENT CENTER",
@@ -83,6 +85,19 @@ interface ResponsibleMemberForm {
   positionOther: string;
 }
 
+const INITIAL_FORM_STATE = {
+  aimObjectives: "",
+  proposedActivity: "",
+  description: "",
+  eventDates: [""],
+  eventTime: "",
+  eventEndTime: "",
+  venue: "",
+  venueOther: "",
+  roomNumber: "",
+  numberOfParticipants: ""
+};
+
 function createBudgetItem(): BudgetFormItem {
   return {
     id: crypto.randomUUID(),
@@ -102,6 +117,76 @@ function createResponsibleMember(): ResponsibleMemberForm {
     position: "",
     positionOther: ""
   };
+}
+
+function normalizeBudgetDraftItems(items: BudgetFormItem[] | undefined) {
+  if (!Array.isArray(items) || items.length === 0) {
+    return [createBudgetItem()];
+  }
+
+  return items.map((item) => ({
+    id: item.id || crypto.randomUUID(),
+    item: item.item || "",
+    quantity: item.quantity || "",
+    description: item.description || "",
+    amount: item.amount || ""
+  }));
+}
+
+function normalizeResponsibleMemberDrafts(members: ResponsibleMemberForm[] | undefined) {
+  if (!Array.isArray(members) || members.length === 0) {
+    return [createResponsibleMember()];
+  }
+
+  return members.map((member) => ({
+    id: member.id || crypto.randomUUID(),
+    name: member.name || "",
+    studentId: normalizeStudentId(member.studentId || ""),
+    phoneNumber: member.phoneNumber || "",
+    position: member.position || "",
+    positionOther: member.positionOther || ""
+  }));
+}
+
+function hasProposalDraftContent(
+  form: typeof INITIAL_FORM_STATE,
+  budgetItems: BudgetFormItem[],
+  responsibleMembers: ResponsibleMemberForm[],
+  step: number
+) {
+  if (step > 0) {
+    return true;
+  }
+
+  if (
+    form.aimObjectives ||
+    form.proposedActivity ||
+    form.description ||
+    form.eventTime ||
+    form.eventEndTime ||
+    form.venue ||
+    form.venueOther ||
+    form.roomNumber ||
+    form.numberOfParticipants ||
+    form.eventDates.some(Boolean)
+  ) {
+    return true;
+  }
+
+  if (budgetItems.some((item) => item.item || item.quantity || item.description || item.amount)) {
+    return true;
+  }
+
+  if (
+    responsibleMembers.some(
+      (member) =>
+        member.name || member.studentId || member.phoneNumber || member.position || member.positionOther
+    )
+  ) {
+    return true;
+  }
+
+  return false;
 }
 
 function getSubmissionErrorMessage(error: unknown) {
@@ -218,25 +303,14 @@ function toResponsibleMembers(members: ResponsibleMemberForm[]): ResponsibleMemb
 }
 
 export default function NewProposal() {
+  const { profile, user } = useAuth();
   const { role } = useRole();
   const canManageProposals = role === "president";
   const [searchParams] = useSearchParams();
   const editProposalId = searchParams.get("edit");
   const isEditMode = Boolean(editProposalId);
   const [step, setStep] = useState(0);
-  const [form, setForm] = useState({
-    clubId: "",
-    aimObjectives: "",
-    proposedActivity: "",
-    description: "",
-    eventDates: [""],
-    eventTime: "",
-    eventEndTime: "",
-    venue: "",
-    venueOther: "",
-    roomNumber: "",
-    numberOfParticipants: ""
-  });
+  const [form, setForm] = useState(INITIAL_FORM_STATE);
   const [budgetItems, setBudgetItems] = useState<BudgetFormItem[]>([createBudgetItem()]);
   const [responsibleMembers, setResponsibleMembers] = useState<ResponsibleMemberForm[]>([
     createResponsibleMember()
@@ -244,7 +318,10 @@ export default function NewProposal() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [didHydrateEditForm, setDidHydrateEditForm] = useState(false);
+  const [didHydrateLocalDraft, setDidHydrateLocalDraft] = useState(false);
+  const [lastLocalSaveAt, setLastLocalSaveAt] = useState<string | null>(null);
   const navigate = useNavigate();
+  const restoredDraftToastRef = useRef(false);
 
   const { data: clubs = [], isLoading: isLoadingClubs } = useQuery({
     queryKey: ["clubs"],
@@ -252,18 +329,12 @@ export default function NewProposal() {
     retry: false
   });
 
-  const { data: editProposal } = useQuery({
+  const { data: editProposal, isFetched: isEditProposalFetched } = useQuery({
     queryKey: ["proposal-edit", editProposalId],
     queryFn: () => getPresidentProposal(editProposalId || ""),
     enabled: !!editProposalId,
     retry: false
   });
-
-  useEffect(() => {
-    if (!form.clubId && clubs.length === 1) {
-      setForm((current) => ({ ...current, clubId: clubs[0].id }));
-    }
-  }, [clubs, form.clubId]);
 
   useEffect(() => {
     if (!editProposal || didHydrateEditForm) {
@@ -275,7 +346,6 @@ export default function NewProposal() {
       : false;
 
     setForm({
-      clubId: editProposal.club_id || "",
       aimObjectives: editProposal.aim_objectives || "",
       proposedActivity: editProposal.proposed_activity || editProposal.title || "",
       description: editProposal.description || "",
@@ -329,18 +399,122 @@ export default function NewProposal() {
     [budgetItems]
   );
 
-  const selectedClub = clubs.find((club) => club.id === form.clubId);
-  const missingPresetClubNames = PRESET_CLUB_NAMES.filter(
-    (name) => !clubs.some((club) => club.name.toLowerCase() === name.toLowerCase())
-  );
+  const currentClubId = editProposal?.club_id || profile?.club_id || "";
+  const selectedClub = clubs.find((club) => club.id === currentClubId);
+  const autosaveMode: ProposalDraftMode = isEditMode ? "edit" : "create";
+  const autosaveUserId = user?.id || profile?.id || "";
   const durationValidationMessage = getDurationValidationMessage(
     form.eventTime,
     form.eventEndTime
   );
+  const clubContextName = selectedClub?.name || (isLoadingClubs ? "Loading club..." : currentClubId ? "Linked club unavailable" : "No club assigned");
+  const clubContextCode = selectedClub?.code || null;
+  const canHydrateLocalDraft = Boolean(
+    autosaveUserId && (!isEditMode || didHydrateEditForm || isEditProposalFetched)
+  );
 
-  function getClubDisplayName() {
-    return selectedClub?.name || "";
-  }
+  useEffect(() => {
+    setStep(0);
+    setForm(INITIAL_FORM_STATE);
+    setBudgetItems([createBudgetItem()]);
+    setResponsibleMembers([createResponsibleMember()]);
+    setDidHydrateEditForm(false);
+    setDidHydrateLocalDraft(false);
+    setLastLocalSaveAt(null);
+    restoredDraftToastRef.current = false;
+  }, [editProposalId, autosaveUserId]);
+
+  useEffect(() => {
+    if (!canHydrateLocalDraft || didHydrateLocalDraft) {
+      return;
+    }
+
+    const savedDraft = readProposalDraft<typeof INITIAL_FORM_STATE, BudgetFormItem, ResponsibleMemberForm>({
+      mode: autosaveMode,
+      proposalId: editProposalId,
+      userId: autosaveUserId
+    });
+
+    if (savedDraft) {
+      setStep(Math.max(0, Math.min(savedDraft.step, steps.length - 1)));
+      setForm({
+        ...INITIAL_FORM_STATE,
+        ...savedDraft.form,
+        eventDates:
+          Array.isArray(savedDraft.form.eventDates) && savedDraft.form.eventDates.length
+            ? savedDraft.form.eventDates
+            : [""]
+      });
+      setBudgetItems(normalizeBudgetDraftItems(savedDraft.budgetItems));
+      setResponsibleMembers(normalizeResponsibleMemberDrafts(savedDraft.responsibleMembers));
+      setLastLocalSaveAt(savedDraft.savedAt);
+
+      if (!restoredDraftToastRef.current) {
+        restoredDraftToastRef.current = true;
+        toast.success("Recovered your unsaved proposal", {
+          description: "Your last local draft has been restored."
+        });
+      }
+    }
+
+    setDidHydrateLocalDraft(true);
+  }, [autosaveMode, autosaveUserId, canHydrateLocalDraft, didHydrateLocalDraft, editProposalId]);
+
+  useEffect(() => {
+    if (!didHydrateLocalDraft || !autosaveUserId) {
+      return;
+    }
+
+    if (
+      autosaveMode === "create" &&
+      !hasProposalDraftContent(form, budgetItems, responsibleMembers, step)
+    ) {
+      clearProposalDraft({
+        mode: autosaveMode,
+        proposalId: editProposalId,
+        userId: autosaveUserId
+      });
+      setLastLocalSaveAt(null);
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      const savedAt = new Date().toISOString();
+
+      writeProposalDraft<typeof INITIAL_FORM_STATE, BudgetFormItem, ResponsibleMemberForm>(
+        {
+          mode: autosaveMode,
+          proposalId: editProposalId,
+          userId: autosaveUserId
+        },
+        {
+          mode: autosaveMode,
+          proposalId: editProposalId || null,
+          userId: autosaveUserId,
+          savedAt,
+          step,
+          form,
+          budgetItems,
+          responsibleMembers
+        }
+      );
+
+      setLastLocalSaveAt(savedAt);
+    }, PROPOSAL_AUTOSAVE_DELAY_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    autosaveMode,
+    autosaveUserId,
+    budgetItems,
+    didHydrateLocalDraft,
+    editProposalId,
+    form,
+    responsibleMembers,
+    step
+  ]);
 
   const validateStepChange = (targetStep: number) => {
     if (step === 1 && targetStep > 1 && durationValidationMessage) {
@@ -391,7 +565,6 @@ export default function NewProposal() {
       : form.description;
 
     return {
-      club_id: form.clubId || undefined,
       title: form.proposedActivity,
       proposed_activity: form.proposedActivity,
       aim_objectives: form.aimObjectives,
@@ -435,6 +608,15 @@ export default function NewProposal() {
         await createProposal(payload);
       }
 
+      if (autosaveUserId) {
+        clearProposalDraft({
+          mode: autosaveMode,
+          proposalId: editProposalId,
+          userId: autosaveUserId
+        });
+        setLastLocalSaveAt(null);
+      }
+
       toast.success(shouldSaveDraft ? "Proposal saved as draft" : "Proposal saved successfully", {
         description: editProposalId
           ? "Your proposal changes have been saved."
@@ -465,6 +647,19 @@ export default function NewProposal() {
     );
   }
 
+  if (!profile?.club_id && !editProposal?.club_id) {
+    return (
+      <div className="nh-page max-w-3xl">
+        <NeoStateCard
+          icon={Building2}
+          title="Club profile required"
+          message="Your president profile is not linked to a club yet. Club Services must assign your club before you can create or edit proposals."
+          tone="warning"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="nh-page max-w-6xl">
       <NeoPageHeader
@@ -473,9 +668,20 @@ export default function NewProposal() {
         description={
           isEditMode
             ? "Update a draft or returned proposal before sending it back for review."
-            : "Capture club details, activity plans, budget estimates, and responsible members."
+            : "Capture your club event plan, budget estimates, and responsible members."
         }
-        actions={<span className="nh-status border-secondary bg-secondary text-secondary-foreground">Max {MAX_RESPONSIBLE_MEMBERS} members</span>}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            {lastLocalSaveAt ? (
+              <span className="nh-status border-foreground bg-background text-foreground">
+                Saved locally {formatProposalDraftSavedAt(lastLocalSaveAt)}
+              </span>
+            ) : null}
+            <span className="nh-status border-secondary bg-secondary text-secondary-foreground">
+              Max {MAX_RESPONSIBLE_MEMBERS} members
+            </span>
+          </div>
+        }
       />
 
       <div className="relative">
@@ -515,42 +721,25 @@ export default function NewProposal() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-lg">
                   <Building2 className="h-5 w-5 text-[#0d5bbc]" />
-                  Section A: Club Information
+                  Section A: Club Context
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-1 gap-5 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Club Name</Label>
-                  <Select
-                    disabled={isLoadingClubs}
-                    value={form.clubId}
-                    onValueChange={(clubId) => setForm({ ...form, clubId })}
-                  >
-                    <SelectTrigger className="rounded-xl bg-[#f1f4f7]">
-                      <SelectValue placeholder={isLoadingClubs ? "Loading clubs..." : "Select club"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clubs.map((club) => (
-                        <SelectItem key={club.id} value={club.id}>
-                          {club.name}{club.code ? ` (${club.code})` : ""}
-                        </SelectItem>
-                      ))}
-                      {missingPresetClubNames.map((name) => (
-                        <SelectItem key={`missing:${name}`} value={`missing:${name}`} disabled>
-                          {name} (add in Supabase first)
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {missingPresetClubNames.length > 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      Some official clubs are disabled until they exist in Supabase.
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>Organization Type</Label>
-                  <Input className="rounded-xl bg-[#f1f4f7]" disabled value="Club" />
+                <div className="space-y-3 md:col-span-2">
+                  <Label>Club</Label>
+                  <div className="nh-card-soft rounded-xl p-4">
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      <div>
+                        <p className="text-lg font-black uppercase text-[#000d27]">{clubContextName}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {clubContextCode ? `Club code: ${clubContextCode}` : "Club code will appear here when available."}
+                        </p>
+                      </div>
+                      <span className="nh-status border-secondary bg-secondary text-secondary-foreground">
+                        Submitted by Club President
+                      </span>
+                    </div>
+                  </div>
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <Label htmlFor="aim-objectives">Aim &amp; Objectives of the Event</Label>
@@ -958,12 +1147,12 @@ export default function NewProposal() {
               </CardHeader>
               <CardContent className="space-y-6 text-sm">
 
-                {/* Section A: Club Info */}
+                {/* Section A: Club Context */}
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#0d5bbc] mb-3">A - Club Information</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#0d5bbc] mb-3">A - Club Context</p>
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                    <ReviewItem label="Club Name" value={getClubDisplayName() || "-"} />
-                    <ReviewItem label="Organization Type" value="Club" />
+                    <ReviewItem label="Club" value={clubContextName || "-"} />
+                    <ReviewItem label="Club Code" value={clubContextCode || "-"} />
                   </div>
                   <div className="nh-card-soft mt-3 p-4">
                     <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Aim &amp; Objectives of the Event</p>

@@ -7,8 +7,10 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { RoleProvider } from "@/contexts/RoleContext";
 import { AppLayout } from "@/components/AppLayout";
 import Dashboard from "@/pages/Dashboard";
+import ForgotPassword from "@/pages/ForgotPassword";
 import Login from "@/pages/Login";
 import ProfileSetup from "@/pages/ProfileSetup";
+import ResetPassword from "@/pages/ResetPassword";
 import SignUp from "@/pages/SignUp";
 import NewProposal from "@/pages/NewProposal";
 import Proposals from "@/pages/Proposals";
@@ -61,6 +63,8 @@ const App = () => (
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<SignUp />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route element={<ProtectedRoutes />}>
                 <Route element={<AppLayout />}>
                   <Route path="/" element={<Dashboard />} />
