@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRole } from "@/contexts/RoleContext";
+import { getEventLifecycleLabel, isPastEvent } from "@/lib/eventLifecycle";
 import { canViewProposalDetails } from "@/lib/roleAccess";
 import {
   ApiClientError,
@@ -106,10 +107,14 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
         rating: Number(rating),
         comment: feedback
       }),
-    onSuccess: () => {
+    onSuccess: async () => {
       actionSuccess("Feedback submitted", "Thank you for helping improve club events.");
       setFeedback("");
       setRating("5");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["event-engagement", event.proposal_id] }),
+        queryClient.invalidateQueries({ queryKey: ["approved-events"] })
+      ]);
     },
     onError: (mutationError) => {
       actionError("Could not submit feedback", mutationError, getErrorMessage(mutationError));
@@ -117,6 +122,9 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
   });
   const attendanceUserIds = new Set((engagement?.attendance || []).filter((record) => record.attended).map((record) => record.user_id));
   const selectedRsvpStatus = engagement?.current_user_rsvp?.status;
+  const effectiveEvent = engagement?.event || event;
+  const isPast = isPastEvent(effectiveEvent);
+  const canSubmitFeedback = Boolean(effectiveEvent.can_submit_feedback);
 
   function getRsvpButtonVariant(status: EventRsvpRecord["status"]) {
     return selectedRsvpStatus === status ? "default" : "outline";
@@ -180,77 +188,89 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
 
       {isStudent ? (
         <div className="space-y-3 border-2 border-foreground bg-primary/5 p-4">
-          <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant={getRsvpButtonVariant("going")}
-              className={getRsvpButtonClassName("going")}
-              disabled={rsvpMutation.isPending}
-              onClick={() => rsvpMutation.mutate("going")}
+          {!isPast ? (
+            <>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant={getRsvpButtonVariant("going")}
+                  className={getRsvpButtonClassName("going")}
+                  disabled={rsvpMutation.isPending || !effectiveEvent.can_rsvp}
+                  onClick={() => rsvpMutation.mutate("going")}
+                >
+                  Going
+                </Button>
+                <Button
+                  size="sm"
+                  variant={getRsvpButtonVariant("interested")}
+                  className={getRsvpButtonClassName("interested")}
+                  disabled={rsvpMutation.isPending || !effectiveEvent.can_rsvp}
+                  onClick={() => rsvpMutation.mutate("interested")}
+                >
+                  Interested
+                </Button>
+                <Button
+                  size="sm"
+                  variant={getRsvpButtonVariant("not_going")}
+                  className={getRsvpButtonClassName("not_going")}
+                  disabled={rsvpMutation.isPending || !effectiveEvent.can_rsvp}
+                  onClick={() => rsvpMutation.mutate("not_going")}
+                >
+                  Not Going
+                </Button>
+              </div>
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Feedback opens after the event for students marked attended.
+              </p>
+            </>
+          ) : canSubmitFeedback ? (
+            <form
+              className="space-y-3"
+              onSubmit={(submitEvent) => {
+                submitEvent.preventDefault();
+                feedbackMutation.mutate();
+              }}
             >
-              Going
-            </Button>
-            <Button
-              size="sm"
-              variant={getRsvpButtonVariant("interested")}
-              className={getRsvpButtonClassName("interested")}
-              disabled={rsvpMutation.isPending}
-              onClick={() => rsvpMutation.mutate("interested")}
-            >
-              Interested
-            </Button>
-            <Button
-              size="sm"
-              variant={getRsvpButtonVariant("not_going")}
-              className={getRsvpButtonClassName("not_going")}
-              disabled={rsvpMutation.isPending}
-              onClick={() => rsvpMutation.mutate("not_going")}
-            >
-              Not Going
-            </Button>
-          </div>
-          <form
-            className="space-y-3"
-            onSubmit={(submitEvent) => {
-              submitEvent.preventDefault();
-              feedbackMutation.mutate();
-            }}
-          >
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <MessageSquare className="h-4 w-4" />
-              Event feedback
-            </div>
-            <div className="grid gap-2 sm:grid-cols-[140px_1fr]">
-              <Select value={rating} onValueChange={setRating}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="5">5 stars</SelectItem>
-                  <SelectItem value="4">4 stars</SelectItem>
-                  <SelectItem value="3">3 stars</SelectItem>
-                  <SelectItem value="2">2 stars</SelectItem>
-                  <SelectItem value="1">1 star</SelectItem>
-                </SelectContent>
-              </Select>
-              <Textarea
-                value={feedback}
-                onChange={(feedbackEvent) => setFeedback(feedbackEvent.target.value)}
-                placeholder="Share quick feedback after attending..."
-                rows={2}
-              />
-            </div>
-            <Button type="submit" size="sm" disabled={feedbackMutation.isPending || !feedback.trim()}>
-              {feedbackMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Sending...
-                </>
-              ) : (
-                "Submit Feedback"
-              )}
-            </Button>
-          </form>
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <MessageSquare className="h-4 w-4" />
+                Event feedback
+              </div>
+              <div className="grid gap-2 sm:grid-cols-[140px_1fr]">
+                <Select value={rating} onValueChange={setRating}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5 stars</SelectItem>
+                    <SelectItem value="4">4 stars</SelectItem>
+                    <SelectItem value="3">3 stars</SelectItem>
+                    <SelectItem value="2">2 stars</SelectItem>
+                    <SelectItem value="1">1 star</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Textarea
+                  value={feedback}
+                  onChange={(feedbackEvent) => setFeedback(feedbackEvent.target.value)}
+                  placeholder="Share what worked, what could improve, or what made the event memorable."
+                  rows={2}
+                />
+              </div>
+              <Button type="submit" size="sm" disabled={feedbackMutation.isPending || !feedback.trim()}>
+                {feedbackMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  "Submit Feedback"
+                )}
+              </Button>
+            </form>
+          ) : (
+            <p className="text-sm font-semibold text-muted-foreground">
+              Feedback is available for students marked as attended.
+            </p>
+          )}
         </div>
       ) : null}
 
@@ -308,6 +328,7 @@ function EventCard({ event }: { event: ApprovedEventRecord }) {
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="text-lg font-black uppercase">{event.title}</h3>
                 <Badge className="bg-success/15 text-success hover:bg-success/15">Approved</Badge>
+                <Badge variant="outline">{getEventLifecycleLabel(event)}</Badge>
               </div>
               <p className="text-sm text-muted-foreground mt-1">{event.description}</p>
             </div>
@@ -386,6 +407,8 @@ export default function EventCalendar() {
     queryFn: () => getEventReminders(),
     retry: false
   });
+  const activeEvents = events.filter((event) => !isPastEvent(event));
+  const pastEvents = events.filter(isPastEvent);
 
   return (
     <div className="nh-page">
@@ -420,7 +443,37 @@ export default function EventCalendar() {
                   </p>
                 </div>
               ) : (
-                events.map((event) => <EventCard key={event.id} event={event} />)
+                <div className="space-y-8">
+                  <section className="space-y-3">
+                    <div>
+                      <h3 className="text-sm font-black uppercase tracking-[0.12em]">Upcoming & Happening Now</h3>
+                      <p className="text-sm text-muted-foreground">These events are still open for student RSVP.</p>
+                    </div>
+                    {activeEvents.length === 0 ? (
+                      <div className="nh-empty">
+                        <p className="font-medium">No upcoming approved events</p>
+                        <p className="mt-1 text-sm text-muted-foreground">Past events are still available below for memories and feedback.</p>
+                      </div>
+                    ) : (
+                      activeEvents.map((event) => <EventCard key={event.id} event={event} />)
+                    )}
+                  </section>
+
+                  <section className="space-y-3">
+                    <div>
+                      <h3 className="text-sm font-black uppercase tracking-[0.12em]">Past Events</h3>
+                      <p className="text-sm text-muted-foreground">Look back on completed events and leave feedback if you attended.</p>
+                    </div>
+                    {pastEvents.length === 0 ? (
+                      <div className="nh-empty">
+                        <p className="font-medium">No past approved events yet</p>
+                        <p className="mt-1 text-sm text-muted-foreground">Completed events will appear here after their event date passes.</p>
+                      </div>
+                    ) : (
+                      pastEvents.map((event) => <EventCard key={event.id} event={event} />)
+                    )}
+                  </section>
+                </div>
               )}
             </CardContent>
           </Card>

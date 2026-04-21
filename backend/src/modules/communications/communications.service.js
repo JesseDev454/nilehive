@@ -5,6 +5,7 @@ const {
   validateCreateAnnouncementPayload,
   validateCreateFeedbackPayload
 } = require("./communications.validation");
+const { getEventLifecycle } = require("../events/event-lifecycle");
 
 function requireActor(actor) {
   if (!actor) {
@@ -474,25 +475,63 @@ async function createFeedback(options) {
   }
 
   const validatedPayload = validateCreateFeedbackPayload(payload);
-  const clubId = actor.role === "admin"
+  let clubId = actor.role === "admin"
     ? validatedPayload.club_id
     : requireClubLinkedActor(actor);
 
-  if (!clubId) {
-    throw new ApiError(400, "Feedback requires a club_id", "VALIDATION_ERROR", {
-      field: "club_id"
-    });
-  }
+  if (validatedPayload.category === "event" && validatedPayload.proposal_id) {
+    if (actor.role !== "student") {
+      throw new ApiError(403, "Only students who attended can submit post-event feedback", "FORBIDDEN");
+    }
 
-  if (actor.role !== "admin" && validatedPayload.club_id && validatedPayload.club_id !== clubId) {
-    throw new ApiError(403, "You can only submit feedback for your own club", "FORBIDDEN");
-  }
+    const proposal = database.getApprovedProposalById
+      ? await database.getApprovedProposalById(validatedPayload.proposal_id)
+      : await database.getProposalById(validatedPayload.proposal_id);
 
-  if (validatedPayload.proposal_id) {
-    const proposal = await database.getProposalById(validatedPayload.proposal_id);
+    if (!proposal || proposal.status !== "approved") {
+      throw new ApiError(404, "Approved event not found", "APPROVED_EVENT_NOT_FOUND");
+    }
 
-    if (!proposal || proposal.club_id !== clubId) {
-      throw new ApiError(404, "Proposal not found for this club", "PROPOSAL_NOT_FOUND");
+    if (getEventLifecycle(proposal.event_date) !== "past") {
+      throw new ApiError(409, "Feedback opens after the event has ended.", "EVENT_FEEDBACK_NOT_OPEN");
+    }
+
+    const attendance = database.listEventAttendance
+      ? await database.listEventAttendance({ proposalId: proposal.id, userId: actor.id })
+      : [];
+    const attended = attendance.some((record) => record.attended);
+
+    if (!attended) {
+      throw new ApiError(403, "Feedback is available for students marked as attended.", "ATTENDANCE_REQUIRED");
+    }
+
+    const existingFeedback = database.listFeedback
+      ? await database.listFeedback({ proposalId: proposal.id, submittedBy: actor.id })
+      : [];
+    const alreadySubmitted = existingFeedback.some((feedback) => feedback.submitted_by === actor.id);
+
+    if (alreadySubmitted) {
+      throw new ApiError(409, "You have already submitted feedback for this event.", "FEEDBACK_ALREADY_SUBMITTED");
+    }
+
+    clubId = proposal.club_id;
+  } else {
+    if (!clubId) {
+      throw new ApiError(400, "Feedback requires a club_id", "VALIDATION_ERROR", {
+        field: "club_id"
+      });
+    }
+
+    if (actor.role !== "admin" && validatedPayload.club_id && validatedPayload.club_id !== clubId) {
+      throw new ApiError(403, "You can only submit feedback for your own club", "FORBIDDEN");
+    }
+
+    if (validatedPayload.proposal_id) {
+      const proposal = await database.getProposalById(validatedPayload.proposal_id);
+
+      if (!proposal || proposal.club_id !== clubId) {
+        throw new ApiError(404, "Proposal not found for this club", "PROPOSAL_NOT_FOUND");
+      }
     }
   }
 

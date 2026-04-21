@@ -165,6 +165,9 @@ export interface ApprovedEventRecord {
   budget_estimate?: number | null;
   status: string;
   current_stage: string;
+  event_lifecycle: "upcoming" | "happening_today" | "past";
+  can_rsvp: boolean;
+  can_submit_feedback: boolean;
   approved_at?: string | null;
   created_at: string;
   updated_at: string;

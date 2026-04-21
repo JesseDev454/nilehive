@@ -62,6 +62,7 @@ import {
   getAdvisorPendingProposalsErrorMessage,
   useAdvisorPendingProposals
 } from "@/hooks/use-advisor-pending-proposals";
+import { isAttendableEvent } from "@/lib/eventLifecycle";
 import { canViewProposalDetails } from "@/lib/roleAccess";
 
 function StatCard({
@@ -1513,7 +1514,7 @@ function StudentDashboard() {
     queryFn: () => getNotifications(),
     retry: false
   });
-  const upcomingEvents = events.slice(0, 3);
+  const upcomingEvents = events.filter(isAttendableEvent).slice(0, 3);
   const engagementQueries = useQueries({
     queries: upcomingEvents.map((event) => ({
       queryKey: ["event-engagement", event.proposal_id],

@@ -413,11 +413,49 @@ test("admin can fetch operations dashboard data", async (t) => {
   assert.equal(payload.data.summary.pending_admin_proposals, 0);
   assert.equal(payload.data.summary.pending_membership_requests, 1);
   assert.equal(payload.data.summary.submitted_dues_payments, 1);
+  assert.equal(payload.data.summary.attendance_rate, 100);
   assert.equal(payload.data.club_performance.length, 2);
   assert.equal(payload.data.club_performance[0].club_name, "Nile Innovators Club");
   assert.ok(payload.data.proposal_bottlenecks.length > 0);
   assert.ok(payload.data.pending_actions.some((action) => action.type === "membership_requests"));
   assert.ok(payload.data.recent_activity.length > 0);
+});
+
+test("admin attendance rate is capped at 100 percent", async (t) => {
+  const database = createFakeDatabase();
+  database.listEventAttendance = async () => [
+    {
+      id: "attendance-1",
+      club_id: "club-1",
+      proposal_id: "proposal-2",
+      user_id: "student-1",
+      attended: true,
+      created_at: "2026-04-13T10:00:00.000Z",
+      updated_at: "2026-04-13T10:00:00.000Z"
+    },
+    {
+      id: "attendance-2",
+      club_id: "club-1",
+      proposal_id: "proposal-2",
+      user_id: "student-2",
+      attended: true,
+      created_at: "2026-04-13T10:00:00.000Z",
+      updated_at: "2026-04-13T10:00:00.000Z"
+    }
+  ];
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const { response, payload } = await getDashboard(
+    server.baseUrl,
+    "/api/v1/dashboard/admin-operations",
+    "admin-token"
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.summary.event_attendance_count, 2);
+  assert.equal(payload.data.summary.event_rsvp_count, 1);
+  assert.equal(payload.data.summary.attendance_rate, 100);
 });
 
 test("non-admin cannot fetch operations dashboard data", async (t) => {

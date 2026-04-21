@@ -63,7 +63,7 @@ function createAttendance(overrides = {}) {
   };
 }
 
-function createFakeDatabase() {
+function createFakeDatabase(overrides = {}) {
   const profiles = {
     "executive-1": {
       id: "executive-1",
@@ -96,7 +96,7 @@ function createFakeDatabase() {
       club_id: "club-1"
     }
   };
-  const proposals = [
+  const proposals = overrides.proposals || [
     createApprovedProposal(),
     createApprovedProposal({
       id: "proposal-2",
@@ -227,6 +227,9 @@ test("admin can fetch all approved events", async (t) => {
   assert.equal(response.status, 200);
   assert.equal(payload.data.length, 2);
   assert.ok(payload.data.every((event) => event.status === "approved"));
+  assert.ok(payload.data.every((event) => ["upcoming", "happening_today", "past"].includes(event.event_lifecycle)));
+  assert.ok(payload.data.every((event) => typeof event.can_rsvp === "boolean"));
+  assert.ok(payload.data.every((event) => typeof event.can_submit_feedback === "boolean"));
 });
 
 test("executive can fetch approved events for their club", async (t) => {
@@ -290,6 +293,30 @@ test("student can RSVP to an approved event", async (t) => {
   assert.equal(response.status, 200);
   assert.equal(payload.data.status, "going");
   assert.equal(payload.data.user_id, "student-1");
+});
+
+test("student cannot RSVP to a past approved event", async (t) => {
+  const server = await createTestServer(createFakeDatabase({
+    proposals: [
+      createApprovedProposal({
+        event_date: "2000-01-01"
+      })
+    ]
+  }));
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/events/proposal-1/rsvp`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer student-token",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ status: "going" })
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 409);
+  assert.equal(payload.error.code, "EVENT_RSVP_CLOSED");
 });
 
 test("non-students cannot RSVP to an approved event", async (t) => {

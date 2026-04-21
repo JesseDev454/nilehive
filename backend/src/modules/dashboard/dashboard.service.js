@@ -24,6 +24,14 @@ function summarizeProposals(proposals) {
   };
 }
 
+function calculateAttendanceRate(attendedCount, goingCount) {
+  if (goingCount <= 0) {
+    return 0;
+  }
+
+  return Math.min(100, Math.round((attendedCount / goingCount) * 100));
+}
+
 function formatProposalSummary(proposal) {
   return {
     id: proposal.id,
@@ -507,7 +515,7 @@ async function getAdminOperationsDashboard(options) {
       dues_collected_amount: paidDues.reduce((sum, payment) => sum + Number(payment.amount || 0), 0),
       event_attendance_count: attendedCount,
       event_rsvp_count: rsvps.length,
-      attendance_rate: goingCount > 0 ? Math.round((attendedCount / goingCount) * 100) : 0,
+      attendance_rate: calculateAttendanceRate(attendedCount, goingCount),
       feedback_count: feedback.length,
       open_tasks: openTasks.length
     },

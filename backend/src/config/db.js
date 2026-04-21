@@ -1589,6 +1589,10 @@ function createDatabase(options = {}) {
         query = query.eq("proposal_id", filters.proposalId);
       }
 
+      if (filters.submittedBy) {
+        query = query.eq("submitted_by", filters.submittedBy);
+      }
+
       if (filters.status) {
         query = query.eq("status", filters.status);
       }
