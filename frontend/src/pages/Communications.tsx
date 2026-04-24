@@ -1,6 +1,6 @@
 import { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, CheckCircle2, Filter, Megaphone, MessageSquare, Send, Users } from "lucide-react";
+import { CheckCircle2, Filter, Megaphone, MessageSquare, Send, Users } from "lucide-react";
 import { NeoCommandPanel, NeoLoadingState } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -448,8 +448,8 @@ export default function Communications() {
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex gap-3">
-                    <div className="rounded-full bg-muted p-3">
-                      <Bell className="h-5 w-5 text-muted-foreground" />
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted">
+                      <Megaphone className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div>
                       <h2 className="font-semibold">Read-only communication access</h2>

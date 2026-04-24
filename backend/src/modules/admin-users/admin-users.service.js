@@ -1,5 +1,6 @@
 const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
+const { writeAuditLog } = require("../../shared/auditLog");
 const {
   validateAdvisorAssignmentPayload,
   validateRoleUpdatePayload
@@ -28,6 +29,7 @@ function formatProfile(profile) {
     student_id: profile.student_id ?? null,
     requested_role: profile.requested_role ?? null,
     onboarding_status: profile.onboarding_status ?? "complete",
+    account_status: profile.account_status ?? "active",
     club: formatClub(profile.club),
     created_at: profile.created_at,
     updated_at: profile.updated_at
@@ -119,6 +121,20 @@ async function updateAdminUserRole(options) {
 
   const updatedProfile = await database.updateProfile(profile.id, update);
   const history = await writeRoleHistory(database, actor, profile, update, validatedPayload.remarks);
+  await writeAuditLog(database, {
+    actor_id: actor.id,
+    entity_type: "profile",
+    action: "role_updated",
+    target_profile_id: profile.id,
+    club_id: update.club_id ?? profile.club_id ?? null,
+    remarks: validatedPayload.remarks,
+    metadata: {
+      previous_role: profile.role,
+      new_role: update.role,
+      previous_club_id: profile.club_id ?? null,
+      new_club_id: update.club_id ?? null
+    }
+  });
 
   return { profile: formatProfile(updatedProfile), history };
 }
@@ -159,6 +175,19 @@ async function assignAdvisorToClub(options) {
     { role: "advisor", club_id: club.id },
     validatedPayload.remarks
   );
+  await writeAuditLog(database, {
+    actor_id: actor.id,
+    entity_type: "club",
+    action: "advisor_assigned",
+    target_profile_id: profile.id,
+    club_id: club.id,
+    remarks: validatedPayload.remarks,
+    metadata: {
+      replace_existing: validatedPayload.replace_existing,
+      advisor_profile_id: profile.id,
+      club_id: club.id
+    }
+  });
 
   return { profile: formatProfile(updatedProfile), club: updatedClub, history };
 }

@@ -1,5 +1,6 @@
 const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
+const { writeAuditLog } = require("../../shared/auditLog");
 const {
   validateCreateDuePaymentPayload,
   validatePaymentConfirmationPayload,
@@ -227,6 +228,22 @@ async function updateDuePayment(options) {
       payment: updatedPayment,
       actor,
       database
+    });
+  }
+
+  if (["paid", "rejected"].includes(updatedPayment.status)) {
+    await writeAuditLog(database, {
+      actor_id: actor.id,
+      entity_type: "due_payment",
+      action: "dues_payment_reviewed",
+      club_id: updatedPayment.club_id,
+      due_payment_id: updatedPayment.id,
+      remarks: null,
+      metadata: {
+        previous_status: payment.status,
+        new_status: updatedPayment.status,
+        member_id: updatedPayment.member_id
+      }
     });
   }
 

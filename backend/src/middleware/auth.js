@@ -15,6 +15,12 @@ function extractBearerToken(authorizationHeader) {
   return token.trim();
 }
 
+function assertProfileIsAllowed(profile) {
+  if (profile?.account_status === "suspended") {
+    throw new ApiError(403, "This account has been suspended", "ACCOUNT_SUSPENDED");
+  }
+}
+
 function createAuthMiddleware(options = {}) {
   const { database = db } = options;
 
@@ -38,6 +44,8 @@ function createAuthMiddleware(options = {}) {
         throw new ApiError(403, "No application profile found for this user", "PROFILE_NOT_FOUND");
       }
 
+      assertProfileIsAllowed(profile);
+
       req.user = {
         id: authUser.id,
         email: authUser.email ?? null,
@@ -45,7 +53,8 @@ function createAuthMiddleware(options = {}) {
         role: profile.role,
         clubId: profile.club_id,
         studentId: profile.student_id ?? null,
-        requestedRole: profile.requested_role ?? null
+        requestedRole: profile.requested_role ?? null,
+        accountStatus: profile.account_status ?? "active"
       };
 
       next();
@@ -80,6 +89,7 @@ function createAuthUserMiddleware(options = {}) {
       }
 
       const profile = await database.getProfileById(authUser.id);
+      assertProfileIsAllowed(profile);
 
       req.authUser = {
         id: authUser.id,
@@ -96,7 +106,8 @@ function createAuthUserMiddleware(options = {}) {
             role: profile.role,
             clubId: profile.club_id,
             studentId: profile.student_id ?? null,
-            requestedRole: profile.requested_role ?? null
+            requestedRole: profile.requested_role ?? null,
+            accountStatus: profile.account_status ?? "active"
           }
         : null;
 

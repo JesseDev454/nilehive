@@ -1,10 +1,13 @@
 const ApiError = require("../../shared/ApiError");
+const { assertPlainText } = require("../../shared/plainText");
 const { readStudentId } = require("../../shared/studentId");
 
 const SELF_SERVICE_REQUESTED_ROLES = new Set(["student"]);
 
 function readString(payload, fieldName) {
-  return typeof payload[fieldName] === "string" ? payload[fieldName].trim() : "";
+  return typeof payload[fieldName] === "string"
+    ? assertPlainText(payload[fieldName], fieldName, fieldName)
+    : "";
 }
 
 function readRequiredString(payload, fieldName, label) {

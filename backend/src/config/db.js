@@ -32,8 +32,12 @@ const eventRsvpSelect =
 const eventAttendanceSelect =
   "id, proposal_id, club_id, user_id, attended, checked_in_by, checked_in_at, created_at, updated_at, profile:profiles!event_attendance_user_id_fkey(id, full_name, student_id, role)";
 const profileSelect =
+  "id, full_name, role, club_id, student_id, requested_role, onboarding_status, account_status, created_at, updated_at";
+const legacyProfileSelect =
   "id, full_name, role, club_id, student_id, requested_role, onboarding_status, created_at, updated_at";
 const profileWithClubSelect =
+  "id, full_name, role, club_id, student_id, requested_role, onboarding_status, account_status, created_at, updated_at, club:clubs!profiles_club_id_fkey(id, name, code)";
+const legacyProfileWithClubSelect =
   "id, full_name, role, club_id, student_id, requested_role, onboarding_status, created_at, updated_at, club:clubs!profiles_club_id_fkey(id, name, code)";
 const membershipRequestSelect =
   "id, profile_id, club_id, requested_role, status, remarks, decision_remarks, reviewed_by, reviewed_at, member_id, due_payment_id, dues_amount, academic_session, created_at, updated_at, profile:profiles!membership_requests_profile_id_fkey(id, full_name, student_id, role), club:clubs!membership_requests_club_id_fkey(id, name, code)";
@@ -41,6 +45,8 @@ const leadershipApplicationSelect =
   "id, profile_id, club_id, current_app_role, requested_role, status, reason, experience, goals, availability, reviewed_by, reviewed_at, decision_remarks, created_at, updated_at, profile:profiles!leadership_applications_profile_id_fkey(id, full_name, student_id, role), club:clubs!leadership_applications_club_id_fkey(id, name, code)";
 const profileRoleHistorySelect =
   "id, profile_id, previous_role, new_role, previous_club_id, new_club_id, changed_by, remarks, created_at";
+const auditLogSelect =
+  "id, actor_id, entity_type, action, target_profile_id, club_id, proposal_id, due_payment_id, leadership_application_id, announcement_id, remarks, metadata, created_at";
 const emailDeliverySelect =
   "id, provider, recipient_user_id, recipient_email, subject, status, announcement_id, notification_id, proposal_id, error_message, sent_at, created_at, updated_at";
 
@@ -67,6 +73,33 @@ function createDatabase(options = {}) {
     return client;
   }
 
+  function isMissingColumn(error, columnName) {
+    return error?.code === "42703" && error?.message?.includes(columnName);
+  }
+
+  function isMissingRelation(error, relationName) {
+    return error?.code === "42P01" && error?.message?.includes(relationName);
+  }
+
+  function normalizeProfile(profile) {
+    if (!profile) {
+      return null;
+    }
+
+    return {
+      ...profile,
+      account_status: profile.account_status ?? "active"
+    };
+  }
+
+  async function selectProfileById(profileId, selectClause) {
+    return getClient()
+      .from("profiles")
+      .select(selectClause)
+      .eq("id", profileId)
+      .maybeSingle();
+  }
+
   return {
     async ping() {
       const { error } = await getClient()
@@ -91,17 +124,19 @@ function createDatabase(options = {}) {
     },
 
     async getProfileById(profileId) {
-      const { data, error } = await getClient()
-        .from("profiles")
-        .select(profileSelect)
-        .eq("id", profileId)
-        .maybeSingle();
+      let { data, error } = await selectProfileById(profileId, profileSelect);
+
+      if (error && isMissingColumn(error, "account_status")) {
+        const fallback = await selectProfileById(profileId, legacyProfileSelect);
+        data = fallback.data;
+        error = fallback.error;
+      }
 
       if (error) {
         throw error;
       }
 
-      return data ?? null;
+      return normalizeProfile(data);
     },
 
     async createProposal(proposal) {
@@ -270,32 +305,55 @@ function createDatabase(options = {}) {
     },
 
     async createProfile(profile) {
-      const { data, error } = await getClient()
+      let { data, error } = await getClient()
         .from("profiles")
         .insert(profile)
         .select(profileSelect)
         .single();
 
+      if (error && isMissingColumn(error, "account_status")) {
+        const { account_status, ...legacyProfile } = profile;
+        const fallback = await getClient()
+          .from("profiles")
+          .insert(legacyProfile)
+          .select(legacyProfileSelect)
+          .single();
+        data = fallback.data;
+        error = fallback.error;
+      }
+
       if (error) {
         throw error;
       }
 
-      return data;
+      return normalizeProfile(data);
     },
 
     async updateProfile(profileId, update) {
-      const { data, error } = await getClient()
+      let { data, error } = await getClient()
         .from("profiles")
         .update(update)
         .eq("id", profileId)
         .select(profileSelect)
         .single();
 
+      if (error && isMissingColumn(error, "account_status")) {
+        const { account_status, ...legacyUpdate } = update;
+        const fallback = await getClient()
+          .from("profiles")
+          .update(legacyUpdate)
+          .eq("id", profileId)
+          .select(legacyProfileSelect)
+          .single();
+        data = fallback.data;
+        error = fallback.error;
+      }
+
       if (error) {
         throw error;
       }
 
-      return data;
+      return normalizeProfile(data);
     },
 
     async listProfiles(filters = {}) {
@@ -328,13 +386,48 @@ function createDatabase(options = {}) {
         }
       }
 
-      const { data, error } = await query;
+      let { data, error } = await query;
+
+      if (error && isMissingColumn(error, "account_status")) {
+        let fallbackQuery = getClient()
+          .from("profiles")
+          .select(legacyProfileWithClubSelect)
+          .order("created_at", { ascending: false });
+
+        if (filters.role) {
+          fallbackQuery = fallbackQuery.eq("role", filters.role);
+        }
+
+        if (filters.roles?.length) {
+          fallbackQuery = fallbackQuery.in("role", filters.roles);
+        }
+
+        if (filters.clubId) {
+          fallbackQuery = fallbackQuery.eq("club_id", filters.clubId);
+        }
+
+        if (filters.requestedRole) {
+          fallbackQuery = fallbackQuery.eq("requested_role", filters.requestedRole);
+        }
+
+        if (filters.q) {
+          const search = filters.q.replace(/[%(),]/g, "").trim();
+
+          if (search) {
+            fallbackQuery = fallbackQuery.or(`full_name.ilike.%${search}%,student_id.ilike.%${search}%`);
+          }
+        }
+
+        const fallback = await fallbackQuery;
+        data = fallback.data;
+        error = fallback.error;
+      }
 
       if (error) {
         throw error;
       }
 
-      return data ?? [];
+      return (data ?? []).map(normalizeProfile);
     },
 
     async createProfileRoleHistory(entry) {
@@ -1046,6 +1139,24 @@ function createDatabase(options = {}) {
         .eq("id", memberId)
         .select(clubMemberSelect)
         .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async createAuditLog(entry) {
+      const { data, error } = await getClient()
+        .from("audit_logs")
+        .insert(entry)
+        .select(auditLogSelect)
+        .single();
+
+      if (error && isMissingRelation(error, "audit_logs")) {
+        return null;
+      }
 
       if (error) {
         throw error;

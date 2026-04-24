@@ -1,5 +1,6 @@
 const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
+const { writeAuditLog } = require("../../shared/auditLog");
 const {
   validateCreateLeadershipApplicationPayload,
   validateLeadershipApplicationDecisionPayload
@@ -289,6 +290,22 @@ async function approveLeadershipApplication({ actor, application, decisionPayloa
       })
     : null;
 
+  await writeAuditLog(database, {
+    actor_id: actor.id,
+    entity_type: "leadership_application",
+    action: "leadership_application_reviewed",
+    target_profile_id: profile.id,
+    club_id: application.club_id,
+    leadership_application_id: application.id,
+    remarks: decisionPayload.remarks,
+    metadata: {
+      decision: "approve",
+      requested_role: application.requested_role,
+      previous_role: profile.role,
+      demoted_president_count: demotedPresidents.length
+    }
+  });
+
   return {
     application: formatLeadershipApplication(updatedApplication),
     profile: updatedProfile,
@@ -329,6 +346,21 @@ async function decideLeadershipApplication(options) {
     reviewed_by: actor.id,
     reviewed_at: new Date().toISOString(),
     decision_remarks: decisionPayload.remarks
+  });
+
+  await writeAuditLog(database, {
+    actor_id: actor.id,
+    entity_type: "leadership_application",
+    action: "leadership_application_reviewed",
+    target_profile_id: application.profile_id,
+    club_id: application.club_id,
+    leadership_application_id: application.id,
+    remarks: decisionPayload.remarks,
+    metadata: {
+      decision: decisionPayload.decision,
+      requested_role: application.requested_role,
+      new_status: status
+    }
   });
 
   return {

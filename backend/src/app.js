@@ -1,8 +1,12 @@
 const express = require("express");
+const helmet = require("helmet");
 const ApiError = require("./shared/ApiError");
+const { logger } = require("./config/logger");
 const errorHandler = require("./middleware/errorHandler");
+const { createRequestContextMiddleware } = require("./middleware/requestContext");
+const { createRequestTimeoutMiddleware } = require("./middleware/requestTimeout");
 const { createAdminUsersRouter } = require("./modules/admin-users/admin-users.routes");
-const { createHealthRouter } = require("./modules/health/health.routes");
+const { createHealthRouter, createReadyRouter } = require("./modules/health/health.routes");
 const { createClubsRouter } = require("./modules/clubs/clubs.routes");
 const { createCommunicationsRouter } = require("./modules/communications/communications.routes");
 const { createDashboardRouter } = require("./modules/dashboard/dashboard.routes");
@@ -34,17 +38,38 @@ function createApp(options = {}) {
   const { database } = options;
   const app = express();
   const allowedOrigins = getAllowedOrigins();
+  const env = getEnv();
+  const isProduction = env.NODE_ENV === "production";
+
+  app.use(helmet({
+    crossOriginResourcePolicy: false
+  }));
+  app.use(createRequestContextMiddleware({ baseLogger: logger }));
+  app.use(createRequestTimeoutMiddleware({
+    timeoutMs: Number(env.REQUEST_TIMEOUT_MS)
+  }));
 
   app.use((req, res, next) => {
     const requestOrigin = req.headers.origin?.replace(/\/+$/, "");
-    const allowedOrigin = requestOrigin && allowedOrigins.has(requestOrigin)
-      ? requestOrigin
-      : "http://localhost:8080";
 
-    res.header("Access-Control-Allow-Origin", allowedOrigin);
+    if (requestOrigin) {
+      if (!allowedOrigins.has(requestOrigin)) {
+        if (isProduction) {
+          next(new ApiError(403, "Origin is not allowed", "CORS_ORIGIN_BLOCKED"));
+          return;
+        }
+
+        res.header("Access-Control-Allow-Origin", requestOrigin);
+      } else {
+        res.header("Access-Control-Allow-Origin", requestOrigin);
+      }
+    } else if (!isProduction) {
+      res.header("Access-Control-Allow-Origin", env.FRONTEND_APP_URL);
+    }
+
     res.header("Vary", "Origin");
     res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Idempotency-Key, X-Request-Id");
 
     if (req.method === "OPTIONS") {
       res.sendStatus(204);
@@ -54,7 +79,7 @@ function createApp(options = {}) {
     next();
   });
 
-  app.use(express.json());
+  app.use(express.json({ limit: "1mb" }));
 
   app.get("/", (req, res) => {
     res.status(200).json({
@@ -64,6 +89,7 @@ function createApp(options = {}) {
   });
 
   app.use("/api/v1/health", createHealthRouter({ database }));
+  app.use("/api/v1/ready", createReadyRouter({ database }));
   app.use("/api/v1/admin/users", createAdminUsersRouter({ database }));
   app.use("/api/v1/clubs", createClubsRouter({ database }));
   app.use("/api/v1/communications", createCommunicationsRouter({ database }));

@@ -13,6 +13,7 @@ function formatProfile(profile, authUser = null) {
     student_id: profile.student_id ?? null,
     requested_role: profile.requested_role ?? null,
     onboarding_status: profile.onboarding_status ?? "complete",
+    account_status: profile.account_status ?? "active",
     created_at: profile.created_at,
     updated_at: profile.updated_at
   };
@@ -73,7 +74,8 @@ async function completeProfileOnboarding(options) {
     club_id: validatedPayload.club_id,
     student_id: validatedPayload.student_id,
     requested_role: validatedPayload.requested_role,
-    onboarding_status: "complete"
+    onboarding_status: "complete",
+    account_status: "active"
   });
 
   if (database.createMembershipRequest && database.getOpenMembershipRequest) {

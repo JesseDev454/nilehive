@@ -1,4 +1,5 @@
 const ApiError = require("../../shared/ApiError");
+const { assertPlainText } = require("../../shared/plainText");
 
 const LEADERSHIP_APPLICATION_STATUSES = new Set([
   "pending",
@@ -11,7 +12,9 @@ const REQUESTED_LEADERSHIP_ROLES = new Set(["executive", "president"]);
 const DECISIONS = new Set(["approve", "reject", "needs_more_info"]);
 
 function readString(payload, fieldName) {
-  return typeof payload[fieldName] === "string" ? payload[fieldName].trim() : "";
+  return typeof payload[fieldName] === "string"
+    ? assertPlainText(payload[fieldName], fieldName, fieldName)
+    : "";
 }
 
 function readOptionalString(payload, fieldName) {

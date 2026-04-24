@@ -19,12 +19,17 @@ Backend:
 ```env
 NODE_ENV=production
 PORT=4000
+REQUEST_TIMEOUT_MS=15000
 SUPABASE_URL=
 SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 ALLOWED_EMAIL_DOMAINS=nileuniversity.edu.ng
 FRONTEND_APP_URL=https://your-frontend-domain
 CURRENT_ACADEMIC_SESSION=2025/2026
+ASYNC_JOBS_ENABLED=false
+REDIS_URL=
+SENTRY_DSN_BACKEND=
+SENTRY_DSN_FRONTEND=
 EMAIL_DELIVERY_ENABLED=false
 EMAIL_PROVIDER=microsoft_graph
 MICROSOFT_TENANT_ID=
@@ -48,6 +53,8 @@ Notes:
 
 - `SUPABASE_SERVICE_ROLE_KEY` is never shared with frontend developers.
 - `VITE_SUPABASE_ANON_KEY` is safe for the frontend.
+- `REQUEST_TIMEOUT_MS` should stay low enough to fail fast instead of letting requests hang.
+- `ASYNC_JOBS_ENABLED` should stay `false` until Redis and the worker service are ready.
 - Microsoft Graph variables can remain blank while `EMAIL_DELIVERY_ENABLED=false`.
 - Supabase Auth site URL and redirect URLs must include the deployed frontend URL.
 - Backend CORS must allow `FRONTEND_APP_URL`.
@@ -116,6 +123,7 @@ Table policy checklist:
 - `announcements`: admin global/club/role; president own club/student/executive targets; read state is per user.
 - `profile_role_history`: admin-only select.
 - `email_deliveries`: admin-only select.
+- `audit_logs`: admin-only select.
 
 Storage path conventions:
 
@@ -151,4 +159,5 @@ Manual checks:
 - Student can submit dues proof only for their own membership flow.
 - Advisor sees assigned-club proposal queue.
 - Admin can manage users and final approvals.
+- `/api/v1/ready` returns healthy status before promoting a deployment.
 - Outlook email delivery is skipped safely while disabled.

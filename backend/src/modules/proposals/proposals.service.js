@@ -1,5 +1,6 @@
 const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
+const { writeAuditLog } = require("../../shared/auditLog");
 const {
   validateAdvisorDecisionPayload,
   validateCreateProposalPayload,
@@ -664,6 +665,20 @@ async function submitAdvisorDecision(options) {
   }
 
   await createNotificationBatch(database, notifications);
+  await writeAuditLog(database, {
+    actor_id: actor.id,
+    entity_type: "proposal",
+    action: "proposal_reviewed",
+    club_id: updatedProposal.club_id,
+    proposal_id: updatedProposal.id,
+    remarks: validatedPayload.remarks,
+    metadata: {
+      stage: "advisor",
+      decision: validatedPayload.decision,
+      previous_status: proposal.status,
+      new_status: updatedProposal.status
+    }
+  });
 
   return updatedProposal;
 }
@@ -732,6 +747,21 @@ async function submitAdminDecision(options) {
   if (validatedPayload.decision === "approve") {
     await createApprovedEventReminders(database, updatedProposal, recipientIds);
   }
+
+  await writeAuditLog(database, {
+    actor_id: actor.id,
+    entity_type: "proposal",
+    action: "proposal_reviewed",
+    club_id: updatedProposal.club_id,
+    proposal_id: updatedProposal.id,
+    remarks: validatedPayload.remarks,
+    metadata: {
+      stage: "admin",
+      decision: validatedPayload.decision,
+      previous_status: proposal.status,
+      new_status: updatedProposal.status
+    }
+  });
 
   return updatedProposal;
 }

@@ -62,7 +62,7 @@ supabase/migrations/
 Current migrations:
 
 ```text
-0001_week1_schema.sql ... 0027_production_rls_cleanup.sql
+0001_week1_schema.sql ... 0033_launch_hardening_foundation.sql
 ```
 
 For production setup and demo data, see:
@@ -120,6 +120,7 @@ president
 Health:
 
 - `GET /api/v1/health`
+- `GET /api/v1/ready`
 
 Clubs:
 

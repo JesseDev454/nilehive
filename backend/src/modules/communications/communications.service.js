@@ -1,6 +1,7 @@
 const { db } = require("../../config/db");
 const { createEmailService } = require("../email/email.service");
 const ApiError = require("../../shared/ApiError");
+const { writeAuditLog } = require("../../shared/auditLog");
 const {
   validateCreateAnnouncementPayload,
   validateCreateFeedbackPayload
@@ -403,6 +404,21 @@ async function createAnnouncement(options) {
   } catch (error) {
     logger.warn("Announcement email delivery failed", error);
   }
+
+  await writeAuditLog(database, {
+    actor_id: actor.id,
+    entity_type: "announcement",
+    action: "announcement_published",
+    club_id: announcement.club_id,
+    announcement_id: announcement.id,
+    remarks: announcement.title,
+    metadata: {
+      audience: announcement.audience,
+      priority: announcement.priority,
+      target_role: announcement.target_role,
+      notification_count: notifications.length
+    }
+  });
 
   return formatAnnouncement(announcement);
 }

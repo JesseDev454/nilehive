@@ -1,9 +1,12 @@
 const ApiError = require("../../shared/ApiError");
+const { assertPlainText } = require("../../shared/plainText");
 
 const APP_ROLES = new Set(["student", "executive", "president", "advisor", "admin"]);
 
 function readString(payload, fieldName) {
-  return typeof payload[fieldName] === "string" ? payload[fieldName].trim() : "";
+  return typeof payload[fieldName] === "string"
+    ? assertPlainText(payload[fieldName], fieldName, fieldName)
+    : "";
 }
 
 function readOptionalString(payload, fieldName) {
