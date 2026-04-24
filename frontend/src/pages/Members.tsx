@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Users } from "lucide-react";
+import { DataPagination } from "@/components/DataPagination";
 import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import {
 } from "@/lib/api";
 import { actionError, actionSuccess } from "@/lib/notify";
 import { isValidStudentId, normalizeStudentId, STUDENT_ID_ERROR_MESSAGE, STUDENT_ID_PLACEHOLDER } from "@/lib/studentId";
+import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -60,25 +62,32 @@ export default function Members() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [selectedClubId, setSelectedClubId] = useState("");
   const [memberClubFilter, setMemberClubFilter] = useState("all");
+  const [page, setPage] = useState(1);
   const [clubRole, setClubRole] = useState<ClubMemberRecord["club_role"]>("member");
   const [membershipStatus, setMembershipStatus] = useState<ClubMemberRecord["membership_status"]>("inactive");
   const canViewMembers = role === "president" || role === "executive" || role === "admin";
   const canManageMembers = role === "president" || role === "admin";
+  useEffect(() => {
+    setPage(1);
+  }, [memberClubFilter]);
 
   const {
-    data: members = [],
+    data: membersPage = emptyPaginatedResponse<ClubMemberRecord>(),
     isLoading,
     isError,
     error
   } = useQuery({
-    queryKey: ["club-members", role, memberClubFilter],
+    queryKey: ["club-members", role, memberClubFilter, page],
     queryFn: () =>
       getClubMembers({
-        club_id: role === "admin" && memberClubFilter !== "all" ? memberClubFilter : undefined
+        club_id: role === "admin" && memberClubFilter !== "all" ? memberClubFilter : undefined,
+        page,
+        page_size: DEFAULT_PAGE_SIZE
       }),
     enabled: canViewMembers,
     retry: false
   });
+  const members = membersPage.items;
   const { data: clubs = [] } = useQuery({
     queryKey: ["member-form-clubs"],
     queryFn: () => getClubs(),
@@ -315,7 +324,7 @@ export default function Members() {
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="nh-card-soft p-3">
                   <p className="nh-panel-title text-muted-foreground">Visible Members</p>
-                  <p className="mt-1 text-2xl font-black">{members.length}</p>
+                  <p className="mt-1 text-2xl font-black">{membersPage.total}</p>
                 </div>
                 <div className="nh-card-soft p-3">
                   <p className="nh-panel-title text-muted-foreground">Active</p>
@@ -468,29 +477,47 @@ export default function Members() {
               </p>
             </div>
           ) : role === "admin" ? (
-            <div className="space-y-6">
-              {groupedMembers.map((group) => {
-                const activeCount = group.members.filter((member) => member.membership_status === "active").length;
+            <div>
+              <div className="space-y-6">
+                {groupedMembers.map((group) => {
+                  const activeCount = group.members.filter((member) => member.membership_status === "active").length;
 
-                return (
-                  <section key={group.id} className="space-y-3">
-                    <div className="flex flex-col gap-2 border-2 border-foreground bg-primary p-4 text-primary-foreground shadow-[4px_4px_0_hsl(var(--foreground))] sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <p className="nh-panel-title text-primary-foreground/70">{group.code || "No code"}</p>
-                        <h3 className="text-xl font-black uppercase">{group.name}</h3>
+                  return (
+                    <section key={group.id} className="space-y-3">
+                      <div className="flex flex-col gap-2 border-2 border-foreground bg-primary p-4 text-primary-foreground shadow-[4px_4px_0_hsl(var(--foreground))] sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="nh-panel-title text-primary-foreground/70">{group.code || "No code"}</p>
+                          <h3 className="text-xl font-black uppercase">{group.name}</h3>
+                        </div>
+                        <div className="flex gap-3 text-sm font-black uppercase tracking-[0.12em]">
+                          <span>{group.members.length} member(s)</span>
+                          <span>{activeCount} active</span>
+                        </div>
                       </div>
-                      <div className="flex gap-3 text-sm font-black uppercase tracking-[0.12em]">
-                        <span>{group.members.length} member(s)</span>
-                        <span>{activeCount} active</span>
-                      </div>
-                    </div>
-                    {renderMembersTable(group.members)}
-                  </section>
-                );
-              })}
+                      {renderMembersTable(group.members)}
+                    </section>
+                  );
+                })}
+              </div>
+              <DataPagination
+                page={membersPage.page}
+                pageSize={membersPage.page_size}
+                total={membersPage.total}
+                hasNext={membersPage.has_next}
+                onPageChange={setPage}
+              />
             </div>
           ) : (
-            renderMembersTable(members)
+            <div>
+              {renderMembersTable(members)}
+              <DataPagination
+                page={membersPage.page}
+                pageSize={membersPage.page_size}
+                total={membersPage.total}
+                hasNext={membersPage.has_next}
+                onPageChange={setPage}
+              />
+            </div>
           )}
         </CardContent>
       </Card>

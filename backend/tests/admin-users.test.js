@@ -237,7 +237,9 @@ test("admin can list users through the route", async (t) => {
   const payload = await response.json();
 
   assert.equal(response.status, 200);
-  assert.equal(payload.data.length, 3);
+  assert.equal(payload.data.items.length, 3);
+  assert.equal(payload.data.total, 3);
+  assert.equal(payload.data.page, 1);
 });
 
 test("non-admin cannot list users through the route", async (t) => {
@@ -251,4 +253,17 @@ test("non-admin cannot list users through the route", async (t) => {
 
   assert.equal(response.status, 403);
   assert.equal(payload.error.code, "FORBIDDEN");
+});
+
+test("invalid pagination params are rejected for admin users route", async (t) => {
+  const server = await createTestServer(createRouteDatabase());
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/admin/users?page=0`, {
+    headers: { Authorization: "Bearer admin-token" }
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 400);
+  assert.equal(payload.error.code, "VALIDATION_ERROR");
 });

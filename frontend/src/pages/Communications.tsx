@@ -1,6 +1,7 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Filter, Megaphone, MessageSquare, Send, Users } from "lucide-react";
+import { DataPagination } from "@/components/DataPagination";
 import { NeoCommandPanel, NeoLoadingState } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import {
   markAnnouncementRead
 } from "@/lib/api";
 import { actionError, actionSuccess } from "@/lib/notify";
+import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 
 type AnnouncementAudience = AnnouncementRecord["audience"];
 type AnnouncementPriority = AnnouncementRecord["priority"];
@@ -110,6 +112,7 @@ export default function Communications() {
   const canSubmitFeedback = role === "president" || role === "executive";
   const [activeTab, setActiveTab] = useState<HubTab>("announcements");
   const [announcementFilter, setAnnouncementFilter] = useState<AnnouncementFilter>("all");
+  const [announcementPage, setAnnouncementPage] = useState(1);
   const [announcementTitle, setAnnouncementTitle] = useState("");
   const [announcementMessage, setAnnouncementMessage] = useState("");
   const [announcementAudience, setAnnouncementAudience] = useState<AnnouncementAudience>(
@@ -121,17 +124,28 @@ export default function Communications() {
   const [feedbackCategory, setFeedbackCategory] = useState<"general" | "event" | "club">("general");
   const [feedbackRating, setFeedbackRating] = useState("");
   const [feedbackComment, setFeedbackComment] = useState("");
+  useEffect(() => {
+    setAnnouncementPage(1);
+  }, [announcementFilter]);
 
   const {
-    data: announcements = [],
+    data: announcementsPage = emptyPaginatedResponse<AnnouncementRecord>(),
     isLoading: isLoadingAnnouncements,
     isError: isAnnouncementsError,
     error: announcementsError
   } = useQuery({
-    queryKey: ["announcements"],
-    queryFn: () => getAnnouncements(),
+    queryKey: ["announcements", announcementFilter, announcementPage],
+    queryFn: () =>
+      getAnnouncements({
+        unread: announcementFilter === "unread" ? true : undefined,
+        priority: announcementFilter === "priority" ? "high" : undefined,
+        audience: announcementFilter === "club" ? "club" : undefined,
+        page: announcementPage,
+        page_size: DEFAULT_PAGE_SIZE
+      }),
     retry: false
   });
+  const announcements = announcementsPage.items;
 
   const {
     data: clubs = [],
@@ -158,22 +172,6 @@ export default function Communications() {
     () => new Map(clubs.map((club) => [club.id, club.name])),
     [clubs]
   );
-
-  const filteredAnnouncements = useMemo(() => {
-    if (announcementFilter === "unread") {
-      return announcements.filter((announcement) => !announcement.is_read);
-    }
-
-    if (announcementFilter === "priority") {
-      return announcements.filter((announcement) => ["high", "urgent"].includes(announcement.priority));
-    }
-
-    if (announcementFilter === "club") {
-      return announcements.filter((announcement) => announcement.audience === "club" || announcement.audience === "all_clubs");
-    }
-
-    return announcements;
-  }, [announcementFilter, announcements]);
 
   const unreadCount = announcements.filter((announcement) => !announcement.is_read).length;
   const urgentCount = announcements.filter((announcement) => ["high", "urgent"].includes(announcement.priority)).length;
@@ -514,7 +512,7 @@ export default function Communications() {
                 </div>
               ) : isAnnouncementsError ? (
                 <p className="text-sm text-destructive">{getErrorMessage(announcementsError)}</p>
-              ) : filteredAnnouncements.length === 0 ? (
+              ) : announcements.length === 0 ? (
                 <div className="nh-empty">
                   <Megaphone className="mx-auto h-8 w-8 text-muted-foreground" />
                   <p className="mt-3 font-medium">No announcements here yet.</p>
@@ -523,7 +521,7 @@ export default function Communications() {
                   </p>
                 </div>
               ) : (
-                filteredAnnouncements.map((announcement) => {
+                announcements.map((announcement) => {
                   const clubName = announcement.club_id ? clubNameById.get(announcement.club_id) : undefined;
 
                   return (
@@ -568,6 +566,15 @@ export default function Communications() {
                   );
                 })
               )}
+              {!isLoadingAnnouncements && !isAnnouncementsError && announcements.length > 0 ? (
+                <DataPagination
+                  page={announcementsPage.page}
+                  pageSize={announcementsPage.page_size}
+                  total={announcementsPage.total}
+                  hasNext={announcementsPage.has_next}
+                  onPageChange={setAnnouncementPage}
+                />
+              ) : null}
             </CardContent>
           </Card>
         </div>

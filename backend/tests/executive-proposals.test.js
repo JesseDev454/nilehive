@@ -259,9 +259,10 @@ test("president can fetch own proposals list", async (t) => {
   );
 
   assert.equal(response.status, 200);
-  assert.equal(payload.data.length, 3);
-  assert.equal(payload.data[0].submitted_at, payload.data[0].created_at);
-  assert.ok(payload.data.every((proposal) => proposal.current_stage));
+  assert.equal(payload.data.items.length, 3);
+  assert.equal(payload.data.total, 3);
+  assert.equal(payload.data.items[0].submitted_at, payload.data.items[0].created_at);
+  assert.ok(payload.data.items.every((proposal) => proposal.current_stage));
 });
 
 test("president can fetch own proposal detail", async (t) => {

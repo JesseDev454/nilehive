@@ -1,6 +1,7 @@
 const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
 const { writeAuditLog } = require("../../shared/auditLog");
+const { ensurePaginatedResult, mapPaginatedResult } = require("../../shared/pagination");
 const {
   validateAdvisorAssignmentPayload,
   validateRoleUpdatePayload
@@ -53,17 +54,24 @@ async function writeRoleHistory(database, actor, profile, update, remarks) {
 }
 
 async function listAdminUsers(options) {
-  const { actor, filters = {}, database = db } = options;
+  const { actor, filters = {}, pagination, database = db } = options;
   requireAdmin(actor);
 
-  const profiles = await database.listProfiles({
+  const profilesResult = ensurePaginatedResult(await database.listProfiles({
     role: filters.role,
     clubId: filters.club_id,
     requestedRole: filters.requested_role,
-    q: filters.q
-  });
+    q: filters.q,
+    pagination,
+    sort: pagination?.sort,
+    order: pagination?.order
+  }), pagination);
 
-  return profiles.map(formatProfile);
+  if (pagination) {
+    return mapPaginatedResult(profilesResult, formatProfile);
+  }
+
+  return profilesResult.map(formatProfile);
 }
 
 async function getAdminUser(options) {

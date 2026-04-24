@@ -1,4 +1,5 @@
 const asyncHandler = require("../../shared/asyncHandler");
+const { parsePaginationQuery } = require("../../shared/pagination");
 const {
   createAnnouncement,
   createFeedback,
@@ -21,6 +22,11 @@ function createCommunicationsController(options = {}) {
           priority: req.query.priority,
           unread: req.query.unread
         },
+        pagination: parsePaginationQuery(req.query, {
+          defaultSort: "created_at",
+          defaultOrder: "desc",
+          allowedSorts: ["created_at", "updated_at", "priority"]
+        }),
         database
       });
 

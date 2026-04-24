@@ -2,6 +2,7 @@ const { db } = require("../../config/db");
 const { createEmailService } = require("../email/email.service");
 const ApiError = require("../../shared/ApiError");
 const { writeAuditLog } = require("../../shared/auditLog");
+const { paginateArray } = require("../../shared/pagination");
 const {
   validateCreateAnnouncementPayload,
   validateCreateFeedbackPayload
@@ -424,15 +425,21 @@ async function createAnnouncement(options) {
 }
 
 async function listAnnouncements(options) {
-  const { actor, filters = {}, database = db } = options;
+  const { actor, filters = {}, pagination, database = db } = options;
   requireActor(actor);
 
-  return getVisibleAnnouncements(actor, {
+  const announcements = await getVisibleAnnouncements(actor, {
     audience: filters.audience,
     club_id: filters.club_id,
     priority: filters.priority,
     unread: filters.unread === true || filters.unread === "true"
   }, database);
+
+  if (pagination) {
+    return paginateArray(announcements, pagination);
+  }
+
+  return announcements;
 }
 
 async function markAnnouncementRead(options) {

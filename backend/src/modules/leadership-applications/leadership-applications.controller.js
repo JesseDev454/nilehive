@@ -1,4 +1,5 @@
 const asyncHandler = require("../../shared/asyncHandler");
+const { parsePaginationQuery } = require("../../shared/pagination");
 const {
   createLeadershipApplication,
   decideLeadershipApplication,
@@ -37,6 +38,11 @@ function createLeadershipApplicationsController(options = {}) {
           requested_role: req.query.requested_role,
           status: req.query.status
         },
+        pagination: parsePaginationQuery(req.query, {
+          defaultSort: "created_at",
+          defaultOrder: "desc",
+          allowedSorts: ["created_at", "updated_at", "requested_role"]
+        }),
         database
       });
 

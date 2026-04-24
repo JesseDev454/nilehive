@@ -3,6 +3,7 @@ import type { ChangeEvent, FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Crown, Loader2, Search, ShieldCheck, UserCheck, UserPlus, Users, WalletCards } from "lucide-react";
 import { toast } from "sonner";
+import { DataPagination } from "@/components/DataPagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,6 +34,7 @@ import {
   type LeadershipApplicationRecord,
   type MembershipRequestRecord
 } from "@/lib/api";
+import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 import { resolveStorageFileUrl, uploadStorageFile } from "@/lib/storage";
 
 const REQUEST_STATUSES = [
@@ -1146,22 +1148,29 @@ function AdminLeadershipApplicationsQueue({ clubs }: { clubs: ClubRecord[] }) {
   const [statusFilter, setStatusFilter] = useState<(typeof LEADERSHIP_STATUSES)[number]>("pending");
   const [roleFilter, setRoleFilter] = useState<"all" | "executive" | "president">("all");
   const [clubFilter, setClubFilter] = useState("all");
+  const [page, setPage] = useState(1);
   const [selectedApplication, setSelectedApplication] = useState<LeadershipApplicationRecord | null>(null);
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, roleFilter, clubFilter]);
   const {
-    data: applications = [],
+    data: applicationsPage = emptyPaginatedResponse<LeadershipApplicationRecord>(),
     isLoading,
     isError,
     error
   } = useQuery({
-    queryKey: ["leadership-applications", statusFilter, roleFilter, clubFilter],
+    queryKey: ["leadership-applications", statusFilter, roleFilter, clubFilter, page],
     queryFn: () =>
       getLeadershipApplications({
         status: statusFilter === "all" ? undefined : statusFilter,
         requested_role: roleFilter === "all" ? undefined : roleFilter,
-        club_id: clubFilter === "all" ? undefined : clubFilter
+        club_id: clubFilter === "all" ? undefined : clubFilter,
+        page,
+        page_size: DEFAULT_PAGE_SIZE
       }),
     retry: false
   });
+  const applications = applicationsPage.items;
 
   return (
     <div className="space-y-4">
@@ -1231,29 +1240,38 @@ function AdminLeadershipApplicationsQueue({ clubs }: { clubs: ClubRecord[] }) {
               <p className="font-medium">No leadership applications match this view</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {applications.map((application) => (
-                <div key={application.id} className="flex flex-col gap-4 rounded-2xl border-2 border-foreground bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-semibold">{application.profile?.full_name || "Applicant"}</p>
-                      <LeadershipStatusBadge status={application.status} />
+            <div>
+              <div className="space-y-3">
+                {applications.map((application) => (
+                  <div key={application.id} className="flex flex-col gap-4 rounded-2xl border-2 border-foreground bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-semibold">{application.profile?.full_name || "Applicant"}</p>
+                        <LeadershipStatusBadge status={application.status} />
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {application.profile?.student_id || "No University ID"} - {application.club?.name || application.club_id}
+                      </p>
+                      <p className="mt-1 text-sm capitalize">
+                        Wants to become <span className="font-medium">{application.requested_role}</span>
+                      </p>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {application.profile?.student_id || "No University ID"} - {application.club?.name || application.club_id}
-                    </p>
-                    <p className="mt-1 text-sm capitalize">
-                      Wants to become <span className="font-medium">{application.requested_role}</span>
-                    </p>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <p className="text-xs text-muted-foreground">{formatDate(application.created_at)}</p>
+                      <Button type="button" onClick={() => setSelectedApplication(application)}>
+                        {["pending", "needs_more_info"].includes(application.status) ? "Review" : "View"}
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <p className="text-xs text-muted-foreground">{formatDate(application.created_at)}</p>
-                    <Button type="button" onClick={() => setSelectedApplication(application)}>
-                      {["pending", "needs_more_info"].includes(application.status) ? "Review" : "View"}
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
+              <DataPagination
+                page={applicationsPage.page}
+                pageSize={applicationsPage.page_size}
+                total={applicationsPage.total}
+                hasNext={applicationsPage.has_next}
+                onPageChange={setPage}
+              />
             </div>
           )}
         </CardContent>
@@ -1267,8 +1285,12 @@ function ReviewerMembershipView() {
   const [statusFilter, setStatusFilter] = useState<(typeof REQUEST_STATUSES)[number]>("pending");
   const [requestTypeFilter, setRequestTypeFilter] = useState<"all" | "member" | "leadership" | "executive" | "president">("all");
   const [clubFilter, setClubFilter] = useState("all");
+  const [page, setPage] = useState(1);
   const [selectedRequest, setSelectedRequest] = useState<MembershipRequestRecord | null>(null);
   const canReview = role === "president" || role === "admin";
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, requestTypeFilter, clubFilter, role]);
   const { data: clubs = [] } = useQuery({
     queryKey: ["membership-request-clubs"],
     queryFn: () => getPublicClubs(),
@@ -1276,20 +1298,27 @@ function ReviewerMembershipView() {
     retry: false
   });
   const {
-    data: requests = [],
+    data: requestsPage = emptyPaginatedResponse<MembershipRequestRecord>(),
     isLoading,
     isError,
     error
   } = useQuery({
-    queryKey: ["membership-requests", statusFilter, clubFilter, role],
+    queryKey: ["membership-requests", statusFilter, clubFilter, requestTypeFilter, role, page],
     queryFn: () =>
       getMembershipRequests({
         status: statusFilter === "all" ? undefined : statusFilter,
-        club_id: role === "admin" && clubFilter !== "all" ? clubFilter : undefined
+        club_id: role === "admin" && clubFilter !== "all" ? clubFilter : undefined,
+        requested_role:
+          requestTypeFilter === "executive" || requestTypeFilter === "president" || requestTypeFilter === "member"
+            ? requestTypeFilter
+            : undefined,
+        page,
+        page_size: DEFAULT_PAGE_SIZE
       }),
     enabled: canReview,
     retry: false
   });
+  const requests = requestsPage.items;
   const summary = useMemo(
     () => ({
       pending: requests.filter((request) => request.status === "pending").length,
@@ -1300,15 +1329,11 @@ function ReviewerMembershipView() {
     [requests]
   );
   const filteredRequests = useMemo(() => {
-    if (requestTypeFilter === "all") {
+    if (requestTypeFilter !== "leadership") {
       return requests;
     }
 
-    if (requestTypeFilter === "leadership") {
-      return requests.filter((request) => request.requested_role === "executive" || request.requested_role === "president");
-    }
-
-    return requests.filter((request) => request.requested_role === requestTypeFilter);
+    return requests.filter((request) => request.requested_role === "executive" || request.requested_role === "president");
   }, [requestTypeFilter, requests]);
 
   if (!canReview) {
@@ -1427,63 +1452,72 @@ function ReviewerMembershipView() {
               <p className="mt-1 text-sm text-muted-foreground">Try another status filter or wait for students to apply.</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {filteredRequests.map((request) => {
-                const isLeadershipRole = request.requested_role === "executive" || request.requested_role === "president";
-                const presidentCannotApprove = role === "president" && isLeadershipRole;
+            <div>
+              <div className="space-y-3">
+                {filteredRequests.map((request) => {
+                  const isLeadershipRole = request.requested_role === "executive" || request.requested_role === "president";
+                  const presidentCannotApprove = role === "president" && isLeadershipRole;
 
-                return (
-                  <div
-                    key={request.id}
-                    className="flex flex-col gap-4 rounded-2xl border bg-card p-4 lg:flex-row lg:items-center lg:justify-between"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-semibold">{request.profile?.full_name || "Student"}</p>
-                        <MembershipStatusBadge status={request.status} />
-                        {isLeadershipRole ? (
-                          <Badge className="bg-secondary/15 text-secondary hover:bg-secondary/15">
-                            Leadership request
-                          </Badge>
+                  return (
+                    <div
+                      key={request.id}
+                      className="flex flex-col gap-4 rounded-2xl border bg-card p-4 lg:flex-row lg:items-center lg:justify-between"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-semibold">{request.profile?.full_name || "Student"}</p>
+                          <MembershipStatusBadge status={request.status} />
+                          {isLeadershipRole ? (
+                            <Badge className="bg-secondary/15 text-secondary hover:bg-secondary/15">
+                              Leadership request
+                            </Badge>
+                          ) : null}
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {request.profile?.student_id || "No University ID"} - {request.club?.name || request.club_id}
+                        </p>
+                        <p className="text-sm">
+                          Wants to join as <span className="font-medium capitalize">{request.requested_role}</span>
+                        </p>
+                        {request.remarks ? <p className="text-sm text-muted-foreground">{request.remarks}</p> : null}
+                        {request.dues_amount ? (
+                          <p className="text-sm text-muted-foreground">
+                            Dues: {formatCurrency(request.dues_amount)} for {request.academic_session}
+                          </p>
                         ) : null}
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {request.profile?.student_id || "No University ID"} - {request.club?.name || request.club_id}
-                      </p>
-                      <p className="text-sm">
-                        Wants to join as <span className="font-medium capitalize">{request.requested_role}</span>
-                      </p>
-                      {request.remarks ? <p className="text-sm text-muted-foreground">{request.remarks}</p> : null}
-                      {request.dues_amount ? (
-                        <p className="text-sm text-muted-foreground">
-                          Dues: {formatCurrency(request.dues_amount)} for {request.academic_session}
+                      <div className="flex flex-col items-stretch gap-2 sm:flex-row lg:items-center">
+                        <p className="text-xs text-muted-foreground">{formatDate(request.created_at)}</p>
+                        {request.status === "pending" ? (
+                          <Button
+                            type="button"
+                            disabled={presidentCannotApprove}
+                            onClick={() => setSelectedRequest(request)}
+                          >
+                            Review
+                          </Button>
+                        ) : (
+                          <Button type="button" variant="outline" onClick={() => setSelectedRequest(request)}>
+                            View
+                          </Button>
+                        )}
+                      </div>
+                      {presidentCannotApprove ? (
+                        <p className="text-xs text-muted-foreground lg:max-w-[220px]">
+                          Executive and president role requests require admin approval.
                         </p>
                       ) : null}
                     </div>
-                    <div className="flex flex-col items-stretch gap-2 sm:flex-row lg:items-center">
-                      <p className="text-xs text-muted-foreground">{formatDate(request.created_at)}</p>
-                      {request.status === "pending" ? (
-                        <Button
-                          type="button"
-                          disabled={presidentCannotApprove}
-                          onClick={() => setSelectedRequest(request)}
-                        >
-                          Review
-                        </Button>
-                      ) : (
-                        <Button type="button" variant="outline" onClick={() => setSelectedRequest(request)}>
-                          View
-                        </Button>
-                      )}
-                    </div>
-                    {presidentCannotApprove ? (
-                      <p className="text-xs text-muted-foreground lg:max-w-[220px]">
-                        Executive and president role requests require admin approval.
-                      </p>
-                    ) : null}
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+              <DataPagination
+                page={requestsPage.page}
+                pageSize={requestsPage.page_size}
+                total={requestsPage.total}
+                hasNext={requestsPage.has_next}
+                onPageChange={setPage}
+              />
             </div>
           )}
         </CardContent>

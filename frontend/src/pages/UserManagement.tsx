@@ -1,6 +1,7 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, ShieldCheck, UserCog, Users } from "lucide-react";
+import { DataPagination } from "@/components/DataPagination";
 import { NeoLoadingState, NeoMetricCard, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import {
   type ProfileRecord
 } from "@/lib/api";
 import { actionError, actionSuccess } from "@/lib/notify";
+import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 
 const ROLE_OPTIONS: ProfileRecord["role"][] = ["student", "executive", "president", "advisor", "admin"];
 
@@ -219,31 +221,38 @@ export default function UserManagement() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [requestedRoleFilter, setRequestedRoleFilter] = useState("all");
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
   const [selectedUser, setSelectedUser] = useState<AdminUserProfileRecord | null>(null);
+  useEffect(() => {
+    setPage(1);
+  }, [roleFilter, requestedRoleFilter, query]);
   const {
-    data: users = [],
+    data: usersPage = emptyPaginatedResponse<AdminUserProfileRecord>(),
     isLoading,
     isError,
     error
   } = useQuery({
-    queryKey: ["admin-users", roleFilter, requestedRoleFilter, query],
+    queryKey: ["admin-users", roleFilter, requestedRoleFilter, query, page],
     queryFn: () =>
       getAdminUsers({
         role: roleFilter === "all" ? undefined : roleFilter,
         requested_role: requestedRoleFilter === "all" ? undefined : requestedRoleFilter,
-        q: query || undefined
+        q: query || undefined,
+        page,
+        page_size: DEFAULT_PAGE_SIZE
       }),
     enabled: role === "admin",
     retry: false
   });
+  const users = usersPage.items;
   const summary = useMemo(
     () => ({
-      total: users.length,
+      total: usersPage.total,
       students: users.filter((user) => user.role === "student").length,
       leadershipRequests: users.filter((user) => ["executive", "president"].includes(user.requested_role || "")).length,
       advisors: users.filter((user) => user.role === "advisor").length
     }),
-    [users]
+    [users, usersPage.total]
   );
 
   if (role !== "admin") {
@@ -330,32 +339,41 @@ export default function UserManagement() {
               <p className="mt-1 text-sm text-muted-foreground">Try another role filter or search term.</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {users.map((user) => (
-                <div
-                  key={user.id}
-                  className="nh-list-card flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
-                >
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-semibold">{user.full_name || "Unnamed user"}</p>
-                      <RoleBadge role={user.role} />
-                      {["executive", "president"].includes(user.requested_role || "") && user.role === "student" ? (
-                        <Badge className="bg-primary/15 text-primary hover:bg-primary/15">
-                          Requests {user.requested_role}
-                        </Badge>
-                      ) : null}
+            <div>
+              <div className="space-y-3">
+                {users.map((user) => (
+                  <div
+                    key={user.id}
+                    className="nh-list-card flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-semibold">{user.full_name || "Unnamed user"}</p>
+                        <RoleBadge role={user.role} />
+                        {["executive", "president"].includes(user.requested_role || "") && user.role === "student" ? (
+                          <Badge className="bg-primary/15 text-primary hover:bg-primary/15">
+                            Requests {user.requested_role}
+                          </Badge>
+                        ) : null}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {user.student_id || "University ID not set"} - {user.club?.name || "No club assigned"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Joined {formatDate(user.created_at)}</p>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {user.student_id || "University ID not set"} - {user.club?.name || "No club assigned"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Joined {formatDate(user.created_at)}</p>
+                    <Button type="button" onClick={() => setSelectedUser(user)}>
+                      Manage Access
+                    </Button>
                   </div>
-                  <Button type="button" onClick={() => setSelectedUser(user)}>
-                    Manage Access
-                  </Button>
-                </div>
-              ))}
+                ))}
+              </div>
+              <DataPagination
+                page={usersPage.page}
+                pageSize={usersPage.page_size}
+                total={usersPage.total}
+                hasNext={usersPage.has_next}
+                onPageChange={setPage}
+              />
             </div>
           )}
         </CardContent>

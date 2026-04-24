@@ -85,12 +85,13 @@ export default function Dues() {
     enabled: canViewDues,
     retry: false
   });
-  const { data: members = [] } = useQuery({
+  const { data: membersPage } = useQuery({
     queryKey: ["club-members", role],
-    queryFn: () => getClubMembers(),
+    queryFn: () => getClubMembers({ page_size: 100 }),
     enabled: canViewDues,
     retry: false
   });
+  const members = membersPage?.items ?? [];
   const { data: clubs = [] } = useQuery({
     queryKey: ["dues-form-clubs"],
     queryFn: () => getClubs(),

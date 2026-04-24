@@ -1,4 +1,5 @@
 const asyncHandler = require("../../shared/asyncHandler");
+const { parsePaginationQuery } = require("../../shared/pagination");
 const {
   getAdminProposalDetail,
   getAdvisorProposalDetail,
@@ -32,8 +33,14 @@ function createProposalsController(options = {}) {
         actor: req.user,
         filters: {
           status: req.query.status,
-          current_stage: req.query.current_stage
+          current_stage: req.query.current_stage,
+          club_id: req.query.club_id
         },
+        pagination: parsePaginationQuery(req.query, {
+          defaultSort: "created_at",
+          defaultOrder: "desc",
+          allowedSorts: ["created_at", "event_date", "updated_at", "title"]
+        }),
         database
       });
 
@@ -74,6 +81,11 @@ function createProposalsController(options = {}) {
     listPresidentProposals: asyncHandler(async (req, res) => {
       const proposals = await listPresidentProposals({
         actor: req.user,
+        pagination: parsePaginationQuery(req.query, {
+          defaultSort: "created_at",
+          defaultOrder: "desc",
+          allowedSorts: ["created_at", "event_date", "updated_at", "title"]
+        }),
         database
       });
 

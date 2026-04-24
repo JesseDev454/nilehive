@@ -1,6 +1,7 @@
 const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
 const { writeAuditLog } = require("../../shared/auditLog");
+const { ensurePaginatedResult, mapPaginatedResult, paginateArray } = require("../../shared/pagination");
 const {
   validateAdvisorDecisionPayload,
   validateCreateProposalPayload,
@@ -342,7 +343,7 @@ async function getPendingAdvisorProposals(options) {
 }
 
 async function listPresidentProposals(options) {
-  const { actor, database = db } = options;
+  const { actor, pagination, database = db } = options;
 
   if (!actor) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
@@ -352,10 +353,21 @@ async function listPresidentProposals(options) {
     throw new ApiError(403, "Only presidents can view their proposals", "FORBIDDEN");
   }
 
-  const proposals = await database.listExecutiveProposals(actor.id);
+  const proposals = ensurePaginatedResult(await database.listExecutiveProposals(actor.id, {
+    pagination,
+    sort: pagination?.sort,
+    order: pagination?.order
+  }), pagination);
+  const proposalItems = pagination ? proposals.items : proposals;
   const latestApprovalsByProposalId = await database.getLatestApprovalsByProposalIds(
-    proposals.map((proposal) => proposal.id)
+    proposalItems.map((proposal) => proposal.id)
   );
+
+  if (pagination) {
+    return mapPaginatedResult(proposals, (proposal) =>
+      formatExecutiveProposal(proposal, latestApprovalsByProposalId[proposal.id] ?? null)
+    );
+  }
 
   return proposals.map((proposal) =>
     formatExecutiveProposal(proposal, latestApprovalsByProposalId[proposal.id] ?? null)
@@ -528,7 +540,7 @@ async function getAdvisorProposalDetail(options) {
 }
 
 async function listAdminProposals(options) {
-  const { actor, filters = {}, database = db } = options;
+  const { actor, filters = {}, pagination, database = db } = options;
 
   if (!actor) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
@@ -538,20 +550,41 @@ async function listAdminProposals(options) {
     throw new ApiError(403, "Only admins can view dashboard proposals", "FORBIDDEN");
   }
 
-  const proposals = await database.listAdminProposals({
-    status: filters.status
-  });
-
   const stageStatuses = filters.current_stage ? getStatusesForStage(filters.current_stage) : null;
-  const filteredProposals = stageStatuses
-    ? proposals.filter((proposal) => stageStatuses.includes(proposal.status))
-    : proposals;
+  const dbFilters = {
+    ...(filters.status ? { status: filters.status } : {}),
+    ...(stageStatuses?.length ? { statuses: stageStatuses } : {}),
+    ...(filters.club_id ? { clubId: filters.club_id } : {}),
+    ...(pagination
+      ? {
+          pagination,
+          sort: pagination.sort,
+          order: pagination.order
+        }
+      : {})
+  };
 
+  const rawProposals = await database.listAdminProposals(dbFilters);
+  const proposals = Array.isArray(rawProposals) && stageStatuses?.length
+    ? (pagination
+        ? paginateArray(
+            rawProposals.filter((proposal) => stageStatuses.includes(proposal.status)),
+            pagination
+          )
+        : rawProposals.filter((proposal) => stageStatuses.includes(proposal.status)))
+    : ensurePaginatedResult(rawProposals, pagination);
+  const proposalItems = pagination ? proposals.items : proposals;
   const latestApprovalsByProposalId = await database.getLatestApprovalsByProposalIds(
-    filteredProposals.map((proposal) => proposal.id)
+    proposalItems.map((proposal) => proposal.id)
   );
 
-  return filteredProposals.map((proposal) =>
+  if (pagination) {
+    return mapPaginatedResult(proposals, (proposal) =>
+      formatAdminProposal(proposal, latestApprovalsByProposalId[proposal.id] ?? null)
+    );
+  }
+
+  return proposals.map((proposal) =>
     formatAdminProposal(proposal, latestApprovalsByProposalId[proposal.id] ?? null)
   );
 }

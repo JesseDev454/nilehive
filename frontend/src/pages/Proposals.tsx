@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { FileText, Plus } from "lucide-react";
+import { DataPagination } from "@/components/DataPagination";
 import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +16,7 @@ import {
   getProposalStatusMeta,
   isProposalEditable
 } from "@/lib/proposalWorkflow";
+import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -31,24 +33,34 @@ function getDateLabel(value?: string) {
 export default function Proposals() {
   const { role } = useRole();
   const [statusFilter, setStatusFilter] = useState("all");
+  const [page, setPage] = useState(1);
   const isAdmin = role === "admin";
   const isPresident = role === "president";
   const canFetch = isAdmin || isPresident;
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, role]);
 
-  const { data: proposals = [], isLoading, isError, error } = useQuery({
-    queryKey: ["proposals", role, statusFilter],
+  const { data: proposalsPage = emptyPaginatedResponse<ProposalRecord>(), isLoading, isError, error } = useQuery({
+    queryKey: ["proposals", role, statusFilter, page],
     queryFn: async () => {
       if (isAdmin) {
         return getAdminProposals({
-          status: statusFilter === "all" ? undefined : statusFilter
+          status: statusFilter === "all" ? undefined : statusFilter,
+          page,
+          page_size: DEFAULT_PAGE_SIZE
         });
       }
 
-      return getPresidentProposals();
+      return getPresidentProposals({
+        page,
+        page_size: DEFAULT_PAGE_SIZE
+      });
     },
     enabled: canFetch,
     retry: false
   });
+  const proposals = proposalsPage.items;
 
   const pageCopy = useMemo(() => {
     if (isAdmin) {
@@ -208,6 +220,13 @@ export default function Proposals() {
                 </div>
               ))}
             </div>
+            <DataPagination
+              page={proposalsPage.page}
+              pageSize={proposalsPage.page_size}
+              total={proposalsPage.total}
+              hasNext={proposalsPage.has_next}
+              onPageChange={setPage}
+            />
           </CardContent>
         </Card>
       )}

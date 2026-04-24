@@ -1,6 +1,7 @@
 const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
 const { writeAuditLog } = require("../../shared/auditLog");
+const { ensurePaginatedResult, mapPaginatedResult } = require("../../shared/pagination");
 const {
   validateCreateLeadershipApplicationPayload,
   validateLeadershipApplicationDecisionPayload
@@ -176,16 +177,21 @@ async function listMyLeadershipApplications(options) {
 }
 
 async function listLeadershipApplications(options) {
-  const { actor, filters = {}, database = db } = options;
+  const { actor, filters = {}, pagination, database = db } = options;
   requireAdmin(actor);
 
-  const applications = await database.listLeadershipApplications({
+  const applications = ensurePaginatedResult(await database.listLeadershipApplications({
     clubId: filters.club_id,
     status: filters.status,
-    requestedRole: filters.requested_role
-  });
+    requestedRole: filters.requested_role,
+    pagination,
+    sort: pagination?.sort,
+    order: pagination?.order
+  }), pagination);
 
-  return applications.map(formatLeadershipApplication);
+  return pagination
+    ? mapPaginatedResult(applications, formatLeadershipApplication)
+    : applications.map(formatLeadershipApplication);
 }
 
 async function replaceExistingPresidentIfNeeded({ actor, application, database, replaceExistingPresident }) {

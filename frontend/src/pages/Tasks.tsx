@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ClipboardList, Loader2, Target, UserCheck } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
+import { DataPagination } from "@/components/DataPagination";
 import { NeoLoadingState, NeoMetricCard, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import {
   type TaskRecord
 } from "@/lib/api";
 import { actionError, actionSuccess } from "@/lib/notify";
+import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -119,23 +121,30 @@ export default function Tasks() {
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<CreateTaskPayload["priority"]>("medium");
   const [dueDate, setDueDate] = useState("");
+  const [page, setPage] = useState(1);
   const adminClubId = searchParams.get("club_id") || "all";
   const canUseTasks = role === "president" || role === "executive" || role === "admin";
+  useEffect(() => {
+    setPage(1);
+  }, [role, adminClubId]);
 
   const {
-    data: tasks = [],
+    data: tasksPage = emptyPaginatedResponse<TaskRecord>(),
     isLoading,
     isError,
     error
   } = useQuery({
-    queryKey: ["tasks", role, adminClubId],
+    queryKey: ["tasks", role, adminClubId, page],
     queryFn: () =>
       getTasks({
-        club_id: role === "admin" && adminClubId !== "all" ? adminClubId : undefined
+        club_id: role === "admin" && adminClubId !== "all" ? adminClubId : undefined,
+        page,
+        page_size: DEFAULT_PAGE_SIZE
       }),
     enabled: canUseTasks,
     retry: false
   });
+  const tasks = tasksPage.items;
   const { data: clubs = [] } = useQuery({
     queryKey: ["clubs", "tasks-admin-filter"],
     queryFn: () => getClubs(),
@@ -239,7 +248,7 @@ export default function Tasks() {
       />
 
       <div className="grid gap-4 md:grid-cols-3">
-        <NeoMetricCard title="Total Tasks" value={tasks.length} icon={ClipboardList} tone="navy" />
+        <NeoMetricCard title="Total Tasks" value={tasksPage.total} icon={ClipboardList} tone="navy" />
         <NeoMetricCard title="In Progress" value={tasks.filter((task) => task.status === "in_progress").length} icon={Target} tone="gold" />
         <NeoMetricCard title="Completed" value={tasks.filter((task) => task.status === "completed").length} icon={UserCheck} tone="green" />
       </div>
@@ -391,15 +400,26 @@ export default function Tasks() {
               </p>
             </div>
           ) : (
-            tasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                canUpdate={role === "executive" || role === "president"}
-                isUpdating={updateMutation.isPending}
-                onStatusChange={handleStatusChange}
+            <div>
+              <div className="space-y-3">
+                {tasks.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    canUpdate={role === "executive" || role === "president"}
+                    isUpdating={updateMutation.isPending}
+                    onStatusChange={handleStatusChange}
+                  />
+                ))}
+              </div>
+              <DataPagination
+                page={tasksPage.page}
+                pageSize={tasksPage.page_size}
+                total={tasksPage.total}
+                hasNext={tasksPage.has_next}
+                onPageChange={setPage}
               />
-            ))
+            </div>
           )}
         </CardContent>
       </Card>

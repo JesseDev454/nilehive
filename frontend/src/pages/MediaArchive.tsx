@@ -3,6 +3,7 @@ import type { ChangeEvent, FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText, ImageIcon, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { DataPagination } from "@/components/DataPagination";
 import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ import {
 } from "@/lib/api";
 import { uploadStorageFile } from "@/lib/storage";
 import { actionError, actionSuccess } from "@/lib/notify";
+import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 
 const MAX_REPORT_MEDIA_IMAGES = 10;
 
@@ -118,20 +120,22 @@ export default function MediaArchive() {
   const [uploadedMediaUrls, setUploadedMediaUrls] = useState<string[]>([]);
   const [uploadedMediaNames, setUploadedMediaNames] = useState<string[]>([]);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const [page, setPage] = useState(1);
   const canSubmitReports = role === "president";
   const canViewReports = ["admin", "advisor", "president"].includes(role);
 
   const {
-    data: reports = [],
+    data: reportsPage = emptyPaginatedResponse<EventReportRecord>(),
     isLoading,
     isError,
     error
   } = useQuery({
-    queryKey: ["event-reports", role],
-    queryFn: () => getEventReports(),
+    queryKey: ["event-reports", role, page],
+    queryFn: () => getEventReports({ page, page_size: DEFAULT_PAGE_SIZE }),
     enabled: canViewReports,
     retry: false
   });
+  const reports = reportsPage.items;
   const { data: approvedEvents = [] } = useQuery({
     queryKey: ["approved-events", "report-form"],
     queryFn: () => getApprovedEvents(),
@@ -433,10 +437,19 @@ export default function MediaArchive() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-              {reports.map((report) => (
-                <ReportCard key={report.id} report={report} />
-              ))}
+            <div>
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                {reports.map((report) => (
+                  <ReportCard key={report.id} report={report} />
+                ))}
+              </div>
+              <DataPagination
+                page={reportsPage.page}
+                pageSize={reportsPage.page_size}
+                total={reportsPage.total}
+                hasNext={reportsPage.has_next}
+                onPageChange={setPage}
+              />
             </div>
           )}
         </CardContent>

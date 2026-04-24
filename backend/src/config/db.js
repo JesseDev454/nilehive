@@ -1,5 +1,6 @@
 const { createClient } = require("@supabase/supabase-js");
 const { getEnv } = require("./env");
+const { buildPaginatedResult } = require("../shared/pagination");
 
 const proposalSelect =
   "id, club_id, submitted_by, title, description, event_date, location, aim_objectives, proposed_activity, event_time, number_of_participants, budget_estimate, budget_line_items, responsible_members, status, submitted_at, resubmitted_at, revision_count, last_edited_at, last_edited_by, advisor_remarks, advisor_decided_at, advisor_decided_by, admin_remarks, admin_decided_at, admin_decided_by, created_at, updated_at";
@@ -90,6 +91,29 @@ function createDatabase(options = {}) {
       ...profile,
       account_status: profile.account_status ?? "active"
     };
+  }
+
+  function applyPagination(query, pagination) {
+    if (!pagination) {
+      return query;
+    }
+
+    return query.range(pagination.from, pagination.to);
+  }
+
+  function formatQueryResult({ data, count, pagination, normalizeItems = null }) {
+    const items = normalizeItems ? (data ?? []).map(normalizeItems) : data ?? [];
+
+    if (!pagination) {
+      return items;
+    }
+
+    return buildPaginatedResult({
+      items,
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      total: count ?? 0
+    });
   }
 
   async function selectProfileById(profileId, selectClause) {
@@ -359,8 +383,8 @@ function createDatabase(options = {}) {
     async listProfiles(filters = {}) {
       let query = getClient()
         .from("profiles")
-        .select(profileWithClubSelect)
-        .order("created_at", { ascending: false });
+        .select(profileWithClubSelect, filters.pagination ? { count: "exact" } : undefined)
+        .order(filters.sort || "created_at", { ascending: (filters.order || "desc") === "asc" });
 
       if (filters.role) {
         query = query.eq("role", filters.role);
@@ -386,13 +410,15 @@ function createDatabase(options = {}) {
         }
       }
 
-      let { data, error } = await query;
+      query = applyPagination(query, filters.pagination);
+
+      let { data, error, count } = await query;
 
       if (error && isMissingColumn(error, "account_status")) {
         let fallbackQuery = getClient()
           .from("profiles")
-          .select(legacyProfileWithClubSelect)
-          .order("created_at", { ascending: false });
+          .select(legacyProfileWithClubSelect, filters.pagination ? { count: "exact" } : undefined)
+          .order(filters.sort || "created_at", { ascending: (filters.order || "desc") === "asc" });
 
         if (filters.role) {
           fallbackQuery = fallbackQuery.eq("role", filters.role);
@@ -418,16 +444,24 @@ function createDatabase(options = {}) {
           }
         }
 
+        fallbackQuery = applyPagination(fallbackQuery, filters.pagination);
+
         const fallback = await fallbackQuery;
         data = fallback.data;
         error = fallback.error;
+        count = fallback.count;
       }
 
       if (error) {
         throw error;
       }
 
-      return (data ?? []).map(normalizeProfile);
+      return formatQueryResult({
+        data,
+        count,
+        pagination: filters.pagination,
+        normalizeItems: normalizeProfile
+      });
     },
 
     async createProfileRoleHistory(entry) {
@@ -459,18 +493,22 @@ function createDatabase(options = {}) {
       return data;
     },
 
-    async listExecutiveProposals(submittedBy) {
-      const { data, error } = await getClient()
+    async listExecutiveProposals(submittedBy, filters = {}) {
+      let query = getClient()
         .from("proposals")
-        .select(proposalSelect)
+        .select(proposalSelect, filters.pagination ? { count: "exact" } : undefined)
         .eq("submitted_by", submittedBy)
-        .order("created_at", { ascending: false });
+        .order(filters.sort || "created_at", { ascending: (filters.order || "desc") === "asc" });
+
+      query = applyPagination(query, filters.pagination);
+
+      const { data, error, count } = await query;
 
       if (error) {
         throw error;
       }
 
-      return data;
+      return formatQueryResult({ data, count, pagination: filters.pagination });
     },
 
     async listProposalsByClubId(clubId) {
@@ -490,20 +528,34 @@ function createDatabase(options = {}) {
     async listAdminProposals(filters = {}) {
       let query = getClient()
         .from("proposals")
-        .select(proposalSelect)
-        .order("created_at", { ascending: false });
+        .select(proposalSelect, filters.pagination ? { count: "exact" } : undefined)
+        .order(filters.sort || "created_at", { ascending: (filters.order || "desc") === "asc" });
 
       if (filters.status) {
         query = query.eq("status", filters.status);
       }
 
-      const { data, error } = await query;
+      if (filters.requestedRole) {
+        query = query.eq("requested_role", filters.requestedRole);
+      }
+
+      if (filters.statuses?.length) {
+        query = query.in("status", filters.statuses);
+      }
+
+      if (filters.clubId) {
+        query = query.eq("club_id", filters.clubId);
+      }
+
+      query = applyPagination(query, filters.pagination);
+
+      const { data, error, count } = await query;
 
       if (error) {
         throw error;
       }
 
-      return data;
+      return formatQueryResult({ data, count, pagination: filters.pagination });
     },
 
     async listApprovedProposals(filters = {}) {
@@ -859,18 +911,22 @@ function createDatabase(options = {}) {
       return data;
     },
 
-    async listNotificationsByUserId(userId) {
-      const { data, error } = await getClient()
+    async listNotificationsByUserId(userId, filters = {}) {
+      let query = getClient()
         .from("notifications")
-        .select(notificationSelect)
+        .select(notificationSelect, filters.pagination ? { count: "exact" } : undefined)
         .eq("user_id", userId)
-        .order("created_at", { ascending: false });
+        .order(filters.sort || "created_at", { ascending: (filters.order || "desc") === "asc" });
+
+      query = applyPagination(query, filters.pagination);
+
+      const { data, error, count } = await query;
 
       if (error) {
         throw error;
       }
 
-      return data;
+      return formatQueryResult({ data, count, pagination: filters.pagination });
     },
 
     async getAuthEmailsByProfileIds(profileIds) {
@@ -967,8 +1023,8 @@ function createDatabase(options = {}) {
     async listTasks(filters = {}) {
       let query = getClient()
         .from("tasks")
-        .select(taskSelect)
-        .order("created_at", { ascending: false });
+        .select(taskSelect, filters.pagination ? { count: "exact" } : undefined)
+        .order(filters.sort || "created_at", { ascending: (filters.order || "desc") === "asc" });
 
       if (filters.clubId) {
         query = query.eq("club_id", filters.clubId);
@@ -982,13 +1038,15 @@ function createDatabase(options = {}) {
         query = query.eq("status", filters.status);
       }
 
-      const { data, error } = await query;
+      query = applyPagination(query, filters.pagination);
+
+      const { data, error, count } = await query;
 
       if (error) {
         throw error;
       }
 
-      return data;
+      return formatQueryResult({ data, count, pagination: filters.pagination });
     },
 
     async updateTaskStatus(taskId, update) {
@@ -1065,8 +1123,8 @@ function createDatabase(options = {}) {
     async listClubMembers(filters = {}) {
       let query = getClient()
         .from("club_members")
-        .select(clubMemberSelect)
-        .order("full_name", { ascending: true });
+        .select(clubMemberSelect, filters.pagination ? { count: "exact" } : undefined)
+        .order(filters.sort || "full_name", { ascending: (filters.order || "asc") === "asc" });
 
       if (filters.clubId) {
         query = query.eq("club_id", filters.clubId);
@@ -1080,13 +1138,15 @@ function createDatabase(options = {}) {
         query = query.eq("membership_status", filters.membershipStatus);
       }
 
-      const { data, error } = await query;
+      query = applyPagination(query, filters.pagination);
+
+      const { data, error, count } = await query;
 
       if (error) {
         throw error;
       }
 
-      return data;
+      return formatQueryResult({ data, count, pagination: filters.pagination });
     },
 
     async getClubMemberByProfileAndClub(profileId, clubId) {
@@ -1340,8 +1400,8 @@ function createDatabase(options = {}) {
     async listMembershipRequests(filters = {}) {
       let query = getClient()
         .from("membership_requests")
-        .select(membershipRequestSelect)
-        .order("created_at", { ascending: false });
+        .select(membershipRequestSelect, filters.pagination ? { count: "exact" } : undefined)
+        .order(filters.sort || "created_at", { ascending: (filters.order || "desc") === "asc" });
 
       if (filters.profileId) {
         query = query.eq("profile_id", filters.profileId);
@@ -1355,13 +1415,15 @@ function createDatabase(options = {}) {
         query = query.eq("status", filters.status);
       }
 
-      const { data, error } = await query;
+      query = applyPagination(query, filters.pagination);
+
+      const { data, error, count } = await query;
 
       if (error) {
         throw error;
       }
 
-      return data;
+      return formatQueryResult({ data, count, pagination: filters.pagination });
     },
 
     async updateMembershipRequest(requestId, update) {
@@ -1445,8 +1507,8 @@ function createDatabase(options = {}) {
     async listLeadershipApplications(filters = {}) {
       let query = getClient()
         .from("leadership_applications")
-        .select(leadershipApplicationSelect)
-        .order("created_at", { ascending: false });
+        .select(leadershipApplicationSelect, filters.pagination ? { count: "exact" } : undefined)
+        .order(filters.sort || "created_at", { ascending: (filters.order || "desc") === "asc" });
 
       if (filters.profileId) {
         query = query.eq("profile_id", filters.profileId);
@@ -1464,13 +1526,15 @@ function createDatabase(options = {}) {
         query = query.eq("requested_role", filters.requestedRole);
       }
 
-      const { data, error } = await query;
+      query = applyPagination(query, filters.pagination);
+
+      const { data, error, count } = await query;
 
       if (error) {
         throw error;
       }
 
-      return data ?? [];
+      return formatQueryResult({ data, count, pagination: filters.pagination });
     },
 
     async updateLeadershipApplication(applicationId, update) {
@@ -1533,8 +1597,8 @@ function createDatabase(options = {}) {
     async listEventReports(filters = {}) {
       let query = getClient()
         .from("event_reports")
-        .select(eventReportSelect)
-        .order("submitted_at", { ascending: false });
+        .select(eventReportSelect, filters.pagination ? { count: "exact" } : undefined)
+        .order(filters.sort || "submitted_at", { ascending: (filters.order || "desc") === "asc" });
 
       if (filters.clubId) {
         query = query.eq("club_id", filters.clubId);
@@ -1542,7 +1606,14 @@ function createDatabase(options = {}) {
 
       if (filters.clubIds) {
         if (!filters.clubIds.length) {
-          return [];
+          return filters.pagination
+            ? buildPaginatedResult({
+                items: [],
+                page: filters.pagination.page,
+                pageSize: filters.pagination.pageSize,
+                total: 0
+              })
+            : [];
         }
 
         query = query.in("club_id", filters.clubIds);
@@ -1552,13 +1623,15 @@ function createDatabase(options = {}) {
         query = query.eq("proposal_id", filters.proposalId);
       }
 
-      const { data, error } = await query;
+      query = applyPagination(query, filters.pagination);
+
+      const { data, error, count } = await query;
 
       if (error) {
         throw error;
       }
 
-      return data;
+      return formatQueryResult({ data, count, pagination: filters.pagination });
     },
 
     async createAnnouncement(announcement) {
@@ -1578,8 +1651,8 @@ function createDatabase(options = {}) {
     async listAnnouncements(filters = {}) {
       let query = getClient()
         .from("announcements")
-        .select(announcementSelect)
-        .order("created_at", { ascending: false });
+        .select(announcementSelect, filters.pagination ? { count: "exact" } : undefined)
+        .order(filters.sort || "created_at", { ascending: (filters.order || "desc") === "asc" });
 
       if (filters.audience) {
         query = query.eq("audience", filters.audience);
@@ -1591,7 +1664,14 @@ function createDatabase(options = {}) {
 
       if (filters.clubIds) {
         if (!filters.clubIds.length) {
-          return [];
+          return filters.pagination
+            ? buildPaginatedResult({
+                items: [],
+                page: filters.pagination.page,
+                pageSize: filters.pagination.pageSize,
+                total: 0
+              })
+            : [];
         } else {
           query = query.in("club_id", filters.clubIds);
         }
@@ -1605,13 +1685,15 @@ function createDatabase(options = {}) {
         query = query.eq("target_role", filters.targetRole);
       }
 
-      const { data, error } = await query;
+      query = applyPagination(query, filters.pagination);
+
+      const { data, error, count } = await query;
 
       if (error) {
         throw error;
       }
 
-      return data;
+      return formatQueryResult({ data, count, pagination: filters.pagination });
     },
 
     async listAnnouncementReadsByUserId(userId) {

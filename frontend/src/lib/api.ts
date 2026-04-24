@@ -59,6 +59,21 @@ export interface ProfileRecord {
   updated_at?: string;
 }
 
+export interface PaginatedResponse<T> {
+  items: T[];
+  page: number;
+  page_size: number;
+  total: number;
+  has_next: boolean;
+}
+
+export interface PaginationQuery {
+  page?: number;
+  page_size?: number;
+  sort?: string;
+  order?: "asc" | "desc";
+}
+
 export interface AdminUserProfileRecord extends ProfileRecord {
   club?: {
     id: string;
@@ -727,6 +742,28 @@ interface ApiRequestOptions {
 const TOKEN_REFRESH_BUFFER_SECONDS = 60;
 export const SESSION_EXPIRED_EVENT = "nilehive:session-expired";
 
+function appendPaginationParams(params: URLSearchParams, pagination?: PaginationQuery) {
+  if (!pagination) {
+    return;
+  }
+
+  if (pagination.page) {
+    params.set("page", String(pagination.page));
+  }
+
+  if (pagination.page_size) {
+    params.set("page_size", String(pagination.page_size));
+  }
+
+  if (pagination.sort) {
+    params.set("sort", pagination.sort);
+  }
+
+  if (pagination.order) {
+    params.set("order", pagination.order);
+  }
+}
+
 export class ApiClientError extends Error {
   status: number;
   code?: string;
@@ -944,11 +981,20 @@ export async function submitAdvisorDecision(
   return response.data;
 }
 
-export async function getPresidentProposals(token?: string) {
-  const response = await request<ApiEnvelope<ProposalRecord[]>>("/api/v1/proposals", {
-    method: "GET",
-    token
-  });
+export async function getPresidentProposals(
+  pagination: PaginationQuery = {},
+  token?: string
+) {
+  const params = new URLSearchParams();
+  appendPaginationParams(params, pagination);
+  const query = params.toString();
+  const response = await request<ApiEnvelope<PaginatedResponse<ProposalRecord>>>(
+    `/api/v1/proposals${query ? `?${query}` : ""}`,
+    {
+      method: "GET",
+      token
+    }
+  );
 
   return response.data;
 }
@@ -974,7 +1020,10 @@ export async function getAdvisorProposal(proposalId: string, token?: string) {
   return response.data;
 }
 
-export async function getAdminProposals(filters: { status?: string; current_stage?: string } = {}, token?: string) {
+export async function getAdminProposals(
+  filters: { status?: string; current_stage?: string; club_id?: string } & PaginationQuery = {},
+  token?: string
+) {
   const params = new URLSearchParams();
 
   if (filters.status) {
@@ -985,8 +1034,14 @@ export async function getAdminProposals(filters: { status?: string; current_stag
     params.set("current_stage", filters.current_stage);
   }
 
+  if (filters.club_id) {
+    params.set("club_id", filters.club_id);
+  }
+
+  appendPaginationParams(params, filters);
+
   const query = params.toString();
-  const response = await request<ApiEnvelope<ProposalRecord[]>>(
+  const response = await request<ApiEnvelope<PaginatedResponse<ProposalRecord>>>(
     `/api/v1/proposals/admin${query ? `?${query}` : ""}`,
     {
       method: "GET",
@@ -1010,7 +1065,7 @@ export async function getAdminProposal(proposalId: string, token?: string) {
 }
 
 export async function getAdminUsers(
-  filters: { role?: string; club_id?: string; requested_role?: string; q?: string } = {},
+  filters: { role?: string; club_id?: string; requested_role?: string; q?: string } & PaginationQuery = {},
   token?: string
 ) {
   const params = new URLSearchParams();
@@ -1031,8 +1086,10 @@ export async function getAdminUsers(
     params.set("q", filters.q);
   }
 
+  appendPaginationParams(params, filters);
+
   const query = params.toString();
-  const response = await request<ApiEnvelope<AdminUserProfileRecord[]>>(
+  const response = await request<ApiEnvelope<PaginatedResponse<AdminUserProfileRecord>>>(
     `/api/v1/admin/users${query ? `?${query}` : ""}`,
     {
       method: "GET",
@@ -1102,11 +1159,17 @@ export async function submitAdminDecision(
   return response.data;
 }
 
-export async function getNotifications(token?: string) {
-  const response = await request<ApiEnvelope<NotificationRecord[]>>("/api/v1/notifications", {
-    method: "GET",
-    token
-  });
+export async function getNotifications(pagination: PaginationQuery = {}, token?: string) {
+  const params = new URLSearchParams();
+  appendPaginationParams(params, pagination);
+  const query = params.toString();
+  const response = await request<ApiEnvelope<PaginatedResponse<NotificationRecord>>>(
+    `/api/v1/notifications${query ? `?${query}` : ""}`,
+    {
+      method: "GET",
+      token
+    }
+  );
 
   return response.data;
 }
@@ -1153,7 +1216,7 @@ export async function getPresidentDashboard(token?: string) {
   return response.data;
 }
 
-export async function getTasks(filters: { status?: string; club_id?: string } = {}, token?: string) {
+export async function getTasks(filters: { status?: string; club_id?: string } & PaginationQuery = {}, token?: string) {
   const params = new URLSearchParams();
 
   if (filters.status) {
@@ -1164,8 +1227,10 @@ export async function getTasks(filters: { status?: string; club_id?: string } = 
     params.set("club_id", filters.club_id);
   }
 
+  appendPaginationParams(params, filters);
+
   const query = params.toString();
-  const response = await request<ApiEnvelope<TaskRecord[]>>(
+  const response = await request<ApiEnvelope<PaginatedResponse<TaskRecord>>>(
     `/api/v1/tasks${query ? `?${query}` : ""}`,
     {
       method: "GET",
@@ -1201,7 +1266,7 @@ export async function updateTaskStatus(
 }
 
 export async function getClubMembers(
-  filters: { team?: "executive"; membership_status?: string; club_id?: string } = {},
+  filters: { team?: "executive"; membership_status?: string; club_id?: string } & PaginationQuery = {},
   token?: string
 ) {
   const params = new URLSearchParams();
@@ -1218,8 +1283,10 @@ export async function getClubMembers(
     params.set("club_id", filters.club_id);
   }
 
+  appendPaginationParams(params, filters);
+
   const query = params.toString();
-  const response = await request<ApiEnvelope<ClubMemberRecord[]>>(
+  const response = await request<ApiEnvelope<PaginatedResponse<ClubMemberRecord>>>(
     `/api/v1/members${query ? `?${query}` : ""}`,
     {
       method: "GET",
@@ -1345,7 +1412,7 @@ export async function getMyMembershipRequests(token?: string) {
 }
 
 export async function getMembershipRequests(
-  filters: { status?: string; club_id?: string } = {},
+  filters: { status?: string; club_id?: string; requested_role?: string } & PaginationQuery = {},
   token?: string
 ) {
   const params = new URLSearchParams();
@@ -1358,8 +1425,14 @@ export async function getMembershipRequests(
     params.set("club_id", filters.club_id);
   }
 
+  if (filters.requested_role) {
+    params.set("requested_role", filters.requested_role);
+  }
+
+  appendPaginationParams(params, filters);
+
   const query = params.toString();
-  const response = await request<ApiEnvelope<MembershipRequestRecord[]>>(
+  const response = await request<ApiEnvelope<PaginatedResponse<MembershipRequestRecord>>>(
     `/api/v1/membership-requests${query ? `?${query}` : ""}`,
     {
       method: "GET",
@@ -1425,7 +1498,7 @@ export async function getMyLeadershipApplications(token?: string) {
 }
 
 export async function getLeadershipApplications(
-  filters: { status?: string; club_id?: string; requested_role?: string } = {},
+  filters: { status?: string; club_id?: string; requested_role?: string } & PaginationQuery = {},
   token?: string
 ) {
   const params = new URLSearchParams();
@@ -1442,8 +1515,10 @@ export async function getLeadershipApplications(
     params.set("requested_role", filters.requested_role);
   }
 
+  appendPaginationParams(params, filters);
+
   const query = params.toString();
-  const response = await request<ApiEnvelope<LeadershipApplicationRecord[]>>(
+  const response = await request<ApiEnvelope<PaginatedResponse<LeadershipApplicationRecord>>>(
     `/api/v1/leadership-applications${query ? `?${query}` : ""}`,
     {
       method: "GET",
@@ -1581,7 +1656,10 @@ export async function submitDuePaymentConfirmation(
   return response.data;
 }
 
-export async function getEventReports(filters: { proposal_id?: string; club_id?: string } = {}, token?: string) {
+export async function getEventReports(
+  filters: { proposal_id?: string; club_id?: string } & PaginationQuery = {},
+  token?: string
+) {
   const params = new URLSearchParams();
 
   if (filters.proposal_id) {
@@ -1592,8 +1670,10 @@ export async function getEventReports(filters: { proposal_id?: string; club_id?:
     params.set("club_id", filters.club_id);
   }
 
+  appendPaginationParams(params, filters);
+
   const query = params.toString();
-  const response = await request<ApiEnvelope<EventReportRecord[]>>(
+  const response = await request<ApiEnvelope<PaginatedResponse<EventReportRecord>>>(
     `/api/v1/reports${query ? `?${query}` : ""}`,
     {
       method: "GET",
@@ -1615,7 +1695,7 @@ export async function createEventReport(payload: CreateEventReportPayload, token
 }
 
 export async function getAnnouncements(
-  filters: { audience?: string; club_id?: string; priority?: string; unread?: boolean } = {},
+  filters: { audience?: string; club_id?: string; priority?: string; unread?: boolean } & PaginationQuery = {},
   token?: string
 ) {
   const params = new URLSearchParams();
@@ -1636,8 +1716,10 @@ export async function getAnnouncements(
     params.set("unread", "true");
   }
 
+  appendPaginationParams(params, filters);
+
   const query = params.toString();
-  const response = await request<ApiEnvelope<AnnouncementRecord[]>>(
+  const response = await request<ApiEnvelope<PaginatedResponse<AnnouncementRecord>>>(
     `/api/v1/communications/announcements${query ? `?${query}` : ""}`,
     {
       method: "GET",

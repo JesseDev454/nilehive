@@ -1,5 +1,6 @@
 const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
+const { ensurePaginatedResult, mapPaginatedResult } = require("../../shared/pagination");
 const { validateCreateEventReportPayload } = require("./reports.validation");
 
 function requireActor(actor) {
@@ -113,7 +114,7 @@ async function createEventReport(options) {
 }
 
 async function listEventReports(options) {
-  const { actor, filters = {}, database = db } = options;
+  const { actor, filters = {}, pagination, database = db } = options;
   requireActor(actor);
 
   const supportedRoles = ["admin", "advisor", "president"];
@@ -131,13 +132,20 @@ async function listEventReports(options) {
     clubId = getScopedClubId(actor, filters.club_id);
   }
 
-  const reports = await database.listEventReports({
+  const reports = ensurePaginatedResult(await database.listEventReports({
     clubId,
     clubIds,
-    proposalId: filters.proposal_id
-  });
+    proposalId: filters.proposal_id,
+    ...(pagination
+      ? {
+          pagination,
+          sort: pagination.sort,
+          order: pagination.order
+        }
+      : {})
+  }), pagination);
 
-  return reports.map(formatEventReport);
+  return pagination ? mapPaginatedResult(reports, formatEventReport) : reports.map(formatEventReport);
 }
 
 async function getEventReportDetail(options) {

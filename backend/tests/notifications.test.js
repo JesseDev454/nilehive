@@ -122,8 +122,9 @@ test("authenticated users can fetch only their own notifications", async (t) => 
   const { response, payload } = await getNotifications(server.baseUrl, "executive-token");
 
   assert.equal(response.status, 200);
-  assert.equal(payload.data.length, 2);
-  assert.ok(payload.data.every((notification) => notification.user_id === "executive-1"));
+  assert.equal(payload.data.items.length, 2);
+  assert.equal(payload.data.total, 2);
+  assert.ok(payload.data.items.every((notification) => notification.user_id === "executive-1"));
 });
 
 test("missing-token access is blocked for notifications retrieval", async (t) => {

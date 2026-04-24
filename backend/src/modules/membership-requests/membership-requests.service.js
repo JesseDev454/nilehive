@@ -1,5 +1,6 @@
 const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
+const { ensurePaginatedResult, mapPaginatedResult } = require("../../shared/pagination");
 const {
   validateCreateMembershipRequestPayload,
   validateMembershipRequestDecisionPayload
@@ -123,7 +124,7 @@ async function listMyMembershipRequests(options) {
 }
 
 async function listMembershipRequests(options) {
-  const { actor, filters = {}, database = db } = options;
+  const { actor, filters = {}, pagination, database = db } = options;
   requireActor(actor);
 
   if (!["admin", "president"].includes(actor.role)) {
@@ -136,12 +137,16 @@ async function listMembershipRequests(options) {
     throw new ApiError(409, "President profile is not linked to a club", "PROFILE_NOT_LINKED_TO_CLUB");
   }
 
-  const requests = await database.listMembershipRequests({
+  const requests = ensurePaginatedResult(await database.listMembershipRequests({
     clubId,
-    status: filters.status
-  });
+    status: filters.status,
+    requestedRole: filters.requested_role,
+    pagination,
+    sort: pagination?.sort,
+    order: pagination?.order
+  }), pagination);
 
-  return requests.map(formatMembershipRequest);
+  return pagination ? mapPaginatedResult(requests, formatMembershipRequest) : requests.map(formatMembershipRequest);
 }
 
 async function approveMembershipRequest({ actor, request, decisionPayload, database }) {

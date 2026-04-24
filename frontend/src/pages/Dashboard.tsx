@@ -533,7 +533,7 @@ function UpcomingEventsCard({ events }: { events: ApprovedEventRecord[] }) {
 
 function ExecutiveDashboard() {
   const {
-    data: tasks = [],
+    data: tasksPage,
     isLoading: isTasksLoading,
     isError: isTasksError,
     error: tasksError
@@ -542,9 +542,10 @@ function ExecutiveDashboard() {
     queryFn: () => getTasks(),
     retry: false
   });
+  const tasks = tasksPage?.items ?? [];
 
   const {
-    data: notifications = [],
+    data: notificationsPage,
     isLoading: isNotificationsLoading,
     isError: isNotificationsError,
     error: notificationsError
@@ -553,6 +554,7 @@ function ExecutiveDashboard() {
     queryFn: () => getNotifications(),
     retry: false
   });
+  const notifications = notificationsPage?.items ?? [];
 
   const {
     data: approvedEvents = [],
@@ -1514,11 +1516,12 @@ function StudentDashboard() {
     queryFn: () => getEventReminders(),
     retry: false
   });
-  const { data: notifications = [] } = useQuery({
+  const { data: notificationsPage } = useQuery({
     queryKey: ["notifications"],
     queryFn: () => getNotifications(),
     retry: false
   });
+  const notifications = notificationsPage?.items ?? [];
   const upcomingEvents = events.filter(isAttendableEvent).slice(0, 3);
   const engagementQueries = useQueries({
     queries: upcomingEvents.map((event) => ({

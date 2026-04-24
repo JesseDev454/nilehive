@@ -1,5 +1,6 @@
 const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
+const { ensurePaginatedResult, mapPaginatedResult } = require("../../shared/pagination");
 const {
   validateCreateMemberPayload,
   validateUpdateMemberPayload
@@ -68,18 +69,25 @@ function formatMember(member) {
 }
 
 async function listMembers(options) {
-  const { actor, filters = {}, database = db } = options;
+  const { actor, filters = {}, pagination, database = db } = options;
   requireActor(actor);
   requireSupportedMemberRole(actor);
 
   const clubId = getScopedClubId(actor, filters.club_id);
-  const members = await database.listClubMembers({
+  const members = ensurePaginatedResult(await database.listClubMembers({
     clubId,
     clubRoles: filters.team === "executive" ? ["executive", "president"] : undefined,
-    membershipStatus: filters.membership_status
-  });
+    membershipStatus: filters.membership_status,
+    ...(pagination
+      ? {
+          pagination,
+          sort: pagination.sort,
+          order: pagination.order
+        }
+      : {})
+  }), pagination);
 
-  return members.map(formatMember);
+  return pagination ? mapPaginatedResult(members, formatMember) : members.map(formatMember);
 }
 
 async function createMember(options) {

@@ -1,4 +1,5 @@
 const asyncHandler = require("../../shared/asyncHandler");
+const { parsePaginationQuery } = require("../../shared/pagination");
 const {
   createMembershipRequest,
   decideMembershipRequest,
@@ -34,8 +35,14 @@ function createMembershipRequestsController(options = {}) {
         actor: req.user,
         filters: {
           club_id: req.query.club_id,
-          status: req.query.status
+          status: req.query.status,
+          requested_role: req.query.requested_role
         },
+        pagination: parsePaginationQuery(req.query, {
+          defaultSort: "created_at",
+          defaultOrder: "desc",
+          allowedSorts: ["created_at", "updated_at", "requested_role"]
+        }),
         database
       });
 

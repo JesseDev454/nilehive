@@ -198,9 +198,10 @@ test("admin can fetch all proposals", async (t) => {
   );
 
   assert.equal(response.status, 200);
-  assert.equal(payload.data.length, 3);
-  assert.equal(payload.data[0].latest_approval.reviewer_role, "advisor");
-  assert.ok(payload.data.every((proposal) => proposal.current_stage));
+  assert.equal(payload.data.items.length, 3);
+  assert.equal(payload.data.total, 3);
+  assert.equal(payload.data.items[0].latest_approval.reviewer_role, "advisor");
+  assert.ok(payload.data.items.every((proposal) => proposal.current_stage));
 });
 
 test("admin can fetch one proposal detail", async (t) => {
@@ -280,8 +281,8 @@ test("optional status filter works correctly", async (t) => {
   );
 
   assert.equal(response.status, 200);
-  assert.equal(payload.data.length, 1);
-  assert.equal(payload.data[0].status, "pending_admin_review");
+  assert.equal(payload.data.items.length, 1);
+  assert.equal(payload.data.items[0].status, "pending_admin_review");
 });
 
 test("optional current_stage filter works correctly", async (t) => {
@@ -296,6 +297,6 @@ test("optional current_stage filter works correctly", async (t) => {
   );
 
   assert.equal(response.status, 200);
-  assert.equal(payload.data.length, 1);
-  assert.equal(payload.data[0].current_stage, "rejected");
+  assert.equal(payload.data.items.length, 1);
+  assert.equal(payload.data.items[0].current_stage, "rejected");
 });
