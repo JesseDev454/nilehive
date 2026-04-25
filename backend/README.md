@@ -29,6 +29,8 @@ PORT=4000
 SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+FRONTEND_APP_URL=http://localhost:8080
+ASYNC_JOBS_ENABLED=false
 ```
 
 The service role key is backend-only. Do not expose it in the frontend.
@@ -62,13 +64,14 @@ supabase/migrations/
 Current migrations:
 
 ```text
-0001_week1_schema.sql ... 0033_launch_hardening_foundation.sql
+0001_week1_schema.sql ... 0034_async_jobs_notification_types.sql
 ```
 
 For production setup and demo data, see:
 
 ```text
 ../docs/PRODUCTION_HANDOFF.md
+../render.yaml
 supabase/bootstrap_admin.sql
 supabase/demo_seed.sql
 ```

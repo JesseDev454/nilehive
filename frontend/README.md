@@ -50,6 +50,16 @@ http://localhost:8080
 npm.cmd run build
 ```
 
+## Deployment
+
+The repo root contains `vercel.json` for the frontend deployment. Keep `VITE_API_BASE_URL` as the backend origin only, for example:
+
+```env
+VITE_API_BASE_URL=https://your-backend-domain.onrender.com
+```
+
+Do not append `/api/v1` to `VITE_API_BASE_URL`, because `src/lib/api.ts` already prefixes requests with `/api/v1`.
+
 ## Frontend Architecture Notes
 
 - API calls live in `src/lib/api.ts`.

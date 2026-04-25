@@ -14,6 +14,17 @@ Recommended first deployment:
 
 The frontend should call only the deployed backend API. The Supabase service role key must stay backend-only.
 
+Repo deployment helpers:
+
+- `vercel.json` builds `frontend/` and rewrites SPA routes to `index.html`
+- `render.yaml` provisions the backend API service with async jobs disabled by default
+- `.nvmrc` pins Node `20`
+
+Deployment UI note:
+
+- In Vercel, import the repo root. `vercel.json` already points build/install/output to `frontend/`.
+- In Render, use the repo blueprint or create the web service from `backend/`.
+
 ## Production Environment Variables
 
 Backend:
@@ -59,6 +70,7 @@ Notes:
 
 - `SUPABASE_SERVICE_ROLE_KEY` is never shared with frontend developers.
 - `VITE_SUPABASE_ANON_KEY` is safe for the frontend.
+- `VITE_API_BASE_URL` should be the backend origin only, without `/api/v1`.
 - `REQUEST_TIMEOUT_MS` should stay low enough to fail fast instead of letting requests hang.
 - `ASYNC_JOBS_ENABLED` should stay `false` until Redis and the worker service are ready.
 - `REDIS_URL` is used by both shared rate limiting and BullMQ background jobs.
@@ -147,6 +159,16 @@ Storage policy checklist:
 - Executives should not have private dues/report storage access.
 
 ## Release Checks
+
+Deployment order:
+
+1. Apply Supabase migrations in staging/production.
+2. Deploy backend API on Render with env vars from this file.
+3. Set frontend env vars in Vercel and deploy the Vite app.
+4. Add Supabase Auth site URL and redirect URLs for the deployed frontend domain.
+5. Create the first real admin account and run `backend/supabase/bootstrap_admin.sql`.
+6. Verify `/api/v1/health` and `/api/v1/ready`.
+7. Enable the Render worker and Redis later only when async jobs are funded and ready.
 
 Run before demo or deployment:
 

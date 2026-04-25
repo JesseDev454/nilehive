@@ -33,7 +33,7 @@ The app currently supports:
 Planned but not fully implemented yet:
 
 - Full Outlook calendar sync
-- Production deployment and Club Services user guide
+- Club Services user guide
 
 ## Repository Structure
 
@@ -76,6 +76,8 @@ Recommended:
 
 - VS Code
 - Supabase dashboard access
+- Vercel access for the frontend deployment
+- Render access for the backend deployment
 
 ## Environment Files
 
@@ -384,6 +386,13 @@ Use the production hardening guide before a real deployment:
 
 ```text
 docs/PRODUCTION_HANDOFF.md
+```
+
+Deployment config checked into this repo:
+
+```text
+vercel.json
+render.yaml
 ```
 
 Important production/demo setup files:
