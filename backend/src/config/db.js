@@ -2,6 +2,8 @@ const { createClient } = require("@supabase/supabase-js");
 const { getEnv } = require("./env");
 const { buildPaginatedResult } = require("../shared/pagination");
 
+const PUBLIC_CLUB_CACHE_TTL_MS = 5 * 60 * 1000;
+
 const proposalSelect =
   "id, club_id, submitted_by, title, description, event_date, location, aim_objectives, proposed_activity, event_time, number_of_participants, budget_estimate, budget_line_items, responsible_members, status, submitted_at, resubmitted_at, revision_count, last_edited_at, last_edited_by, advisor_remarks, advisor_decided_at, advisor_decided_by, admin_remarks, admin_decided_at, admin_decided_by, created_at, updated_at";
 const notificationSelect =
@@ -65,6 +67,10 @@ function createAdminClient() {
 function createDatabase(options = {}) {
   const { clientFactory = createAdminClient } = options;
   let client;
+  let publicClubsCache = {
+    expiresAt: 0,
+    items: null
+  };
 
   function getClient() {
     if (!client) {
@@ -114,6 +120,31 @@ function createDatabase(options = {}) {
       pageSize: pagination.pageSize,
       total: count ?? 0
     });
+  }
+
+  function normalizeClub(club) {
+    return {
+      id: club.id,
+      name: club.name,
+      code: club.code ?? null,
+      advisor_id: club.advisor_id ?? null,
+      created_at: club.created_at ?? null
+    };
+  }
+
+  function getCachedPublicClubs() {
+    if (publicClubsCache.items && publicClubsCache.expiresAt > Date.now()) {
+      return publicClubsCache.items;
+    }
+
+    return null;
+  }
+
+  function setCachedPublicClubs(clubs) {
+    publicClubsCache = {
+      items: clubs,
+      expiresAt: Date.now() + PUBLIC_CLUB_CACHE_TTL_MS
+    };
   }
 
   async function selectProfileById(profileId, selectClause) {
@@ -231,13 +262,7 @@ function createDatabase(options = {}) {
         throw error;
       }
 
-      return (data ?? []).map((club) => ({
-        id: club.id,
-        name: club.name,
-        code: club.code ?? null,
-        advisor_id: club.advisor_id ?? null,
-        created_at: club.created_at ?? null
-      }));
+      return (data ?? []).map(normalizeClub);
     },
 
     async getClubById(clubId) {
@@ -270,6 +295,12 @@ function createDatabase(options = {}) {
     },
 
     async listPublicClubs() {
+      const cachedClubs = getCachedPublicClubs();
+
+      if (cachedClubs) {
+        return cachedClubs;
+      }
+
       let query = getClient()
         .from("clubs")
         .select(publicClubSelect)
@@ -281,7 +312,7 @@ function createDatabase(options = {}) {
       if (error && isMissingColumn(error, "is_public_signup")) {
         const fallback = await getClient()
           .from("clubs")
-          .select("id, name")
+          .select("id, name, code, created_at")
           .order("name", { ascending: true });
 
         data = fallback.data;
@@ -292,13 +323,24 @@ function createDatabase(options = {}) {
         throw error;
       }
 
-      return (data ?? []).map((club) => ({
-        id: club.id,
-        name: club.name,
-        code: club.code ?? null,
-        advisor_id: null,
-        created_at: club.created_at ?? null
-      }));
+      let clubs = (data ?? []).map(normalizeClub);
+
+      if (!clubs.length) {
+        const fallback = await getClient()
+          .from("clubs")
+          .select("id, name, code, created_at")
+          .order("name", { ascending: true });
+
+        if (fallback.error) {
+          throw fallback.error;
+        }
+
+        clubs = (fallback.data ?? []).map(normalizeClub);
+      }
+
+      setCachedPublicClubs(clubs);
+
+      return clubs;
     },
 
     async clearClubAdvisorAssignments(advisorId) {

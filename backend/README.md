@@ -74,6 +74,7 @@ For production setup and demo data, see:
 ../docs/PRODUCTION_FRESH_START.md
 ../render.yaml
 supabase/bootstrap_admin.sql
+supabase/bootstrap_clubs.sql
 supabase/verify_clean_production.sql
 supabase/demo_seed.sql
 ```

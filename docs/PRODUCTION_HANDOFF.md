@@ -23,6 +23,7 @@ Rules:
 - production must use `nileuniversity.edu.ng` only
 - `backend/supabase/demo_seed.sql` and `backend/supabase/seed.sql` are never run against production
 - `backend/supabase/bootstrap_admin.sql` is production/bootstrap only
+- `backend/supabase/bootstrap_clubs.sql` is the production-safe place to insert the real official clubs
 
 ## Deployment Shape
 
@@ -194,8 +195,9 @@ Deployment order:
 3. Set frontend env vars in Vercel and deploy the Vite app.
 4. Add Supabase Auth site URL and redirect URLs for the deployed frontend domain.
 5. Create the first real admin account and run `backend/supabase/bootstrap_admin.sql`.
-6. Verify `/api/v1/health` and `/api/v1/ready`.
-7. Enable the Render worker and Redis later only when async jobs are funded and ready.
+6. Insert the real official clubs with `backend/supabase/bootstrap_clubs.sql` if production should offer club selection immediately.
+7. Verify `/api/v1/health` and `/api/v1/ready`.
+8. Enable the Render worker and Redis later only when async jobs are funded and ready.
 
 Run before demo or deployment:
 

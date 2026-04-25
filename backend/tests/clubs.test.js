@@ -156,6 +156,19 @@ test("public club list supports signup and profile onboarding", async (t) => {
   assert.equal(payload.data[0].name, "Robotics Club");
 });
 
+test("public club list falls back to the current directory when no clubs are flagged public yet", async (t) => {
+  const database = createFakeDatabase();
+  database.listPublicClubs = async () => [];
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const { response, payload } = await getPublicClubs(server.baseUrl);
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.length, 1);
+  assert.equal(payload.data[0].name, "Robotics Club");
+});
+
 test("executive can fetch only their linked club for the proposal dropdown", async (t) => {
   const database = createFakeDatabase();
   const server = await createTestServer(database);

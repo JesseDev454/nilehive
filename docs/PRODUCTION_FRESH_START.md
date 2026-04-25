@@ -21,6 +21,7 @@ Production should use only:
 
 - `backend/supabase/migrations/`
 - `backend/supabase/bootstrap_admin.sql`
+- `backend/supabase/bootstrap_clubs.sql` for the real official club directory
 
 Production must **never** use:
 
@@ -184,6 +185,16 @@ Run it in the new production project and confirm:
 - no `Nile Innovators Club`
 - no `.nilehive.test` users
 - zero demo proposals/tasks/dues/reports unless you have already created real ones
+
+## Step 8b: Insert The Real Official Clubs
+
+If signup or onboarding should immediately show real club choices, run:
+
+```text
+backend/supabase/bootstrap_clubs.sql
+```
+
+Replace the sample row with the actual Nile University clubs and keep only real production clubs in that script.
 
 ## Step 9: Redeploy And Smoke Test
 

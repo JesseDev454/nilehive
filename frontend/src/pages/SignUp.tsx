@@ -192,7 +192,9 @@ export default function SignUp() {
                   ? "We are loading the official signup clubs."
                   : clubsFailed
                     ? (clubsError instanceof Error ? clubsError.message : "We could not load clubs right now. Please refresh and try again.")
-                    : "Only clubs marked for public signup appear here."}
+                    : clubs.length === 0
+                      ? "No clubs are available yet. Ask Club Services to add the official clubs for production."
+                      : "Official clubs appear here automatically. If no clubs are marked public yet, NileHive falls back to the current club directory."}
               </p>
             </div>
 

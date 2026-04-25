@@ -131,6 +131,7 @@ Environment safety rules:
 - Production should allow only `nileuniversity.edu.ng`.
 - Never run `backend/supabase/demo_seed.sql` or `backend/supabase/seed.sql` against production.
 - `backend/supabase/bootstrap_admin.sql` is production/bootstrap only and is not a seed file.
+- `backend/supabase/bootstrap_clubs.sql` is the production-safe place to insert the real official clubs.
 
 Frontend developers only need the Supabase URL and anon key. They should never use the service role key in frontend code.
 
@@ -409,6 +410,7 @@ Important production/demo setup files:
 
 ```text
 backend/supabase/bootstrap_admin.sql
+backend/supabase/bootstrap_clubs.sql
 backend/supabase/verify_clean_production.sql
 backend/supabase/demo_seed.sql
 backend/supabase/migrations/0027_production_rls_cleanup.sql
