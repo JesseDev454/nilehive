@@ -14,8 +14,8 @@ import { useRole } from "@/contexts/RoleContext";
 import {
   ApiClientError,
   assignAdminUserAdvisor,
+  getClubs,
   getAdminUsers,
-  getPublicClubs,
   updateAdminUserRole,
   type AdminUserProfileRecord,
   type ProfileRecord
@@ -63,7 +63,7 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
   const [replaceExisting, setReplaceExisting] = useState(false);
   const { data: clubs = [] } = useQuery({
     queryKey: ["admin-user-management-clubs"],
-    queryFn: getPublicClubs,
+    queryFn: () => getClubs(),
     retry: false
   });
   const roleMutation = useMutation({
@@ -93,7 +93,7 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
       actionSuccess("Advisor assigned", `${user.full_name || "User"} is now assigned as club advisor.`);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-users"] }),
-        queryClient.invalidateQueries({ queryKey: ["public-clubs"] })
+        queryClient.invalidateQueries({ queryKey: ["admin-user-management-clubs"] })
       ]);
       onClose();
     },

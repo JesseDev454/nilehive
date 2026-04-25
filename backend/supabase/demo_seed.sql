@@ -78,6 +78,10 @@ on conflict (name) do update set
   description = excluded.description,
   code = excluded.code;
 
+update public.clubs
+set is_public_signup = false
+where name = 'Nile Innovators Club';
+
 insert into public.profiles (id, full_name, role, club_id, student_id, requested_role, onboarding_status)
 values
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Club Services Admin', 'admin', null, null, 'admin', 'complete'),

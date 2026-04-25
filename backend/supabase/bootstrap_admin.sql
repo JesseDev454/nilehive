@@ -1,6 +1,12 @@
 -- Production admin bootstrap.
 -- Use this only after the first real admin has signed up in Supabase Auth.
 -- Replace the values in the params CTE before running this in Supabase SQL Editor.
+-- This is production/bootstrap-only and must stay separate from demo/local seed data.
+-- Steps:
+-- 1. Create the real auth user first in Supabase Auth or through the live signup flow.
+-- 2. Copy that exact auth.users UUID and email.
+-- 3. Replace the params below.
+-- 4. Run this script once in Supabase SQL Editor.
 --
 -- This does not create auth.users. It only creates/updates the matching app
 -- profile and records an idempotent bootstrap role-history entry.

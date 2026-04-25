@@ -36,14 +36,16 @@ function createFakeDatabase() {
       name: "Nile Innovators Club",
       code: "NIC",
       advisor_id: "advisor-1",
-      created_at: "2026-04-05T10:00:00.000Z"
+      created_at: "2026-04-05T10:00:00.000Z",
+      is_public_signup: false
     },
     {
       id: "club-2",
       name: "Robotics Club",
       code: "ROB",
       advisor_id: null,
-      created_at: "2026-04-05T10:00:00.000Z"
+      created_at: "2026-04-05T10:00:00.000Z",
+      is_public_signup: true
     }
   ];
 
@@ -85,6 +87,9 @@ function createFakeDatabase() {
 
         return true;
       });
+    },
+    async listPublicClubs() {
+      return clubs.filter((club) => club.is_public_signup !== false);
     }
   };
 }
@@ -147,7 +152,8 @@ test("public club list supports signup and profile onboarding", async (t) => {
   const { response, payload } = await getPublicClubs(server.baseUrl);
 
   assert.equal(response.status, 200);
-  assert.equal(payload.data.length, 2);
+  assert.equal(payload.data.length, 1);
+  assert.equal(payload.data[0].name, "Robotics Club");
 });
 
 test("executive can fetch only their linked club for the proposal dropdown", async (t) => {

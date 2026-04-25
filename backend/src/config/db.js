@@ -9,7 +9,7 @@ const notificationSelect =
 const eventReminderSelect =
   "id, user_id, proposal_id, message, remind_at, delivery_status, created_at";
 const clubSelect = "id, name, code, advisor_id, created_at";
-const publicClubSelect = "id, name, code, created_at";
+const publicClubSelect = "id, name, code, created_at, is_public_signup";
 const taskSelect =
   "id, club_id, assigned_by, assigned_to, title, description, priority, status, due_date, created_at, updated_at, assigned_by_profile:profiles!tasks_assigned_by_fkey(id, full_name, student_id, role), assigned_to_profile:profiles!tasks_assigned_to_fkey(id, full_name, student_id, role)";
 const taskStatusHistorySelect =
@@ -273,11 +273,12 @@ function createDatabase(options = {}) {
       let query = getClient()
         .from("clubs")
         .select(publicClubSelect)
+        .eq("is_public_signup", true)
         .order("name", { ascending: true });
 
       let { data, error } = await query;
 
-      if (error) {
+      if (error && isMissingColumn(error, "is_public_signup")) {
         const fallback = await getClient()
           .from("clubs")
           .select("id, name")

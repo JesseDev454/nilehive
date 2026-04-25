@@ -60,6 +60,8 @@ test("production handoff documents storage conventions and env split", () => {
 
   assert.match(docs, /SUPABASE_SERVICE_ROLE_KEY/);
   assert.match(docs, /VITE_SUPABASE_ANON_KEY/);
+  assert.match(docs, /local\/demo Supabase project/i);
+  assert.match(docs, /production Supabase project/i);
   assert.match(docs, /dues-receipts\/\{club_id\}\/\{profile_id\}\/\{file\}/);
   assert.match(docs, /event-media\/\{club_id\}\/\{file\}/);
   assert.match(docs, /reports\/\{club_id\}\/\{proposal_id\}\/\{file\}/);

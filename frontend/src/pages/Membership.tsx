@@ -22,6 +22,7 @@ import {
   decideMembershipRequest,
   getLeadershipApplications,
   getClubPaymentSettings,
+  getClubs,
   getMyLeadershipApplications,
   getMembershipRequests,
   getMyDuePayments,
@@ -35,6 +36,7 @@ import {
   type MembershipRequestRecord
 } from "@/lib/api";
 import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
+import { publicClubsQueryOptions } from "@/lib/publicClubsQuery";
 import { resolveStorageFileUrl, uploadStorageFile } from "@/lib/storage";
 
 const REQUEST_STATUSES = [
@@ -379,11 +381,7 @@ function StudentMembershipView() {
     isLoading: isLoadingClubs,
     isError: clubsFailed,
     error: clubsError
-  } = useQuery({
-    queryKey: ["public-clubs"],
-    queryFn: () => getPublicClubs(),
-    retry: false
-  });
+  } = useQuery(publicClubsQueryOptions);
   const {
     data: myRequests = [],
     isLoading: isLoadingRequests,
@@ -1293,7 +1291,7 @@ function ReviewerMembershipView() {
   }, [statusFilter, requestTypeFilter, clubFilter, role]);
   const { data: clubs = [] } = useQuery({
     queryKey: ["membership-request-clubs"],
-    queryFn: () => getPublicClubs(),
+    queryFn: () => getClubs(),
     enabled: role === "admin",
     retry: false
   });

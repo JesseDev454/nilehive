@@ -207,6 +207,10 @@ on conflict (name) do update set
   description = excluded.description,
   code = excluded.code;
 
+update public.clubs
+set is_public_signup = false
+where name = 'Nile Innovators Club';
+
 insert into public.profiles (id, full_name, role, club_id)
 select
   u.id,
@@ -241,4 +245,3 @@ set advisor_id = u.id
 from auth.users u
 where c.name = 'Nile Innovators Club'
   and lower(u.email) = lower('advisor@nilehive.test');
-

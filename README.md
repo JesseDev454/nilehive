@@ -123,6 +123,15 @@ VITE_AUTH_MODE=password
 VITE_MICROSOFT_PASSWORD_HELP_URL=https://passwordreset.microsoftonline.com/
 ```
 
+Environment safety rules:
+
+- Local/demo must point to a local or demo Supabase project.
+- Production must point to a separate production Supabase project.
+- Local/demo should allow `nileuniversity.edu.ng,nilehive.test`.
+- Production should allow only `nileuniversity.edu.ng`.
+- Never run `backend/supabase/demo_seed.sql` or `backend/supabase/seed.sql` against production.
+- `backend/supabase/bootstrap_admin.sql` is production/bootstrap only and is not a seed file.
+
 Frontend developers only need the Supabase URL and anon key. They should never use the service role key in frontend code.
 
 If teammates connect their frontend to a backend running on your laptop, set your backend env to listen on the network and allow their frontend origin:
@@ -284,8 +293,8 @@ Create a club:
 insert into public.clubs (id, name, code)
 values (
   gen_random_uuid(),
-  'Nile Innovators Club',
-  'NIC'
+  'Nile Book Club',
+  'NBC'
 )
 returning id, name, code;
 ```
@@ -402,6 +411,11 @@ backend/supabase/bootstrap_admin.sql
 backend/supabase/demo_seed.sql
 backend/supabase/migrations/0027_production_rls_cleanup.sql
 ```
+
+Production note:
+
+- `demo_seed.sql` and `seed.sql` are local/demo only.
+- `bootstrap_admin.sql` is the production-safe way to promote the first real admin after a real auth signup.
 
 ## Backend API Summary
 

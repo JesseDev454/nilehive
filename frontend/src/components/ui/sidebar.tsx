@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -18,6 +18,24 @@ const SIDEBAR_WIDTH = "16rem";
 const SIDEBAR_WIDTH_MOBILE = "18rem";
 const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
+
+function clearStaleBodyScrollLock() {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  const hasOpenDialog = Boolean(document.querySelector("[role='dialog'][data-state='open']"));
+
+  if (hasOpenDialog) {
+    return;
+  }
+
+  document.body.style.removeProperty("overflow");
+  document.body.style.removeProperty("padding-right");
+  document.body.style.removeProperty("pointer-events");
+  document.body.removeAttribute("data-scroll-locked");
+  document.documentElement.style.removeProperty("overflow");
+}
 
 type SidebarContext = {
   state: "expanded" | "collapsed";
@@ -87,6 +105,18 @@ const SidebarProvider = React.forwardRef<
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [toggleSidebar]);
+
+  React.useEffect(() => {
+    if (openMobile) {
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      clearStaleBodyScrollLock();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [openMobile]);
 
   // We add a state so that we can do data-state="expanded" or "collapsed".
   // This makes it easier to style the sidebar with Tailwind classes.
@@ -164,6 +194,10 @@ const Sidebar = React.forwardRef<
           }
           side={side}
         >
+          <SheetHeader className="sr-only">
+            <SheetTitle>Navigation menu</SheetTitle>
+            <SheetDescription>Browse NileHive pages and account actions.</SheetDescription>
+          </SheetHeader>
           <div className="flex h-full w-full flex-col">{children}</div>
         </SheetContent>
       </Sheet>

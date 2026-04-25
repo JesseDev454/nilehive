@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NhStudentId } from "@/components/NhStudentId";
 import { useAuth } from "@/contexts/AuthContext";
-import { completeProfileOnboarding, getPublicClubs } from "@/lib/api";
+import { completeProfileOnboarding } from "@/lib/api";
 import { getAllowedEmailDomainLabel, isAllowedEmailDomain } from "@/lib/env";
+import { publicClubsQueryOptions } from "@/lib/publicClubsQuery";
 import { isValidStudentId, normalizeStudentId, STUDENT_ID_ERROR_MESSAGE } from "@/lib/studentId";
 
 export default function ProfileSetup() {
@@ -21,11 +22,12 @@ export default function ProfileSetup() {
   const [clubId, setClubId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: clubs = [], isLoading: isLoadingClubs } = useQuery({
-    queryKey: ["public-clubs"],
-    queryFn: getPublicClubs,
-    retry: false
-  });
+  const {
+    data: clubs = [],
+    isLoading: isLoadingClubs,
+    isError: clubsFailed,
+    error: clubsError
+  } = useQuery(publicClubsQueryOptions);
 
   useEffect(() => {
     setFullName(typeof metadata.full_name === "string" ? metadata.full_name : "");
@@ -170,9 +172,17 @@ export default function ProfileSetup() {
 
               <div className="space-y-2 md:col-span-2">
                 <Label>Club</Label>
-                <Select disabled={isLoadingClubs} value={clubId} onValueChange={setClubId}>
+                <Select disabled={isLoadingClubs || clubsFailed || clubs.length === 0} value={clubId} onValueChange={setClubId}>
                   <SelectTrigger className="border-2 border-foreground bg-[#f1f4f7] py-6">
-                    <SelectValue placeholder={isLoadingClubs ? "Loading clubs..." : "Select your club"} />
+                    <SelectValue
+                      placeholder={
+                        isLoadingClubs
+                          ? "Loading official clubs..."
+                          : clubsFailed
+                            ? "Club list unavailable"
+                            : "Select your club"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {clubs.map((club) => (
@@ -182,6 +192,13 @@ export default function ProfileSetup() {
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-[#44474e]">
+                  {isLoadingClubs
+                    ? "We are loading the official clubs available for onboarding."
+                    : clubsFailed
+                      ? (clubsError instanceof Error ? clubsError.message : "We could not load clubs right now. Please refresh and try again.")
+                      : "Only clubs marked for public signup appear here."}
+                </p>
               </div>
             </div>
 

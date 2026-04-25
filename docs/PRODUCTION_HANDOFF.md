@@ -2,6 +2,20 @@
 
 This checklist prepares NileHive for a real Club Services demo or first production deployment.
 
+## Environment Separation
+
+Keep local/demo and production fully separate:
+
+- local/demo Supabase project
+- production Supabase project
+
+Rules:
+
+- local/demo may use `nileuniversity.edu.ng,nilehive.test`
+- production must use `nileuniversity.edu.ng` only
+- `backend/supabase/demo_seed.sql` and `backend/supabase/seed.sql` are never run against production
+- `backend/supabase/bootstrap_admin.sql` is production/bootstrap only
+
 ## Deployment Shape
 
 Recommended first deployment:
@@ -78,6 +92,8 @@ Notes:
 - Microsoft Graph variables can remain blank while `EMAIL_DELIVERY_ENABLED=false`.
 - Supabase Auth site URL and redirect URLs must include the deployed frontend URL.
 - Backend CORS must allow `FRONTEND_APP_URL`.
+- Local/demo env files should point to a non-production Supabase project.
+- Production env files should never point to a demo/local Supabase project.
 
 ## First Admin Bootstrap
 
@@ -93,6 +109,7 @@ Production should not seed fake `auth.users`.
 5. Run the SQL once in Supabase SQL Editor.
 
 The bootstrap script is idempotent. It upserts the admin profile and records one role-history entry.
+It does not create login credentials by itself. The auth user must already exist before you run it.
 
 ## Demo Seed
 
@@ -121,6 +138,8 @@ Suggested demo flow:
 3. Login as admin and show user management, final approval queue, and institution-wide dashboard.
 4. Login as executive and show task-focused dashboard only.
 5. Login as student and show membership/dues status plus approved events.
+
+`backend/supabase/seed.sql` is also local/dev-only and should not be used on production data.
 
 ## RLS And Storage Audit
 
