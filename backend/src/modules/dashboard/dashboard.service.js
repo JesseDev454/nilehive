@@ -1,5 +1,6 @@
 const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
+const { getQueueHealth } = require("../../jobs/queue");
 
 function isPendingStatus(status) {
   return status === "pending_advisor_review" || status === "pending_admin_review";
@@ -490,7 +491,8 @@ async function getAdminOperationsDashboard(options) {
     tasks,
     feedback,
     rsvps,
-    attendance
+    attendance,
+    queue
   ] = await Promise.all([
     database.listClubs ? database.listClubs() : [],
     database.listAdminProposals ? database.listAdminProposals() : [],
@@ -502,7 +504,8 @@ async function getAdminOperationsDashboard(options) {
     database.listTasks ? database.listTasks() : [],
     database.listFeedback ? database.listFeedback() : [],
     database.listEventRsvps ? database.listEventRsvps() : [],
-    database.listEventAttendance ? database.listEventAttendance() : []
+    database.listEventAttendance ? database.listEventAttendance() : [],
+    getQueueHealth()
   ]);
   const approvedEventIdsWithReports = new Set(reports.map((report) => report.proposal_id));
   const allMissingReports = approvedEvents
@@ -571,6 +574,7 @@ async function getAdminOperationsDashboard(options) {
       feedback,
       tasks
     }),
+    queue,
     missing_reports: missingReports,
     recent_activity: buildRecentActivity({
       proposals,
@@ -579,7 +583,17 @@ async function getAdminOperationsDashboard(options) {
       reports,
       feedback,
       tasks
-    })
+    }),
+    ops_status: {
+      queue: {
+        status: queue.status,
+        worker_status: queue.worker_status,
+        waiting: queue.waiting,
+        active: queue.active,
+        failed: queue.failed,
+        delayed: queue.delayed
+      }
+    }
   };
 }
 

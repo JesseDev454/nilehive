@@ -139,6 +139,74 @@ test("admin rejection creates final rejected state and notifications", async () 
   assert.equal(createdReminders.length, 0);
 });
 
+test("admin approval queues reminders and missing-report prompt when async jobs are enabled", async () => {
+  let createdReminders = [];
+  const queuedReminderJobs = [];
+  const queuedMissingReportJobs = [];
+  const fakeDatabase = {
+    async getProposalById() {
+      return createPendingAdminProposal();
+    },
+    async applyAdminDecision(decisionInput) {
+      return createPendingAdminProposal({
+        status: decisionInput.nextStatus,
+        admin_remarks: decisionInput.remarks,
+        admin_decided_at: decisionInput.decidedAt,
+        admin_decided_by: decisionInput.reviewerId
+      });
+    },
+    async getAdvisorProfileIdsByClubId() {
+      return ["advisor-1"];
+    },
+    async getPresidentProfileIdsByClubId() {
+      return ["president-1"];
+    },
+    async createNotifications(notifications) {
+      return notifications;
+    },
+    async createEventReminders(reminders) {
+      createdReminders = reminders;
+      return reminders;
+    }
+  };
+
+  const proposal = await submitAdminDecision({
+    actor: {
+      id: "admin-1",
+      role: "admin"
+    },
+    proposalId: "proposal-1",
+    payload: {
+      decision: "approve",
+      remarks: "Final approval granted."
+    },
+    database: fakeDatabase,
+    queueService: {
+      areAsyncJobsEnabled() {
+        return true;
+      },
+      async enqueueEventReminderGeneration(payload) {
+        queuedReminderJobs.push(payload);
+      },
+      async enqueueMissingReportPrompt(payload) {
+        queuedMissingReportJobs.push(payload);
+      }
+    }
+  });
+
+  assert.equal(proposal.status, "approved");
+  assert.equal(createdReminders.length, 0);
+  assert.deepEqual(queuedReminderJobs, [{
+    proposalId: "proposal-1",
+    recipientUserIds: ["executive-1", "advisor-1", "president-1"]
+  }]);
+  assert.deepEqual(queuedMissingReportJobs, [{
+    proposalId: "proposal-1",
+    clubId: "club-1",
+    eventDate: "2026-05-20"
+  }]);
+});
+
 test("admin decision blocks invalid or duplicate transitions", async () => {
   const fakeDatabase = {
     async getProposalById() {

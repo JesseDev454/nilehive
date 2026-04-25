@@ -17,12 +17,19 @@ function createMembershipRequestsRouter(options = {}) {
     message: "Too many membership requests. Please wait before trying again.",
     key: (req) => `${req.user?.id || req.ip}:membership-request:create`
   });
+  const membershipDecisionLimit = createRateLimitMiddleware({
+    windowMs: 5 * 60 * 1000,
+    max: 20,
+    code: "MEMBERSHIP_DECISION_RATE_LIMITED",
+    message: "Too many membership review attempts. Please wait before trying again.",
+    key: (req) => `${req.user?.id || req.ip}:membership-request:decision`
+  });
   const controller = createMembershipRequestsController({ database });
 
   router.post("/", auth, membershipWriteLimit, controller.createRequest);
   router.get("/", auth, controller.listRequests);
   router.get("/me", auth, controller.listMyRequests);
-  router.post("/:requestId/decision", auth, controller.decideRequest);
+  router.post("/:requestId/decision", auth, membershipDecisionLimit, controller.decideRequest);
 
   return router;
 }

@@ -7,8 +7,10 @@ This checklist prepares NileHive for a real Club Services demo or first producti
 Recommended first deployment:
 
 - Frontend: Vercel
-- Backend: Render or Railway
+- Backend API: Render or Railway
+- Backend worker: Render worker service running `npm run worker`
 - Database/auth/storage: managed Supabase
+- Redis: managed Redis
 
 The frontend should call only the deployed backend API. The Supabase service role key must stay backend-only.
 
@@ -28,6 +30,10 @@ FRONTEND_APP_URL=https://your-frontend-domain
 CURRENT_ACADEMIC_SESSION=2025/2026
 ASYNC_JOBS_ENABLED=false
 REDIS_URL=
+REDIS_QUEUE_PREFIX=nilehive
+JOB_CHUNK_SIZE=250
+JOB_DEFAULT_ATTEMPTS=3
+JOB_BACKOFF_MS=5000
 SENTRY_DSN_BACKEND=
 SENTRY_DSN_FRONTEND=
 EMAIL_DELIVERY_ENABLED=false
@@ -55,6 +61,8 @@ Notes:
 - `VITE_SUPABASE_ANON_KEY` is safe for the frontend.
 - `REQUEST_TIMEOUT_MS` should stay low enough to fail fast instead of letting requests hang.
 - `ASYNC_JOBS_ENABLED` should stay `false` until Redis and the worker service are ready.
+- `REDIS_URL` is used by both shared rate limiting and BullMQ background jobs.
+- When `ASYNC_JOBS_ENABLED=true`, `/api/v1/ready` expects both Redis and the worker heartbeat to be healthy.
 - Microsoft Graph variables can remain blank while `EMAIL_DELIVERY_ENABLED=false`.
 - Supabase Auth site URL and redirect URLs must include the deployed frontend URL.
 - Backend CORS must allow `FRONTEND_APP_URL`.

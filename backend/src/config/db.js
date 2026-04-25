@@ -1648,6 +1648,20 @@ function createDatabase(options = {}) {
       return data;
     },
 
+    async getAnnouncementById(announcementId) {
+      const { data, error } = await getClient()
+        .from("announcements")
+        .select(announcementSelect)
+        .eq("id", announcementId)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? null;
+    },
+
     async listAnnouncements(filters = {}) {
       let query = getClient()
         .from("announcements")

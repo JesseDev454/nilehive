@@ -3,6 +3,11 @@ const ApiError = require("../../shared/ApiError");
 const { writeAuditLog } = require("../../shared/auditLog");
 const { ensurePaginatedResult, mapPaginatedResult, paginateArray } = require("../../shared/pagination");
 const {
+  areAsyncJobsEnabled,
+  enqueueEventReminderGeneration,
+  enqueueMissingReportPrompt
+} = require("../../jobs/queue");
+const {
   validateAdvisorDecisionPayload,
   validateCreateProposalPayload,
   validateDraftProposalPayload,
@@ -717,7 +722,7 @@ async function submitAdvisorDecision(options) {
 }
 
 async function submitAdminDecision(options) {
-  const { actor, proposalId, payload, database = db } = options;
+  const { actor, proposalId, payload, database = db, queueService } = options;
 
   if (!actor) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
@@ -777,8 +782,26 @@ async function submitAdminDecision(options) {
     }))
   );
 
+  const asyncJobService = queueService ?? {
+    areAsyncJobsEnabled,
+    enqueueEventReminderGeneration,
+    enqueueMissingReportPrompt
+  };
+
   if (validatedPayload.decision === "approve") {
-    await createApprovedEventReminders(database, updatedProposal, recipientIds);
+    if (asyncJobService.areAsyncJobsEnabled()) {
+      await asyncJobService.enqueueEventReminderGeneration({
+        proposalId: updatedProposal.id,
+        recipientUserIds: recipientIds
+      });
+      await asyncJobService.enqueueMissingReportPrompt({
+        proposalId: updatedProposal.id,
+        clubId: updatedProposal.club_id,
+        eventDate: updatedProposal.event_date
+      });
+    } else {
+      await createApprovedEventReminders(database, updatedProposal, recipientIds);
+    }
   }
 
   await writeAuditLog(database, {

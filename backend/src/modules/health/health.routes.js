@@ -3,26 +3,27 @@ const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
 const asyncHandler = require("../../shared/asyncHandler");
 const { getEnv } = require("../../config/env");
+const queueModule = require("../../jobs/queue");
 
 function createHealthRouter(options = {}) {
-  const { database = db } = options;
+  const { database = db, queueService = queueModule } = options;
   const router = Router();
 
-  router.get("/", buildHealthHandler(database));
+  router.get("/", buildHealthHandler(database, queueService));
 
   return router;
 }
 
 function createReadyRouter(options = {}) {
-  const { database = db } = options;
+  const { database = db, queueService = queueModule } = options;
   const router = Router();
 
-  router.get("/", buildReadyHandler(database));
+  router.get("/", buildReadyHandler(database, queueService));
 
   return router;
 }
 
-function buildHealthHandler(database) {
+function buildHealthHandler(database, queueService) {
   return asyncHandler(async (req, res) => {
     try {
       await database.ping();
@@ -32,15 +33,19 @@ function buildHealthHandler(database) {
       });
     }
 
+    const queue = await queueService.getQueueHealth();
+
     res.status(200).json({
       status: "ok",
       service: "nilehive-backend",
-      database: "reachable"
+      database: "reachable",
+      queue: queue.status,
+      worker: queue.worker_status
     });
   });
 }
 
-function buildReadyHandler(database) {
+function buildReadyHandler(database, queueService) {
   return asyncHandler(async (req, res) => {
     const env = getEnv();
 
@@ -56,11 +61,21 @@ function buildReadyHandler(database) {
       throw new ApiError(503, "Async jobs are enabled but REDIS_URL is not configured", "QUEUE_UNAVAILABLE");
     }
 
+    await queueService.ensureQueueReady({ requireWorker: true });
+    const queue = await queueService.getQueueHealth();
+
     res.status(200).json({
       status: "ready",
       service: "nilehive-backend",
       database: "reachable",
-      queue: env.ASYNC_JOBS_ENABLED === "true" ? "configured" : "not_required"
+      queue: queue.status,
+      worker: queue.worker_status,
+      queue_counts: {
+        waiting: queue.waiting,
+        active: queue.active,
+        failed: queue.failed,
+        delayed: queue.delayed
+      }
     });
   });
 }
