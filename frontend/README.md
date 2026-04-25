@@ -60,6 +60,14 @@ VITE_API_BASE_URL=https://your-backend-domain.onrender.com
 
 Do not append `/api/v1` to `VITE_API_BASE_URL`, because `src/lib/api.ts` already prefixes requests with `/api/v1`.
 
+If production has already been mixed with local/demo data, follow:
+
+```text
+../docs/PRODUCTION_FRESH_START.md
+```
+
+before reusing the normal deployment flow.
+
 ## Frontend Architecture Notes
 
 - API calls live in `src/lib/api.ts`.

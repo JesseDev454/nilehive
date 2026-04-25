@@ -2,6 +2,14 @@
 
 This checklist prepares NileHive for a real Club Services demo or first production deployment.
 
+If production has already been contaminated by local/demo data, use:
+
+```text
+docs/PRODUCTION_FRESH_START.md
+```
+
+before following the normal handoff steps below.
+
 ## Environment Separation
 
 Keep local/demo and production fully separate:

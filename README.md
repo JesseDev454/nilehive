@@ -395,6 +395,7 @@ Use the production hardening guide before a real deployment:
 
 ```text
 docs/PRODUCTION_HANDOFF.md
+docs/PRODUCTION_FRESH_START.md
 ```
 
 Deployment config checked into this repo:
@@ -408,6 +409,7 @@ Important production/demo setup files:
 
 ```text
 backend/supabase/bootstrap_admin.sql
+backend/supabase/verify_clean_production.sql
 backend/supabase/demo_seed.sql
 backend/supabase/migrations/0027_production_rls_cleanup.sql
 ```

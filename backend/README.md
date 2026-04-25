@@ -64,15 +64,17 @@ supabase/migrations/
 Current migrations:
 
 ```text
-0001_week1_schema.sql ... 0034_async_jobs_notification_types.sql
+0001_week1_schema.sql ... 0035_public_club_visibility.sql
 ```
 
 For production setup and demo data, see:
 
 ```text
 ../docs/PRODUCTION_HANDOFF.md
+../docs/PRODUCTION_FRESH_START.md
 ../render.yaml
 supabase/bootstrap_admin.sql
+supabase/verify_clean_production.sql
 supabase/demo_seed.sql
 ```
 
