@@ -1,5 +1,6 @@
 import { CalendarDays, ClipboardList, CreditCard, FileText, Home, Plus, Clock, Bell, Users, MessageSquare, UserPlus, UserCog } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
+import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/contexts/RoleContext";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -8,6 +9,7 @@ import {
 
 export function AppSidebar() {
   const { role } = useRole();
+  const { profile } = useAuth();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const roleLabels = {
@@ -81,26 +83,38 @@ export function AppSidebar() {
   };
 
   const items = role ? itemsMap[role] : [];
+  const displayName = profile?.full_name?.trim() || "Club Services User";
+  const identityLabel = role ? roleLabels[role] : "Loading View";
+  const initials = displayName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "CU";
 
   return (
     <Sidebar collapsible="icon" className="border-r-2 border-foreground">
       <SidebarHeader className="border-b-2 border-sidebar-border p-4">
         {!collapsed && (
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center border-2 border-sidebar-primary bg-sidebar-accent shadow-[3px_3px_0_hsl(var(--sidebar-primary))]">
-              <span className="text-sm font-black text-sidebar-accent-foreground">CS</span>
-            </div>
-            <div>
-              <h2 className="text-sm font-black uppercase tracking-[0.16em] text-sidebar-primary">Club Services</h2>
-              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-sidebar-foreground/70">
-                {role ? roleLabels[role] : "Loading"} View
-              </p>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center border-2 border-sidebar-primary bg-sidebar-accent text-sidebar-accent-foreground shadow-[3px_3px_0_hsl(var(--sidebar-primary))]">
+                <span className="text-sm font-black uppercase tracking-[0.08em]">{initials}</span>
+              </div>
+              <div className="min-w-0">
+                <h2 className="truncate text-sm font-black uppercase tracking-[0.12em] text-sidebar-primary">
+                  {displayName}
+                </h2>
+                <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-sidebar-foreground/70">
+                  {identityLabel}
+                </p>
+              </div>
             </div>
           </div>
         )}
         {collapsed && (
-          <div className="mx-auto flex h-10 w-10 items-center justify-center border-2 border-sidebar-primary bg-sidebar-accent">
-            <span className="text-xs font-black text-sidebar-accent-foreground">CS</span>
+          <div className="mx-auto flex h-11 w-11 items-center justify-center border-2 border-sidebar-primary bg-sidebar-accent text-sidebar-accent-foreground shadow-none">
+            <span className="text-sm font-black uppercase tracking-[0.08em]">{initials}</span>
           </div>
         )}
       </SidebarHeader>
@@ -119,7 +133,7 @@ export function AppSidebar() {
                       to={item.url}
                       end={item.url === "/"}
                       className="border-2 border-transparent font-bold uppercase tracking-[0.08em] transition-all duration-200 hover:border-sidebar-primary hover:bg-sidebar-accent/50"
-                      activeClassName="translate-x-1 border-warning bg-sidebar-accent text-sidebar-accent-foreground shadow-[4px_4px_0_hsl(var(--sidebar-primary))]"
+                      activeClassName="translate-x-1 border-sidebar-primary bg-sidebar-accent text-sidebar-accent-foreground shadow-[4px_4px_0_hsl(var(--sidebar-primary))]"
                     >
                       <item.icon className="mr-2 h-4 w-4" />
                       {!collapsed && <span>{item.title}</span>}

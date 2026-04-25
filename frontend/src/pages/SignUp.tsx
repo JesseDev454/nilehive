@@ -2,7 +2,8 @@ import { FormEvent, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, Navigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowRight, Building2, CheckCircle2, ShieldCheck, Users } from "lucide-react";
+import { ArrowRight, CheckCircle2, ShieldCheck, Users } from "lucide-react";
+import { BrandLogo } from "@/components/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -88,12 +89,14 @@ export default function SignUp() {
     <main className="min-h-screen bg-background p-5 text-foreground md:p-10">
       <section className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-7xl items-center gap-8 lg:grid-cols-[0.8fr_1.2fr]">
         <aside className="space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center border-2 border-foreground bg-secondary text-secondary-foreground shadow-[4px_4px_0_hsl(var(--foreground))]">
-              <Building2 className="h-6 w-6" />
-            </div>
+          <div className="space-y-4">
+            <BrandLogo
+              size="lg"
+              variant="plain"
+              className="h-24 w-[22rem] max-w-full sm:h-28 sm:w-[24rem]"
+            />
             <div>
-              <p className="nh-eyebrow">Nile University</p>
+              <p className="nh-eyebrow">Official university platform</p>
               <h1 className="text-2xl font-black uppercase">Club Services</h1>
             </div>
           </div>

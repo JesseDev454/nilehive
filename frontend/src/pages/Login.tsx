@@ -1,7 +1,8 @@
 import { FormEvent, useState } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowRight, Building2, Lock, Mail, ShieldCheck } from "lucide-react";
+import { ArrowRight, Lock, Mail, ShieldCheck } from "lucide-react";
+import { BrandLogo } from "@/components/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,16 +62,6 @@ export default function Login() {
           <div className="absolute -right-28 top-20 h-80 w-80 rotate-45 border-[18px] border-secondary/30" />
           <div className="absolute -bottom-20 left-12 h-72 w-72 rotate-12 border-[18px] border-accent/30" />
 
-          <div className="relative z-10 flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center border-2 border-primary-foreground bg-secondary shadow-[4px_4px_0_hsl(var(--primary-foreground))]">
-              <Building2 className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-primary-foreground/70">Nile University</p>
-              <h1 className="text-2xl font-black uppercase tracking-tight">Club Services</h1>
-            </div>
-          </div>
-
           <div className="relative z-10 max-w-xl">
             <p className="nh-eyebrow text-primary-foreground/70">Institutional Access</p>
             <h2 className="mt-4 text-6xl font-black uppercase leading-[0.9] tracking-tighter">
@@ -91,7 +82,12 @@ export default function Login() {
 
         <div className="flex items-center justify-center p-5 md:p-10">
           <div className="w-full max-w-xl">
-            <div className="mb-8 lg:hidden">
+            <div className="mb-8 flex flex-col items-center text-center">
+              <BrandLogo
+                size="lg"
+                variant="plain"
+                className="mx-auto mb-4 h-24 w-[22rem] max-w-full sm:h-28 sm:w-[24rem]"
+              />
               <p className="nh-eyebrow">Nile University</p>
               <h1 className="nh-title mt-2">Club Services</h1>
             </div>

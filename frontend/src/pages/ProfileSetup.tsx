@@ -1,7 +1,8 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowRight, Network, ShieldCheck } from "lucide-react";
+import { ArrowRight, ShieldCheck } from "lucide-react";
+import { BrandLogo } from "@/components/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -93,38 +94,36 @@ export default function ProfileSetup() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#f7fafd] p-5 text-[#181c1e] md:p-12">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_100%_0%,rgba(13,91,188,0.14),transparent_42%)]" />
+    <main className="relative min-h-screen overflow-hidden bg-background p-5 text-foreground md:p-12">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_100%_0%,hsl(var(--primary)/0.16),transparent_42%)]" />
       <section className="relative z-10 mx-auto grid min-h-[calc(100vh-6rem)] w-full max-w-5xl items-center gap-10 lg:grid-cols-12">
         <div className="space-y-6 lg:col-span-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center border-2 border-foreground bg-[#0b2347] text-white shadow-[3px_3px_0_hsl(var(--foreground))]">
-              <Network className="h-5 w-5" />
-            </div>
-            <span className="text-2xl font-extrabold tracking-tight text-[#000d27]">Club Services</span>
-          </div>
+          <BrandLogo
+            size="lg"
+            className="h-24 w-[22rem] max-w-full sm:h-28 sm:w-[24rem]"
+          />
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#0d5bbc]">
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-primary">
               Profile Onboarding
             </p>
-            <h1 className="mt-3 text-4xl font-extrabold leading-tight text-[#000d27] md:text-5xl">
+            <h1 className="mt-3 text-4xl font-extrabold leading-tight text-foreground md:text-5xl">
               Finish setting up your Club Services account.
             </h1>
-            <p className="mt-4 text-base leading-relaxed text-[#44474e]">
+            <p className="mt-4 text-base leading-relaxed text-muted-foreground">
               We found your login, but Club Services still needs your app profile before
               opening the dashboard. Real users must use a Nile University Outlook email address.
             </p>
           </div>
           {profileError && (
-            <Card className="bg-[#ffdad6]">
-              <CardContent className="p-5 text-sm font-medium text-[#93000a]">
+            <Card className="border-destructive bg-destructive/10">
+              <CardContent className="p-5 text-sm font-medium text-destructive">
                 {profileError}
               </CardContent>
             </Card>
           )}
-          <Card className="bg-white/80">
-            <CardContent className="flex gap-3 p-5 text-sm text-[#44474e]">
-              <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#299e5c]" />
+          <Card className="bg-white/85">
+            <CardContent className="flex gap-3 p-5 text-sm text-muted-foreground">
+              <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-success" />
               <p>
                 For safety, self-service onboarding activates users as students first. Executive
                 and president applications open after membership and dues verification.
@@ -143,7 +142,7 @@ export default function ProfileSetup() {
                 <Label htmlFor="profile-full-name">Full Name</Label>
                 <Input
                   id="profile-full-name"
-                  className="border-2 border-foreground bg-[#f1f4f7] px-5 py-6"
+                  className="border-2 border-foreground bg-muted px-5 py-6"
                   value={fullName}
                   onChange={(event) => setFullName(event.target.value)}
                   required
@@ -162,10 +161,10 @@ export default function ProfileSetup() {
 
               <div className="space-y-2">
                 <Label>Starting Access</Label>
-                <div className="border-2 border-foreground bg-[#f1f4f7] px-5 py-4 text-sm font-bold text-[#000d27]">
+                <div className="border-2 border-foreground bg-muted px-5 py-4 text-sm font-bold text-foreground">
                   Student
                 </div>
-                <p className="text-xs text-[#44474e]">
+                <p className="text-xs text-muted-foreground">
                   Club leadership applications are handled inside the app after your membership is active.
                 </p>
               </div>
@@ -173,7 +172,7 @@ export default function ProfileSetup() {
               <div className="space-y-2 md:col-span-2">
                 <Label>Club</Label>
                 <Select disabled={isLoadingClubs || clubsFailed || clubs.length === 0} value={clubId} onValueChange={setClubId}>
-                  <SelectTrigger className="border-2 border-foreground bg-[#f1f4f7] py-6">
+                  <SelectTrigger className="border-2 border-foreground bg-muted py-6">
                     <SelectValue
                       placeholder={
                         isLoadingClubs
@@ -192,7 +191,7 @@ export default function ProfileSetup() {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-[#44474e]">
+                <p className="text-xs text-muted-foreground">
                   {isLoadingClubs
                     ? "We are loading the official clubs available for onboarding."
                     : clubsFailed
@@ -205,11 +204,7 @@ export default function ProfileSetup() {
             </div>
 
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Button
-                className="h-12 flex-1 bg-[#0d5bbc] font-bold text-white hover:bg-[#004493]"
-                disabled={isSubmitting}
-                type="submit"
-              >
+              <Button className="h-12 flex-1 font-bold" disabled={isSubmitting} type="submit">
                 {isSubmitting ? "Saving profile..." : "Complete Profile"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>

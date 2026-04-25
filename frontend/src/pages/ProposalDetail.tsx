@@ -259,7 +259,7 @@ export default function ProposalDetail() {
                 <p className="mt-1 font-semibold">{getDateLabel(proposal.updated_at)}</p>
               </div>
               <div className="border-2 border-primary-foreground/30 bg-white/10 p-4 sm:col-span-2 lg:col-span-4">
-                <p className="text-xs font-bold uppercase tracking-wide text-[#F5B942]">Next Action</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-[#D4A437]">Next Action</p>
                 <p className="mt-1 text-white/90">{getProposalNextAction(proposal.status)}</p>
               </div>
             </CardContent>
@@ -501,3 +501,4 @@ export default function ProposalDetail() {
     </div>
   );
 }
+

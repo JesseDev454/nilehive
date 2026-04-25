@@ -471,19 +471,19 @@ function StudentMembershipView() {
 
   return (
     <div className="space-y-6 animate-slide-up">
-      <div className="border-2 border-foreground bg-[#000d27] p-6 text-white shadow-[8px_8px_0_hsl(var(--foreground))]">
+      <div className="border-2 border-foreground bg-primary p-6 text-primary-foreground shadow-[8px_8px_0_hsl(var(--foreground))]">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <Badge className="mb-3 bg-white/15 text-white hover:bg-white/15">Student Membership</Badge>
+            <Badge className="mb-3 bg-white/15 text-primary-foreground hover:bg-white/15">Student Membership</Badge>
             <h1 className="text-3xl font-bold">Discover clubs and track your membership</h1>
-            <p className="mt-2 max-w-2xl text-sm text-white/75">
+            <p className="mt-2 max-w-2xl text-sm text-primary-foreground/75">
               Request to join a Nile University club. You become an official member only after your request is approved and dues are verified.
             </p>
           </div>
-          <div className="border-2 border-white/25 bg-white/10 p-4">
-            <p className="text-xs uppercase tracking-wide text-white/60">Signed in as</p>
+          <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
+            <p className="text-xs uppercase tracking-wide text-primary-foreground/60">Signed in as</p>
             <p className="font-semibold">{profile?.full_name || "Student"}</p>
-            <p className="text-sm text-white/70">{profile?.student_id || "University ID not set"}</p>
+            <p className="text-sm text-primary-foreground/70">{profile?.student_id || "University ID not set"}</p>
           </div>
         </div>
       </div>

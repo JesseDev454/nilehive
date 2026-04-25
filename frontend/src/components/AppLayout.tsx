@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from "react";
+import { BrandLogo } from "@/components/BrandLogo";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
@@ -66,19 +67,20 @@ export function AppLayout() {
         <AppShellEffects />
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="flex h-16 items-center justify-between border-b-2 border-foreground bg-card px-4">
-            <div className="flex items-center gap-2">
+          <header className="flex h-16 items-center justify-between border-b-2 border-foreground bg-card/95 px-4 backdrop-blur">
+            <div className="flex items-center gap-3">
               <SidebarTrigger />
-              <span className="hidden text-sm font-black uppercase tracking-[0.18em] text-foreground sm:inline">
-                Nile University Club Services
-              </span>
+              <div className="hidden items-center sm:flex">
+                <BrandLogo
+                  size="md"
+                  variant="plain"
+                  className="h-10 w-[13rem] shrink-0 lg:h-11 lg:w-[14rem]"
+                />
+              </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className="hidden border-2 border-secondary bg-secondary px-2 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-secondary-foreground sm:inline">
+              <span className="hidden border-2 border-warning bg-warning px-2 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-warning-foreground sm:inline">
                 {profile?.role ?? "Loading"} Mode
-              </span>
-              <span className="hidden text-xs font-bold text-muted-foreground md:inline">
-                {profile?.full_name ?? "Club Services User"}
               </span>
               <Button variant="outline" size="sm" onClick={handleSignOut}>
                 Logout

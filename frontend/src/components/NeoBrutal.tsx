@@ -276,9 +276,9 @@ export function NeoLoadingState({
       <div className="mb-5 h-3 border-2 border-foreground bg-primary" />
       <div className="flex flex-col gap-5 md:flex-row md:items-center">
         <div className="flex gap-2">
-          <span className="h-12 w-5 animate-pulse border-2 border-foreground bg-accent shadow-[3px_3px_0_#181c1e]" />
-          <span className="h-12 w-5 animate-pulse border-2 border-foreground bg-secondary shadow-[3px_3px_0_#181c1e] [animation-delay:140ms]" />
-          <span className="h-12 w-5 animate-pulse border-2 border-foreground bg-primary shadow-[3px_3px_0_#181c1e] [animation-delay:280ms]" />
+          <span className="h-12 w-5 animate-pulse border-2 border-foreground bg-accent shadow-[3px_3px_0_hsl(var(--foreground))]" />
+          <span className="h-12 w-5 animate-pulse border-2 border-foreground bg-secondary shadow-[3px_3px_0_hsl(var(--foreground))] [animation-delay:140ms]" />
+          <span className="h-12 w-5 animate-pulse border-2 border-foreground bg-primary shadow-[3px_3px_0_hsl(var(--foreground))] [animation-delay:280ms]" />
         </div>
         <div>
           <p className="nh-eyebrow">Please wait</p>

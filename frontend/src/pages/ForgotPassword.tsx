@@ -2,6 +2,7 @@ import { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, Mail, ShieldCheck } from "lucide-react";
+import { BrandLogo } from "@/components/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -59,6 +60,10 @@ export default function ForgotPassword() {
         </Link>
 
         <div className="nh-card bg-card p-6 md:p-10">
+          <BrandLogo
+            size="lg"
+            className="mb-6 h-20 w-[19rem] max-w-full sm:h-24 sm:w-[21rem]"
+          />
           <div className="mb-8 border-b-2 border-foreground pb-6">
             <p className="nh-eyebrow">Account Recovery</p>
             <h1 className="mt-2 text-4xl font-black uppercase">Reset Password</h1>
