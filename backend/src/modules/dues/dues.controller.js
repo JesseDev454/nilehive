@@ -1,5 +1,6 @@
 const asyncHandler = require("../../shared/asyncHandler");
 const {
+  applyDuesAmountToAllClubs,
   createDuePayment,
   getPaymentSettings,
   listDuePayments,
@@ -54,6 +55,16 @@ function createDuesController(options = {}) {
       });
 
       res.status(200).json({ data: settings });
+    }),
+
+    applyDuesAmountToAllClubs: asyncHandler(async (req, res) => {
+      const result = await applyDuesAmountToAllClubs({
+        actor: req.user,
+        payload: req.body,
+        database
+      });
+
+      res.status(200).json({ data: result });
     }),
 
     createDuePayment: asyncHandler(async (req, res) => {

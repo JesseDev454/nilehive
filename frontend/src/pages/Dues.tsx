@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/contexts/RoleContext";
 import {
+  applyClubDuesAmountToAll,
   ApiClientError,
   createDuePayment,
   getClubMembers,
@@ -59,6 +60,8 @@ export default function Dues() {
   const queryClient = useQueryClient();
   const [memberId, setMemberId] = useState("");
   const [selectedClubId, setSelectedClubId] = useState("");
+  const [selectedClubDuesAmount, setSelectedClubDuesAmount] = useState("5000");
+  const [globalDuesAmount, setGlobalDuesAmount] = useState("5000");
   const [amount, setAmount] = useState("");
   const [academicSession, setAcademicSession] = useState("2025/2026");
   const [paymentReference, setPaymentReference] = useState("");
@@ -95,7 +98,7 @@ export default function Dues() {
   const { data: clubs = [] } = useQuery({
     queryKey: ["dues-form-clubs"],
     queryFn: () => getClubs(),
-    enabled: role === "admin",
+    enabled: canManageDues,
     retry: false
   });
   const { data: paymentSettings } = useQuery({
@@ -115,6 +118,14 @@ export default function Dues() {
     setAccountName(paymentSettings.account_name);
     setPaymentInstructions(paymentSettings.payment_instructions || "");
   }, [paymentSettings]);
+
+  useEffect(() => {
+    const selectedClub = clubs.find((club) => club.id === (role === "admin" ? selectedClubId : profile?.club_id));
+
+    if (selectedClub) {
+      setSelectedClubDuesAmount(String(selectedClub.dues_amount ?? 5000));
+    }
+  }, [clubs, profile?.club_id, role, selectedClubId]);
 
   useEffect(() => {
     const payments = duesData?.payments || [];
@@ -189,6 +200,7 @@ export default function Dues() {
     mutationFn: () =>
       saveClubPaymentSettings({
         club_id: role === "admin" ? selectedClubId : undefined,
+        dues_amount: Number(selectedClubDuesAmount),
         bank_name: bankName,
         account_number: accountNumber,
         account_name: accountName,
@@ -196,10 +208,27 @@ export default function Dues() {
       }),
     onSuccess: async () => {
       actionSuccess("Payment details saved", "Students can now see where to pay their dues.");
-      await queryClient.invalidateQueries({ queryKey: ["club-payment-settings"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["club-payment-settings"] }),
+        queryClient.invalidateQueries({ queryKey: ["dues-form-clubs"] }),
+        queryClient.invalidateQueries({ queryKey: ["public-clubs"] })
+      ]);
     },
     onError: (mutationError) => {
       actionError("Could not save payment details", mutationError, getErrorMessage(mutationError));
+    }
+  });
+  const bulkDuesMutation = useMutation({
+    mutationFn: () => applyClubDuesAmountToAll(Number(globalDuesAmount)),
+    onSuccess: async (result) => {
+      actionSuccess("Global dues updated", `Applied ${formatCurrency(result.dues_amount)} to ${result.clubs_updated} club records.`);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["dues-form-clubs"] }),
+        queryClient.invalidateQueries({ queryKey: ["public-clubs"] })
+      ]);
+    },
+    onError: (mutationError) => {
+      actionError("Could not update global dues", mutationError, getErrorMessage(mutationError));
     }
   });
   const updateMutation = useMutation({
@@ -336,6 +365,18 @@ export default function Dues() {
                 </div>
               ) : null}
               <div className="space-y-2">
+                <Label htmlFor="dues_amount">Join Dues Amount</Label>
+                <Input
+                  id="dues_amount"
+                  type="number"
+                  min="0"
+                  value={selectedClubDuesAmount}
+                  onChange={(event) => setSelectedClubDuesAmount(event.target.value)}
+                  placeholder="5000"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="bank_name">Bank Name</Label>
                 <Input
                   id="bank_name"
@@ -386,6 +427,46 @@ export default function Dues() {
                   )}
                 </Button>
               </div>
+            </form>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {role === "admin" ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Apply One Dues Amount To Every Club</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form
+              className="flex flex-col gap-3 sm:flex-row sm:items-end"
+              onSubmit={(event) => {
+                event.preventDefault();
+                bulkDuesMutation.mutate();
+              }}
+            >
+              <div className="flex-1 space-y-2">
+                <Label htmlFor="global_dues_amount">Universal Join Dues</Label>
+                <Input
+                  id="global_dues_amount"
+                  type="number"
+                  min="0"
+                  value={globalDuesAmount}
+                  onChange={(event) => setGlobalDuesAmount(event.target.value)}
+                  placeholder="5000"
+                  required
+                />
+              </div>
+              <Button type="submit" disabled={bulkDuesMutation.isPending}>
+                {bulkDuesMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Applying...
+                  </>
+                ) : (
+                  "Apply To All Clubs"
+                )}
+              </Button>
             </form>
           </CardContent>
         </Card>

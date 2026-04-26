@@ -13,14 +13,31 @@ export function NeoPageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-4 border-b-2 border-foreground pb-6 lg:flex-row lg:items-end lg:justify-between">
-      <div className="nh-page-header">
-        {eyebrow ? <p className="nh-eyebrow">{eyebrow}</p> : null}
-        <h1 className="nh-title mt-2">{title}</h1>
-        {description ? <p className="mt-3 max-w-3xl text-base text-muted-foreground md:text-lg">{description}</p> : null}
+    <section className="relative overflow-hidden border-2 border-foreground bg-primary p-6 text-primary-foreground shadow-[8px_8px_0_hsl(var(--foreground))] md:p-8">
+      <div className="absolute -right-20 -top-20 h-56 w-56 border-2 border-primary-foreground/20 bg-warning/20" />
+      <div className="absolute -bottom-16 left-1/2 h-40 w-40 border-2 border-primary-foreground/10 bg-success/10" />
+      <div className="relative grid gap-6 lg:grid-cols-[1.3fr_0.7fr] lg:items-end">
+        <div className="min-w-0">
+          {eyebrow ? (
+            <p className="mb-4 inline-flex bg-white/15 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-white">
+              {eyebrow}
+            </p>
+          ) : null}
+          <h1 className="text-3xl font-black tracking-tight md:text-4xl">{title}</h1>
+          {description ? (
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-primary-foreground/78 md:text-base">
+              {description}
+            </p>
+          ) : null}
+        </div>
+        {actions ? (
+          <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
+            <p className="text-xs uppercase tracking-[0.18em] text-primary-foreground/60">Quick actions</p>
+            <div className="mt-3 flex flex-wrap gap-3">{actions}</div>
+          </div>
+        ) : null}
       </div>
-      {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
-    </div>
+    </section>
   );
 }
 

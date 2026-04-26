@@ -13,7 +13,6 @@ import { ApiClientError, getAdminProposals, getPresidentProposals, type Proposal
 import {
   getProposalOwnerLabel,
   getProposalPrimaryActionLabel,
-  getProposalStatusMeta,
   isProposalEditable
 } from "@/lib/proposalWorkflow";
 import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
@@ -28,6 +27,10 @@ function getErrorMessage(error: unknown) {
 
 function getDateLabel(value?: string) {
   return value ? value.slice(0, 10) : "-";
+}
+
+function getProposalClubLabel(proposal: ProposalRecord) {
+  return proposal.club?.name || "Unknown club";
 }
 
 export default function Proposals() {
@@ -144,7 +147,7 @@ export default function Proposals() {
                   <tr className="border-b-2 border-foreground bg-primary text-primary-foreground">
                     <th className="p-4 text-left text-xs font-black uppercase tracking-[0.14em]">Title</th>
                     <th className="hidden p-4 text-left text-xs font-black uppercase tracking-[0.14em] md:table-cell">
-                      {isAdmin ? "Club ID" : "Currently With"}
+                      {isAdmin ? "Club" : "Currently With"}
                     </th>
                     <th className="hidden p-4 text-left text-xs font-black uppercase tracking-[0.14em] sm:table-cell">Date</th>
                     <th className="p-4 text-left text-xs font-black uppercase tracking-[0.14em]">Status</th>
@@ -160,7 +163,7 @@ export default function Proposals() {
                         </Link>
                       </td>
                       <td className="hidden p-4 text-muted-foreground md:table-cell">
-                        {isAdmin ? proposal.club_id ?? "-" : getProposalOwnerLabel(proposal.current_owner_role)}
+                        {isAdmin ? getProposalClubLabel(proposal) : getProposalOwnerLabel(proposal.current_owner_role)}
                       </td>
                       <td className="hidden p-4 text-muted-foreground sm:table-cell">
                         {getDateLabel(proposal.event_date)}
@@ -180,9 +183,6 @@ export default function Proposals() {
                             {isPresident ? getProposalPrimaryActionLabel(proposal.status) : "View"}
                           </Link>
                         </Button>
-                        <p className="mt-1 text-xs text-muted-foreground hidden lg:block">
-                          {getProposalStatusMeta(proposal.status).label}
-                        </p>
                       </td>
                     </tr>
                   ))}
@@ -204,7 +204,7 @@ export default function Proposals() {
                     <StatusBadge status={proposal.status} />
                   </div>
                   <p className="mt-3 text-sm text-muted-foreground">
-                    {isAdmin ? `Club ${proposal.club_id ?? "-"}` : getProposalOwnerLabel(proposal.current_owner_role)}
+                    {isAdmin ? getProposalClubLabel(proposal) : getProposalOwnerLabel(proposal.current_owner_role)}
                   </p>
                   <Button asChild variant="outline" size="sm" className="mt-4 w-full">
                     <Link

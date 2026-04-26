@@ -5,15 +5,15 @@ const { buildPaginatedResult } = require("../shared/pagination");
 const PUBLIC_CLUB_CACHE_TTL_MS = 5 * 60 * 1000;
 
 const proposalSelect =
-  "id, club_id, submitted_by, title, description, event_date, location, aim_objectives, proposed_activity, event_time, number_of_participants, budget_estimate, budget_line_items, responsible_members, status, submitted_at, resubmitted_at, revision_count, last_edited_at, last_edited_by, advisor_remarks, advisor_decided_at, advisor_decided_by, admin_remarks, admin_decided_at, admin_decided_by, created_at, updated_at";
+  "id, club_id, submitted_by, title, description, event_date, location, aim_objectives, proposed_activity, event_time, number_of_participants, budget_estimate, budget_line_items, responsible_members, status, submitted_at, resubmitted_at, revision_count, last_edited_at, last_edited_by, advisor_remarks, advisor_decided_at, advisor_decided_by, admin_remarks, admin_decided_at, admin_decided_by, created_at, updated_at, club:clubs!proposals_club_id_fkey(id, name, code)";
 const notificationSelect =
   "id, user_id, proposal_id, announcement_id, type, message, delivery_status, created_at";
 const eventReminderSelect =
   "id, user_id, proposal_id, message, remind_at, delivery_status, created_at";
-const clubSelect = "id, name, code, advisor_id, created_at";
+const clubSelect = "id, name, code, advisor_id, dues_amount, created_at";
 const clubAdvisorAssignmentSelect =
   "id, club_id, advisor_profile_id, assigned_by, remarks, created_at, club:clubs!club_advisors_club_id_fkey(id, name, code), advisor:profiles!club_advisors_advisor_profile_id_fkey(id, full_name, role, club_id, student_id)";
-const publicClubSelect = "id, name, code, created_at, is_public_signup";
+const publicClubSelect = "id, name, code, dues_amount, created_at, is_public_signup";
 const taskSelect =
   "id, club_id, assigned_by, assigned_to, title, description, priority, status, due_date, created_at, updated_at, assigned_by_profile:profiles!tasks_assigned_by_fkey(id, full_name, student_id, role), assigned_to_profile:profiles!tasks_assigned_to_fkey(id, full_name, student_id, role)";
 const taskStatusHistorySelect =
@@ -45,7 +45,7 @@ const profileWithClubSelect =
 const legacyProfileWithClubSelect =
   "id, full_name, role, club_id, student_id, requested_role, onboarding_status, created_at, updated_at, club:clubs!profiles_club_id_fkey(id, name, code)";
 const membershipRequestSelect =
-  "id, profile_id, club_id, requested_role, status, remarks, decision_remarks, reviewed_by, reviewed_at, member_id, due_payment_id, dues_amount, academic_session, created_at, updated_at, profile:profiles!membership_requests_profile_id_fkey(id, full_name, student_id, role), club:clubs!membership_requests_club_id_fkey(id, name, code)";
+  "id, profile_id, club_id, requested_role, status, remarks, decision_remarks, reviewed_by, reviewed_at, member_id, due_payment_id, dues_amount, academic_session, created_at, updated_at, profile:profiles!membership_requests_profile_id_fkey(id, full_name, student_id, role), club:clubs!membership_requests_club_id_fkey(id, name, code), due_payment:due_payments!membership_requests_due_payment_id_fkey(id, club_id, member_id, amount, academic_session, payment_reference, payment_account_name, payment_paid_at, payer_note, proof_url, submitted_at, status, verified_by, verified_at, created_at, updated_at)";
 const leadershipApplicationSelect =
   "id, profile_id, club_id, current_app_role, requested_role, status, reason, experience, goals, availability, reviewed_by, reviewed_at, decision_remarks, created_at, updated_at, profile:profiles!leadership_applications_profile_id_fkey(id, full_name, student_id, role), club:clubs!leadership_applications_club_id_fkey(id, name, code)";
 const profileRoleHistorySelect =
@@ -130,6 +130,7 @@ function createDatabase(options = {}) {
       name: club.name,
       code: club.code ?? null,
       advisor_id: club.advisor_id ?? null,
+      dues_amount: club.dues_amount === null || club.dues_amount === undefined ? 5000 : Number(club.dues_amount),
       created_at: club.created_at ?? null
     };
   }
@@ -1440,6 +1441,35 @@ function createDatabase(options = {}) {
       return data ?? null;
     },
 
+    async updateClubDuesAmount(clubId, duesAmount) {
+      const { data, error } = await getClient()
+        .from("clubs")
+        .update({ dues_amount: duesAmount })
+        .eq("id", clubId)
+        .select(clubSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return normalizeClub(data);
+    },
+
+    async updateAllClubDuesAmounts(duesAmount) {
+      const { data, error } = await getClient()
+        .from("clubs")
+        .update({ dues_amount: duesAmount })
+        .neq("id", "00000000-0000-0000-0000-000000000000")
+        .select(clubSelect);
+
+      if (error) {
+        throw error;
+      }
+
+      return (data ?? []).map(normalizeClub);
+    },
+
     async upsertClubPaymentSettings(settings) {
       const { data, error } = await getClient()
         .from("club_payment_settings")
@@ -1644,12 +1674,13 @@ function createDatabase(options = {}) {
       return data ?? null;
     },
 
-    async getMembershipRequestByMemberId(memberId) {
+    async getMembershipRequestByMemberId(memberId, statuses = ["approved_pending_dues"]) {
       const { data, error } = await getClient()
         .from("membership_requests")
         .select(membershipRequestSelect)
         .eq("member_id", memberId)
-        .eq("status", "approved_pending_dues")
+        .in("status", statuses)
+        .order("created_at", { ascending: false })
         .maybeSingle();
 
       if (error) {
@@ -1675,6 +1706,10 @@ function createDatabase(options = {}) {
 
       if (filters.status) {
         query = query.eq("status", filters.status);
+      }
+
+      if (filters.requestedRole) {
+        query = query.eq("requested_role", filters.requestedRole);
       }
 
       query = applyPagination(query, filters.pagination);

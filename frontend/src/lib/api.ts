@@ -42,6 +42,7 @@ export interface ClubRecord {
   name: string;
   description: string | null;
   code: string | null;
+  dues_amount: number;
   advisor_id?: string | null;
   advisors?: Array<{
     id: string;
@@ -130,6 +131,11 @@ export interface ProfileOnboardingPayload {
 export interface ProposalRecord {
   id: string;
   club_id?: string;
+  club?: {
+    id: string;
+    name: string;
+    code: string | null;
+  } | null;
   submitted_by?: string;
   title: string;
   description?: string | null;
@@ -235,6 +241,7 @@ export interface DashboardProposalSummary {
   id: string;
   title: string;
   club_id: string;
+  club_name?: string | null;
   event_date: string;
   event_time?: string | null;
   location?: string | null;
@@ -351,6 +358,7 @@ export interface AdminOperationsDashboardRecord {
     id: string;
     type: string;
     club_id: string;
+    club_name?: string | null;
     title: string;
     message: string;
     created_at: string;
@@ -457,6 +465,7 @@ export interface MembershipRequestRecord {
     name: string;
     code: string | null;
   } | null;
+  due_payment?: DuePaymentRecord | null;
   created_at: string;
   updated_at: string;
 }
@@ -551,6 +560,7 @@ export interface PaymentConfirmationPayload {
 
 export interface PaymentSettingsPayload {
   club_id?: string | null;
+  dues_amount?: number | null;
   bank_name: string;
   account_number: string;
   account_name: string;
@@ -1495,6 +1505,12 @@ export async function createMembershipRequest(
     club_id: string;
     requested_role?: ClubMemberRecord["club_role"];
     remarks?: string;
+    payment_account_name: string;
+    payment_reference: string;
+    payment_paid_at?: string | null;
+    proof_url?: string | null;
+    payer_note?: string | null;
+    academic_session?: string | null;
   },
   token?: string
 ) {
@@ -1722,6 +1738,19 @@ export async function saveClubPaymentSettings(payload: PaymentSettingsPayload, t
     token,
     body: payload
   });
+
+  return response.data;
+}
+
+export async function applyClubDuesAmountToAll(dues_amount: number, token?: string) {
+  const response = await request<ApiEnvelope<{ dues_amount: number; clubs_updated: number }>>(
+    "/api/v1/dues/payment-settings/apply-all",
+    {
+      method: "POST",
+      token,
+      body: { dues_amount }
+    }
+  );
 
   return response.data;
 }

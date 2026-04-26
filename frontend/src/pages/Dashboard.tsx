@@ -165,7 +165,9 @@ function ProposalSummaryList({
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">{proposal.title}</p>
                 <p className="text-xs text-muted-foreground">
-                  {showClub ? `Club ${proposal.club_id ?? "-"}` : `Event ${getDateLabel(proposal.event_date)}`}
+                  {showClub
+                    ? ("club_name" in proposal && proposal.club_name ? proposal.club_name : "Unknown club")
+                    : `Event ${getDateLabel(proposal.event_date)}`}
                 </p>
               </div>
             </div>
@@ -260,7 +262,7 @@ function AdminActivityList({
             <p className="text-sm font-medium truncate">{item.title}</p>
             <p className="text-xs text-muted-foreground mt-1">{item.message}</p>
             <p className="text-[11px] text-muted-foreground mt-1">
-              Club record {item.club_id} - {getDateLabel(item.created_at)}
+              {(item.club_name || "Unknown club")} - {getDateLabel(item.created_at)}
             </p>
           </div>
         </div>

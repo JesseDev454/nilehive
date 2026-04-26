@@ -122,12 +122,6 @@ test("authenticated user without profile can inspect onboarding state", async (t
 
 test("new user can complete student profile onboarding", async (t) => {
   const database = createFakeDatabase();
-  let createdMembershipRequest = null;
-  database.getOpenMembershipRequest = async () => null;
-  database.createMembershipRequest = async (request) => {
-    createdMembershipRequest = request;
-    return request;
-  };
   const server = await createTestServer(database);
   t.after(() => server.close());
 
@@ -148,13 +142,6 @@ test("new user can complete student profile onboarding", async (t) => {
   assert.equal(payload.data.requested_role, "student");
   assert.equal(payload.data.club_id, "club-1");
   assert.equal(payload.data.account_status, "active");
-  assert.deepEqual(createdMembershipRequest, {
-    profile_id: "new-user-1",
-    club_id: "club-1",
-    requested_role: "member",
-    status: "pending",
-    remarks: "Created during profile onboarding."
-  });
 });
 
 test("advisor can complete profile onboarding without a student ID", async (t) => {

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Crown, Loader2, Search, ShieldCheck, UserCheck, UserPlus, Users, WalletCards } from "lucide-react";
+import { Crown, Loader2, Search, ShieldCheck, UserCheck, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
 import { DataPagination } from "@/components/DataPagination";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +27,6 @@ import {
   getMembershipRequests,
   getMyDuePayments,
   getMyMembershipRequests,
-  getPublicClubs,
   submitDuePaymentConfirmation,
   type ClubMemberRecord,
   type ClubRecord,
@@ -370,12 +369,227 @@ function DuesConfirmationCard({
   );
 }
 
-function StudentMembershipView() {
+function JoinClubCard({
+  club,
+  existingRequest
+}: {
+  club: ClubRecord;
+  existingRequest?: MembershipRequestRecord;
+}) {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [remarks, setRemarks] = useState("");
+  const [accountName, setAccountName] = useState("");
+  const [reference, setReference] = useState("");
+  const [paidAt, setPaidAt] = useState("");
+  const [proofUrl, setProofUrl] = useState("");
+  const [proofFileName, setProofFileName] = useState("");
+  const [note, setNote] = useState("");
+  const [isUploadingProof, setIsUploadingProof] = useState(false);
+  const { data: settings } = useQuery({
+    queryKey: ["club-payment-settings", club.id],
+    queryFn: () => getClubPaymentSettings(club.id),
+    retry: false
+  });
+  const createRequestMutation = useMutation({
+    mutationFn: () =>
+      createMembershipRequest({
+        club_id: club.id,
+        requested_role: "member",
+        remarks: remarks || undefined,
+        payment_account_name: accountName,
+        payment_reference: reference,
+        payment_paid_at: paidAt || null,
+        proof_url: proofUrl || null,
+        payer_note: note || null
+      }),
+    onSuccess: async () => {
+      toast.success("Join request submitted", {
+        description: "Your payment details were attached and the club can now review your request."
+      });
+      setRemarks("");
+      setAccountName("");
+      setReference("");
+      setPaidAt("");
+      setProofUrl("");
+      setProofFileName("");
+      setNote("");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["my-membership-requests"] }),
+        queryClient.invalidateQueries({ queryKey: ["my-dues"] })
+      ]);
+    },
+    onError: (mutationError) => {
+      toast.error("Could not submit join request", {
+        description: getErrorMessage(mutationError)
+      });
+    }
+  });
+
+  async function handleReceiptUpload(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Receipt is too large", {
+        description: "Please upload a file smaller than 5MB."
+      });
+      return;
+    }
+
+    try {
+      setIsUploadingProof(true);
+
+      if (!user?.id) {
+        toast.error("You are not signed in", {
+          description: "Please sign in again and retry uploading your receipt."
+        });
+        return;
+      }
+
+      const upload = await uploadStorageFile(file, "dues-receipts", {
+        folder: `${club.id}/${user.id}`
+      });
+
+      setProofUrl(upload.path);
+      setProofFileName(file.name);
+      toast.success("Receipt uploaded", {
+        description: "The upload will be attached to your join request."
+      });
+    } catch (uploadError) {
+      toast.error("Could not upload receipt", {
+        description: getErrorMessage(uploadError)
+      });
+    } finally {
+      setIsUploadingProof(false);
+      event.target.value = "";
+    }
+  }
+
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="border-b-2 border-foreground bg-primary/10">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <CardTitle className="text-lg">{club.name}</CardTitle>
+            <p className="text-sm text-muted-foreground">{club.code || "Nile University club"}</p>
+          </div>
+          {existingRequest ? <MembershipStatusBadge status={existingRequest.status} /> : null}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4 p-5">
+        <div className="rounded-xl border-2 border-foreground bg-warning/10 p-3">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground">Join dues</p>
+          <p className="mt-1 text-lg font-bold">{formatCurrency(club.dues_amount)}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Pay first, then submit your join request with the payment details below.
+          </p>
+        </div>
+
+        {settings ? (
+          <div className="nh-card-soft space-y-2 p-4 text-sm">
+            <p className="font-semibold">Payment destination</p>
+            <p><span className="text-muted-foreground">Bank:</span> {settings.bank_name}</p>
+            <p><span className="text-muted-foreground">Account:</span> {settings.account_number}</p>
+            <p><span className="text-muted-foreground">Name:</span> {settings.account_name}</p>
+            {settings.payment_instructions ? (
+              <p className="text-muted-foreground">{settings.payment_instructions}</p>
+            ) : null}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-dashed p-3 text-sm text-muted-foreground">
+            Club payment account details have not been published yet. You can still submit your payment evidence if Club Services has already told you where to pay.
+          </div>
+        )}
+
+        {!existingRequest ? (
+          <form
+            className="space-y-3"
+            onSubmit={(event: FormEvent<HTMLFormElement>) => {
+              event.preventDefault();
+              createRequestMutation.mutate();
+            }}
+          >
+            <div className="space-y-2">
+              <Label>Request type</Label>
+              <div className="rounded-xl border-2 border-foreground bg-muted/60 p-3 text-sm font-semibold">
+                Join as Member
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Name on account used</Label>
+              <Input value={accountName} onChange={(event) => setAccountName(event.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label>Payment reference / transaction ID</Label>
+              <Input value={reference} onChange={(event) => setReference(event.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label>Payment date</Label>
+              <Input type="date" value={paidAt} onChange={(event) => setPaidAt(event.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`proof_upload_${club.id}`}>Upload receipt (optional)</Label>
+              <Input
+                id={`proof_upload_${club.id}`}
+                type="file"
+                accept="image/*,.pdf"
+                onChange={handleReceiptUpload}
+                disabled={isUploadingProof}
+              />
+              {proofFileName ? <p className="text-xs text-muted-foreground">Uploaded: {proofFileName}</p> : null}
+              {proofUrl ? <p className="text-xs text-muted-foreground break-all">Stored path: {proofUrl}</p> : null}
+            </div>
+            <div className="space-y-2">
+              <Label>Proof URL or path</Label>
+              <Input value={proofUrl} onChange={(event) => setProofUrl(event.target.value)} placeholder="Optional receipt link" />
+            </div>
+            <div className="space-y-2">
+              <Label>Reason or note</Label>
+              <Textarea
+                value={remarks}
+                onChange={(event) => setRemarks(event.target.value)}
+                placeholder="Why do you want to join?"
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Payment note</Label>
+              <Textarea
+                value={note}
+                onChange={(event) => setNote(event.target.value)}
+                placeholder="Optional note for the reviewer"
+                rows={2}
+              />
+            </div>
+            <Button className="w-full" type="submit" disabled={createRequestMutation.isPending || isUploadingProof}>
+              {createRequestMutation.isPending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                "Pay & Submit Join Request"
+              )}
+            </Button>
+          </form>
+        ) : (
+          <div className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
+            You already have a {getStatusLabel(existingRequest.status).toLowerCase()} request for this club.
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function StudentMembershipView() {
   const { profile } = useAuth();
   const { role } = useRole();
   const [search, setSearch] = useState("");
-  const [remarksByClub, setRemarksByClub] = useState<Record<string, string>>({});
   const {
     data: clubs = [],
     isLoading: isLoadingClubs,
@@ -405,6 +619,7 @@ function StudentMembershipView() {
   } = useQuery({
     queryKey: ["my-leadership-applications"],
     queryFn: () => getMyLeadershipApplications(),
+    enabled: role !== "executive",
     retry: false
   });
   const paymentById = useMemo(
@@ -426,25 +641,6 @@ function StudentMembershipView() {
       [club.name, club.code].filter(Boolean).some((value) => value?.toLowerCase().includes(normalizedSearch))
     );
   }, [clubs, search]);
-  const createRequestMutation = useMutation({
-    mutationFn: (clubId: string) =>
-      createMembershipRequest({
-        club_id: clubId,
-        requested_role: "member",
-        remarks: remarksByClub[clubId] || undefined
-      }),
-    onSuccess: async () => {
-      toast.success("Membership request submitted", {
-        description: "Your club leadership can now review your request."
-      });
-      await queryClient.invalidateQueries({ queryKey: ["my-membership-requests"] });
-    },
-    onError: (mutationError) => {
-      toast.error("Could not submit membership request", {
-        description: getErrorMessage(mutationError)
-      });
-    }
-  });
   const activeMembershipClubs = useMemo(() => {
     const activeClubs = myRequests
       .filter((request) => request.status === "active")
@@ -507,7 +703,7 @@ function StudentMembershipView() {
             <div className="nh-empty">
               <UserPlus className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
               <p className="font-medium">No membership request yet</p>
-              <p className="mt-1 text-sm text-muted-foreground">Choose a club below and submit your first request.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Choose a club below, pay the dues, and submit your first request.</p>
             </div>
           ) : (
             <div className="grid gap-4 lg:grid-cols-2">
@@ -532,6 +728,14 @@ function StudentMembershipView() {
                       <p className="font-medium">{request.dues_amount ? formatCurrency(request.dues_amount) : "Not set yet"}</p>
                     </div>
                   </div>
+                  {request.due_payment?.status === "submitted" ? (
+                    <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">
+                      <p className="font-semibold text-primary">Payment submitted for review</p>
+                      <p className="mt-1 text-muted-foreground">
+                        {request.due_payment.payment_reference || "Reference pending"} {request.due_payment.payment_account_name ? `- Paid by ${request.due_payment.payment_account_name}` : ""}
+                      </p>
+                    </div>
+                  ) : null}
                   {request.status === "approved_pending_dues" ? (
                     <DuesConfirmationCard request={request} payment={paymentById.get(request.due_payment_id || "")} />
                   ) : null}
@@ -550,7 +754,7 @@ function StudentMembershipView() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-xl font-bold">Discover Clubs</h2>
-          <p className="text-sm text-muted-foreground">Browse clubs and request to join the ones you care about.</p>
+          <p className="text-sm text-muted-foreground">Browse clubs, pay the dues, and submit your membership request in one step.</p>
         </div>
         <div className="relative sm:w-80">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -584,83 +788,19 @@ function StudentMembershipView() {
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filteredClubs.map((club) => {
             const existingRequest = requestByClubId.get(club.id);
-            const isRequesting = createRequestMutation.isPending && createRequestMutation.variables === club.id;
-
-            return (
-              <Card key={club.id} className="overflow-hidden">
-                <CardHeader className="border-b-2 border-foreground bg-primary/10">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <CardTitle className="text-lg">{club.name}</CardTitle>
-                      <p className="text-sm text-muted-foreground">{club.code || "Nile University club"}</p>
-                    </div>
-                    {existingRequest ? <MembershipStatusBadge status={existingRequest.status} /> : null}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4 p-5">
-                  <p className="text-sm text-muted-foreground">
-                    Join this club to receive updates, participate in approved events, and become part of its official member record.
-                  </p>
-                  {!existingRequest ? (
-                    <form
-                      className="space-y-3"
-                      onSubmit={(event: FormEvent<HTMLFormElement>) => {
-                        event.preventDefault();
-                        createRequestMutation.mutate(club.id);
-                      }}
-                    >
-                      <div className="space-y-2">
-                        <Label>Request type</Label>
-                        <div className="rounded-xl border-2 border-foreground bg-muted/60 p-3 text-sm font-semibold">
-                          Join as Member
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          Leadership applications unlock after your membership and dues are active.
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Reason or note</Label>
-                        <Textarea
-                          value={remarksByClub[club.id] || ""}
-                          onChange={(event) =>
-                            setRemarksByClub((current) => ({
-                              ...current,
-                              [club.id]: event.target.value
-                            }))
-                          }
-                          placeholder="Why do you want to join?"
-                          rows={3}
-                        />
-                      </div>
-                      <Button className="w-full" type="submit" disabled={isRequesting}>
-                        {isRequesting ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Sending...
-                          </>
-                        ) : (
-                          "Request to Join"
-                        )}
-                      </Button>
-                    </form>
-                  ) : (
-                    <div className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
-                      You already have a {getStatusLabel(existingRequest.status).toLowerCase()} request for this club.
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
+            return <JoinClubCard key={club.id} club={club} existingRequest={existingRequest} />;
           })}
         </div>
       )}
-      <LeadershipApplicationPanel
-        activeClubs={activeMembershipClubs}
-        applications={leadershipApplications}
-        isLoading={isLoadingLeadershipApplications}
-        isError={leadershipApplicationsFailed}
-        error={leadershipApplicationsError}
-      />
+      {role !== "executive" ? (
+        <LeadershipApplicationPanel
+          activeClubs={activeMembershipClubs}
+          applications={leadershipApplications}
+          isLoading={isLoadingLeadershipApplications}
+          isError={leadershipApplicationsFailed}
+          error={leadershipApplicationsError}
+        />
+      ) : null}
     </div>
   );
 }
@@ -877,22 +1017,36 @@ function RequestReviewPanel({
 }) {
   const queryClient = useQueryClient();
   const [decision, setDecision] = useState<"approve" | "reject">("approve");
-  const [duesAmount, setDuesAmount] = useState("");
-  const [academicSession, setAcademicSession] = useState("2025/2026");
   const [remarks, setRemarks] = useState("");
+  const [proofLink, setProofLink] = useState<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function resolveProof() {
+      const resolved = await resolveStorageFileUrl("dues-receipts", request.due_payment?.proof_url);
+
+      if (!cancelled) {
+        setProofLink(resolved);
+      }
+    }
+
+    resolveProof();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [request.due_payment?.proof_url]);
   const decisionMutation = useMutation({
     mutationFn: () =>
       decideMembershipRequest(request.id, {
         decision,
-        dues_amount: decision === "approve" ? Number(duesAmount) : undefined,
-        academic_session: decision === "approve" ? academicSession : undefined,
         remarks: remarks || undefined
       }),
     onSuccess: async (result) => {
       toast.success(decision === "approve" ? "Request approved" : "Request rejected", {
         description:
           decision === "approve"
-            ? "An inactive member and unpaid dues record were created."
+            ? "Membership is now active and the submitted payment has been verified."
             : "The student has been notified through the request status."
       });
       await Promise.all([
@@ -919,7 +1073,7 @@ function RequestReviewPanel({
           <div>
             <CardTitle className="text-lg">Review Membership Request</CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">
-              Approving creates an inactive member and unpaid dues record. Membership activates only after dues are marked paid.
+              Review the submitted payment proof and decide whether this member should be activated.
             </p>
           </div>
           <Button type="button" variant="outline" onClick={onClose}>
@@ -943,6 +1097,34 @@ function RequestReviewPanel({
             <p className="mt-2 text-sm">
               Requested role: <span className="font-medium capitalize">{request.requested_role}</span>
             </p>
+            {request.dues_amount ? (
+              <p className="mt-2 text-sm text-muted-foreground">
+                Submitted dues: {formatCurrency(request.dues_amount)} for {request.academic_session || "the current session"}
+              </p>
+            ) : null}
+            {request.due_payment?.payment_account_name ? (
+              <p className="mt-2 text-sm text-muted-foreground">
+                Paid by {request.due_payment.payment_account_name}
+              </p>
+            ) : null}
+            {request.due_payment?.payment_reference ? (
+              <p className="text-sm text-muted-foreground">
+                Reference: {request.due_payment.payment_reference}
+              </p>
+            ) : null}
+            {request.due_payment?.payment_paid_at ? (
+              <p className="text-sm text-muted-foreground">
+                Paid on: {formatDate(request.due_payment.payment_paid_at)}
+              </p>
+            ) : null}
+            {request.due_payment?.payer_note ? (
+              <p className="mt-2 text-sm text-muted-foreground">{request.due_payment.payer_note}</p>
+            ) : null}
+            {proofLink ? (
+              <a className="mt-2 inline-block text-sm text-primary underline" href={proofLink} target="_blank" rel="noreferrer">
+                View payment proof
+              </a>
+            ) : null}
             {request.remarks ? <p className="mt-2 text-sm text-muted-foreground">{request.remarks}</p> : null}
           </div>
           <div className="space-y-2">
@@ -957,30 +1139,6 @@ function RequestReviewPanel({
               </SelectContent>
             </Select>
           </div>
-          {decision === "approve" ? (
-            <>
-              <div className="space-y-2">
-                <Label>Dues amount</Label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={duesAmount}
-                  onChange={(event) => setDuesAmount(event.target.value)}
-                  placeholder="5000"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Academic session</Label>
-                <Input
-                  value={academicSession}
-                  onChange={(event) => setAcademicSession(event.target.value)}
-                  placeholder="2025/2026"
-                  required
-                />
-              </div>
-            </>
-          ) : null}
           <div className="space-y-2 lg:col-span-2">
             <Label>Decision remarks</Label>
             <Textarea
@@ -998,7 +1156,7 @@ function RequestReviewPanel({
                   Saving...
                 </>
               ) : decision === "approve" ? (
-                "Approve and Create Dues"
+                "Approve Membership"
               ) : (
                 "Reject Request"
               )}
@@ -1353,7 +1511,7 @@ function ReviewerMembershipView() {
         </Badge>
         <h1 className="text-3xl font-bold">Membership Requests</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Review student requests, approve dues requirements, and activate official club membership after payment.
+          Review paid join requests, verify the submitted dues, and activate official club membership.
         </p>
       </div>
 
@@ -1366,7 +1524,7 @@ function ReviewerMembershipView() {
         </Card>
         <Card>
           <CardContent className="p-5">
-            <p className="text-sm text-muted-foreground">Awaiting Dues</p>
+            <p className="text-sm text-muted-foreground">Legacy Dues Follow-up</p>
             <p className="mt-1 text-2xl font-bold text-primary">{summary.dues}</p>
           </CardContent>
         </Card>
@@ -1521,22 +1679,6 @@ function ReviewerMembershipView() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <WalletCards className="h-9 w-9 rounded-xl bg-primary/10 p-2 text-primary" />
-            <div>
-              <p className="font-semibold">Dues activation happens on the Dues page</p>
-              <p className="text-sm text-muted-foreground">
-                After approval, mark the created dues record as paid to activate official membership.
-              </p>
-            </div>
-          </div>
-          <Button asChild variant="outline">
-            <a href="/dues">Open Dues</a>
-          </Button>
-        </CardContent>
-      </Card>
     </div>
   );
 }

@@ -79,20 +79,6 @@ async function completeProfileOnboarding(options) {
     account_status: "active"
   });
 
-  if (!isAdvisorOnboarding && database.createMembershipRequest && database.getOpenMembershipRequest) {
-    const existingRequest = await database.getOpenMembershipRequest(authUser.id, validatedPayload.club_id);
-
-    if (!existingRequest) {
-      await database.createMembershipRequest({
-        profile_id: authUser.id,
-        club_id: validatedPayload.club_id,
-        requested_role: "member",
-        status: "pending",
-        remarks: "Created during profile onboarding."
-      });
-    }
-  }
-
   return formatProfile(profile, authUser);
 }
 

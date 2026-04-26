@@ -2,6 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { createApp } = require("../src/app");
 const {
+  applyDuesAmountToAllClubs,
   createDuePayment,
   getPaymentSettings,
   listDuePayments,
@@ -332,7 +333,12 @@ test("student cannot submit payment confirmation for another member", async () =
 
 test("president can save and fetch payment settings for their club", async () => {
   let savedSettings;
+  let updatedClubDuesAmount;
   const fakeDatabase = {
+    async updateClubDuesAmount(clubId, duesAmount) {
+      updatedClubDuesAmount = { clubId, duesAmount };
+      return { id: clubId, dues_amount: duesAmount };
+    },
     async upsertClubPaymentSettings(settings) {
       savedSettings = settings;
       return {
@@ -366,6 +372,7 @@ test("president can save and fetch payment settings for their club", async () =>
   const settings = await upsertPaymentSettings({
     actor,
     payload: {
+      dues_amount: 5000,
       bank_name: "Zenith Bank",
       account_number: "1234567890",
       account_name: "Nile Innovators Club",
@@ -380,8 +387,34 @@ test("president can save and fetch payment settings for their club", async () =>
   });
 
   assert.equal(savedSettings.club_id, "club-1");
+  assert.equal(updatedClubDuesAmount.duesAmount, 5000);
   assert.equal(settings.bank_name, "Zenith Bank");
   assert.equal(fetchedSettings.account_number, "1234567890");
+});
+
+test("admin can apply one dues amount to all clubs", async () => {
+  let appliedAmount;
+  const fakeDatabase = {
+    async updateAllClubDuesAmounts(duesAmount) {
+      appliedAmount = duesAmount;
+      return [{ id: "club-1" }, { id: "club-2" }];
+    }
+  };
+
+  const result = await applyDuesAmountToAllClubs({
+    actor: {
+      id: "admin-1",
+      role: "admin",
+      clubId: null
+    },
+    payload: {
+      dues_amount: 5000
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(appliedAmount, 5000);
+  assert.equal(result.clubs_updated, 2);
 });
 
 test("president cannot manage dues for another club", async () => {

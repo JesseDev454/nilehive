@@ -77,12 +77,14 @@ function createPayment(overrides = {}) {
   };
 }
 
-test("student can create a membership request", async () => {
+test("student can create a paid membership request", async () => {
+  let createdMember;
+  let createdPayment;
   let createdRequest;
   const fakeDatabase = {
     async getClubById(clubId) {
       assert.equal(clubId, "club-1");
-      return { id: "club-1", name: "Nile Innovators Club" };
+      return { id: "club-1", name: "Nile Innovators Club", dues_amount: 5000 };
     },
     async getClubMemberByProfileAndClub() {
       return null;
@@ -90,9 +92,36 @@ test("student can create a membership request", async () => {
     async getOpenMembershipRequest() {
       return null;
     },
+    async getProfileById() {
+      return createProfile();
+    },
+    async createClubMember(member) {
+      createdMember = member;
+      return createMember(member);
+    },
+    async createDuePayment(payment) {
+      createdPayment = payment;
+      return createPayment({
+        ...payment,
+        status: "submitted",
+        payment_account_name: "Ada Student",
+        payment_reference: "JOIN-001"
+      });
+    },
     async createMembershipRequest(request) {
       createdRequest = request;
-      return createRequest(request);
+      return createRequest({
+        ...request,
+        due_payment: createPayment({
+          id: request.due_payment_id,
+          member_id: request.member_id,
+          amount: request.dues_amount,
+          academic_session: request.academic_session,
+          status: "submitted",
+          payment_account_name: "Ada Student",
+          payment_reference: "JOIN-001"
+        })
+      });
     }
   };
 
@@ -105,13 +134,21 @@ test("student can create a membership request", async () => {
     payload: {
       club_id: "club-1",
       requested_role: "member",
-      remarks: "I want to help run events."
+      remarks: "I want to help run events.",
+      payment_account_name: "Ada Student",
+      payment_reference: "JOIN-001",
+      payment_paid_at: "2026-04-18",
+      proof_url: "https://example.com/proof.png",
+      payer_note: "Paid this morning."
     },
     database: fakeDatabase
   });
 
   assert.equal(createdRequest.profile_id, "student-1");
   assert.equal(createdRequest.status, "pending");
+  assert.equal(createdMember.membership_status, "inactive");
+  assert.equal(createdPayment.status, "submitted");
+  assert.equal(createdRequest.dues_amount, 5000);
   assert.equal(request.requested_role, "member");
 });
 
@@ -139,7 +176,9 @@ test("membership request creation rejects leadership roles", async () => {
         payload: {
           club_id: "club-1",
           requested_role: "executive",
-          remarks: "I want to help run events."
+          remarks: "I want to help run events.",
+          payment_account_name: "Ada Student",
+          payment_reference: "JOIN-001"
         },
         database: fakeDatabase
       }),
@@ -147,34 +186,47 @@ test("membership request creation rejects leadership roles", async () => {
   );
 });
 
-test("president approval creates inactive member and unpaid dues record", async () => {
-  let createdMember;
-  let createdPayment;
+test("president approval activates membership and verifies the submitted payment", async () => {
+  let updatedPayment;
+  let memberStatusUpdate;
   let requestUpdate;
   const fakeDatabase = {
     async getMembershipRequestById(requestId) {
       assert.equal(requestId, "request-1");
-      return createRequest();
+      return createRequest({
+        member_id: "member-1",
+        due_payment_id: "payment-1",
+        dues_amount: 5000,
+        academic_session: "2025/2026"
+      });
     },
-    async getProfileById(profileId) {
-      assert.equal(profileId, "student-1");
-      return createProfile();
+    async getClubMemberById(memberId) {
+      assert.equal(memberId, "member-1");
+      return createMember();
     },
-    async getClubMemberByProfileAndClub() {
-      return null;
+    async updateDuePayment(paymentId, update) {
+      updatedPayment = update;
+      return createPayment({
+        id: paymentId,
+        status: "paid",
+        ...update
+      });
     },
-    async createClubMember(member) {
-      createdMember = member;
-      return createMember(member);
-    },
-    async createDuePayment(payment) {
-      createdPayment = payment;
-      return createPayment(payment);
+    async updateClubMember(memberId, update) {
+      memberStatusUpdate = update;
+      return createMember({
+        id: memberId,
+        ...update
+      });
     },
     async updateMembershipRequest(requestId, update) {
       requestUpdate = update;
       return createRequest({
         id: requestId,
+        member_id: "member-1",
+        due_payment_id: "payment-1",
+        dues_amount: 5000,
+        academic_session: "2025/2026",
         ...update
       });
     }
@@ -189,19 +241,15 @@ test("president approval creates inactive member and unpaid dues record", async 
     requestId: "request-1",
     payload: {
       decision: "approve",
-      dues_amount: 5000,
-      academic_session: "2025/2026",
-      remarks: "Pay dues to complete membership."
+      remarks: "Payment verified."
     },
     database: fakeDatabase
   });
 
-  assert.equal(createdMember.membership_status, "inactive");
-  assert.equal(createdMember.club_role, "member");
-  assert.equal(createdPayment.status, "unpaid");
-  assert.equal(createdPayment.amount, 5000);
-  assert.equal(requestUpdate.status, "approved_pending_dues");
-  assert.equal(result.request.status, "approved_pending_dues");
+  assert.equal(updatedPayment.status, "paid");
+  assert.equal(memberStatusUpdate.membership_status, "active");
+  assert.equal(requestUpdate.status, "active");
+  assert.equal(result.request.status, "active");
 });
 
 test("president cannot approve president membership requests", async () => {
@@ -224,8 +272,7 @@ test("president cannot approve president membership requests", async () => {
         requestId: "request-1",
         payload: {
           decision: "approve",
-          dues_amount: 5000,
-          academic_session: "2025/2026"
+          remarks: "Not allowed"
         },
         database: fakeDatabase
       }),
@@ -253,8 +300,7 @@ test("president cannot approve executive membership requests", async () => {
         requestId: "request-1",
         payload: {
           decision: "approve",
-          dues_amount: 5000,
-          academic_session: "2025/2026"
+          remarks: "Not allowed"
         },
         database: fakeDatabase
       }),

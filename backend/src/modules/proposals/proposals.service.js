@@ -189,6 +189,18 @@ function formatApproval(approval) {
   };
 }
 
+function formatClubReference(club) {
+  if (!club) {
+    return null;
+  }
+
+  return {
+    id: club.id,
+    name: club.name,
+    code: club.code ?? null
+  };
+}
+
 function withApprovalHistory(formattedProposal, approvalHistory) {
   if (!Array.isArray(approvalHistory)) {
     return formattedProposal;
@@ -204,6 +216,7 @@ function formatExecutiveProposal(proposal, latestApproval = null, approvalHistor
   return withApprovalHistory({
     id: proposal.id,
     club_id: proposal.club_id,
+    club: formatClubReference(proposal.club),
     title: proposal.title,
     description: proposal.description,
     event_date: proposal.event_date,
@@ -239,6 +252,7 @@ function formatAdminProposal(proposal, latestApproval = null, approvalHistory = 
     title: proposal.title,
     description: proposal.description,
     club_id: proposal.club_id,
+    club: formatClubReference(proposal.club),
     submitted_by: proposal.submitted_by,
     event_date: proposal.event_date,
     location: proposal.location,

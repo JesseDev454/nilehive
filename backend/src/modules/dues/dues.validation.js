@@ -47,6 +47,18 @@ function readAmount(payload) {
   return amount;
 }
 
+function readDuesAmount(payload, fieldName = "dues_amount") {
+  const amount = Number(payload[fieldName]);
+
+  if (!Number.isFinite(amount) || amount < 0) {
+    throw new ApiError(400, "Dues amount must be a non-negative number", "VALIDATION_ERROR", {
+      field: fieldName
+    });
+  }
+
+  return amount;
+}
+
 function readStatus(payload, fallback) {
   const status = readOptionalString(payload, "status") || fallback;
 
@@ -84,10 +96,17 @@ function validatePaymentConfirmationPayload(payload = {}) {
 function validatePaymentSettingsPayload(payload = {}) {
   return {
     club_id: readOptionalString(payload, "club_id"),
+    dues_amount: Object.prototype.hasOwnProperty.call(payload, "dues_amount") ? readDuesAmount(payload) : null,
     bank_name: readRequiredString(payload, "bank_name", "Bank name"),
     account_number: readRequiredString(payload, "account_number", "Account number"),
     account_name: readRequiredString(payload, "account_name", "Account name"),
     payment_instructions: readOptionalString(payload, "payment_instructions")
+  };
+}
+
+function validateBulkDuesAmountPayload(payload = {}) {
+  return {
+    dues_amount: readDuesAmount(payload)
   };
 }
 
@@ -135,6 +154,7 @@ function validateUpdateDuePaymentPayload(payload = {}) {
 
 module.exports = {
   DUE_PAYMENT_STATUSES,
+  validateBulkDuesAmountPayload,
   validateCreateDuePaymentPayload,
   validatePaymentConfirmationPayload,
   validatePaymentSettingsPayload,

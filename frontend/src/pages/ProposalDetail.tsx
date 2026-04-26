@@ -58,6 +58,10 @@ function formatCurrency(value?: number | null) {
   }).format(value || 0);
 }
 
+function getProposalClubLabel(proposal: ProposalRecord) {
+  return proposal.club?.name || "Unknown club";
+}
+
 function buildApprovalSteps(proposal: ProposalRecord) {
   const advisorDecision = proposal.approval_history?.find((approval) => approval.reviewer_role === "advisor");
   const adminDecision = proposal.approval_history?.find((approval) => approval.reviewer_role === "admin");
@@ -231,7 +235,7 @@ export default function ProposalDetail() {
             title={proposal.title}
             description={`${
               role === "admin" || role === "advisor"
-                ? `Submitted by the club president for club ${proposal.club_id ?? "-"}`
+                ? `Submitted by the club president for ${getProposalClubLabel(proposal)}`
                 : "President-owned club proposal"
             } - ${getDateLabel(proposal.created_at)}`}
             actions={<StatusBadge status={proposal.status} />}

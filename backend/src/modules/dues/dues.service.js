@@ -2,6 +2,7 @@ const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
 const { writeAuditLog } = require("../../shared/auditLog");
 const {
+  validateBulkDuesAmountPayload,
   validateCreateDuePaymentPayload,
   validatePaymentConfirmationPayload,
   validatePaymentSettingsPayload,
@@ -321,15 +322,45 @@ async function upsertPaymentSettings(options) {
     });
   }
 
+  if (validatedPayload.dues_amount !== null && typeof database.updateClubDuesAmount === "function") {
+    await database.updateClubDuesAmount(clubId, validatedPayload.dues_amount);
+  }
+
   const settings = await database.upsertClubPaymentSettings({
-    ...validatedPayload,
+    bank_name: validatedPayload.bank_name,
+    account_number: validatedPayload.account_number,
+    account_name: validatedPayload.account_name,
+    payment_instructions: validatedPayload.payment_instructions,
     club_id: clubId
   });
 
   return formatPaymentSettings(settings);
 }
 
+async function applyDuesAmountToAllClubs(options) {
+  const { actor, payload, database = db } = options;
+  requireActor(actor);
+
+  if (actor.role !== "admin") {
+    throw new ApiError(403, "Only Club Services admins can set dues for every club at once", "FORBIDDEN");
+  }
+
+  const validatedPayload = validateBulkDuesAmountPayload(payload);
+
+  if (typeof database.updateAllClubDuesAmounts !== "function") {
+    throw new ApiError(500, "Bulk dues updates are not available", "DATABASE_UNAVAILABLE");
+  }
+
+  const clubs = await database.updateAllClubDuesAmounts(validatedPayload.dues_amount);
+
+  return {
+    dues_amount: validatedPayload.dues_amount,
+    clubs_updated: clubs.length
+  };
+}
+
 module.exports = {
+  applyDuesAmountToAllClubs,
   createDuePayment,
   getPaymentSettings,
   listDuePayments,

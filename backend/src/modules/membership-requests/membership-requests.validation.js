@@ -35,6 +35,22 @@ function readAmount(payload) {
   return amount;
 }
 
+function readOptionalDate(payload, fieldName) {
+  const value = readOptionalString(payload, fieldName);
+
+  if (!value) {
+    return null;
+  }
+
+  if (Number.isNaN(Date.parse(value))) {
+    throw new ApiError(400, `${fieldName} must be a valid date`, "VALIDATION_ERROR", {
+      field: fieldName
+    });
+  }
+
+  return value;
+}
+
 function validateCreateMembershipRequestPayload(payload = {}) {
   const requestedRole = readOptionalString(payload, "requested_role") || "member";
 
@@ -47,7 +63,13 @@ function validateCreateMembershipRequestPayload(payload = {}) {
   return {
     club_id: readRequiredString(payload, "club_id", "Club"),
     requested_role: requestedRole,
-    remarks: readOptionalString(payload, "remarks")
+    remarks: readOptionalString(payload, "remarks"),
+    payment_account_name: readRequiredString(payload, "payment_account_name", "Name on account"),
+    payment_reference: readRequiredString(payload, "payment_reference", "Payment reference"),
+    payment_paid_at: readOptionalDate(payload, "payment_paid_at"),
+    proof_url: readOptionalString(payload, "proof_url"),
+    payer_note: readOptionalString(payload, "payer_note"),
+    academic_session: readOptionalString(payload, "academic_session")
   };
 }
 
@@ -72,8 +94,8 @@ function validateMembershipRequestDecisionPayload(payload = {}) {
   return {
     decision,
     decision_remarks: readOptionalString(payload, "remarks"),
-    dues_amount: readAmount(payload),
-    academic_session: readRequiredString(payload, "academic_session", "Academic session")
+    dues_amount: null,
+    academic_session: null
   };
 }
 

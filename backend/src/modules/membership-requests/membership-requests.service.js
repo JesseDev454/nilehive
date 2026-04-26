@@ -6,6 +6,7 @@ const {
   validateMembershipRequestDecisionPayload
 } = require("./membership-requests.validation");
 const {
+  getCurrentAcademicSession,
   updateMemberStatus
 } = require("../members/member-status");
 
@@ -45,6 +46,28 @@ function formatMembershipRequest(request) {
           id: request.club.id,
           name: request.club.name,
           code: request.club.code
+        }
+      : null,
+    due_payment: request.due_payment
+      ? {
+          id: request.due_payment.id,
+          club_id: request.due_payment.club_id,
+          member_id: request.due_payment.member_id,
+          amount: request.due_payment.amount === null || request.due_payment.amount === undefined
+            ? null
+            : Number(request.due_payment.amount),
+          academic_session: request.due_payment.academic_session,
+          payment_reference: request.due_payment.payment_reference,
+          payment_account_name: request.due_payment.payment_account_name,
+          payment_paid_at: request.due_payment.payment_paid_at,
+          payer_note: request.due_payment.payer_note,
+          proof_url: request.due_payment.proof_url,
+          submitted_at: request.due_payment.submitted_at,
+          status: request.due_payment.status,
+          verified_by: request.due_payment.verified_by,
+          verified_at: request.due_payment.verified_at,
+          created_at: request.due_payment.created_at,
+          updated_at: request.due_payment.updated_at
         }
       : null,
     created_at: request.created_at,
@@ -101,12 +124,60 @@ async function createMembershipRequest(options) {
     throw new ApiError(409, "You already have an open membership request for this club", "REQUEST_ALREADY_OPEN");
   }
 
+  const profile = await database.getProfileById(actor.id);
+
+  if (!profile) {
+    throw new ApiError(404, "Profile not found", "PROFILE_NOT_FOUND");
+  }
+
+  const duesAmount = club.dues_amount === null || club.dues_amount === undefined
+    ? 5000
+    : Number(club.dues_amount);
+  const academicSession = validatedPayload.academic_session || getCurrentAcademicSession();
+  const member = existingMember
+    ? await database.updateClubMember(existingMember.id, {
+        full_name: profile.full_name,
+        student_id: profile.student_id,
+        club_role: validatedPayload.requested_role,
+        membership_status: "inactive"
+      })
+    : await database.createClubMember({
+        club_id: validatedPayload.club_id,
+        profile_id: actor.id,
+        full_name: profile.full_name,
+        student_id: profile.student_id,
+        email: null,
+        phone_number: null,
+        club_role: validatedPayload.requested_role,
+        membership_status: "inactive"
+      });
+
+  const payment = await database.createDuePayment({
+    club_id: validatedPayload.club_id,
+    member_id: member.id,
+    amount: duesAmount,
+    academic_session: academicSession,
+    payment_reference: validatedPayload.payment_reference,
+    payment_account_name: validatedPayload.payment_account_name,
+    payment_paid_at: validatedPayload.payment_paid_at,
+    payer_note: validatedPayload.payer_note,
+    proof_url: validatedPayload.proof_url,
+    submitted_at: new Date().toISOString(),
+    status: "submitted",
+    verified_by: null,
+    verified_at: null
+  });
+
   const request = await database.createMembershipRequest({
     profile_id: actor.id,
     club_id: validatedPayload.club_id,
     requested_role: validatedPayload.requested_role,
     status: "pending",
-    remarks: validatedPayload.remarks
+    remarks: validatedPayload.remarks,
+    member_id: member.id,
+    due_payment_id: payment.id,
+    dues_amount: duesAmount,
+    academic_session: academicSession
   });
 
   return formatMembershipRequest(request);
@@ -150,65 +221,45 @@ async function listMembershipRequests(options) {
 }
 
 async function approveMembershipRequest({ actor, request, decisionPayload, database }) {
-  const profile = await database.getProfileById(request.profile_id);
-
-  if (!profile) {
-    throw new ApiError(404, "Request profile not found", "PROFILE_NOT_FOUND");
-  }
-
-  const existingMember = database.getClubMemberByProfileAndClub
-    ? await database.getClubMemberByProfileAndClub(request.profile_id, request.club_id)
+  const now = new Date().toISOString();
+  const member = request.member_id && database.getClubMemberById
+    ? await database.getClubMemberById(request.member_id)
     : null;
 
-  if (existingMember?.membership_status === "active") {
-    throw new ApiError(409, "This profile is already an active member", "ALREADY_MEMBER");
+  if (!member) {
+    throw new ApiError(409, "This request is missing its pending member record", "MEMBERSHIP_MEMBER_MISSING");
   }
 
-  const now = new Date().toISOString();
-  const member = existingMember
-    ? await database.updateClubMember(existingMember.id, {
-        full_name: profile.full_name,
-        student_id: profile.student_id,
-        club_role: request.requested_role,
-        membership_status: "inactive"
-      })
-    : await database.createClubMember({
-        club_id: request.club_id,
-        profile_id: request.profile_id,
-        full_name: profile.full_name,
-        student_id: profile.student_id,
-        email: null,
-        phone_number: null,
-        club_role: request.requested_role,
-        membership_status: "inactive"
-      });
+  if (!request.due_payment_id) {
+    throw new ApiError(409, "This request has no submitted dues payment to review yet", "DUES_PAYMENT_REQUIRED");
+  }
 
-  const payment = await database.createDuePayment({
-    club_id: request.club_id,
-    member_id: member.id,
-    amount: decisionPayload.dues_amount,
-    academic_session: decisionPayload.academic_session,
-    payment_reference: null,
-    proof_url: null,
-    status: "unpaid",
-    verified_by: null,
-    verified_at: null
+  const payment = await database.updateDuePayment(request.due_payment_id, {
+    status: "paid",
+    verified_by: actor.id,
+    verified_at: now
+  });
+
+  const activeMember = await updateMemberStatus({
+    database,
+    member,
+    actor,
+    nextStatus: "active",
+    reason: `Membership request approved for ${request.academic_session || getCurrentAcademicSession()}`
   });
 
   const updatedRequest = await database.updateMembershipRequest(request.id, {
-    status: "approved_pending_dues",
+    status: "active",
     decision_remarks: decisionPayload.decision_remarks,
     reviewed_by: actor.id,
     reviewed_at: now,
-    member_id: member.id,
-    due_payment_id: payment.id,
-    dues_amount: decisionPayload.dues_amount,
-    academic_session: decisionPayload.academic_session
+    member_id: activeMember.id,
+    due_payment_id: payment?.id || request.due_payment_id
   });
 
   return {
     request: formatMembershipRequest(updatedRequest),
-    member,
+    member: activeMember,
     due_payment: payment
   };
 }
@@ -232,6 +283,13 @@ async function decideMembershipRequest(options) {
   const decisionPayload = validateMembershipRequestDecisionPayload(payload);
 
   if (decisionPayload.decision === "reject") {
+    const payment = request.due_payment_id
+      ? await database.updateDuePayment(request.due_payment_id, {
+          status: "rejected",
+          verified_by: actor.id,
+          verified_at: new Date().toISOString()
+        })
+      : null;
     const updatedRequest = await database.updateMembershipRequest(request.id, {
       status: "rejected",
       decision_remarks: decisionPayload.decision_remarks,
@@ -242,7 +300,7 @@ async function decideMembershipRequest(options) {
     return {
       request: formatMembershipRequest(updatedRequest),
       member: null,
-      due_payment: null
+      due_payment: payment
     };
   }
 
