@@ -70,15 +70,15 @@ export default function Proposals() {
       return {
         eyebrow: "Club Services Review",
         title: "Final Review",
-        description: "Review proposal movement across clubs without changing president-owned proposal access."
+        description: "See what each club has submitted and step in when Club Services review is needed."
       };
     }
 
     if (isPresident) {
       return {
-        eyebrow: "Club Leadership",
+        eyebrow: "Club Planning",
         title: "Club Proposals",
-        description: "Create, continue, resubmit, and track proposals submitted by the club president."
+        description: "Start a new proposal, continue a draft, and keep track of feedback for your club."
       };
     }
 
@@ -130,14 +130,14 @@ export default function Proposals() {
         <NeoStateCard
           icon={FileText}
           title="Proposal access is restricted"
-          message="Executives use tasks and approved events. Proposal creation and review belong to presidents, advisors, and Club Services."
+          message="Presidents create proposals here, while advisors and Club Services review them. Executives can follow club work through tasks and approved events."
         />
       ) : isLoading ? (
-        <NeoLoadingState title="Loading proposal records" message="We are getting the latest proposal records." />
+        <NeoLoadingState title="Loading proposals" message="We are getting the latest proposal updates." />
       ) : isError ? (
         <NeoStateCard icon={FileText} title="Unable to load proposals" message={getErrorMessage(error)} tone="danger" />
       ) : proposals.length === 0 ? (
-        <NeoStateCard icon={FileText} title="No proposals found" message="Proposal records will appear here once the club president starts a proposal." />
+        <NeoStateCard icon={FileText} title="No proposals yet" message="Your club's proposals will appear here once one has been started." />
       ) : (
         <Card>
           <CardContent className="p-0">
@@ -147,7 +147,7 @@ export default function Proposals() {
                   <tr className="border-b-2 border-foreground bg-primary text-primary-foreground">
                     <th className="p-4 text-left text-xs font-black uppercase tracking-[0.14em]">Title</th>
                     <th className="hidden p-4 text-left text-xs font-black uppercase tracking-[0.14em] md:table-cell">
-                      {isAdmin ? "Club" : "Currently With"}
+                      {isAdmin ? "Club" : "Waiting On"}
                     </th>
                     <th className="hidden p-4 text-left text-xs font-black uppercase tracking-[0.14em] sm:table-cell">Date</th>
                     <th className="p-4 text-left text-xs font-black uppercase tracking-[0.14em]">Status</th>

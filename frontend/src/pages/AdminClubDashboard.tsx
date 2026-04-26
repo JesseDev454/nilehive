@@ -122,6 +122,7 @@ export default function AdminClubDashboard() {
   }
 
   const { club, summary } = dashboard;
+  const visibleRecentMembers = dashboard.recent_members.filter((member) => member.membership_status !== "alumni");
 
   return (
     <div className="nh-page">
@@ -214,10 +215,10 @@ export default function AdminClubDashboard() {
             <CardTitle className="text-lg">Recent Members</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {!dashboard.recent_members.length ? (
+            {!visibleRecentMembers.length ? (
               <p className="text-sm text-muted-foreground">No members are recorded yet.</p>
             ) : (
-              dashboard.recent_members.map((member) => (
+              visibleRecentMembers.map((member) => (
                 <div key={member.id} className="nh-list-card">
                   <p className="font-semibold">{member.full_name}</p>
                   <p className="text-xs text-muted-foreground">{member.student_id} - {member.club_role} - {member.membership_status}</p>

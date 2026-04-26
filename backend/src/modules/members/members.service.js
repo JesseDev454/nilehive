@@ -78,6 +78,7 @@ async function listMembers(options) {
     clubId,
     clubRoles: filters.team === "executive" ? ["executive", "president"] : undefined,
     membershipStatus: filters.membership_status,
+    excludeMembershipStatuses: filters.membership_status ? undefined : ["alumni"],
     ...(pagination
       ? {
           pagination,

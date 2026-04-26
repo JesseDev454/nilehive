@@ -2,6 +2,8 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { createApp } = require("../src/app");
 const {
+  applyClubPaymentProfileToAllClubs,
+  applyPaymentSettingsToAllClubs,
   applyDuesAmountToAllClubs,
   createDuePayment,
   getPaymentSettings,
@@ -414,6 +416,70 @@ test("admin can apply one dues amount to all clubs", async () => {
   });
 
   assert.equal(appliedAmount, 5000);
+  assert.equal(result.clubs_updated, 2);
+});
+
+test("admin can apply one payment account to all clubs", async () => {
+  let savedSettings;
+  const fakeDatabase = {
+    async upsertAllClubPaymentSettings(settings) {
+      savedSettings = settings;
+      return [{ id: "settings-1" }, { id: "settings-2" }];
+    }
+  };
+
+  const result = await applyPaymentSettingsToAllClubs({
+    actor: {
+      id: "admin-1",
+      role: "admin",
+      clubId: null
+    },
+    payload: {
+      bank_name: "Zenith Bank",
+      account_number: "1234567890",
+      account_name: "Club Services Account",
+      payment_instructions: "Use your student ID as payment reference."
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(savedSettings.bank_name, "Zenith Bank");
+  assert.equal(savedSettings.account_number, "1234567890");
+  assert.equal(result.clubs_updated, 2);
+});
+
+test("admin can apply one dues amount and payment account profile to all clubs", async () => {
+  let appliedAmount;
+  let savedSettings;
+  const fakeDatabase = {
+    async updateAllClubDuesAmounts(duesAmount) {
+      appliedAmount = duesAmount;
+      return [{ id: "club-1" }, { id: "club-2" }];
+    },
+    async upsertAllClubPaymentSettings(settings) {
+      savedSettings = settings;
+      return [{ id: "settings-1" }, { id: "settings-2" }];
+    }
+  };
+
+  const result = await applyClubPaymentProfileToAllClubs({
+    actor: {
+      id: "admin-1",
+      role: "admin",
+      clubId: null
+    },
+    payload: {
+      dues_amount: 5000,
+      bank_name: "Zenith Bank",
+      account_number: "1234567890",
+      account_name: "Club Services Account",
+      payment_instructions: "Use your student ID as payment reference."
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(appliedAmount, 5000);
+  assert.equal(savedSettings.account_name, "Club Services Account");
   assert.equal(result.clubs_updated, 2);
 });
 

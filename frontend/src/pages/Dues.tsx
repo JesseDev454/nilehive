@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/contexts/RoleContext";
 import {
-  applyClubDuesAmountToAll,
+  applyClubPaymentProfileToAll,
   ApiClientError,
   createDuePayment,
   getClubMembers,
@@ -62,6 +62,10 @@ export default function Dues() {
   const [selectedClubId, setSelectedClubId] = useState("");
   const [selectedClubDuesAmount, setSelectedClubDuesAmount] = useState("5000");
   const [globalDuesAmount, setGlobalDuesAmount] = useState("5000");
+  const [globalBankName, setGlobalBankName] = useState("");
+  const [globalAccountNumber, setGlobalAccountNumber] = useState("");
+  const [globalAccountName, setGlobalAccountName] = useState("");
+  const [globalPaymentInstructions, setGlobalPaymentInstructions] = useState("");
   const [amount, setAmount] = useState("");
   const [academicSession, setAcademicSession] = useState("2025/2026");
   const [paymentReference, setPaymentReference] = useState("");
@@ -219,16 +223,27 @@ export default function Dues() {
     }
   });
   const bulkDuesMutation = useMutation({
-    mutationFn: () => applyClubDuesAmountToAll(Number(globalDuesAmount)),
+    mutationFn: () =>
+      applyClubPaymentProfileToAll({
+        dues_amount: Number(globalDuesAmount),
+        bank_name: globalBankName,
+        account_number: globalAccountNumber,
+        account_name: globalAccountName,
+        payment_instructions: globalPaymentInstructions || null
+      }),
     onSuccess: async (result) => {
-      actionSuccess("Global dues updated", `Applied ${formatCurrency(result.dues_amount)} to ${result.clubs_updated} club records.`);
+      actionSuccess(
+        "Universal club payment profile applied",
+        `Applied ${formatCurrency(result.dues_amount)} and the shared payment account to ${result.clubs_updated} club records.`
+      );
       await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["club-payment-settings"] }),
         queryClient.invalidateQueries({ queryKey: ["dues-form-clubs"] }),
         queryClient.invalidateQueries({ queryKey: ["public-clubs"] })
       ]);
     },
     onError: (mutationError) => {
-      actionError("Could not update global dues", mutationError, getErrorMessage(mutationError));
+      actionError("Could not apply universal club payment profile", mutationError, getErrorMessage(mutationError));
     }
   });
   const updateMutation = useMutation({
@@ -435,17 +450,17 @@ export default function Dues() {
       {role === "admin" ? (
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Apply One Dues Amount To Every Club</CardTitle>
+            <CardTitle className="text-lg">Apply One Club Payment Profile To Every Club</CardTitle>
           </CardHeader>
           <CardContent>
             <form
-              className="flex flex-col gap-3 sm:flex-row sm:items-end"
+              className="nh-form-grid"
               onSubmit={(event) => {
                 event.preventDefault();
                 bulkDuesMutation.mutate();
               }}
             >
-              <div className="flex-1 space-y-2">
+              <div className="space-y-2">
                 <Label htmlFor="global_dues_amount">Universal Join Dues</Label>
                 <Input
                   id="global_dues_amount"
@@ -457,16 +472,57 @@ export default function Dues() {
                   required
                 />
               </div>
-              <Button type="submit" disabled={bulkDuesMutation.isPending}>
-                {bulkDuesMutation.isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Applying...
-                  </>
-                ) : (
-                  "Apply To All Clubs"
-                )}
-              </Button>
+              <div className="space-y-2">
+                <Label htmlFor="global_bank_name">Bank Name</Label>
+                <Input
+                  id="global_bank_name"
+                  value={globalBankName}
+                  onChange={(event) => setGlobalBankName(event.target.value)}
+                  placeholder="Zenith Bank"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="global_account_number">Account Number</Label>
+                <Input
+                  id="global_account_number"
+                  value={globalAccountNumber}
+                  onChange={(event) => setGlobalAccountNumber(event.target.value)}
+                  placeholder="1234567890"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="global_account_name">Account Name</Label>
+                <Input
+                  id="global_account_name"
+                  value={globalAccountName}
+                  onChange={(event) => setGlobalAccountName(event.target.value)}
+                  placeholder="Club Services Account"
+                  required
+                />
+              </div>
+              <div className="space-y-2 lg:col-span-2">
+                <Label htmlFor="global_payment_instructions">Payment Instructions</Label>
+                <Input
+                  id="global_payment_instructions"
+                  value={globalPaymentInstructions}
+                  onChange={(event) => setGlobalPaymentInstructions(event.target.value)}
+                  placeholder="Use your student ID as narration or payment reference"
+                />
+              </div>
+              <div className="lg:col-span-2 flex justify-end">
+                <Button type="submit" disabled={bulkDuesMutation.isPending}>
+                  {bulkDuesMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Applying...
+                    </>
+                  ) : (
+                    "Apply To All Clubs"
+                  )}
+                </Button>
+              </div>
             </form>
           </CardContent>
         </Card>

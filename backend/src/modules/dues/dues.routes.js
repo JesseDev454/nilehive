@@ -20,7 +20,9 @@ function createDuesRouter(options = {}) {
   router.get("/me", auth, controller.listMyDuePayments);
   router.get("/payment-settings", auth, controller.getPaymentSettings);
   router.post("/payment-settings", auth, controller.upsertPaymentSettings);
+  router.post("/payment-settings/apply-club-profile-all", auth, controller.applyClubPaymentProfileToAllClubs);
   router.post("/payment-settings/apply-all", auth, controller.applyDuesAmountToAllClubs);
+  router.post("/payment-settings/apply-account-all", auth, controller.applyPaymentSettingsToAllClubs);
   router.get("/", auth, controller.listDuePayments);
   router.post("/", auth, controller.createDuePayment);
   router.post("/:paymentId/submit-confirmation", auth, controller.submitDuePaymentConfirmation);

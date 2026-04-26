@@ -120,7 +120,7 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
           <div>
             <CardTitle className="text-lg">Manage User Access</CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">
-              Promote users, assign club context, and record why the role changed.
+              Update access for someone who has already signed up with a Nile University email.
             </p>
           </div>
           <Button type="button" variant="outline" onClick={onClose}>
@@ -137,6 +137,9 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
               Requested role: <span className="capitalize">{user.requested_role || "student"}</span>
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              This updates an existing signed-up user. It does not create a new login account.
             </p>
           </div>
 
@@ -271,7 +274,7 @@ export default function UserManagement() {
       <NeoPageHeader
         eyebrow="Admin Controls"
         title="User Management"
-        description="Approve leadership access, promote trusted users, and assign advisors without opening Supabase."
+        description="Review signed-up users, adjust their role, and assign club access from one place."
       />
 
       <div className="nh-metric-grid">
@@ -280,6 +283,32 @@ export default function UserManagement() {
         <NeoMetricCard title="Leadership Requests" value={summary.leadershipRequests} icon={ShieldCheck} tone="green" />
         <NeoMetricCard title="Advisors / Requests" value={`${summary.advisors} / ${summary.advisorRequests}`} icon={Users} />
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">How access works</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3 md:grid-cols-3">
+          <div className="nh-card-soft p-4">
+            <p className="font-semibold">1. User signs up first</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              The student, executive, president, or advisor should sign up with a Nile University email first.
+            </p>
+          </div>
+          <div className="nh-card-soft p-4">
+            <p className="font-semibold">2. Club Services updates access</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Use this page to promote the user, assign the right club, or attach advisor access after signup.
+            </p>
+          </div>
+          <div className="nh-card-soft p-4">
+            <p className="font-semibold">3. They log in with the new role</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              The updated role appears the next time they sign in or refresh their current session.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {selectedUser ? <UserActionPanel user={selectedUser} onClose={() => setSelectedUser(null)} /> : null}
 

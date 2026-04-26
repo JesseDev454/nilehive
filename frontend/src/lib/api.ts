@@ -1755,6 +1755,55 @@ export async function applyClubDuesAmountToAll(dues_amount: number, token?: stri
   return response.data;
 }
 
+export async function applyClubPaymentSettingsToAll(
+  payload: Pick<PaymentSettingsPayload, "bank_name" | "account_number" | "account_name" | "payment_instructions">,
+  token?: string,
+) {
+  const response = await request<
+    ApiEnvelope<{
+      bank_name: string;
+      account_number: string;
+      account_name: string;
+      payment_instructions: string | null;
+      clubs_updated: number;
+    }>
+  >("/api/v1/dues/payment-settings/apply-account-all", {
+    method: "POST",
+    token,
+    body: payload
+  });
+
+  return response.data;
+}
+
+export async function applyClubPaymentProfileToAll(
+  payload: {
+    dues_amount: number;
+    bank_name: string;
+    account_number: string;
+    account_name: string;
+    payment_instructions?: string | null;
+  },
+  token?: string,
+) {
+  const response = await request<
+    ApiEnvelope<{
+      dues_amount: number;
+      bank_name: string;
+      account_number: string;
+      account_name: string;
+      payment_instructions: string | null;
+      clubs_updated: number;
+    }>
+  >("/api/v1/dues/payment-settings/apply-club-profile-all", {
+    method: "POST",
+    token,
+    body: payload
+  });
+
+  return response.data;
+}
+
 export async function createDuePayment(payload: CreateDuePaymentPayload, token?: string) {
   const response = await request<ApiEnvelope<DuePaymentRecord>>("/api/v1/dues", {
     method: "POST",

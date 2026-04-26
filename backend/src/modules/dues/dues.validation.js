@@ -110,6 +110,25 @@ function validateBulkDuesAmountPayload(payload = {}) {
   };
 }
 
+function validateBulkPaymentSettingsPayload(payload = {}) {
+  return {
+    bank_name: readRequiredString(payload, "bank_name", "Bank name"),
+    account_number: readRequiredString(payload, "account_number", "Account number"),
+    account_name: readRequiredString(payload, "account_name", "Account name"),
+    payment_instructions: readOptionalString(payload, "payment_instructions")
+  };
+}
+
+function validateBulkClubPaymentProfilePayload(payload = {}) {
+  return {
+    dues_amount: readDuesAmount(payload),
+    bank_name: readRequiredString(payload, "bank_name", "Bank name"),
+    account_number: readRequiredString(payload, "account_number", "Account number"),
+    account_name: readRequiredString(payload, "account_name", "Account name"),
+    payment_instructions: readOptionalString(payload, "payment_instructions")
+  };
+}
+
 function validateUpdateDuePaymentPayload(payload = {}) {
   const update = {};
 
@@ -154,6 +173,8 @@ function validateUpdateDuePaymentPayload(payload = {}) {
 
 module.exports = {
   DUE_PAYMENT_STATUSES,
+  validateBulkClubPaymentProfilePayload,
+  validateBulkPaymentSettingsPayload,
   validateBulkDuesAmountPayload,
   validateCreateDuePaymentPayload,
   validatePaymentConfirmationPayload,

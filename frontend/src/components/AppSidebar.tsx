@@ -1,4 +1,5 @@
 import { CalendarDays, ClipboardList, CreditCard, FileText, Home, Plus, Clock, Bell, Users, MessageSquare, UserPlus, UserCog } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/contexts/RoleContext";
@@ -11,6 +12,7 @@ export function AppSidebar() {
   const { role } = useRole();
   const { profile } = useAuth();
   const { state } = useSidebar();
+  const { pathname } = useLocation();
   const collapsed = state === "collapsed";
   const roleLabels = {
     executive: "Executive",
@@ -92,9 +94,25 @@ export function AppSidebar() {
     .map((part) => part[0]?.toUpperCase())
     .join("") || "CU";
 
+  function getActiveOverride(url: string) {
+    if (role !== "president") {
+      return undefined;
+    }
+
+    if (url === "/proposals/new") {
+      return pathname === "/proposals/new";
+    }
+
+    if (url === "/proposals") {
+      return pathname.startsWith("/proposals") && pathname !== "/proposals/new";
+    }
+
+    return undefined;
+  }
+
   return (
     <Sidebar collapsible="icon" className="border-r-2 border-foreground">
-      <SidebarHeader className="border-b-2 border-sidebar-border p-4">
+      <SidebarHeader className={collapsed ? "border-b-2 border-sidebar-border px-1 py-3" : "border-b-2 border-sidebar-border p-4"}>
         {!collapsed && (
           <div className="space-y-3">
             <div className="flex items-center gap-3">
@@ -113,8 +131,8 @@ export function AppSidebar() {
           </div>
         )}
         {collapsed && (
-          <div className="mx-auto flex h-11 w-11 items-center justify-center border-2 border-sidebar-primary bg-sidebar-accent text-sidebar-accent-foreground shadow-none">
-            <span className="text-sm font-black uppercase tracking-[0.08em]">{initials}</span>
+          <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-md border-2 border-sidebar-primary bg-sidebar-accent text-sidebar-accent-foreground shadow-none">
+            <span className="text-xs font-black uppercase tracking-[0.06em]">{initials}</span>
           </div>
         )}
       </SidebarHeader>
@@ -132,6 +150,7 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end={item.url === "/"}
+                      activeOverride={getActiveOverride(item.url)}
                       className="border-2 border-transparent font-bold uppercase tracking-[0.08em] transition-all duration-200 hover:border-sidebar-primary hover:bg-sidebar-accent/50"
                       activeClassName="translate-x-1 border-sidebar-primary bg-sidebar-accent text-sidebar-accent-foreground shadow-[4px_4px_0_hsl(var(--sidebar-primary))]"
                     >

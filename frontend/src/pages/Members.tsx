@@ -87,7 +87,10 @@ export default function Members() {
     enabled: canViewMembers,
     retry: false
   });
-  const members = membersPage.items;
+  const members = useMemo(
+    () => membersPage.items.filter((member) => member.membership_status !== "alumni"),
+    [membersPage.items]
+  );
   const { data: clubs = [] } = useQuery({
     queryKey: ["member-form-clubs"],
     queryFn: () => getClubs(),
@@ -259,7 +262,6 @@ export default function Members() {
                       <SelectContent>
                         <SelectItem value="active">Active</SelectItem>
                         <SelectItem value="inactive">Inactive</SelectItem>
-                        {role === "admin" ? <SelectItem value="alumni">Alumni</SelectItem> : null}
                       </SelectContent>
                     </Select>
                   ) : (
@@ -292,7 +294,7 @@ export default function Members() {
       <NeoPageHeader
         eyebrow="Club Records"
         title="Member Database"
-        description="View club members and keep the executive team structure organized."
+        description="View signed-up members, track club roles, and keep your club records organized."
       />
 
       {role === "admin" ? (
@@ -324,7 +326,7 @@ export default function Members() {
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="nh-card-soft p-3">
                   <p className="nh-panel-title text-muted-foreground">Visible Members</p>
-                  <p className="mt-1 text-2xl font-black">{membersPage.total}</p>
+                  <p className="mt-1 text-2xl font-black">{members.length}</p>
                 </div>
                 <div className="nh-card-soft p-3">
                   <p className="nh-panel-title text-muted-foreground">Active</p>
@@ -346,7 +348,9 @@ export default function Members() {
             <CardTitle className="text-lg">Add Member</CardTitle>
             <p className="text-sm text-muted-foreground">
               New members start inactive until dues are verified for the current academic session.
-              Alumni status is controlled by Club Services admins.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Adding a member here updates club records only. It does not create a login account, so the person should sign up separately with a Nile University email if they need app access.
             </p>
           </CardHeader>
           <CardContent>
@@ -435,7 +439,6 @@ export default function Members() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="inactive">Inactive</SelectItem>
-                    {role === "admin" ? <SelectItem value="alumni">Alumni</SelectItem> : null}
                   </SelectContent>
                 </Select>
               </div>

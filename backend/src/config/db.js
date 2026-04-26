@@ -1401,6 +1401,14 @@ function createDatabase(options = {}) {
         query = query.eq("membership_status", filters.membershipStatus);
       }
 
+      if (filters.excludeMembershipStatuses?.length) {
+        query = query.not(
+          "membership_status",
+          "in",
+          `(${filters.excludeMembershipStatuses.map((status) => `"${status}"`).join(",")})`
+        );
+      }
+
       query = applyPagination(query, filters.pagination);
 
       const { data, error, count } = await query;
@@ -1468,6 +1476,40 @@ function createDatabase(options = {}) {
       }
 
       return (data ?? []).map(normalizeClub);
+    },
+
+    async upsertAllClubPaymentSettings(settings) {
+      const { data: clubs, error: clubsError } = await getClient()
+        .from("clubs")
+        .select("id")
+        .neq("id", "00000000-0000-0000-0000-000000000000");
+
+      if (clubsError) {
+        throw clubsError;
+      }
+
+      const payload = (clubs ?? []).map((club) => ({
+        club_id: club.id,
+        bank_name: settings.bank_name,
+        account_number: settings.account_number,
+        account_name: settings.account_name,
+        payment_instructions: settings.payment_instructions
+      }));
+
+      if (!payload.length) {
+        return [];
+      }
+
+      const { data, error } = await getClient()
+        .from("club_payment_settings")
+        .upsert(payload, { onConflict: "club_id" })
+        .select(clubPaymentSettingsSelect);
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? [];
     },
 
     async upsertClubPaymentSettings(settings) {

@@ -2,6 +2,8 @@ const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
 const { writeAuditLog } = require("../../shared/auditLog");
 const {
+  validateBulkClubPaymentProfilePayload,
+  validateBulkPaymentSettingsPayload,
   validateBulkDuesAmountPayload,
   validateCreateDuePaymentPayload,
   validatePaymentConfirmationPayload,
@@ -359,7 +361,69 @@ async function applyDuesAmountToAllClubs(options) {
   };
 }
 
+async function applyPaymentSettingsToAllClubs(options) {
+  const { actor, payload, database = db } = options;
+  requireActor(actor);
+
+  if (actor.role !== "admin") {
+    throw new ApiError(403, "Only Club Services admins can apply one payment account to every club", "FORBIDDEN");
+  }
+
+  const validatedPayload = validateBulkPaymentSettingsPayload(payload);
+
+  if (typeof database.upsertAllClubPaymentSettings !== "function") {
+    throw new ApiError(500, "Bulk payment settings updates are not available", "DATABASE_UNAVAILABLE");
+  }
+
+  const settings = await database.upsertAllClubPaymentSettings(validatedPayload);
+
+  return {
+    bank_name: validatedPayload.bank_name,
+    account_number: validatedPayload.account_number,
+    account_name: validatedPayload.account_name,
+    payment_instructions: validatedPayload.payment_instructions,
+    clubs_updated: settings.length
+  };
+}
+
+async function applyClubPaymentProfileToAllClubs(options) {
+  const { actor, payload, database = db } = options;
+  requireActor(actor);
+
+  if (actor.role !== "admin") {
+    throw new ApiError(403, "Only Club Services admins can apply one payment profile to every club", "FORBIDDEN");
+  }
+
+  const validatedPayload = validateBulkClubPaymentProfilePayload(payload);
+
+  if (
+    typeof database.updateAllClubDuesAmounts !== "function" ||
+    typeof database.upsertAllClubPaymentSettings !== "function"
+  ) {
+    throw new ApiError(500, "Bulk club payment profile updates are not available", "DATABASE_UNAVAILABLE");
+  }
+
+  const clubs = await database.updateAllClubDuesAmounts(validatedPayload.dues_amount);
+  const settings = await database.upsertAllClubPaymentSettings({
+    bank_name: validatedPayload.bank_name,
+    account_number: validatedPayload.account_number,
+    account_name: validatedPayload.account_name,
+    payment_instructions: validatedPayload.payment_instructions
+  });
+
+  return {
+    dues_amount: validatedPayload.dues_amount,
+    bank_name: validatedPayload.bank_name,
+    account_number: validatedPayload.account_number,
+    account_name: validatedPayload.account_name,
+    payment_instructions: validatedPayload.payment_instructions,
+    clubs_updated: Math.max(clubs.length, settings.length)
+  };
+}
+
 module.exports = {
+  applyClubPaymentProfileToAllClubs,
+  applyPaymentSettingsToAllClubs,
   applyDuesAmountToAllClubs,
   createDuePayment,
   getPaymentSettings,
