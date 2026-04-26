@@ -1,16 +1,27 @@
 # NileHive Backend
 
-This is the Express backend for NileHive.
+[![Service](https://img.shields.io/badge/service-Express%20API-16a34a)](C:/Users/goodl/Documents/NileHive/backend/README.md)
+[![Database](https://img.shields.io/badge/database-Supabase%20Postgres-059669)](C:/Users/goodl/Documents/NileHive/docs/DEVELOPER_GUIDE.md#supabase-setup)
+[![Tests](https://img.shields.io/badge/tests-node%20test%20runner-15803d)](C:/Users/goodl/Documents/NileHive/README.md#verification)
 
-Start from the root README first:
+Backend quick reference for NileHive.
 
-```text
-../README.md
-```
+Start here first if you need the full project context:
+
+- [README.md](C:/Users/goodl/Documents/NileHive/README.md)
+- [docs/DEVELOPER_GUIDE.md](C:/Users/goodl/Documents/NileHive/docs/DEVELOPER_GUIDE.md)
+
+## What Lives Here
+
+- Express API routes
+- backend role and scope enforcement
+- Supabase-backed data access through `src/config/db.js`
+- SQL migrations and production bootstrap SQL
+- backend tests
 
 ## Setup
 
-Install dependencies:
+Install:
 
 ```powershell
 npm.cmd install
@@ -22,18 +33,17 @@ Create:
 .env
 ```
 
-Use:
+Use `../backend/.env.example` as the base.
 
-```env
-PORT=4000
-SUPABASE_URL=https://your-project-ref.supabase.co
-SUPABASE_ANON_KEY=your-supabase-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-FRONTEND_APP_URL=http://localhost:8080
-ASYNC_JOBS_ENABLED=false
-```
+Important backend-only variables:
 
-The service role key is backend-only. Do not expose it in the frontend.
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `ALLOWED_EMAIL_DOMAINS`
+- `FRONTEND_APP_URL`
+
+Never expose `SUPABASE_SERVICE_ROLE_KEY` in the frontend.
 
 ## Run
 
@@ -41,7 +51,7 @@ The service role key is backend-only. Do not expose it in the frontend.
 npm.cmd run dev
 ```
 
-Backend URL:
+Default local URL:
 
 ```text
 http://localhost:4000
@@ -53,139 +63,70 @@ http://localhost:4000
 npm.cmd test
 ```
 
-## Supabase Migrations
+## Main Backend Entry Points
 
-Apply migrations in numeric order from:
+- app wiring: [src/app.js](C:/Users/goodl/Documents/NileHive/backend/src/app.js)
+- auth middleware: [src/middleware/auth.js](C:/Users/goodl/Documents/NileHive/backend/src/middleware/auth.js)
+- shared DB adapter: [src/config/db.js](C:/Users/goodl/Documents/NileHive/backend/src/config/db.js)
+- profile module: [src/modules/profile](C:/Users/goodl/Documents/NileHive/backend/src/modules/profile)
+- proposals module: [src/modules/proposals](C:/Users/goodl/Documents/NileHive/backend/src/modules/proposals)
+- membership module: [src/modules/membership-requests](C:/Users/goodl/Documents/NileHive/backend/src/modules/membership-requests)
+
+## Supabase Files
+
+### Migrations
+
+Apply SQL in numeric order from:
 
 ```text
 supabase/migrations/
 ```
 
-Current migrations:
+Current migration ceiling:
 
 ```text
-0001_week1_schema.sql ... 0035_public_club_visibility.sql
+0037_signup_profile_provisioning.sql
 ```
 
-For production setup and demo data, see:
+### Production-Safe SQL
 
-```text
-../docs/PRODUCTION_HANDOFF.md
-../docs/PRODUCTION_FRESH_START.md
-../render.yaml
-supabase/bootstrap_admin.sql
-supabase/bootstrap_clubs.sql
-supabase/verify_clean_production.sql
-supabase/demo_seed.sql
-```
+- [supabase/bootstrap_admin.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/bootstrap_admin.sql)
+- [supabase/bootstrap_clubs.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/bootstrap_clubs.sql)
+- [supabase/verify_clean_production.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/verify_clean_production.sql)
 
-## Main Modules
+### Local/Demo Only
 
-```text
-src/modules/clubs
-src/modules/dashboard
-src/modules/dues
-src/modules/events
-src/modules/health
-src/modules/notifications
-src/modules/proposals
-src/modules/reminders
-src/modules/reports
-src/modules/tasks
-src/modules/members
-```
+- [supabase/demo_seed.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/demo_seed.sql)
+- [supabase/seed.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/seed.sql)
 
-## Auth Model
+## API Shape
 
-Supabase Auth is the identity provider.
+Common route groups:
 
-The app profile lives in:
+- `/api/v1/health`
+- `/api/v1/ready`
+- `/api/v1/profile`
+- `/api/v1/clubs`
+- `/api/v1/proposals`
+- `/api/v1/membership-requests`
+- `/api/v1/members`
+- `/api/v1/dues`
+- `/api/v1/events`
+- `/api/v1/reports`
+- `/api/v1/communications`
+- `/api/v1/tasks`
+- `/api/v1/admin/users`
 
-```text
-public.profiles
-```
+## Backend Development Rules
 
-The backend maps:
+1. Keep business rules in services.
+2. Keep validation explicit and close to the module.
+3. Keep route handlers thin.
+4. Add tests for behavior changes.
+5. Treat backend authorization as the real security layer even if the frontend already hides the UI.
 
-```text
-Supabase access token -> auth user -> profiles row -> app role and club scope
-```
+## More Detail
 
-Current roles:
+For setup, auth flow, production safety, and troubleshooting:
 
-```text
-student
-executive
-advisor
-admin
-president
-```
-
-## API Overview
-
-Health:
-
-- `GET /api/v1/health`
-- `GET /api/v1/ready`
-
-Clubs:
-
-- `GET /api/v1/clubs`
-
-Proposals:
-
-- `POST /api/v1/proposals`
-- `GET /api/v1/proposals`
-- `GET /api/v1/proposals/:proposalId`
-- `GET /api/v1/proposals/pending-advisor`
-- `GET /api/v1/proposals/advisor/:proposalId`
-- `POST /api/v1/proposals/:proposalId/advisor-decision`
-- `GET /api/v1/proposals/admin`
-- `GET /api/v1/proposals/admin/:proposalId`
-- `POST /api/v1/proposals/admin/:proposalId/decision`
-
-Notifications:
-
-- `GET /api/v1/notifications`
-
-Events/reminders:
-
-- `GET /api/v1/events/approved`
-- `GET /api/v1/reminders`
-
-Dashboards:
-
-- `GET /api/v1/dashboard/executive`
-- `GET /api/v1/dashboard/president`
-
-Tasks:
-
-- `GET /api/v1/tasks`
-- `POST /api/v1/tasks`
-- `GET /api/v1/tasks/:taskId`
-- `POST /api/v1/tasks/:taskId/status`
-
-Members:
-
-- `GET /api/v1/members`
-- `POST /api/v1/members`
-- `POST /api/v1/members/:memberId`
-
-Dues:
-
-- `GET /api/v1/dues`
-- `POST /api/v1/dues`
-- `POST /api/v1/dues/:paymentId`
-
-Reports:
-
-- `GET /api/v1/reports`
-- `POST /api/v1/reports`
-- `GET /api/v1/reports/:reportId`
-
-## Notes
-
-- Keep route logic inside the relevant module.
-- Keep validation explicit.
-- Avoid adding new abstractions unless the current module pattern genuinely needs it.
-- Add tests when adding backend behavior.
+- [docs/DEVELOPER_GUIDE.md](C:/Users/goodl/Documents/NileHive/docs/DEVELOPER_GUIDE.md)
