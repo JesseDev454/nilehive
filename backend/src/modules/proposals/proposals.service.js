@@ -124,6 +124,16 @@ function buildApprovedEventReminderMessage(proposal) {
   return `Approved event "${proposal.proposed_activity || proposal.title}" is scheduled for ${proposal.event_date}.`;
 }
 
+function assertProposalIsNotSelfReviewed(actor, proposal) {
+  if (proposal.submitted_by && proposal.submitted_by === actor.id) {
+    throw new ApiError(
+      403,
+      "You cannot approve or reject a proposal that you submitted yourself",
+      "SELF_REVIEW_FORBIDDEN"
+    );
+  }
+}
+
 function getApprovedEventReminderAt(proposal) {
   return `${proposal.event_date}T09:00:00.000Z`;
 }
@@ -645,6 +655,8 @@ async function submitAdvisorDecision(options) {
     throw new ApiError(403, "You do not have access to this proposal", "FORBIDDEN");
   }
 
+  assertProposalIsNotSelfReviewed(actor, proposal);
+
   const decidedAt = new Date().toISOString();
   const nextStatus = getNextProposalStatus(proposal.status, validatedPayload.decision);
 
@@ -738,6 +750,8 @@ async function submitAdminDecision(options) {
   if (!proposal) {
     throw new ApiError(404, "Proposal not found", "PROPOSAL_NOT_FOUND");
   }
+
+  assertProposalIsNotSelfReviewed(actor, proposal);
 
   const decidedAt = new Date().toISOString();
   const nextStatus = getNextAdminProposalStatus(proposal.status, validatedPayload.decision);

@@ -42,7 +42,12 @@ export interface ClubRecord {
   name: string;
   description: string | null;
   code: string | null;
-  advisor_id: string | null;
+  advisor_id?: string | null;
+  advisors?: Array<{
+    id: string;
+    full_name: string | null;
+    role: ProfileRecord["role"];
+  }> | null;
   created_at: string;
 }
 
@@ -80,6 +85,18 @@ export interface AdminUserProfileRecord extends ProfileRecord {
     name: string;
     code: string | null;
   } | null;
+  advisor_assignments?: Array<{
+    id: string;
+    club_id: string;
+    assigned_by: string | null;
+    remarks: string | null;
+    created_at: string | null;
+    club: {
+      id: string;
+      name: string;
+      code: string | null;
+    } | null;
+  }>;
 }
 
 export interface ProfileRoleHistoryRecord {
@@ -105,9 +122,9 @@ export interface AdminAdvisorAssignmentResult extends AdminRoleChangeResult {
 
 export interface ProfileOnboardingPayload {
   full_name: string;
-  student_id: string;
+  student_id?: string | null;
   club_id: string;
-  requested_role?: "student";
+  requested_role?: "student" | "advisor";
 }
 
 export interface ProposalRecord {
@@ -1125,7 +1142,6 @@ export async function assignAdminUserAdvisor(
   profileId: string,
   payload: {
     club_id: string;
-    replace_existing?: boolean;
     remarks?: string | null;
   },
   token?: string

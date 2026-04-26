@@ -14,12 +14,18 @@ import { getAllowedEmailDomainLabel, isAllowedEmailDomain } from "@/lib/env";
 import { publicClubsQueryOptions } from "@/lib/publicClubsQuery";
 import { isValidStudentId, STUDENT_ID_ERROR_MESSAGE } from "@/lib/studentId";
 
+const REQUESTED_ROLES = [
+  { value: "student", label: "Student" },
+  { value: "advisor", label: "Advisor" }
+] as const;
+
 export default function SignUp() {
   const { signUp, session, isLoading } = useAuth();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
+  const [requestedRole, setRequestedRole] = useState<(typeof REQUESTED_ROLES)[number]["value"]>("student");
   const [studentId, setStudentId] = useState("");
-  const [clubName, setClubName] = useState("");
+  const [clubId, setClubId] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signupError, setSignupError] = useState<string | null>(null);
@@ -39,7 +45,7 @@ export default function SignUp() {
     setIsSubmitting(true);
     setSignupError(null);
 
-    if (!clubName) {
+    if (!clubId) {
       const message = "Please select your club before creating an account.";
       setSignupError(message);
       toast.error("Signup failed", { description: message });
@@ -55,7 +61,7 @@ export default function SignUp() {
       return;
     }
 
-    if (!isValidStudentId(studentId)) {
+    if (requestedRole === "student" && !isValidStudentId(studentId)) {
       setSignupError(STUDENT_ID_ERROR_MESSAGE);
       toast.error("Signup failed", { description: STUDENT_ID_ERROR_MESSAGE });
       setIsSubmitting(false);
@@ -63,13 +69,15 @@ export default function SignUp() {
     }
 
     try {
+      const selectedClub = clubs.find((club) => club.id === clubId);
       await signUp({
         email,
         password,
         fullName,
-        requestedRole: "student",
-        clubName,
-        studentId
+        requestedRole,
+        clubId,
+        clubName: selectedClub?.name || "",
+        studentId: requestedRole === "student" ? studentId : undefined
       });
       toast.success("Account request created", {
         description: "After confirming your email, log in and complete your Club Services profile setup."
@@ -105,7 +113,7 @@ export default function SignUp() {
             <p className="nh-eyebrow text-primary-foreground/70">New Profile</p>
             <h2 className="mt-3 text-5xl font-black uppercase leading-none md:text-6xl">Join an official club workspace.</h2>
             <p className="mt-5 border-l-4 border-secondary pl-4 text-primary-foreground/80">
-              Create your account, pick your club, and start with safe student access. Leadership applications happen after dues verification.
+              Create your account, pick your club, and enter with the right access path for students or advisors.
             </p>
           </div>
 
@@ -113,7 +121,7 @@ export default function SignUp() {
             <div className="nh-card p-5">
               <ShieldCheck className="h-7 w-7 text-secondary" />
               <h3 className="mt-4 font-black uppercase">Official access</h3>
-              <p className="mt-2 text-sm text-muted-foreground">Advisor and admin roles are assigned by Club Services.</p>
+              <p className="mt-2 text-sm text-muted-foreground">Choose student or advisor access based on your real university role.</p>
             </div>
             <div className="nh-card p-5">
               <Users className="h-7 w-7 text-secondary" />
@@ -128,11 +136,27 @@ export default function SignUp() {
             <p className="nh-eyebrow">Profile Setup</p>
             <h2 className="mt-2 text-4xl font-black uppercase">Create Account</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Use your Nile University email. You will complete your profile after email confirmation.
+              Use your Nile University email. Advisors do not need a student ID.
             </p>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
+            <div className="space-y-2 md:col-span-2">
+              <Label className="font-black uppercase tracking-[0.12em]">Access Role</Label>
+              <Select value={requestedRole} onValueChange={(value) => setRequestedRole(value as (typeof REQUESTED_ROLES)[number]["value"])}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose your access role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {REQUESTED_ROLES.map((roleOption) => (
+                    <SelectItem key={roleOption.value} value={roleOption.value}>
+                      {roleOption.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-2">
               <Label className="font-black uppercase tracking-[0.12em]" htmlFor="full-name">
                 Full Name
@@ -146,12 +170,14 @@ export default function SignUp() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label className="font-black uppercase tracking-[0.12em]" htmlFor="student-id">
-                University ID
-              </Label>
-              <NhStudentId id="student-id" value={studentId} onChange={setStudentId} required />
-            </div>
+            {requestedRole === "student" ? (
+              <div className="space-y-2">
+                <Label className="font-black uppercase tracking-[0.12em]" htmlFor="student-id">
+                  University ID
+                </Label>
+                <NhStudentId id="student-id" value={studentId} onChange={setStudentId} required />
+              </div>
+            ) : null}
 
             <div className="space-y-2 md:col-span-2">
               <Label className="font-black uppercase tracking-[0.12em]" htmlFor="signup-email">
@@ -169,8 +195,10 @@ export default function SignUp() {
             </div>
 
             <div className="space-y-2">
-              <Label className="font-black uppercase tracking-[0.12em]">Club Association</Label>
-              <Select disabled={isLoadingClubs || clubsFailed || clubs.length === 0} value={clubName} onValueChange={setClubName}>
+              <Label className="font-black uppercase tracking-[0.12em]">
+                {requestedRole === "advisor" ? "Advising Club" : "Club Association"}
+              </Label>
+              <Select disabled={isLoadingClubs || clubsFailed || clubs.length === 0} value={clubId} onValueChange={setClubId}>
                 <SelectTrigger className="border-2 border-input bg-card">
                   <SelectValue
                     placeholder={
@@ -184,7 +212,7 @@ export default function SignUp() {
                 </SelectTrigger>
                 <SelectContent>
                   {clubs.map((club) => (
-                    <SelectItem key={club.id} value={club.name}>
+                    <SelectItem key={club.id} value={club.id}>
                       {club.name}{club.code ? ` (${club.code})` : ""}
                     </SelectItem>
                   ))}
@@ -204,10 +232,12 @@ export default function SignUp() {
             <div className="space-y-2">
               <Label className="font-black uppercase tracking-[0.12em]">Starting Access</Label>
               <div className="border-2 border-input bg-card px-4 py-3 text-sm font-black uppercase">
-                Student
+                {requestedRole}
               </div>
               <p className="text-xs text-muted-foreground">
-                Executive and president applications open after your membership is active.
+                {requestedRole === "advisor"
+                  ? "Advisor access is tied to the club you selected and can support more than one advisor per club."
+                  : "Executive and president applications open after your membership is active."}
               </p>
             </div>
 
@@ -242,7 +272,9 @@ export default function SignUp() {
             <div className="flex items-start gap-3 border-2 border-foreground bg-muted p-4 text-sm">
               <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-secondary" />
               <p>
-                Everyone starts safely as a student. Advisor and admin roles are assigned by Club Services.
+                {requestedRole === "advisor"
+                  ? "Advisor signup uses your Nile email and club choice without asking for a student ID."
+                  : "Students use their Nile email plus University ID to enter Club Services safely."}
               </p>
             </div>
 

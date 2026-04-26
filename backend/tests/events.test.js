@@ -131,6 +131,21 @@ function createFakeDatabase(overrides = {}) {
       assert.equal(advisorId, "advisor-1");
       return ["club-2"];
     },
+    async getActiveClubIdsByProfileId(profileId) {
+      if (profileId === "student-1") {
+        return ["club-1"];
+      }
+
+      if (profileId === "executive-1") {
+        return [];
+      }
+
+      if (profileId === "president-1") {
+        return [];
+      }
+
+      return [];
+    },
     async listApprovedProposals(filters = {}) {
       if (!filters.clubIds) {
         return proposals;
@@ -262,8 +277,9 @@ test("student can fetch approved events feed", async (t) => {
   const { response, payload } = await getApprovedEvents(server.baseUrl, "student-token");
 
   assert.equal(response.status, 200);
-  assert.equal(payload.data.length, 2);
+  assert.equal(payload.data.length, 1);
   assert.ok(payload.data.every((event) => event.status === "approved"));
+  assert.ok(payload.data.every((event) => event.club_id === "club-1"));
 });
 
 test("missing-token access is blocked for approved events", async (t) => {

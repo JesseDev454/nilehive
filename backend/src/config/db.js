@@ -11,6 +11,8 @@ const notificationSelect =
 const eventReminderSelect =
   "id, user_id, proposal_id, message, remind_at, delivery_status, created_at";
 const clubSelect = "id, name, code, advisor_id, created_at";
+const clubAdvisorAssignmentSelect =
+  "id, club_id, advisor_profile_id, assigned_by, remarks, created_at, club:clubs!club_advisors_club_id_fkey(id, name, code), advisor:profiles!club_advisors_advisor_profile_id_fkey(id, full_name, role, club_id, student_id)";
 const publicClubSelect = "id, name, code, created_at, is_public_signup";
 const taskSelect =
   "id, club_id, assigned_by, assigned_to, title, description, priority, status, due_date, created_at, updated_at, assigned_by_profile:profiles!tasks_assigned_by_fkey(id, full_name, student_id, role), assigned_to_profile:profiles!tasks_assigned_to_fkey(id, full_name, student_id, role)";
@@ -132,6 +134,37 @@ function createDatabase(options = {}) {
     };
   }
 
+  function normalizeAdvisorAssignment(assignment) {
+    if (!assignment) {
+      return null;
+    }
+
+    return {
+      id: assignment.id,
+      club_id: assignment.club_id,
+      advisor_profile_id: assignment.advisor_profile_id,
+      assigned_by: assignment.assigned_by ?? null,
+      remarks: assignment.remarks ?? null,
+      created_at: assignment.created_at ?? null,
+      club: assignment.club
+        ? {
+            id: assignment.club.id,
+            name: assignment.club.name,
+            code: assignment.club.code ?? null
+          }
+        : null,
+      advisor: assignment.advisor
+        ? {
+            id: assignment.advisor.id,
+            full_name: assignment.advisor.full_name ?? null,
+            role: assignment.advisor.role,
+            club_id: assignment.advisor.club_id ?? null,
+            student_id: assignment.advisor.student_id ?? null
+          }
+        : null
+    };
+  }
+
   function getCachedPublicClubs() {
     if (publicClubsCache.items && publicClubsCache.expiresAt > Date.now()) {
       return publicClubsCache.items;
@@ -153,6 +186,41 @@ function createDatabase(options = {}) {
       .select(selectClause)
       .eq("id", profileId)
       .maybeSingle();
+  }
+
+  async function listAdvisorAssignments(filters = {}) {
+    let query = getClient()
+      .from("club_advisors")
+      .select(clubAdvisorAssignmentSelect)
+      .order("created_at", { ascending: true });
+
+    if (filters.clubId) {
+      query = query.eq("club_id", filters.clubId);
+    }
+
+    if (filters.clubIds?.length) {
+      query = query.in("club_id", filters.clubIds);
+    }
+
+    if (filters.advisorProfileId) {
+      query = query.eq("advisor_profile_id", filters.advisorProfileId);
+    }
+
+    if (filters.advisorProfileIds?.length) {
+      query = query.in("advisor_profile_id", filters.advisorProfileIds);
+    }
+
+    const { data, error } = await query;
+
+    if (error && isMissingRelation(error, "club_advisors")) {
+      return null;
+    }
+
+    if (error) {
+      throw error;
+    }
+
+    return (data ?? []).map(normalizeAdvisorAssignment);
   }
 
   return {
@@ -209,6 +277,23 @@ function createDatabase(options = {}) {
     },
 
     async listClubs(filters = {}) {
+      if (filters.advisorId) {
+        const advisorAssignments = await listAdvisorAssignments({
+          advisorProfileId: filters.advisorId
+        });
+
+        if (advisorAssignments) {
+          const clubs = advisorAssignments
+            .map((assignment) => assignment.club)
+            .filter(Boolean)
+            .map(normalizeClub);
+
+          return filters.ids?.length
+            ? clubs.filter((club) => filters.ids.includes(club.id))
+            : clubs;
+        }
+      }
+
       let query = getClient()
         .from("clubs")
         .select(clubSelect)
@@ -216,10 +301,6 @@ function createDatabase(options = {}) {
 
       if (filters.ids?.length) {
         query = query.in("id", filters.ids);
-      }
-
-      if (filters.advisorId) {
-        query = query.eq("advisor_id", filters.advisorId);
       }
 
       let { data, error } = await query;
@@ -232,10 +313,6 @@ function createDatabase(options = {}) {
 
         if (filters.ids?.length) {
           fallbackQuery = fallbackQuery.in("id", filters.ids);
-        }
-
-        if (filters.advisorId) {
-          fallbackQuery = fallbackQuery.eq("advisor_id", filters.advisorId);
         }
 
         const fallback = await fallbackQuery;
@@ -279,19 +356,112 @@ function createDatabase(options = {}) {
       return data ?? null;
     },
 
-    async updateClubAdvisor(clubId, advisorId) {
+    async createClubAdvisorAssignment(assignment) {
       const { data, error } = await getClient()
-        .from("clubs")
-        .update({ advisor_id: advisorId })
-        .eq("id", clubId)
-        .select(clubSelect)
+        .from("club_advisors")
+        .insert(assignment)
+        .select(clubAdvisorAssignmentSelect)
         .single();
+
+      if (error && isMissingRelation(error, "club_advisors")) {
+        const fallback = await getClient()
+          .from("clubs")
+          .update({ advisor_id: assignment.advisor_profile_id })
+          .eq("id", assignment.club_id)
+          .select(clubSelect)
+          .single();
+
+        if (fallback.error) {
+          throw fallback.error;
+        }
+
+        return normalizeAdvisorAssignment({
+          id: fallback.data.id,
+          club_id: fallback.data.id,
+          advisor_profile_id: assignment.advisor_profile_id,
+          assigned_by: assignment.assigned_by ?? null,
+          remarks: assignment.remarks ?? null,
+          created_at: fallback.data.created_at ?? null,
+          club: fallback.data,
+          advisor: null
+        });
+      }
 
       if (error) {
         throw error;
       }
 
-      return data;
+      return normalizeAdvisorAssignment(data);
+    },
+
+    async listClubAdvisorAssignments(filters = {}) {
+      const assignments = await listAdvisorAssignments({
+        clubId: filters.clubId,
+        clubIds: filters.clubIds,
+        advisorProfileId: filters.advisorProfileId,
+        advisorProfileIds: filters.advisorProfileIds
+      });
+
+      if (assignments) {
+        return assignments;
+      }
+
+      if (filters.clubIds?.length || filters.advisorProfileIds?.length) {
+        return [];
+      }
+
+      if (filters.clubId) {
+        const club = await getClient()
+          .from("clubs")
+          .select(clubSelect)
+          .eq("id", filters.clubId)
+          .maybeSingle();
+
+        if (club.error) {
+          throw club.error;
+        }
+
+        return club.data?.advisor_id
+          ? [
+              normalizeAdvisorAssignment({
+                id: club.data.id,
+                club_id: club.data.id,
+                advisor_profile_id: club.data.advisor_id,
+                assigned_by: null,
+                remarks: null,
+                created_at: club.data.created_at ?? null,
+                club: club.data,
+                advisor: null
+              })
+            ]
+          : [];
+      }
+
+      if (filters.advisorProfileId) {
+        const clubs = await getClient()
+          .from("clubs")
+          .select(clubSelect)
+          .eq("advisor_id", filters.advisorProfileId);
+
+        if (clubs.error) {
+          throw clubs.error;
+        }
+
+        return (clubs.data ?? []).map((club) =>
+          normalizeAdvisorAssignment({
+            id: club.id,
+            club_id: club.id,
+            advisor_profile_id: club.advisor_id,
+            assigned_by: null,
+            remarks: null,
+            created_at: club.created_at ?? null,
+            club,
+            advisor: null
+          })
+        );
+      }
+
+      return [];
     },
 
     async listPublicClubs() {
@@ -345,16 +515,30 @@ function createDatabase(options = {}) {
 
     async clearClubAdvisorAssignments(advisorId) {
       const { data, error } = await getClient()
-        .from("clubs")
-        .update({ advisor_id: null })
-        .eq("advisor_id", advisorId)
-        .select(clubSelect);
+        .from("club_advisors")
+        .delete()
+        .eq("advisor_profile_id", advisorId)
+        .select(clubAdvisorAssignmentSelect);
+
+      if (error && isMissingRelation(error, "club_advisors")) {
+        const fallback = await getClient()
+          .from("clubs")
+          .update({ advisor_id: null })
+          .eq("advisor_id", advisorId)
+          .select(clubSelect);
+
+        if (fallback.error) {
+          throw fallback.error;
+        }
+
+        return fallback.data;
+      }
 
       if (error) {
         throw error;
       }
 
-      return data;
+      return (data ?? []).map(normalizeAdvisorAssignment);
     },
 
     async getProposalById(proposalId) {
@@ -723,6 +907,14 @@ function createDatabase(options = {}) {
     },
 
     async getAdvisorClubIds(advisorId) {
+      const assignments = await listAdvisorAssignments({
+        advisorProfileId: advisorId
+      });
+
+      if (assignments) {
+        return assignments.map((assignment) => assignment.club_id);
+      }
+
       const { data, error } = await getClient()
         .from("clubs")
         .select("id")
@@ -736,6 +928,14 @@ function createDatabase(options = {}) {
     },
 
     async getAdvisorProfileIdsByClubId(clubId) {
+      const assignments = await listAdvisorAssignments({
+        clubId
+      });
+
+      if (assignments) {
+        return assignments.map((assignment) => assignment.advisor_profile_id);
+      }
+
       const { data, error } = await getClient()
         .from("clubs")
         .select("advisor_id")
@@ -747,6 +947,25 @@ function createDatabase(options = {}) {
       }
 
       return data.map((club) => club.advisor_id);
+    },
+
+    async getAllAdvisorProfileIds() {
+      const assignments = await listAdvisorAssignments();
+
+      if (assignments) {
+        return [...new Set(assignments.map((assignment) => assignment.advisor_profile_id))];
+      }
+
+      const { data, error } = await getClient()
+        .from("clubs")
+        .select("advisor_id")
+        .not("advisor_id", "is", null);
+
+      if (error) {
+        throw error;
+      }
+
+      return [...new Set((data ?? []).map((club) => club.advisor_id))];
     },
 
     async getAdminProfileIds() {
@@ -1703,6 +1922,20 @@ function createDatabase(options = {}) {
       }
 
       return data ?? null;
+    },
+
+    async getActiveClubIdsByProfileId(profileId) {
+      const { data, error } = await getClient()
+        .from("club_members")
+        .select("club_id")
+        .eq("profile_id", profileId)
+        .eq("membership_status", "active");
+
+      if (error) {
+        throw error;
+      }
+
+      return [...new Set((data ?? []).map((member) => member.club_id))];
     },
 
     async listAnnouncements(filters = {}) {

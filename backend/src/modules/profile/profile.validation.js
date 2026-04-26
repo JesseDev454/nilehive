@@ -2,7 +2,7 @@ const ApiError = require("../../shared/ApiError");
 const { assertPlainText } = require("../../shared/plainText");
 const { readStudentId } = require("../../shared/studentId");
 
-const SELF_SERVICE_REQUESTED_ROLES = new Set(["student"]);
+const SELF_SERVICE_REQUESTED_ROLES = new Set(["student", "advisor"]);
 
 function readString(payload, fieldName) {
   return typeof payload[fieldName] === "string"
@@ -33,7 +33,9 @@ function validateCompleteProfilePayload(payload = {}) {
 
   return {
     full_name: readRequiredString(payload, "full_name", "Full name"),
-    student_id: readStudentId(payload, "student_id", "Student ID"),
+    student_id: requestedRole === "student"
+      ? readStudentId(payload, "student_id", "Student ID")
+      : null,
     club_id: readRequiredString(payload, "club_id", "Club"),
     requested_role: requestedRole
   };

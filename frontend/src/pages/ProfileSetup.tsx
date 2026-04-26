@@ -18,6 +18,9 @@ import { isValidStudentId, normalizeStudentId, STUDENT_ID_ERROR_MESSAGE } from "
 export default function ProfileSetup() {
   const { profileError, session, signOut, refreshProfile } = useAuth();
   const metadata = session?.user.user_metadata ?? {};
+  const requestedRole = typeof metadata.requested_role === "string" && metadata.requested_role === "advisor"
+    ? "advisor"
+    : "student";
   const [fullName, setFullName] = useState("");
   const [studentId, setStudentId] = useState("");
   const [clubId, setClubId] = useState("");
@@ -38,6 +41,13 @@ export default function ProfileSetup() {
 
   useEffect(() => {
     const requestedClub = typeof metadata.requested_club === "string" ? metadata.requested_club : "";
+    const requestedClubId = typeof metadata.requested_club_id === "string" ? metadata.requested_club_id : "";
+
+    if (!clubId && requestedClubId && clubs.some((club) => club.id === requestedClubId)) {
+      setClubId(requestedClubId);
+      return;
+    }
+
     const matchingClub = clubs.find(
       (club) => club.name.toLowerCase() === requestedClub.toLowerCase()
     );
@@ -45,7 +55,7 @@ export default function ProfileSetup() {
     if (!clubId && matchingClub) {
       setClubId(matchingClub.id);
     }
-  }, [clubId, clubs, metadata.requested_club]);
+  }, [clubId, clubs, metadata.requested_club, metadata.requested_club_id]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -64,7 +74,7 @@ export default function ProfileSetup() {
       return;
     }
 
-    if (!isValidStudentId(studentId)) {
+    if (requestedRole === "student" && !isValidStudentId(studentId)) {
       toast.error("Check your University ID", {
         description: STUDENT_ID_ERROR_MESSAGE
       });
@@ -76,13 +86,15 @@ export default function ProfileSetup() {
     try {
       await completeProfileOnboarding({
         full_name: fullName,
-        student_id: studentId,
+        student_id: requestedRole === "student" ? studentId : null,
         club_id: clubId,
-        requested_role: "student"
+        requested_role: requestedRole
       });
       await refreshProfile();
       toast.success("Profile setup complete", {
-        description: "You can now request membership and apply for leadership after your dues are active."
+        description: requestedRole === "advisor"
+          ? "Your advisor workspace is ready."
+          : "You can now request membership and apply for leadership after your dues are active."
       });
     } catch (error) {
       toast.error("Profile setup failed", {
@@ -125,8 +137,9 @@ export default function ProfileSetup() {
             <CardContent className="flex gap-3 p-5 text-sm text-muted-foreground">
               <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-success" />
               <p>
-                For safety, self-service onboarding activates users as students first. Executive
-                and president applications open after membership and dues verification.
+                {requestedRole === "advisor"
+                  ? "Advisor onboarding links you to a specific club without asking for a student ID."
+                  : "Executive and president applications open after membership and dues verification."}
               </p>
             </CardContent>
           </Card>
@@ -149,28 +162,32 @@ export default function ProfileSetup() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="profile-student-id">University ID</Label>
-                <NhStudentId
-                  id="profile-student-id"
-                  value={studentId}
-                  onChange={setStudentId}
-                  required
-                />
-              </div>
+              {requestedRole === "student" ? (
+                <div className="space-y-2">
+                  <Label htmlFor="profile-student-id">University ID</Label>
+                  <NhStudentId
+                    id="profile-student-id"
+                    value={studentId}
+                    onChange={setStudentId}
+                    required
+                  />
+                </div>
+              ) : null}
 
               <div className="space-y-2">
                 <Label>Starting Access</Label>
                 <div className="border-2 border-foreground bg-muted px-5 py-4 text-sm font-bold text-foreground">
-                  Student
+                  {requestedRole === "advisor" ? "Advisor" : "Student"}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Club leadership applications are handled inside the app after your membership is active.
+                  {requestedRole === "advisor"
+                    ? "Advisor access opens with the club you selected."
+                    : "Club leadership applications are handled inside the app after your membership is active."}
                 </p>
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <Label>Club</Label>
+                <Label>{requestedRole === "advisor" ? "Advising Club" : "Club"}</Label>
                 <Select disabled={isLoadingClubs || clubsFailed || clubs.length === 0} value={clubId} onValueChange={setClubId}>
                   <SelectTrigger className="border-2 border-foreground bg-muted py-6">
                     <SelectValue

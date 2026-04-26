@@ -273,6 +273,47 @@ test("advisor rejection creates approval history and moves proposal to rejected 
   assert.equal(database.notifications[0].type, "advisor_rejected");
 });
 
+test("advisor cannot review a proposal they submitted themselves", async (t) => {
+  const database = createFakeDatabase();
+  const server = await createTestServer({
+    ...database,
+    async getProposalById(proposalId) {
+      assert.equal(proposalId, "proposal-self");
+      return {
+        id: "proposal-self",
+        club_id: "club-1",
+        submitted_by: "advisor-1",
+        title: "Self Submitted Proposal",
+        description: "Should not be self-approved.",
+        event_date: "2026-05-24",
+        location: "Conference Room",
+        status: "pending_advisor_review",
+        advisor_remarks: null,
+        advisor_decided_at: null,
+        advisor_decided_by: null,
+        created_at: "2026-04-05T10:00:00.000Z",
+        updated_at: "2026-04-05T10:00:00.000Z"
+      };
+    }
+  });
+  t.after(() => server.close());
+
+  const { response, payload } = await postAdvisorDecision(
+    server.baseUrl,
+    "proposal-self",
+    "advisor-token",
+    {
+      decision: "approve",
+      remarks: "Trying to self approve."
+    }
+  );
+
+  assert.equal(response.status, 403);
+  assert.equal(payload.error.code, "SELF_REVIEW_FORBIDDEN");
+  assert.equal(database.approvals.length, 0);
+  assert.equal(database.notifications.length, 0);
+});
+
 test("wrong role is blocked from advisor decisions", async (t) => {
   const database = createFakeDatabase();
   const server = await createTestServer(database);

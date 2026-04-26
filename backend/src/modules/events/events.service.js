@@ -19,11 +19,17 @@ async function getVisibleClubIds(actor, database) {
   }
 
   if (actor.role === "executive" || actor.role === "president") {
-    return actor.clubId ? [actor.clubId] : [];
+    const membershipClubIds = database.getActiveClubIdsByProfileId
+      ? await database.getActiveClubIdsByProfileId(actor.id)
+      : [];
+
+    return [...new Set([...(actor.clubId ? [actor.clubId] : []), ...membershipClubIds])];
   }
 
   if (actor.role === "student") {
-    return null;
+    return database.getActiveClubIdsByProfileId
+      ? await database.getActiveClubIdsByProfileId(actor.id)
+      : [];
   }
 
   return [];

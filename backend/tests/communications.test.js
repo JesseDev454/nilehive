@@ -350,11 +350,8 @@ test("admin can create an all-clubs announcement", async () => {
         { profile_id: "executive-1" }
       ];
     },
-    async listClubs() {
-      return [
-        { id: "club-1", advisor_id: "advisor-1" },
-        { id: "club-2", advisor_id: null }
-      ];
+    async getAllAdvisorProfileIds() {
+      return ["advisor-1"];
     },
     async createNotifications(notifications) {
       createdNotifications = notifications;

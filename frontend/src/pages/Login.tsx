@@ -6,7 +6,6 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { NhStudentId } from "@/components/NhStudentId";
 import { useAuth } from "@/contexts/AuthContext";
 import { getMicrosoftPasswordHelpUrl, isPasswordAuthEnabled } from "@/lib/env";
 
@@ -26,7 +25,6 @@ export default function Login() {
   const { signIn, session, isLoading } = useAuth();
   const location = useLocation();
   const [email, setEmail] = useState("");
-  const [studentId, setStudentId] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -120,16 +118,6 @@ export default function Login() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="font-black uppercase tracking-[0.12em]" htmlFor="login-student-id">
-                    University ID
-                  </Label>
-                  <NhStudentId id="login-student-id" value={studentId} onChange={setStudentId} disabled />
-                  <p className="text-xs text-muted-foreground">
-                    University ID login needs account mapping first. Use your university email for now.
-                  </p>
-                </div>
-
-                <div className="space-y-2">
                   <div className="flex items-center justify-between gap-3">
                     <Label className="font-black uppercase tracking-[0.12em]" htmlFor="password">
                       Password
@@ -178,7 +166,7 @@ export default function Login() {
 
                 <div className="flex items-start gap-3 text-xs text-muted-foreground">
                   <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
-                  <p>Real users should use a Nile University email address. Admin and advisor roles are assigned by Club Services.</p>
+                  <p>Real users should use a Nile University email address. Students and advisors sign in with email and password only.</p>
                 </div>
               </div>
             </form>

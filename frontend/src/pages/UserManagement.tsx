@@ -60,7 +60,6 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
   const [role, setRole] = useState<ProfileRecord["role"]>(user.role);
   const [clubId, setClubId] = useState(user.club_id || "none");
   const [remarks, setRemarks] = useState("");
-  const [replaceExisting, setReplaceExisting] = useState(false);
   const { data: clubs = [] } = useQuery({
     queryKey: ["admin-user-management-clubs"],
     queryFn: () => getClubs(),
@@ -86,7 +85,6 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
     mutationFn: () =>
       assignAdminUserAdvisor(user.id, {
         club_id: clubId === "none" ? "" : clubId,
-        replace_existing: replaceExisting,
         remarks: remarks || null
       }),
     onSuccess: async () => {
@@ -175,15 +173,15 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
             </Select>
           </div>
 
-          {role === "advisor" ? (
-            <label className="flex items-center gap-2 border-2 border-foreground bg-background p-3 text-sm lg:col-span-2">
-              <input
-                type="checkbox"
-                checked={replaceExisting}
-                onChange={(event) => setReplaceExisting(event.target.checked)}
-              />
-              Replace the current advisor if this club already has one.
-            </label>
+          {role === "advisor" && user.advisor_assignments?.length ? (
+            <div className="nh-card-soft p-4 text-sm lg:col-span-2">
+              <p className="font-semibold">Current advisor clubs</p>
+              <p className="mt-2 text-muted-foreground">
+                {user.advisor_assignments
+                  .map((assignment) => assignment.club?.name || "Unknown club")
+                  .join(", ")}
+              </p>
+            </div>
           ) : null}
 
           <div className="space-y-2 lg:col-span-2">
@@ -250,7 +248,8 @@ export default function UserManagement() {
       total: usersPage.total,
       students: users.filter((user) => user.role === "student").length,
       leadershipRequests: users.filter((user) => ["executive", "president"].includes(user.requested_role || "")).length,
-      advisors: users.filter((user) => user.role === "advisor").length
+      advisors: users.filter((user) => user.role === "advisor").length,
+      advisorRequests: users.filter((user) => user.requested_role === "advisor").length
     }),
     [users, usersPage.total]
   );
@@ -279,7 +278,7 @@ export default function UserManagement() {
         <NeoMetricCard title="Visible Users" value={summary.total} icon={Users} tone="navy" />
         <NeoMetricCard title="Students" value={summary.students} icon={UserCog} tone="gold" />
         <NeoMetricCard title="Leadership Requests" value={summary.leadershipRequests} icon={ShieldCheck} tone="green" />
-        <NeoMetricCard title="Advisors" value={summary.advisors} icon={Users} />
+        <NeoMetricCard title="Advisors / Requests" value={`${summary.advisors} / ${summary.advisorRequests}`} icon={Users} />
       </div>
 
       {selectedUser ? <UserActionPanel user={selectedUser} onClose={() => setSelectedUser(null)} /> : null}
@@ -317,6 +316,7 @@ export default function UserManagement() {
                 <SelectContent>
                   <SelectItem value="all">All requests</SelectItem>
                   <SelectItem value="student">Student</SelectItem>
+                  <SelectItem value="advisor">Advisor</SelectItem>
                   <SelectItem value="executive">Executive</SelectItem>
                   <SelectItem value="president">President</SelectItem>
                 </SelectContent>
@@ -350,15 +350,22 @@ export default function UserManagement() {
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-semibold">{user.full_name || "Unnamed user"}</p>
                         <RoleBadge role={user.role} />
-                        {["executive", "president"].includes(user.requested_role || "") && user.role === "student" ? (
+                        {["executive", "president", "advisor"].includes(user.requested_role || "") && user.role === "student" ? (
                           <Badge className="bg-primary/15 text-primary hover:bg-primary/15">
                             Requests {user.requested_role}
                           </Badge>
                         ) : null}
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {user.student_id || "University ID not set"} - {user.club?.name || "No club assigned"}
+                        {(user.student_id || (user.requested_role === "advisor" || user.role === "advisor"
+                          ? "No University ID required"
+                          : "University ID not set"))} - {user.club?.name || "No club assigned"}
                       </p>
+                      {user.advisor_assignments?.length ? (
+                        <p className="text-xs text-muted-foreground">
+                          Advisor clubs: {user.advisor_assignments.map((assignment) => assignment.club?.name || "Unknown club").join(", ")}
+                        </p>
+                      ) : null}
                       <p className="text-xs text-muted-foreground">Joined {formatDate(user.created_at)}</p>
                     </div>
                     <Button type="button" onClick={() => setSelectedUser(user)}>

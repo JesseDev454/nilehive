@@ -74,8 +74,8 @@ async function createMembershipRequest(options) {
   const { actor, payload, database = db } = options;
   requireActor(actor);
 
-  if (actor.role !== "student") {
-    throw new ApiError(403, "Only students can request club membership", "FORBIDDEN");
+  if (!["student", "executive", "president"].includes(actor.role)) {
+    throw new ApiError(403, "Only students and club leaders can request ordinary club membership", "FORBIDDEN");
   }
 
   const validatedPayload = validateCreateMembershipRequestPayload(payload);

@@ -67,10 +67,11 @@ async function completeProfileOnboarding(options) {
     });
   }
 
+  const isAdvisorOnboarding = validatedPayload.requested_role === "advisor";
   const profile = await database.createProfile({
     id: authUser.id,
     full_name: validatedPayload.full_name,
-    role: "student",
+    role: isAdvisorOnboarding ? "advisor" : "student",
     club_id: validatedPayload.club_id,
     student_id: validatedPayload.student_id,
     requested_role: validatedPayload.requested_role,
@@ -78,7 +79,7 @@ async function completeProfileOnboarding(options) {
     account_status: "active"
   });
 
-  if (database.createMembershipRequest && database.getOpenMembershipRequest) {
+  if (!isAdvisorOnboarding && database.createMembershipRequest && database.getOpenMembershipRequest) {
     const existingRequest = await database.getOpenMembershipRequest(authUser.id, validatedPayload.club_id);
 
     if (!existingRequest) {

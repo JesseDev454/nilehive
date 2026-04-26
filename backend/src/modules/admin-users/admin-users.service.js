@@ -21,6 +21,19 @@ function formatClub(club) {
   return club ? { id: club.id, name: club.name, code: club.code } : null;
 }
 
+function formatAdvisorAssignments(assignments = []) {
+  return assignments
+    .filter(Boolean)
+    .map((assignment) => ({
+      id: assignment.id,
+      club_id: assignment.club_id,
+      assigned_by: assignment.assigned_by ?? null,
+      remarks: assignment.remarks ?? null,
+      created_at: assignment.created_at ?? null,
+      club: formatClub(assignment.club)
+    }));
+}
+
 function formatProfile(profile) {
   return {
     id: profile.id,
@@ -32,9 +45,33 @@ function formatProfile(profile) {
     onboarding_status: profile.onboarding_status ?? "complete",
     account_status: profile.account_status ?? "active",
     club: formatClub(profile.club),
+    advisor_assignments: formatAdvisorAssignments(profile.advisor_assignments),
     created_at: profile.created_at,
     updated_at: profile.updated_at
   };
+}
+
+async function enrichProfilesWithAdvisorAssignments(database, profiles) {
+  const advisorProfiles = profiles.filter((profile) => profile.role === "advisor" || profile.requested_role === "advisor");
+
+  if (!advisorProfiles.length || !database.listClubAdvisorAssignments) {
+    return profiles;
+  }
+
+  const assignments = await database.listClubAdvisorAssignments({
+    advisorProfileIds: advisorProfiles.map((profile) => profile.id)
+  });
+  const assignmentsByProfileId = assignments.reduce((map, assignment) => {
+    const currentAssignments = map.get(assignment.advisor_profile_id) || [];
+    currentAssignments.push(assignment);
+    map.set(assignment.advisor_profile_id, currentAssignments);
+    return map;
+  }, new Map());
+
+  return profiles.map((profile) => ({
+    ...profile,
+    advisor_assignments: assignmentsByProfileId.get(profile.id) || []
+  }));
 }
 
 async function writeRoleHistory(database, actor, profile, update, remarks) {
@@ -66,12 +103,19 @@ async function listAdminUsers(options) {
     sort: pagination?.sort,
     order: pagination?.order
   }), pagination);
+  const enrichedItems = await enrichProfilesWithAdvisorAssignments(
+    database,
+    pagination ? profilesResult.items : profilesResult
+  );
 
   if (pagination) {
-    return mapPaginatedResult(profilesResult, formatProfile);
+    return mapPaginatedResult(
+      { ...profilesResult, items: enrichedItems },
+      formatProfile
+    );
   }
 
-  return profilesResult.map(formatProfile);
+  return enrichedItems.map(formatProfile);
 }
 
 async function getAdminUser(options) {
@@ -84,7 +128,8 @@ async function getAdminUser(options) {
     throw new ApiError(404, "Profile not found", "PROFILE_NOT_FOUND");
   }
 
-  return formatProfile(profile);
+  const [enrichedProfile] = await enrichProfilesWithAdvisorAssignments(database, [profile]);
+  return formatProfile(enrichedProfile);
 }
 
 async function updateAdminUserRole(options) {
@@ -144,7 +189,8 @@ async function updateAdminUserRole(options) {
     }
   });
 
-  return { profile: formatProfile(updatedProfile), history };
+  const [enrichedProfile] = await enrichProfilesWithAdvisorAssignments(database, [updatedProfile]);
+  return { profile: formatProfile(enrichedProfile), history };
 }
 
 async function assignAdvisorToClub(options) {
@@ -166,21 +212,31 @@ async function assignAdvisorToClub(options) {
     });
   }
 
-  if (club.advisor_id && club.advisor_id !== profile.id && !validatedPayload.replace_existing) {
-    throw new ApiError(409, "This club already has an advisor assigned", "ADVISOR_ALREADY_ASSIGNED");
+  const existingAssignments = database.listClubAdvisorAssignments
+    ? await database.listClubAdvisorAssignments({ clubId: club.id })
+    : [];
+
+  if (existingAssignments.some((assignment) => assignment.advisor_profile_id === profile.id)) {
+    throw new ApiError(409, "This advisor is already assigned to the selected club", "ADVISOR_ALREADY_ASSIGNED");
   }
 
-  if (database.clearClubAdvisorAssignments) {
-    await database.clearClubAdvisorAssignments(profile.id);
-  }
-
-  const updatedProfile = await database.updateProfile(profile.id, { role: "advisor", club_id: club.id });
-  const updatedClub = await database.updateClubAdvisor(club.id, profile.id);
+  const updatedProfile = await database.updateProfile(profile.id, {
+    role: "advisor",
+    club_id: profile.club_id ?? club.id
+  });
+  const assignment = database.createClubAdvisorAssignment
+    ? await database.createClubAdvisorAssignment({
+        club_id: club.id,
+        advisor_profile_id: profile.id,
+        assigned_by: actor.id,
+        remarks: validatedPayload.remarks ?? null
+      })
+    : null;
   const history = await writeRoleHistory(
     database,
     actor,
     profile,
-    { role: "advisor", club_id: club.id },
+    { role: "advisor", club_id: profile.club_id ?? club.id },
     validatedPayload.remarks
   );
   await writeAuditLog(database, {
@@ -191,13 +247,18 @@ async function assignAdvisorToClub(options) {
     club_id: club.id,
     remarks: validatedPayload.remarks,
     metadata: {
-      replace_existing: validatedPayload.replace_existing,
       advisor_profile_id: profile.id,
       club_id: club.id
     }
   });
 
-  return { profile: formatProfile(updatedProfile), club: updatedClub, history };
+  const [enrichedProfile] = await enrichProfilesWithAdvisorAssignments(database, [updatedProfile]);
+
+  return {
+    profile: formatProfile(enrichedProfile),
+    club: assignment?.club ?? formatClub(club),
+    history
+  };
 }
 
 module.exports = {

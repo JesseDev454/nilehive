@@ -31,9 +31,10 @@ interface AuthContextType {
     email: string;
     password: string;
     fullName: string;
-    requestedRole: string;
+    requestedRole: "student" | "advisor";
+    clubId: string;
     clubName: string;
-    studentId: string;
+    studentId?: string;
   }) => Promise<void>;
   signOut: () => Promise<void>;
   getAccessToken: () => string;
@@ -238,7 +239,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           throw error;
         }
       },
-      async signUp({ email, password, fullName, requestedRole, clubName, studentId }) {
+      async signUp({ email, password, fullName, requestedRole, clubId, clubName, studentId }) {
         if (!isPasswordAuthEnabled()) {
           throw new Error("Password signup is disabled. Please continue with your Nile University Microsoft account.");
         }
@@ -249,9 +250,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           throw new Error(`Please use your Nile University email address (${getAllowedEmailDomainLabel()}).`);
         }
 
-        const normalizedStudentId = normalizeStudentId(studentId);
+        const normalizedStudentId = requestedRole === "student"
+          ? normalizeStudentId(studentId ?? "")
+          : "";
 
-        if (!isValidStudentId(normalizedStudentId)) {
+        if (requestedRole === "student" && !isValidStudentId(normalizedStudentId)) {
           throw new Error(STUDENT_ID_ERROR_MESSAGE);
         }
 
@@ -262,8 +265,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             data: {
               full_name: fullName.trim(),
               requested_role: requestedRole,
+              requested_club_id: clubId,
               requested_club: clubName.trim(),
-              student_id: normalizedStudentId
+              student_id: requestedRole === "student" ? normalizedStudentId : null
             }
           }
         });

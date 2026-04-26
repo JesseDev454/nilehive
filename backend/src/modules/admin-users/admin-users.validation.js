@@ -42,7 +42,6 @@ function validateAdvisorAssignmentPayload(payload = {}) {
 
   return {
     club_id: clubId,
-    replace_existing: payload.replace_existing === true,
     remarks: readOptionalString(payload, "remarks")
   };
 }

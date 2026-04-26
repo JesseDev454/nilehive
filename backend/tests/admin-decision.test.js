@@ -251,6 +251,32 @@ test("non-admin role is blocked from admin decision", async () => {
   );
 });
 
+test("admin cannot review a proposal they submitted themselves", async () => {
+  const fakeDatabase = {
+    async getProposalById() {
+      return createPendingAdminProposal({
+        submitted_by: "admin-1"
+      });
+    }
+  };
+
+  await assert.rejects(
+    () =>
+      submitAdminDecision({
+        actor: {
+          id: "admin-1",
+          role: "admin"
+        },
+        proposalId: "proposal-1",
+        payload: {
+          decision: "approve"
+        },
+        database: fakeDatabase
+      }),
+    (error) => error.statusCode === 403 && error.code === "SELF_REVIEW_FORBIDDEN"
+  );
+});
+
 function createRouteTestDatabase() {
   const profiles = {
     "admin-1": {

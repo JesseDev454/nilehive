@@ -144,6 +144,41 @@ test("new user can complete student profile onboarding", async (t) => {
   assert.equal(payload.data.account_status, "active");
 });
 
+test("advisor can complete profile onboarding without a student ID", async (t) => {
+  const database = createFakeDatabase();
+  database.getUserByAccessToken = async (accessToken) => {
+    if (accessToken === "advisor-token") {
+      return {
+        id: "advisor-1",
+        email: "advisor@nileuniversity.edu.ng",
+        user_metadata: {}
+      };
+    }
+
+    return null;
+  };
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const { response, payload } = await requestJson(
+    server.baseUrl,
+    "/api/v1/profile/onboarding",
+    "advisor-token",
+    {
+      full_name: "Daniel Advisor",
+      student_id: null,
+      club_id: "club-1",
+      requested_role: "advisor"
+    }
+  );
+
+  assert.equal(response.status, 201);
+  assert.equal(payload.data.role, "advisor");
+  assert.equal(payload.data.requested_role, "advisor");
+  assert.equal(payload.data.student_id, null);
+  assert.equal(payload.data.club_id, "club-1");
+});
+
 test("profile onboarding rejects leadership self-service roles", async (t) => {
   const server = await createTestServer(createFakeDatabase());
   t.after(() => server.close());

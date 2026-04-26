@@ -21,16 +21,16 @@ async function getClubRecipientIds(database, clubId) {
 }
 
 async function getAllClubRecipientIds(database) {
-  const [profiles, members, clubs] = await Promise.all([
+  const [profiles, members, advisorIds] = await Promise.all([
     database.listProfiles ? database.listProfiles() : [],
     database.listClubMembers ? database.listClubMembers({ membershipStatus: "active" }) : [],
-    database.listClubs ? database.listClubs() : []
+    database.getAllAdvisorProfileIds ? database.getAllAdvisorProfileIds() : []
   ]);
 
   return uniqueIds([
     ...profiles.filter((profile) => profile.club_id).map((profile) => profile.id),
     ...members.map((member) => member.profile_id),
-    ...clubs.map((club) => club.advisor_id)
+    ...advisorIds
   ]);
 }
 

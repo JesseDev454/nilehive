@@ -87,9 +87,8 @@ test("non-admin cannot promote users", async () => {
 });
 
 test("admin can assign an advisor to a club", async () => {
-  let clearedAdvisorId;
-  let updatedAdvisorClub;
   let profileUpdate;
+  let assignmentInput;
   let historyEntry;
   const fakeDatabase = {
     async getProfileById(profileId) {
@@ -105,17 +104,25 @@ test("admin can assign an advisor to a club", async () => {
       assert.equal(clubId, "club-1");
       return createClub();
     },
-    async clearClubAdvisorAssignments(advisorId) {
-      clearedAdvisorId = advisorId;
+    async listClubAdvisorAssignments() {
       return [];
     },
     async updateProfile(profileId, update) {
       profileUpdate = update;
       return createProfile({ id: profileId, ...update });
     },
-    async updateClubAdvisor(clubId, advisorId) {
-      updatedAdvisorClub = { clubId, advisorId };
-      return createClub({ id: clubId, advisor_id: advisorId });
+    async createClubAdvisorAssignment(input) {
+      assignmentInput = input;
+      return {
+        id: "assignment-1",
+        club_id: "club-1",
+        advisor_profile_id: "advisor-1",
+        assigned_by: "admin-1",
+        remarks: "Assigned as club advisor.",
+        created_at: "2026-04-17T10:00:00.000Z",
+        club: createClub(),
+        advisor: createProfile({ id: "advisor-1", role: "advisor", club_id: "club-1" })
+      };
     },
     async createProfileRoleHistory(entry) {
       historyEntry = entry;
@@ -133,20 +140,37 @@ test("admin can assign an advisor to a club", async () => {
     database: fakeDatabase
   });
 
-  assert.equal(clearedAdvisorId, "advisor-1");
   assert.deepEqual(profileUpdate, { role: "advisor", club_id: "club-1" });
-  assert.deepEqual(updatedAdvisorClub, { clubId: "club-1", advisorId: "advisor-1" });
+  assert.deepEqual(assignmentInput, {
+    club_id: "club-1",
+    advisor_profile_id: "advisor-1",
+    assigned_by: "admin-1",
+    remarks: "Assigned as club advisor."
+  });
   assert.equal(historyEntry.new_role, "advisor");
-  assert.equal(result.club.advisor_id, "advisor-1");
+  assert.equal(result.club.id, "club-1");
 });
 
-test("advisor assignment rejects occupied club unless replacement is confirmed", async () => {
+test("advisor assignment rejects duplicate advisor-club links", async () => {
   const fakeDatabase = {
     async getProfileById() {
-      return createProfile({ id: "advisor-2", role: "student", club_id: null });
+      return createProfile({ id: "advisor-1", role: "advisor", club_id: "club-1" });
     },
     async getClubById() {
-      return createClub({ advisor_id: "advisor-1" });
+      return createClub();
+    },
+    async listClubAdvisorAssignments() {
+      return [
+        {
+          id: "assignment-1",
+          club_id: "club-1",
+          advisor_profile_id: "advisor-1",
+          assigned_by: "admin-1",
+          remarks: null,
+          created_at: "2026-04-17T10:00:00.000Z",
+          club: createClub()
+        }
+      ];
     }
   };
 
@@ -154,7 +178,7 @@ test("advisor assignment rejects occupied club unless replacement is confirmed",
     () =>
       assignAdvisorToClub({
         actor: { id: "admin-1", role: "admin" },
-        profileId: "advisor-2",
+        profileId: "advisor-1",
         payload: { club_id: "club-1" },
         database: fakeDatabase
       }),
