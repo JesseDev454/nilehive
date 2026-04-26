@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -10,6 +10,8 @@ import { useSidebar } from "@/components/ui/sidebar";
 function AppShellEffects() {
   const location = useLocation();
   const { openMobile, setOpenMobile } = useSidebar();
+  const lastRouteKeyRef = useRef<string | null>(null);
+  const routeKey = `${location.pathname}${location.search}${location.hash}`;
 
   const clearStaleScrollLock = useCallback(() => {
     if (typeof document === "undefined") {
@@ -30,7 +32,10 @@ function AppShellEffects() {
   }, []);
 
   useEffect(() => {
-    if (openMobile) {
+    const previousRouteKey = lastRouteKeyRef.current;
+    lastRouteKeyRef.current = routeKey;
+
+    if (previousRouteKey && previousRouteKey !== routeKey && openMobile) {
       setOpenMobile(false);
     }
 
@@ -39,7 +44,7 @@ function AppShellEffects() {
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [clearStaleScrollLock, location.hash, location.pathname, location.search, openMobile, setOpenMobile]);
+  }, [clearStaleScrollLock, openMobile, routeKey, setOpenMobile]);
 
   useEffect(() => {
     clearStaleScrollLock();
