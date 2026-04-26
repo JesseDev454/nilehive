@@ -79,7 +79,7 @@ function createApp(options = {}) {
     next();
   });
 
-  app.use(express.json({ limit: "1mb" }));
+  app.use(express.json({ limit: "10mb" }));
 
   app.get("/", (req, res) => {
     res.status(200).json({

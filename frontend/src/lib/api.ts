@@ -132,6 +132,21 @@ export interface ProfileOnboardingPayload {
   requested_role?: "student" | "advisor";
 }
 
+export interface SignupReceiptUploadPayload {
+  user_id: string;
+  club_id: string;
+  file_name: string;
+  content_type: string;
+  file_data_url: string;
+}
+
+export interface SignupReceiptUploadResult {
+  proof_url: string;
+  due_payment_id: string;
+  user_id: string;
+  club_id: string;
+}
+
 export interface ProposalRecord {
   id: string;
   club_id?: string;
@@ -1074,6 +1089,15 @@ export async function completeProfileOnboarding(payload: ProfileOnboardingPayloa
   const response = await request<ApiEnvelope<ProfileRecord>>("/api/v1/profile/onboarding", {
     method: "POST",
     token,
+    body: payload
+  });
+
+  return response.data;
+}
+
+export async function uploadSignupReceipt(payload: SignupReceiptUploadPayload) {
+  const response = await request<ApiEnvelope<SignupReceiptUploadResult>>("/api/v1/profile/signup-receipt", {
+    method: "POST",
     body: payload
   });
 

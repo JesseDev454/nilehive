@@ -1216,6 +1216,30 @@ function createDatabase(options = {}) {
       return Object.fromEntries(entries);
     },
 
+    async getAuthUserById(profileId) {
+      const { data, error } = await getClient().auth.admin.getUserById(profileId);
+
+      if (error) {
+        throw error;
+      }
+
+      return data?.user ?? null;
+    },
+
+    async uploadStorageFile({ bucket, path, fileBuffer, contentType }) {
+      const { data, error } = await getClient().storage.from(bucket).upload(path, fileBuffer, {
+        cacheControl: "3600",
+        upsert: false,
+        contentType
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
     async createEmailDeliveryLog(log) {
       const { data, error } = await getClient()
         .from("email_deliveries")

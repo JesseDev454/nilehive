@@ -49,7 +49,7 @@ interface AuthContextType {
     paymentPaidAt?: string | null;
     proofUrl?: string | null;
     payerNote?: string | null;
-  }) => Promise<{ needsEmailConfirmation: boolean }>;
+  }) => Promise<{ needsEmailConfirmation: boolean; userId: string | null }>;
   signOut: () => Promise<void>;
   getAccessToken: () => string;
   refreshProfile: () => Promise<AppProfile | null>;
@@ -358,7 +358,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         return {
-          needsEmailConfirmation: !data.session
+          needsEmailConfirmation: !data.session,
+          userId: data.user?.id ?? null
         };
       },
       async signOut() {

@@ -10,6 +10,7 @@ function createProfileRouter(options = {}) {
   const controller = createProfileController({ database });
 
   router.get("/me", authUser, controller.getMe);
+  router.post("/signup-receipt", controller.uploadSignupReceipt);
   router.post("/onboarding", authUser, controller.completeOnboarding);
 
   return router;

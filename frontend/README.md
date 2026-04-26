@@ -87,6 +87,16 @@ Important current rule:
 - `ProfileSetup` is a legacy recovery page
 - it is not the normal post-signup destination anymore
 
+Signup currently includes:
+
+- user role selection (`student` or `advisor`)
+- first club selection during account creation
+- optional student ID for students
+- required phone number and department
+- fresher/returning student type for students
+- shared Club Services dues details
+- receipt image upload that is attached to the signup-created dues record
+
 ## Frontend Development Rules
 
 1. Use `src/lib/api.ts` for backend communication.

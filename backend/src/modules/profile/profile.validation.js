@@ -41,7 +41,36 @@ function validateCompleteProfilePayload(payload = {}) {
   };
 }
 
+function validateSignupReceiptPayload(payload = {}) {
+  const userId = readRequiredString(payload, "user_id", "User");
+  const clubId = readRequiredString(payload, "club_id", "Club");
+  const fileName = readRequiredString(payload, "file_name", "File name");
+  const contentType = readRequiredString(payload, "content_type", "Content type");
+  const fileDataUrl = typeof payload.file_data_url === "string" ? payload.file_data_url.trim() : "";
+
+  if (!/^image\//i.test(contentType)) {
+    throw new ApiError(400, "Only image receipts can be uploaded during signup", "VALIDATION_ERROR", {
+      field: "content_type"
+    });
+  }
+
+  if (!/^data:image\/[a-zA-Z0-9.+-]+;base64,/i.test(fileDataUrl)) {
+    throw new ApiError(400, "Receipt upload data is invalid", "VALIDATION_ERROR", {
+      field: "file_data_url"
+    });
+  }
+
+  return {
+    user_id: userId,
+    club_id: clubId,
+    file_name: fileName,
+    content_type: contentType,
+    file_data_url: fileDataUrl
+  };
+}
+
 module.exports = {
   SELF_SERVICE_REQUESTED_ROLES,
-  validateCompleteProfilePayload
+  validateCompleteProfilePayload,
+  validateSignupReceiptPayload
 };

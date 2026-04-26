@@ -66,10 +66,11 @@ The normal signup flow is:
 
 1. user signs up in the frontend
 2. signup metadata is sent to Supabase Auth
-3. [0037_signup_profile_provisioning.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/migrations/0037_signup_profile_provisioning.sql) provisions the app profile
-4. students also get an initial ordinary membership request
-5. if email confirmation is required, the user sees the confirmation page
-6. after confirmation or immediate session creation, the user enters the app directly
+3. [0040_unified_club_dues_and_signup_join_flow.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/migrations/0040_unified_club_dues_and_signup_join_flow.sql) provisions the app profile
+4. students also get an initial membership request and linked dues record based on the selected club and student type
+5. if the student selected a receipt image on signup, the frontend uploads it through the public signup receipt endpoint after account creation and the backend attaches it to the created dues record
+6. if email confirmation is required, the user sees the confirmation page
+7. after confirmation or immediate session creation, the user enters the app directly
 
 ### Legacy Recovery Path
 
@@ -242,7 +243,7 @@ Current migration range:
 ```text
 0001_week1_schema.sql
 ...
-0037_signup_profile_provisioning.sql
+0040_unified_club_dues_and_signup_join_flow.sql
 ```
 
 ### SQL Files And When To Use Them
@@ -334,11 +335,16 @@ Examples:
 ### Student Signup
 
 - requires Nile email
-- requires student ID
+- allows student ID if available, but does not require it at signup
+- requires phone number
+- requires department
 - requires club choice
+- requires student type (`fresher` or `returning`)
+- requires payment account name and transaction reference
 - creates Supabase auth user
 - provisions `public.profiles` automatically
-- creates the first ordinary membership request automatically
+- creates the first membership request and dues record automatically
+- can attach an uploaded receipt image to the created dues record
 
 ### Advisor Signup
 
@@ -409,11 +415,21 @@ Check:
 
 Check:
 
-1. migration `0037_signup_profile_provisioning.sql` was applied
+1. migration `0040_unified_club_dues_and_signup_join_flow.sql` was applied
 2. user exists in `auth.users`
 3. matching `public.profiles` row exists
 4. Supabase table grants and RLS are correct
 5. the user is not hitting the legacy recovery path because of an older account
+
+### Signup Receipt Upload Fails
+
+Check:
+
+1. the backend is running the new `/api/v1/profile/signup-receipt` route
+2. the `dues-receipts` bucket exists in Supabase
+3. the signup user was created successfully before the upload fires
+4. the uploaded file is an image and smaller than 5MB
+5. the signup-created membership request and dues record were created by the provisioning trigger
 
 ### Clubs Do Not Show On Signup
 

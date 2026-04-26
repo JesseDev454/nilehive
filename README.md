@@ -5,7 +5,7 @@
 [![Backend](https://img.shields.io/badge/backend-Express%20%2B%20Supabase-16a34a)](#tech-stack)
 [![Auth](https://img.shields.io/badge/auth-Supabase%20Auth-0f766e)](#auth-and-signup-model)
 [![Database](https://img.shields.io/badge/database-Postgres%20on%20Supabase-059669)](#supabase-and-database-rules)
-[![Tests](https://img.shields.io/badge/tests-192%20passing-15803d)](#verification)
+[![Tests](https://img.shields.io/badge/tests-195%20passing-15803d)](#verification)
 [![License](https://img.shields.io/badge/license-private-52525b)](#repository-structure)
 
 NileHive is the club operations and event approval platform for the Club Services Unit at Nile University of Nigeria.
@@ -34,6 +34,7 @@ NileHive currently supports:
 - password-based Supabase Auth with Nile University email restrictions
 - automatic app-profile provisioning during signup
 - student and advisor self-signup
+- student-type dues with shared Club Services payment details
 - membership requests and dues verification workflows
 - president proposal submission
 - advisor review queue
@@ -124,7 +125,7 @@ Apply them in numeric order through:
 The current migration range in this repo ends at:
 
 ```text
-0037_signup_profile_provisioning.sql
+0040_unified_club_dues_and_signup_join_flow.sql
 ```
 
 ### 4. Start the app
@@ -156,11 +157,12 @@ The normal signup flow is now:
 
 1. user completes the signup form
 2. Supabase creates the auth account
-3. signup metadata is consumed by the SQL trigger in [0037_signup_profile_provisioning.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/migrations/0037_signup_profile_provisioning.sql)
+3. signup metadata is consumed by the SQL trigger in [0040_unified_club_dues_and_signup_join_flow.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/migrations/0040_unified_club_dues_and_signup_join_flow.sql)
 4. a matching `public.profiles` row is created automatically
-5. student signup also creates the first ordinary membership request
-6. if Supabase requires email confirmation, the user sees a confirmation-pending page
-7. after confirmation or immediate session creation, the user enters the app directly
+5. student signup also creates the first membership request and dues record using the selected club and student type
+6. signup can attach a receipt image through the public signup receipt endpoint, which stores the proof on the created dues record
+7. if Supabase requires email confirmation, the user sees a confirmation-pending page
+8. after confirmation or immediate session creation, the user enters the app directly
 
 Important rule:
 
