@@ -67,6 +67,9 @@ export default function Members() {
   const [membershipStatus, setMembershipStatus] = useState<ClubMemberRecord["membership_status"]>("inactive");
   const canViewMembers = role === "president" || role === "executive" || role === "admin";
   const canManageMembers = role === "president" || role === "admin";
+  const availableClubRoles: ClubMemberRecord["club_role"][] = role === "admin"
+    ? ["member", "executive", "president"]
+    : ["member", "executive"];
   useEffect(() => {
     setPage(1);
   }, [memberClubFilter]);
@@ -235,9 +238,11 @@ export default function Members() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="member">Member</SelectItem>
-                        <SelectItem value="executive">Executive</SelectItem>
-                        <SelectItem value="president">President</SelectItem>
+                        {availableClubRoles.map((clubRoleOption) => (
+                          <SelectItem key={clubRoleOption} value={clubRoleOption}>
+                            {clubRoleOption.charAt(0).toUpperCase() + clubRoleOption.slice(1)}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   ) : (
@@ -352,6 +357,9 @@ export default function Members() {
             <p className="text-sm text-muted-foreground">
               Adding a member here updates club records only. It does not create a login account, so the person should sign up separately with a Nile University email if they need app access.
             </p>
+            <p className="text-sm text-muted-foreground">
+              Club Services assigns presidents. Presidents can choose executives only from active dues-verified members.
+            </p>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleAddMember} className="nh-form-grid">
@@ -422,9 +430,11 @@ export default function Members() {
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="member">Member</SelectItem>
-                    <SelectItem value="executive">Executive</SelectItem>
-                    <SelectItem value="president">President</SelectItem>
+                    {availableClubRoles.map((clubRoleOption) => (
+                      <SelectItem key={clubRoleOption} value={clubRoleOption}>
+                        {clubRoleOption.charAt(0).toUpperCase() + clubRoleOption.slice(1)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

@@ -51,11 +51,33 @@ function readOptionalDate(payload, fieldName) {
   return value;
 }
 
+function readStudentType(payload, required = false) {
+  const value = readOptionalString(payload, "student_type");
+
+  if (!value) {
+    if (required) {
+      throw new ApiError(400, "Student type is required", "VALIDATION_ERROR", {
+        field: "student_type"
+      });
+    }
+
+    return null;
+  }
+
+  if (!["fresher", "returning"].includes(value)) {
+    throw new ApiError(400, "Student type must be fresher or returning", "VALIDATION_ERROR", {
+      field: "student_type"
+    });
+  }
+
+  return value;
+}
+
 function validateCreateMembershipRequestPayload(payload = {}) {
   const requestedRole = readOptionalString(payload, "requested_role") || "member";
 
   if (!REQUESTED_MEMBER_ROLES.has(requestedRole)) {
-    throw new ApiError(400, "Membership requests are only for ordinary club membership. Use leadership applications for executive or president roles.", "VALIDATION_ERROR", {
+    throw new ApiError(400, "Membership requests are only for ordinary club membership. Club Services assigns presidents, and presidents choose executives from active members.", "VALIDATION_ERROR", {
       field: "requested_role"
     });
   }
@@ -64,6 +86,8 @@ function validateCreateMembershipRequestPayload(payload = {}) {
     club_id: readRequiredString(payload, "club_id", "Club"),
     requested_role: requestedRole,
     remarks: readOptionalString(payload, "remarks"),
+    student_type: readStudentType(payload, false),
+    join_reason: readOptionalString(payload, "join_reason"),
     payment_account_name: readRequiredString(payload, "payment_account_name", "Name on account"),
     payment_reference: readRequiredString(payload, "payment_reference", "Payment reference"),
     payment_paid_at: readOptionalDate(payload, "payment_paid_at"),

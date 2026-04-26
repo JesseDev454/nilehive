@@ -96,11 +96,16 @@ function validatePaymentConfirmationPayload(payload = {}) {
 function validatePaymentSettingsPayload(payload = {}) {
   return {
     club_id: readOptionalString(payload, "club_id"),
-    dues_amount: Object.prototype.hasOwnProperty.call(payload, "dues_amount") ? readDuesAmount(payload) : null,
     bank_name: readRequiredString(payload, "bank_name", "Bank name"),
     account_number: readRequiredString(payload, "account_number", "Account number"),
     account_name: readRequiredString(payload, "account_name", "Account name"),
-    payment_instructions: readOptionalString(payload, "payment_instructions")
+    payment_instructions: readOptionalString(payload, "payment_instructions"),
+    fresher_dues_amount: Object.prototype.hasOwnProperty.call(payload, "fresher_dues_amount")
+      ? readDuesAmount(payload, "fresher_dues_amount")
+      : 10000,
+    returning_student_dues_amount: Object.prototype.hasOwnProperty.call(payload, "returning_student_dues_amount")
+      ? readDuesAmount(payload, "returning_student_dues_amount")
+      : 5000
   };
 }
 
@@ -115,17 +120,24 @@ function validateBulkPaymentSettingsPayload(payload = {}) {
     bank_name: readRequiredString(payload, "bank_name", "Bank name"),
     account_number: readRequiredString(payload, "account_number", "Account number"),
     account_name: readRequiredString(payload, "account_name", "Account name"),
-    payment_instructions: readOptionalString(payload, "payment_instructions")
+    payment_instructions: readOptionalString(payload, "payment_instructions"),
+    fresher_dues_amount: Object.prototype.hasOwnProperty.call(payload, "fresher_dues_amount")
+      ? readDuesAmount(payload, "fresher_dues_amount")
+      : 10000,
+    returning_student_dues_amount: Object.prototype.hasOwnProperty.call(payload, "returning_student_dues_amount")
+      ? readDuesAmount(payload, "returning_student_dues_amount")
+      : 5000
   };
 }
 
 function validateBulkClubPaymentProfilePayload(payload = {}) {
   return {
-    dues_amount: readDuesAmount(payload),
     bank_name: readRequiredString(payload, "bank_name", "Bank name"),
     account_number: readRequiredString(payload, "account_number", "Account number"),
     account_name: readRequiredString(payload, "account_name", "Account name"),
-    payment_instructions: readOptionalString(payload, "payment_instructions")
+    payment_instructions: readOptionalString(payload, "payment_instructions"),
+    fresher_dues_amount: readDuesAmount(payload, "fresher_dues_amount"),
+    returning_student_dues_amount: readDuesAmount(payload, "returning_student_dues_amount")
   };
 }
 

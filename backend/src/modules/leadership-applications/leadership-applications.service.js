@@ -136,33 +136,13 @@ async function assertLeadershipEligibility({ actor, payload, database }) {
 }
 
 async function createLeadershipApplication(options) {
-  const { actor, payload, database = db } = options;
+  const { actor } = options;
   requireActor(actor);
-
-  const validatedPayload = validateCreateLeadershipApplicationPayload(payload);
-  const { member } = await assertLeadershipEligibility({
-    actor,
-    payload: validatedPayload,
-    database
-  });
-
-  if (member.club_role === validatedPayload.requested_role) {
-    throw new ApiError(409, `You are already listed as ${validatedPayload.requested_role} for this club`, "ROLE_ALREADY_ACTIVE");
-  }
-
-  const application = await database.createLeadershipApplication({
-    profile_id: actor.id,
-    club_id: validatedPayload.club_id,
-    current_app_role: actor.role,
-    requested_role: validatedPayload.requested_role,
-    status: "pending",
-    reason: validatedPayload.reason,
-    experience: validatedPayload.experience,
-    goals: validatedPayload.goals,
-    availability: validatedPayload.availability
-  });
-
-  return formatLeadershipApplication(application);
+  throw new ApiError(
+    403,
+    "Leadership roles are no longer self-requested. Club Services assigns presidents, and presidents choose executives from active members.",
+    "LEADERSHIP_SELF_SERVICE_DISABLED"
+  );
 }
 
 async function listMyLeadershipApplications(options) {

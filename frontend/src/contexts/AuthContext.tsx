@@ -14,6 +14,10 @@ export interface AppProfile {
   role: AppRole;
   club_id: string | null;
   student_id?: string | null;
+  phone_number?: string | null;
+  department?: string | null;
+  student_type?: "fresher" | "returning" | null;
+  join_reason?: string | null;
   requested_role?: AppRole | null;
   onboarding_status?: string | null;
 }
@@ -36,6 +40,15 @@ interface AuthContextType {
     clubId: string;
     clubName: string;
     studentId?: string;
+    phoneNumber?: string;
+    department?: string;
+    studentType?: "fresher" | "returning";
+    joinReason?: string;
+    paymentAccountName?: string;
+    paymentReference?: string;
+    paymentPaidAt?: string | null;
+    proofUrl?: string | null;
+    payerNote?: string | null;
   }) => Promise<{ needsEmailConfirmation: boolean }>;
   signOut: () => Promise<void>;
   getAccessToken: () => string;
@@ -52,7 +65,7 @@ const PROFILE_FETCH_RETRY_DELAY_MS = 500;
 async function fetchProfile(userId: string) {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, full_name, role, club_id, student_id, requested_role, onboarding_status")
+    .select("id, full_name, role, club_id, student_id, phone_number, department, student_type, join_reason, requested_role, onboarding_status")
     .eq("id", userId)
     .maybeSingle();
 
@@ -276,7 +289,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           throw error;
         }
       },
-      async signUp({ email, password, fullName, requestedRole, clubId, clubName, studentId }) {
+      async signUp({
+        email,
+        password,
+        fullName,
+        requestedRole,
+        clubId,
+        clubName,
+        studentId,
+        phoneNumber,
+        department,
+        studentType,
+        joinReason,
+        paymentAccountName,
+        paymentReference,
+        paymentPaidAt,
+        proofUrl,
+        payerNote
+      }) {
         if (!isPasswordAuthEnabled()) {
           throw new Error("Password signup is disabled. Please continue with your Nile University Microsoft account.");
         }
@@ -291,7 +321,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           ? normalizeStudentId(studentId ?? "")
           : "";
 
-        if (requestedRole === "student" && !isValidStudentId(normalizedStudentId)) {
+        if (requestedRole === "student" && normalizedStudentId && !isValidStudentId(normalizedStudentId)) {
           throw new Error(STUDENT_ID_ERROR_MESSAGE);
         }
 
@@ -304,7 +334,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               requested_role: requestedRole,
               requested_club_id: clubId,
               requested_club: clubName.trim(),
-              student_id: requestedRole === "student" ? normalizedStudentId : null
+              student_id: requestedRole === "student" ? normalizedStudentId || null : null,
+              phone_number: phoneNumber?.trim() || null,
+              department: department?.trim() || null,
+              student_type: requestedRole === "student" ? studentType || "returning" : null,
+              join_reason: requestedRole === "student" ? joinReason?.trim() || null : null,
+              payment_account_name: requestedRole === "student" ? paymentAccountName?.trim() || null : null,
+              payment_reference: requestedRole === "student" ? paymentReference?.trim() || null : null,
+              payment_paid_at: requestedRole === "student" ? paymentPaidAt || null : null,
+              proof_url: requestedRole === "student" ? proofUrl?.trim() || null : null,
+              payer_note: requestedRole === "student" ? payerNote?.trim() || null : null
             }
           }
         });

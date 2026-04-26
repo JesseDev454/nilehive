@@ -94,7 +94,7 @@ export default function ProfileSetup() {
       toast.success("Profile setup complete", {
         description: requestedRole === "advisor"
           ? "Your advisor workspace is ready."
-          : "You can now request membership and apply for leadership after your dues are active."
+          : "Your profile is ready. You can now join clubs and send payment details from the membership page."
       });
     } catch (error) {
       toast.error("Profile setup failed", {
@@ -138,7 +138,7 @@ export default function ProfileSetup() {
               <p>
                 {requestedRole === "advisor"
                   ? "Advisor onboarding links you to a specific club without asking for a student ID."
-                  : "Executive and president applications open after membership and dues verification."}
+                  : "Club Services assigns presidents, and presidents choose executives from active members."}
               </p>
             </CardContent>
           </Card>
@@ -181,7 +181,7 @@ export default function ProfileSetup() {
                 <p className="text-xs text-muted-foreground">
                   {requestedRole === "advisor"
                     ? "Advisor access opens with the club you selected."
-                    : "Club leadership applications are handled inside the app after your membership is active."}
+                    : "Club Services assigns presidents, and presidents choose executives from active members."}
                 </p>
               </div>
 

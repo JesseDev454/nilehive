@@ -1647,7 +1647,7 @@ function StudentDashboard() {
                 <AdminEmptyState
                   icon={UserPlus}
                   title="You have not requested a club yet"
-                  message="Start by choosing a club you care about. Your request will go to the right club leadership."
+                  message="Start by choosing a club you care about. Your paid join request will go into Club Services review."
                   action={{ label: "Discover clubs", to: "/membership" }}
                 />
               ) : (
@@ -1758,7 +1758,7 @@ function StudentDashboard() {
               ) : submittedDues.length > 0 ? (
                 <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
                   <p className="font-semibold">Payment confirmation submitted</p>
-                  <p className="mt-1 text-sm text-primary-foreground/70">Your club leadership or admin can now verify it.</p>
+                  <p className="mt-1 text-sm text-primary-foreground/70">Your club president or Club Services admin can now verify it.</p>
                 </div>
               ) : (
                 <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4 text-sm text-primary-foreground/75">

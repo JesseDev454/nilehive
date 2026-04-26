@@ -59,6 +59,10 @@ export interface ProfileRecord {
   role: "executive" | "advisor" | "admin" | "president" | "student";
   club_id: string | null;
   student_id?: string | null;
+  phone_number?: string | null;
+  department?: string | null;
+  student_type?: "fresher" | "returning" | null;
+  join_reason?: string | null;
   requested_role?: "executive" | "advisor" | "admin" | "president" | "student" | null;
   onboarding_status?: string | null;
   created_at?: string;
@@ -466,6 +470,8 @@ export interface MembershipRequestRecord {
     code: string | null;
   } | null;
   due_payment?: DuePaymentRecord | null;
+  student_type?: "fresher" | "returning" | null;
+  join_reason?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -546,6 +552,8 @@ export interface ClubPaymentSettingsRecord {
   account_number: string;
   account_name: string;
   payment_instructions: string | null;
+  fresher_dues_amount: number;
+  returning_student_dues_amount: number;
   created_at: string;
   updated_at: string;
 }
@@ -560,11 +568,12 @@ export interface PaymentConfirmationPayload {
 
 export interface PaymentSettingsPayload {
   club_id?: string | null;
-  dues_amount?: number | null;
   bank_name: string;
   account_number: string;
   account_name: string;
   payment_instructions?: string | null;
+  fresher_dues_amount: number;
+  returning_student_dues_amount: number;
 }
 
 export interface MembershipRequestDecisionResult {
@@ -1505,6 +1514,8 @@ export async function createMembershipRequest(
     club_id: string;
     requested_role?: ClubMemberRecord["club_role"];
     remarks?: string;
+    student_type?: "fresher" | "returning" | null;
+    join_reason?: string | null;
     payment_account_name: string;
     payment_reference: string;
     payment_paid_at?: string | null;
@@ -1778,21 +1789,23 @@ export async function applyClubPaymentSettingsToAll(
 
 export async function applyClubPaymentProfileToAll(
   payload: {
-    dues_amount: number;
     bank_name: string;
     account_number: string;
     account_name: string;
     payment_instructions?: string | null;
+    fresher_dues_amount: number;
+    returning_student_dues_amount: number;
   },
   token?: string,
 ) {
   const response = await request<
     ApiEnvelope<{
-      dues_amount: number;
       bank_name: string;
       account_number: string;
       account_name: string;
       payment_instructions: string | null;
+      fresher_dues_amount: number;
+      returning_student_dues_amount: number;
       clubs_updated: number;
     }>
   >("/api/v1/dues/payment-settings/apply-club-profile-all", {

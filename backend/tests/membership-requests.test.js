@@ -95,6 +95,9 @@ test("student can create a paid membership request", async () => {
     async getProfileById() {
       return createProfile();
     },
+    async getClubPaymentSettings() {
+      return null;
+    },
     async createClubMember(member) {
       createdMember = member;
       return createMember(member);
@@ -252,11 +255,11 @@ test("president approval activates membership and verifies the submitted payment
   assert.equal(result.request.status, "active");
 });
 
-test("president cannot approve president membership requests", async () => {
+test("president cannot review membership requests for another club", async () => {
   const fakeDatabase = {
     async getMembershipRequestById() {
       return createRequest({
-        requested_role: "president"
+        club_id: "club-2"
       });
     }
   };
@@ -280,12 +283,10 @@ test("president cannot approve president membership requests", async () => {
   );
 });
 
-test("president cannot approve executive membership requests", async () => {
+test("executive cannot review membership requests", async () => {
   const fakeDatabase = {
     async getMembershipRequestById() {
-      return createRequest({
-        requested_role: "executive"
-      });
+      return createRequest();
     }
   };
 
@@ -293,8 +294,8 @@ test("president cannot approve executive membership requests", async () => {
     () =>
       decideMembershipRequest({
         actor: {
-          id: "president-1",
-          role: "president",
+          id: "executive-1",
+          role: "executive",
           clubId: "club-1"
         },
         requestId: "request-1",
@@ -308,9 +309,8 @@ test("president cannot approve executive membership requests", async () => {
   );
 });
 
-test("dues payment verification activates membership and requested role", async () => {
+test("dues payment verification activates membership and updates request state", async () => {
   let memberUpdate;
-  let profileUpdate;
   let requestUpdate;
   const fakeDatabase = {
     async getDuePaymentById() {
@@ -327,7 +327,6 @@ test("dues payment verification activates membership and requested role", async 
     async getMembershipRequestByMemberId(memberId) {
       assert.equal(memberId, "member-1");
       return createRequest({
-        requested_role: "executive",
         status: "approved_pending_dues",
         member_id: "member-1",
         due_payment_id: "payment-1"
@@ -337,13 +336,6 @@ test("dues payment verification activates membership and requested role", async 
       memberUpdate = update;
       return createMember({
         id: memberId,
-        ...update
-      });
-    },
-    async updateProfile(profileId, update) {
-      profileUpdate = update;
-      return createProfile({
-        id: profileId,
         ...update
       });
     },
@@ -372,8 +364,6 @@ test("dues payment verification activates membership and requested role", async 
 
   assert.equal(payment.status, "paid");
   assert.equal(memberUpdate.membership_status, "active");
-  assert.equal(profileUpdate.role, "executive");
-  assert.equal(profileUpdate.club_id, "club-1");
   assert.equal(requestUpdate.status, "active");
 });
 

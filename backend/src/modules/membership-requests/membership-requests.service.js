@@ -16,6 +16,18 @@ function requireActor(actor) {
   }
 }
 
+function normalizeStudentType(value) {
+  return value === "fresher" ? "fresher" : "returning";
+}
+
+function resolveJoinDuesAmount(studentType, paymentSettings) {
+  if (normalizeStudentType(studentType) === "fresher") {
+    return Number(paymentSettings?.fresher_dues_amount ?? 10000);
+  }
+
+  return Number(paymentSettings?.returning_student_dues_amount ?? 5000);
+}
+
 function formatMembershipRequest(request) {
   return {
     id: request.id,
@@ -70,6 +82,8 @@ function formatMembershipRequest(request) {
           updated_at: request.due_payment.updated_at
         }
       : null,
+    student_type: request.student_type ?? null,
+    join_reason: request.join_reason ?? null,
     created_at: request.created_at,
     updated_at: request.updated_at
   };
@@ -88,9 +102,6 @@ function assertCanReviewRequest(actor, request) {
     throw new ApiError(403, "Presidents can only review requests for their own club", "FORBIDDEN");
   }
 
-  if (["executive", "president"].includes(request.requested_role)) {
-    throw new ApiError(403, "Only admins can approve executive or president requests", "FORBIDDEN");
-  }
 }
 
 async function createMembershipRequest(options) {
@@ -130,14 +141,18 @@ async function createMembershipRequest(options) {
     throw new ApiError(404, "Profile not found", "PROFILE_NOT_FOUND");
   }
 
-  const duesAmount = club.dues_amount === null || club.dues_amount === undefined
-    ? 5000
-    : Number(club.dues_amount);
+  const studentType = normalizeStudentType(validatedPayload.student_type || profile.student_type);
+  const paymentSettings = database.getClubPaymentSettings
+    ? await database.getClubPaymentSettings(validatedPayload.club_id)
+    : null;
+  const duesAmount = resolveJoinDuesAmount(studentType, paymentSettings);
   const academicSession = validatedPayload.academic_session || getCurrentAcademicSession();
   const member = existingMember
     ? await database.updateClubMember(existingMember.id, {
         full_name: profile.full_name,
         student_id: profile.student_id,
+        email: existingMember.email,
+        phone_number: profile.phone_number || existingMember.phone_number,
         club_role: validatedPayload.requested_role,
         membership_status: "inactive"
       })
@@ -147,7 +162,7 @@ async function createMembershipRequest(options) {
         full_name: profile.full_name,
         student_id: profile.student_id,
         email: null,
-        phone_number: null,
+        phone_number: profile.phone_number || null,
         club_role: validatedPayload.requested_role,
         membership_status: "inactive"
       });
@@ -177,7 +192,9 @@ async function createMembershipRequest(options) {
     member_id: member.id,
     due_payment_id: payment.id,
     dues_amount: duesAmount,
-    academic_session: academicSession
+    academic_session: academicSession,
+    student_type: studentType,
+    join_reason: validatedPayload.join_reason
   });
 
   return formatMembershipRequest(request);
@@ -344,13 +361,6 @@ async function activateMembershipAfterPaidDues(options) {
     : await database.updateClubMember(payment.member_id, {
         membership_status: "active"
       });
-
-  if (["executive", "president"].includes(request.requested_role)) {
-    await database.updateProfile(request.profile_id, {
-      role: request.requested_role,
-      club_id: request.club_id
-    });
-  }
 
   const updatedRequest = await database.updateMembershipRequest(request.id, {
     status: "active"

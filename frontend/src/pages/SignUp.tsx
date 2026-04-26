@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { NhStudentId } from "@/components/NhStudentId";
 import { useAuth } from "@/contexts/AuthContext";
 import { getAllowedEmailDomainLabel, isAllowedEmailDomain } from "@/lib/env";
@@ -19,6 +20,10 @@ const REQUESTED_ROLES = [
   { value: "student", label: "Student" },
   { value: "advisor", label: "Advisor" }
 ] as const;
+const STUDENT_TYPE_OPTIONS = [
+  { value: "fresher", label: "Fresher" },
+  { value: "returning", label: "Returning Student" }
+] as const;
 
 export default function SignUp() {
   const { signUp, session, isLoading } = useAuth();
@@ -27,7 +32,15 @@ export default function SignUp() {
   const [email, setEmail] = useState("");
   const [requestedRole, setRequestedRole] = useState<(typeof REQUESTED_ROLES)[number]["value"]>("student");
   const [studentId, setStudentId] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [department, setDepartment] = useState("");
+  const [studentType, setStudentType] = useState<(typeof STUDENT_TYPE_OPTIONS)[number]["value"]>("returning");
+  const [joinReason, setJoinReason] = useState("");
   const [clubId, setClubId] = useState("");
+  const [paymentAccountName, setPaymentAccountName] = useState("");
+  const [paymentReference, setPaymentReference] = useState("");
+  const [paymentPaidAt, setPaymentPaidAt] = useState("");
+  const [proofUrl, setProofUrl] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signupError, setSignupError] = useState<string | null>(null);
@@ -63,9 +76,33 @@ export default function SignUp() {
       return;
     }
 
-    if (requestedRole === "student" && !isValidStudentId(studentId)) {
+    if (requestedRole === "student" && studentId && !isValidStudentId(studentId)) {
       setSignupError(STUDENT_ID_ERROR_MESSAGE);
       toast.error("Signup failed", { description: STUDENT_ID_ERROR_MESSAGE });
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!phoneNumber.trim()) {
+      const message = "Please add the WhatsApp phone number used for club communication.";
+      setSignupError(message);
+      toast.error("Signup failed", { description: message });
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (!department.trim()) {
+      const message = "Please add your department before creating an account.";
+      setSignupError(message);
+      toast.error("Signup failed", { description: message });
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (requestedRole === "student" && (!paymentAccountName.trim() || !paymentReference.trim())) {
+      const message = "Please add the payment name and transaction reference used for your club dues.";
+      setSignupError(message);
+      toast.error("Signup failed", { description: message });
       setIsSubmitting(false);
       return;
     }
@@ -79,7 +116,15 @@ export default function SignUp() {
         requestedRole,
         clubId,
         clubName: selectedClub?.name || "",
-        studentId: requestedRole === "student" ? studentId : undefined
+        studentId: requestedRole === "student" ? studentId : undefined,
+        phoneNumber,
+        department,
+        studentType: requestedRole === "student" ? studentType : undefined,
+        joinReason: requestedRole === "student" ? joinReason : undefined,
+        paymentAccountName: requestedRole === "student" ? paymentAccountName : undefined,
+        paymentReference: requestedRole === "student" ? paymentReference : undefined,
+        paymentPaidAt: requestedRole === "student" ? paymentPaidAt || null : null,
+        proofUrl: requestedRole === "student" ? proofUrl || null : null
       });
 
       if (result.needsEmailConfirmation) {
@@ -184,13 +229,56 @@ export default function SignUp() {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label className="font-black uppercase tracking-[0.12em]" htmlFor="phone-number">
+                Phone Number (WhatsApp)
+              </Label>
+              <Input
+                id="phone-number"
+                placeholder="08000000000"
+                value={phoneNumber}
+                onChange={(event) => setPhoneNumber(event.target.value)}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="font-black uppercase tracking-[0.12em]" htmlFor="department">
+                Department
+              </Label>
+              <Input
+                id="department"
+                placeholder="Computer Science"
+                value={department}
+                onChange={(event) => setDepartment(event.target.value)}
+                required
+              />
+            </div>
+
             {requestedRole === "student" ? (
-              <div className="space-y-2">
-                <Label className="font-black uppercase tracking-[0.12em]" htmlFor="student-id">
-                  University ID
-                </Label>
-                <NhStudentId id="student-id" value={studentId} onChange={setStudentId} required />
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label className="font-black uppercase tracking-[0.12em]" htmlFor="student-id">
+                    Student ID (If You Have Gotten It)
+                  </Label>
+                  <NhStudentId id="student-id" value={studentId} onChange={setStudentId} required={false} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-black uppercase tracking-[0.12em]">Which One Are You?</Label>
+                  <Select value={studentType} onValueChange={(value) => setStudentType(value as (typeof STUDENT_TYPE_OPTIONS)[number]["value"])}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose student type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STUDENT_TYPE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
             ) : null}
 
             <div className="space-y-2 md:col-span-2">
@@ -251,9 +339,88 @@ export default function SignUp() {
               <p className="text-xs text-muted-foreground">
                 {requestedRole === "advisor"
                   ? "Advisor access is tied to the club you selected and can support more than one advisor per club."
-                  : "Executive and president applications open after your membership is active."}
+                  : "Club Services can assign presidents, and presidents can choose executives after membership becomes active."}
               </p>
             </div>
+
+            {requestedRole === "student" ? (
+              <>
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="font-black uppercase tracking-[0.12em]" htmlFor="join-reason">
+                    Why Did You Join This Club? (Optional)
+                  </Label>
+                  <Textarea
+                    id="join-reason"
+                    placeholder="Tell the club what drew you in."
+                    value={joinReason}
+                    onChange={(event) => setJoinReason(event.target.value)}
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <div className="rounded-2xl border-2 border-foreground bg-primary/10 p-4">
+                    <p className="font-black uppercase">Shared payment details</p>
+                    <p className="mt-2 text-sm text-muted-foreground">Bank: Providus Bank</p>
+                    <p className="text-sm text-muted-foreground">Account Number: 1305861314</p>
+                    <p className="text-sm text-muted-foreground">Account Name: Nile Arts &amp; Creative Hub</p>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      Freshers pay N10,000. Returning students pay N5,000.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="font-black uppercase tracking-[0.12em]" htmlFor="payment-account-name">
+                    Name On Account Used
+                  </Label>
+                  <Input
+                    id="payment-account-name"
+                    value={paymentAccountName}
+                    onChange={(event) => setPaymentAccountName(event.target.value)}
+                    placeholder="As shown on the payment account"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="font-black uppercase tracking-[0.12em]" htmlFor="payment-reference">
+                    Payment Reference / Transaction ID
+                  </Label>
+                  <Input
+                    id="payment-reference"
+                    value={paymentReference}
+                    onChange={(event) => setPaymentReference(event.target.value)}
+                    placeholder="Bank transfer reference"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="font-black uppercase tracking-[0.12em]" htmlFor="payment-date">
+                    Payment Date (Optional)
+                  </Label>
+                  <Input
+                    id="payment-date"
+                    type="date"
+                    value={paymentPaidAt}
+                    onChange={(event) => setPaymentPaidAt(event.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="font-black uppercase tracking-[0.12em]" htmlFor="proof-url">
+                    Proof Link Or Stored Path (Optional)
+                  </Label>
+                  <Input
+                    id="proof-url"
+                    value={proofUrl}
+                    onChange={(event) => setProofUrl(event.target.value)}
+                    placeholder="Paste a receipt link if you already have one"
+                  />
+                </div>
+              </>
+            ) : null}
 
             <div className="space-y-2 md:col-span-2">
               <Label className="font-black uppercase tracking-[0.12em]" htmlFor="signup-password">
@@ -288,7 +455,7 @@ export default function SignUp() {
               <p>
                 {requestedRole === "advisor"
                   ? "Advisor signup uses your Nile email and club choice without asking for a student ID."
-                  : "Students use their Nile email plus University ID, then enter the app directly after verification."}
+                  : "Students use their Nile email, pick their first club, attach payment details, and the dues record is prepared automatically."}
               </p>
             </div>
 

@@ -25,7 +25,6 @@ export function AppSidebar() {
   const execItems = [
     { title: "Dashboard", url: "/", icon: Home },
     { title: "My Tasks", url: "/tasks", icon: ClipboardList },
-    { title: "Leadership", url: "/membership", icon: UserPlus },
     { title: "Announcements", url: "/communications", icon: MessageSquare },
     { title: "Approved Events", url: "/events", icon: CalendarDays },
     { title: "Notifications", url: "/notifications", icon: Bell },

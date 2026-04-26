@@ -5,17 +5,12 @@ const {
   validateBulkClubPaymentProfilePayload,
   validateBulkPaymentSettingsPayload,
   validateBulkDuesAmountPayload,
-  validateCreateDuePaymentPayload,
   validatePaymentConfirmationPayload,
   validatePaymentSettingsPayload,
   validateUpdateDuePaymentPayload
 } = require("./dues.validation");
-const {
-  activateMembershipAfterPaidDues
-} = require("../membership-requests/membership-requests.service");
-const {
-  syncMemberStatusFromDuePayment
-} = require("../members/member-status");
+const { activateMembershipAfterPaidDues } = require("../membership-requests/membership-requests.service");
+const { syncMemberStatusFromDuePayment } = require("../members/member-status");
 
 function requireActor(actor) {
   if (!actor) {
@@ -84,6 +79,14 @@ function formatPaymentSettings(settings) {
     account_number: settings.account_number,
     account_name: settings.account_name,
     payment_instructions: settings.payment_instructions,
+    fresher_dues_amount:
+      settings.fresher_dues_amount === null || settings.fresher_dues_amount === undefined
+        ? 10000
+        : Number(settings.fresher_dues_amount),
+    returning_student_dues_amount:
+      settings.returning_student_dues_amount === null || settings.returning_student_dues_amount === undefined
+        ? 5000
+        : Number(settings.returning_student_dues_amount),
     created_at: settings.created_at,
     updated_at: settings.updated_at
   };
@@ -147,50 +150,12 @@ async function listMyDuePayments(options) {
 }
 
 async function createDuePayment(options) {
-  const { actor, payload, database = db } = options;
-  requireActor(actor);
-  requireManagerRole(actor);
-
-  const validatedPayload = validateCreateDuePaymentPayload(payload);
-  const member = await database.getClubMemberById(validatedPayload.member_id);
-
-  if (!member) {
-    throw new ApiError(404, "Member not found", "MEMBER_NOT_FOUND");
-  }
-
-  const clubId = getScopedClubId(actor, validatedPayload.club_id || member.club_id);
-
-  if (!clubId || clubId !== member.club_id) {
-    throw new ApiError(403, "Payment member must belong to the selected club", "FORBIDDEN");
-  }
-
-  const payment = await database.createDuePayment({
-    club_id: clubId,
-    member_id: member.id,
-    amount: validatedPayload.amount,
-    academic_session: validatedPayload.academic_session,
-    payment_reference: validatedPayload.payment_reference,
-    proof_url: validatedPayload.proof_url,
-    status: validatedPayload.status,
-    verified_by: validatedPayload.status === "paid" ? actor.id : null,
-    verified_at: validatedPayload.status === "paid" ? new Date().toISOString() : null
-  });
-
-  await syncMemberStatusFromDuePayment({
-    payment,
-    actor,
-    database
-  });
-
-  if (payment.status === "paid") {
-    await activateMembershipAfterPaidDues({
-      payment,
-      actor,
-      database
-    });
-  }
-
-  return formatDuePayment(payment);
+  requireActor(options.actor);
+  throw new ApiError(
+    409,
+    "Dues records are created automatically when a student signs up or joins a club.",
+    "DUES_CREATED_AUTOMATICALLY"
+  );
 }
 
 async function updateDuePayment(options) {
@@ -296,13 +261,18 @@ async function getPaymentSettings(options) {
   let scopedClubId = clubId;
 
   if (actor.role !== "student") {
-    scopedClubId = getScopedClubId(actor, clubId);
+    scopedClubId = actor.role === "admin"
+      ? (clubId || null)
+      : getScopedClubId(actor, clubId);
   }
 
   if (!scopedClubId) {
-    throw new ApiError(400, "club_id is required for admin payment settings", "VALIDATION_ERROR", {
-      field: "club_id"
-    });
+    const clubs = await database.listClubs();
+    scopedClubId = clubs[0]?.id ?? null;
+  }
+
+  if (!scopedClubId) {
+    return null;
   }
 
   const settings = await database.getClubPaymentSettings(scopedClubId);
@@ -313,30 +283,21 @@ async function getPaymentSettings(options) {
 async function upsertPaymentSettings(options) {
   const { actor, payload, database = db } = options;
   requireActor(actor);
-  requireManagerRole(actor);
+  if (actor.role !== "admin") {
+    throw new ApiError(403, "Only Club Services admins can update the shared payment profile", "FORBIDDEN");
+  }
 
   const validatedPayload = validatePaymentSettingsPayload(payload);
-  const clubId = getScopedClubId(actor, validatedPayload.club_id);
-
-  if (!clubId) {
-    throw new ApiError(400, "club_id is required for admin payment settings", "VALIDATION_ERROR", {
-      field: "club_id"
-    });
-  }
-
-  if (validatedPayload.dues_amount !== null && typeof database.updateClubDuesAmount === "function") {
-    await database.updateClubDuesAmount(clubId, validatedPayload.dues_amount);
-  }
-
-  const settings = await database.upsertClubPaymentSettings({
+  const settings = await database.upsertAllClubPaymentSettings({
     bank_name: validatedPayload.bank_name,
     account_number: validatedPayload.account_number,
     account_name: validatedPayload.account_name,
     payment_instructions: validatedPayload.payment_instructions,
-    club_id: clubId
+    fresher_dues_amount: validatedPayload.fresher_dues_amount,
+    returning_student_dues_amount: validatedPayload.returning_student_dues_amount
   });
 
-  return formatPaymentSettings(settings);
+  return formatPaymentSettings(settings[0] || null);
 }
 
 async function applyDuesAmountToAllClubs(options) {
@@ -382,6 +343,8 @@ async function applyPaymentSettingsToAllClubs(options) {
     account_number: validatedPayload.account_number,
     account_name: validatedPayload.account_name,
     payment_instructions: validatedPayload.payment_instructions,
+    fresher_dues_amount: validatedPayload.fresher_dues_amount,
+    returning_student_dues_amount: validatedPayload.returning_student_dues_amount,
     clubs_updated: settings.length
   };
 }
@@ -396,28 +359,27 @@ async function applyClubPaymentProfileToAllClubs(options) {
 
   const validatedPayload = validateBulkClubPaymentProfilePayload(payload);
 
-  if (
-    typeof database.updateAllClubDuesAmounts !== "function" ||
-    typeof database.upsertAllClubPaymentSettings !== "function"
-  ) {
+  if (typeof database.upsertAllClubPaymentSettings !== "function") {
     throw new ApiError(500, "Bulk club payment profile updates are not available", "DATABASE_UNAVAILABLE");
   }
 
-  const clubs = await database.updateAllClubDuesAmounts(validatedPayload.dues_amount);
   const settings = await database.upsertAllClubPaymentSettings({
     bank_name: validatedPayload.bank_name,
     account_number: validatedPayload.account_number,
     account_name: validatedPayload.account_name,
-    payment_instructions: validatedPayload.payment_instructions
+    payment_instructions: validatedPayload.payment_instructions,
+    fresher_dues_amount: validatedPayload.fresher_dues_amount,
+    returning_student_dues_amount: validatedPayload.returning_student_dues_amount
   });
 
   return {
-    dues_amount: validatedPayload.dues_amount,
     bank_name: validatedPayload.bank_name,
     account_number: validatedPayload.account_number,
     account_name: validatedPayload.account_name,
     payment_instructions: validatedPayload.payment_instructions,
-    clubs_updated: Math.max(clubs.length, settings.length)
+    fresher_dues_amount: validatedPayload.fresher_dues_amount,
+    returning_student_dues_amount: validatedPayload.returning_student_dues_amount,
+    clubs_updated: settings.length
   };
 }
 

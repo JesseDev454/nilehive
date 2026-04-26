@@ -250,7 +250,8 @@ export default function UserManagement() {
     () => ({
       total: usersPage.total,
       students: users.filter((user) => user.role === "student").length,
-      leadershipRequests: users.filter((user) => ["executive", "president"].includes(user.requested_role || "")).length,
+      presidents: users.filter((user) => user.role === "president").length,
+      executives: users.filter((user) => user.role === "executive").length,
       advisors: users.filter((user) => user.role === "advisor").length,
       advisorRequests: users.filter((user) => user.requested_role === "advisor").length
     }),
@@ -280,7 +281,7 @@ export default function UserManagement() {
       <div className="nh-metric-grid">
         <NeoMetricCard title="Visible Users" value={summary.total} icon={Users} tone="navy" />
         <NeoMetricCard title="Students" value={summary.students} icon={UserCog} tone="gold" />
-        <NeoMetricCard title="Leadership Requests" value={summary.leadershipRequests} icon={ShieldCheck} tone="green" />
+        <NeoMetricCard title="Presidents / Executives" value={`${summary.presidents} / ${summary.executives}`} icon={ShieldCheck} tone="green" />
         <NeoMetricCard title="Advisors / Requests" value={`${summary.advisors} / ${summary.advisorRequests}`} icon={Users} />
       </div>
 
@@ -292,19 +293,19 @@ export default function UserManagement() {
           <div className="nh-card-soft p-4">
             <p className="font-semibold">1. User signs up first</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              The student, executive, president, or advisor should sign up with a Nile University email first.
+              The user signs up with a Nile University email first. Students can submit their first club join during signup.
             </p>
           </div>
           <div className="nh-card-soft p-4">
             <p className="font-semibold">2. Club Services updates access</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Use this page to promote the user, assign the right club, or attach advisor access after signup.
+              Use this page to assign president access, adjust club context, or attach advisor access after signup.
             </p>
           </div>
           <div className="nh-card-soft p-4">
             <p className="font-semibold">3. They log in with the new role</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              The updated role appears the next time they sign in or refresh their current session.
+              Presidents can then choose executives from active club members. Users see the new role on their next refresh or sign-in.
             </p>
           </div>
         </CardContent>
@@ -346,8 +347,6 @@ export default function UserManagement() {
                   <SelectItem value="all">All requests</SelectItem>
                   <SelectItem value="student">Student</SelectItem>
                   <SelectItem value="advisor">Advisor</SelectItem>
-                  <SelectItem value="executive">Executive</SelectItem>
-                  <SelectItem value="president">President</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -379,9 +378,9 @@ export default function UserManagement() {
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-semibold">{user.full_name || "Unnamed user"}</p>
                         <RoleBadge role={user.role} />
-                        {["executive", "president", "advisor"].includes(user.requested_role || "") && user.role === "student" ? (
+                        {user.requested_role === "advisor" && user.role === "student" ? (
                           <Badge className="bg-primary/15 text-primary hover:bg-primary/15">
-                            Requests {user.requested_role}
+                            Requests advisor access
                           </Badge>
                         ) : null}
                       </div>

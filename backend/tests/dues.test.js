@@ -46,36 +46,24 @@ function createPayment(overrides = {}) {
   };
 }
 
-test("president can create a due payment record for a club member", async () => {
-  let createdPayment;
-  const fakeDatabase = {
-    async getClubMemberById(memberId) {
-      assert.equal(memberId, "member-1");
-      return createMember();
-    },
-    async createDuePayment(payment) {
-      createdPayment = payment;
-      return createPayment(payment);
-    }
-  };
-
-  const payment = await createDuePayment({
-    actor: {
-      id: "president-1",
-      role: "president",
-      clubId: "club-1"
-    },
-    payload: {
-      member_id: "member-1",
-      amount: 5000,
-      academic_session: "2025/2026"
-    },
-    database: fakeDatabase
-  });
-
-  assert.equal(createdPayment.club_id, "club-1");
-  assert.equal(createdPayment.status, "unpaid");
-  assert.equal(payment.amount, 5000);
+test("dues records are created automatically during signup or club join", async () => {
+  await assert.rejects(
+    () =>
+      createDuePayment({
+        actor: {
+          id: "president-1",
+          role: "president",
+          clubId: "club-1"
+        },
+        payload: {
+          member_id: "member-1",
+          amount: 5000,
+          academic_session: "2025/2026"
+        },
+        database: {}
+      }),
+    (error) => error.statusCode === 409 && error.code === "DUES_CREATED_AUTOMATICALLY"
+  );
 });
 
 test("executive cannot list club due payments", async () => {
@@ -333,22 +321,21 @@ test("student cannot submit payment confirmation for another member", async () =
   );
 });
 
-test("president can save and fetch payment settings for their club", async () => {
+test("admin can save and fetch the shared Club Services payment profile", async () => {
   let savedSettings;
-  let updatedClubDuesAmount;
   const fakeDatabase = {
-    async updateClubDuesAmount(clubId, duesAmount) {
-      updatedClubDuesAmount = { clubId, duesAmount };
-      return { id: clubId, dues_amount: duesAmount };
-    },
-    async upsertClubPaymentSettings(settings) {
+    async upsertAllClubPaymentSettings(settings) {
       savedSettings = settings;
-      return {
+      return [{
         id: "settings-1",
+        club_id: "club-1",
         created_at: "2026-04-15T10:00:00.000Z",
         updated_at: "2026-04-15T10:00:00.000Z",
         ...settings
-      };
+      }];
+    },
+    async listClubs() {
+      return [{ id: "club-1", name: "Nile Innovators Club" }];
     },
     async getClubPaymentSettings(clubId) {
       assert.equal(clubId, "club-1");
@@ -359,6 +346,8 @@ test("president can save and fetch payment settings for their club", async () =>
         account_number: "1234567890",
         account_name: "Nile Innovators Club",
         payment_instructions: "Use your student ID as narration.",
+        fresher_dues_amount: 10000,
+        returning_student_dues_amount: 5000,
         created_at: "2026-04-15T10:00:00.000Z",
         updated_at: "2026-04-15T10:00:00.000Z"
       };
@@ -366,19 +355,20 @@ test("president can save and fetch payment settings for their club", async () =>
   };
 
   const actor = {
-    id: "president-1",
-    role: "president",
-    clubId: "club-1"
+    id: "admin-1",
+    role: "admin",
+    clubId: null
   };
 
   const settings = await upsertPaymentSettings({
     actor,
     payload: {
-      dues_amount: 5000,
       bank_name: "Zenith Bank",
       account_number: "1234567890",
       account_name: "Nile Innovators Club",
-      payment_instructions: "Use your student ID as narration."
+      payment_instructions: "Use your student ID as narration.",
+      fresher_dues_amount: 10000,
+      returning_student_dues_amount: 5000
     },
     database: fakeDatabase
   });
@@ -388,9 +378,8 @@ test("president can save and fetch payment settings for their club", async () =>
     database: fakeDatabase
   });
 
-  assert.equal(savedSettings.club_id, "club-1");
-  assert.equal(updatedClubDuesAmount.duesAmount, 5000);
   assert.equal(settings.bank_name, "Zenith Bank");
+  assert.equal(settings.fresher_dues_amount, 10000);
   assert.equal(fetchedSettings.account_number, "1234567890");
 });
 
@@ -449,13 +438,8 @@ test("admin can apply one payment account to all clubs", async () => {
 });
 
 test("admin can apply one dues amount and payment account profile to all clubs", async () => {
-  let appliedAmount;
   let savedSettings;
   const fakeDatabase = {
-    async updateAllClubDuesAmounts(duesAmount) {
-      appliedAmount = duesAmount;
-      return [{ id: "club-1" }, { id: "club-2" }];
-    },
     async upsertAllClubPaymentSettings(settings) {
       savedSettings = settings;
       return [{ id: "settings-1" }, { id: "settings-2" }];
@@ -469,7 +453,8 @@ test("admin can apply one dues amount and payment account profile to all clubs",
       clubId: null
     },
     payload: {
-      dues_amount: 5000,
+      fresher_dues_amount: 10000,
+      returning_student_dues_amount: 5000,
       bank_name: "Zenith Bank",
       account_number: "1234567890",
       account_name: "Club Services Account",
@@ -478,15 +463,16 @@ test("admin can apply one dues amount and payment account profile to all clubs",
     database: fakeDatabase
   });
 
-  assert.equal(appliedAmount, 5000);
   assert.equal(savedSettings.account_name, "Club Services Account");
+  assert.equal(savedSettings.fresher_dues_amount, 10000);
+  assert.equal(savedSettings.returning_student_dues_amount, 5000);
   assert.equal(result.clubs_updated, 2);
 });
 
-test("president cannot manage dues for another club", async () => {
+test("president cannot update dues for another club", async () => {
   const fakeDatabase = {
-    async getClubMemberById() {
-      return createMember({
+    async getDuePaymentById() {
+      return createPayment({
         club_id: "club-2"
       });
     }
@@ -494,16 +480,15 @@ test("president cannot manage dues for another club", async () => {
 
   await assert.rejects(
     () =>
-      createDuePayment({
+      updateDuePayment({
         actor: {
           id: "president-1",
           role: "president",
           clubId: "club-1"
         },
+        paymentId: "payment-1",
         payload: {
-          member_id: "member-1",
-          amount: 5000,
-          academic_session: "2025/2026"
+          status: "paid"
         },
         database: fakeDatabase
       }),
