@@ -66,3 +66,14 @@ test("production handoff documents storage conventions and env split", () => {
   assert.match(docs, /event-media\/\{club_id\}\/\{file\}/);
   assert.match(docs, /reports\/\{club_id\}\/\{proposal_id\}\/\{file\}/);
 });
+
+test("signup provisioning migration creates profiles from auth metadata without advisor auto-assignment", () => {
+  const sql = readRepoFile("backend", "supabase", "migrations", "0037_signup_profile_provisioning.sql");
+
+  assert.match(sql, /after insert on auth\.users/i);
+  assert.match(sql, /raw_user_meta_data/i);
+  assert.match(sql, /insert into public\.profiles/i);
+  assert.match(sql, /insert into public\.membership_requests/i);
+  assert.match(sql, /Created during signup\./i);
+  assert.doesNotMatch(sql, /insert into public\.club_advisors/i);
+});

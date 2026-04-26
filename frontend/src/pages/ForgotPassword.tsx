@@ -6,6 +6,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getUserFacingErrorMessage } from "@/lib/api";
 import { getAllowedEmailDomainLabel, getMicrosoftPasswordHelpUrl, isAllowedEmailDomain, isPasswordAuthEnabled } from "@/lib/env";
 import { supabase } from "@/lib/supabase";
 
@@ -44,7 +45,7 @@ export default function ForgotPassword() {
       });
     } catch (error) {
       toast.error("Could not send reset email", {
-        description: error instanceof Error ? error.message : "Please try again."
+        description: getUserFacingErrorMessage(error, "Please try again.")
       });
     } finally {
       setIsSubmitting(false);

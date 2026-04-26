@@ -1,6 +1,6 @@
 import { FormEvent, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link, Navigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowRight, CheckCircle2, ShieldCheck, Users } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { NhStudentId } from "@/components/NhStudentId";
 import { useAuth } from "@/contexts/AuthContext";
 import { getAllowedEmailDomainLabel, isAllowedEmailDomain } from "@/lib/env";
+import { getUserFacingErrorMessage } from "@/lib/api";
 import { publicClubsQueryOptions } from "@/lib/publicClubsQuery";
 import { isValidStudentId, STUDENT_ID_ERROR_MESSAGE } from "@/lib/studentId";
 
@@ -21,6 +22,7 @@ const REQUESTED_ROLES = [
 
 export default function SignUp() {
   const { signUp, session, isLoading } = useAuth();
+  const navigate = useNavigate();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [requestedRole, setRequestedRole] = useState<(typeof REQUESTED_ROLES)[number]["value"]>("student");
@@ -70,7 +72,7 @@ export default function SignUp() {
 
     try {
       const selectedClub = clubs.find((club) => club.id === clubId);
-      await signUp({
+      const result = await signUp({
         email,
         password,
         fullName,
@@ -79,11 +81,23 @@ export default function SignUp() {
         clubName: selectedClub?.name || "",
         studentId: requestedRole === "student" ? studentId : undefined
       });
-      toast.success("Account request created", {
-        description: "After confirming your email, log in and complete your Club Services profile setup."
+
+      if (result.needsEmailConfirmation) {
+        toast.success("Verification email sent", {
+          description: "Check your Nile University inbox, confirm your email, then sign in."
+        });
+        navigate(`/signup/confirm?email=${encodeURIComponent(email.trim().toLowerCase())}`, {
+          replace: true
+        });
+        return;
+      }
+
+      toast.success("Account created", {
+        description: "Your Club Services access is ready."
       });
+      navigate("/", { replace: true });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Please check the form and try again.";
+      const message = getUserFacingErrorMessage(error, "Please check the form and try again.");
       setSignupError(message);
       toast.error("Signup failed", {
         description: message
@@ -133,10 +147,10 @@ export default function SignUp() {
 
         <form className="nh-card bg-card p-6 md:p-10" onSubmit={handleSubmit}>
           <div className="mb-8 border-b-2 border-foreground pb-6">
-            <p className="nh-eyebrow">Profile Setup</p>
+            <p className="nh-eyebrow">Account Creation</p>
             <h2 className="mt-2 text-4xl font-black uppercase">Create Account</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Use your Nile University email. Advisors do not need a student ID.
+              Use your Nile University email. We create your Club Services profile during signup.
             </p>
           </div>
 
@@ -274,7 +288,7 @@ export default function SignUp() {
               <p>
                 {requestedRole === "advisor"
                   ? "Advisor signup uses your Nile email and club choice without asking for a student ID."
-                  : "Students use their Nile email plus University ID to enter Club Services safely."}
+                  : "Students use their Nile email plus University ID, then enter the app directly after verification."}
               </p>
             </div>
 

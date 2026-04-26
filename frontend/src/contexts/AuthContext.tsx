@@ -25,6 +25,7 @@ interface AuthContextType {
   role: AppRole | null;
   isLoading: boolean;
   profileError: string | null;
+  requiresProfileRecovery: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithMicrosoft: (redirectTo?: string) => Promise<void>;
   signUp: (input: {
@@ -35,7 +36,7 @@ interface AuthContextType {
     clubId: string;
     clubName: string;
     studentId?: string;
-  }) => Promise<void>;
+  }) => Promise<{ needsEmailConfirmation: boolean }>;
   signOut: () => Promise<void>;
   getAccessToken: () => string;
   refreshProfile: () => Promise<AppProfile | null>;
@@ -45,6 +46,8 @@ const AuthContext = createContext<AuthContextType | null>(null);
 const INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000;
 const ACTIVITY_EVENTS = ["click", "keydown", "mousemove", "scroll", "touchstart"] as const;
 const UNSUPPORTED_EMAIL_MESSAGE = `Please use your Nile University Microsoft account (${getAllowedEmailDomainLabel()}).`;
+const PROFILE_FETCH_RETRY_ATTEMPTS = 5;
+const PROFILE_FETCH_RETRY_DELAY_MS = 500;
 
 async function fetchProfile(userId: string) {
   const { data, error } = await supabase
@@ -64,8 +67,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<AppProfile | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [requiresProfileRecovery, setRequiresProfileRecovery] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const currentUserIdRef = useRef<string | null>(null);
+
+  async function waitForProfileProvisioning() {
+    await new Promise((resolve) => window.setTimeout(resolve, PROFILE_FETCH_RETRY_DELAY_MS));
+  }
 
   function clearAuthState() {
     currentUserIdRef.current = null;
@@ -73,6 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(null);
     setProfile(null);
     setProfileError(null);
+    setRequiresProfileRecovery(false);
     setIsLoading(false);
   }
 
@@ -90,6 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (userChanged) {
       setProfile(null);
       setProfileError(null);
+      setRequiresProfileRecovery(false);
     }
   }
 
@@ -97,22 +107,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!nextSession?.user) {
       setProfile(null);
       setProfileError(null);
+      setRequiresProfileRecovery(false);
       return;
     }
 
     if (!isAllowedEmailDomain(nextSession.user.email ?? "")) {
       setProfile(null);
       setProfileError(UNSUPPORTED_EMAIL_MESSAGE);
+      setRequiresProfileRecovery(false);
       return;
     }
 
     try {
-      const currentProfile = await fetchProfile(nextSession.user.id);
-      setProfile(currentProfile);
-      setProfileError(currentProfile ? null : "No application profile was found for this user.");
+      let currentProfile: AppProfile | null = null;
+
+      for (let attempt = 0; attempt < PROFILE_FETCH_RETRY_ATTEMPTS; attempt += 1) {
+        currentProfile = await fetchProfile(nextSession.user.id);
+
+        if (currentProfile) {
+          break;
+        }
+
+        if (attempt < PROFILE_FETCH_RETRY_ATTEMPTS - 1) {
+          await waitForProfileProvisioning();
+        }
+      }
+
+      if (currentProfile) {
+        setProfile(currentProfile);
+        setProfileError(null);
+        setRequiresProfileRecovery(false);
+        return;
+      }
+
+      setProfile(null);
+      setProfileError(
+        "We couldn't finish loading your Club Services profile automatically. If this is an older account, use the recovery form below once."
+      );
+      setRequiresProfileRecovery(true);
     } catch (error) {
       setProfile(null);
-      setProfileError(error instanceof Error ? error.message : "Unable to load user profile.");
+      setRequiresProfileRecovery(false);
+      setProfileError(error instanceof Error ? error.message : "Unable to load your Club Services profile right now.");
     }
   }
 
@@ -212,6 +248,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       role: profile?.role ?? null,
       isLoading,
       profileError,
+      requiresProfileRecovery,
       async signIn(email, password) {
         if (!isPasswordAuthEnabled()) {
           throw new Error("Password login is disabled. Please continue with your Nile University Microsoft account.");
@@ -258,7 +295,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           throw new Error(STUDENT_ID_ERROR_MESSAGE);
         }
 
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: normalizedEmail,
           password,
           options: {
@@ -276,7 +313,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           throw error;
         }
 
-        await supabase.auth.signOut();
+        if (data.session) {
+          prepareForSession(data.session);
+          await loadProfileForSession(data.session);
+        }
+
+        return {
+          needsEmailConfirmation: !data.session
+        };
       },
       async signOut() {
         clearAuthState();
@@ -289,16 +333,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!session?.user) {
           setProfile(null);
           setProfileError(null);
+          setRequiresProfileRecovery(false);
           return null;
         }
 
         const nextProfile = await fetchProfile(session.user.id);
         setProfile(nextProfile);
-        setProfileError(nextProfile ? null : "No application profile was found for this user.");
+        setProfileError(
+          nextProfile
+            ? null
+            : "We couldn't finish loading your Club Services profile automatically. If this is an older account, use the recovery form below once."
+        );
+        setRequiresProfileRecovery(!nextProfile);
         return nextProfile;
       }
     }),
-    [isLoading, profile, profileError, session]
+    [isLoading, profile, profileError, requiresProfileRecovery, session]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

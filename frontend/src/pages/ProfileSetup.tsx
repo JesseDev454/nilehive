@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { NhStudentId } from "@/components/NhStudentId";
 import { useAuth } from "@/contexts/AuthContext";
-import { completeProfileOnboarding } from "@/lib/api";
+import { completeProfileOnboarding, getUserFacingErrorMessage } from "@/lib/api";
 import { getAllowedEmailDomainLabel, isAllowedEmailDomain } from "@/lib/env";
 import { publicClubsQueryOptions } from "@/lib/publicClubsQuery";
 import { isValidStudentId, normalizeStudentId, STUDENT_ID_ERROR_MESSAGE } from "@/lib/studentId";
@@ -98,7 +98,7 @@ export default function ProfileSetup() {
       });
     } catch (error) {
       toast.error("Profile setup failed", {
-        description: error instanceof Error ? error.message : "Please check the form and try again."
+        description: getUserFacingErrorMessage(error, "Please check the form and try again.")
       });
     } finally {
       setIsSubmitting(false);
@@ -116,14 +116,13 @@ export default function ProfileSetup() {
           />
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.24em] text-primary">
-              Profile Onboarding
+              Legacy Profile Recovery
             </p>
             <h1 className="mt-3 text-4xl font-extrabold leading-tight text-foreground md:text-5xl">
-              Finish setting up your Club Services account.
+              Recover an older Club Services account.
             </h1>
             <p className="mt-4 text-base leading-relaxed text-muted-foreground">
-              We found your login, but Club Services still needs your app profile before
-              opening the dashboard. Real users must use a Nile University Outlook email address.
+              New accounts should enter the app directly after signup. Use this recovery form only if your older account signed in successfully before automatic profile provisioning was added.
             </p>
           </div>
           {profileError && (

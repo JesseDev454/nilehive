@@ -795,6 +795,61 @@ export class ApiClientError extends Error {
   }
 }
 
+interface ApiValidationFieldDetail {
+  field?: string;
+  message?: string;
+}
+
+function extractValidationFieldMessages(details: unknown) {
+  if (!details || typeof details !== "object") {
+    return [];
+  }
+
+  const validationDetails = details as {
+    fields?: ApiValidationFieldDetail[];
+    field?: string;
+    message?: string;
+  };
+
+  if (Array.isArray(validationDetails.fields)) {
+    return validationDetails.fields
+      .map((field) => field?.message?.trim())
+      .filter((message): message is string => Boolean(message));
+  }
+
+  if (typeof validationDetails.message === "string" && validationDetails.message.trim()) {
+    return [validationDetails.message.trim()];
+  }
+
+  return [];
+}
+
+export function getApiErrorFieldMessages(error: unknown) {
+  if (!(error instanceof ApiClientError)) {
+    return [];
+  }
+
+  return extractValidationFieldMessages(error.details);
+}
+
+export function getUserFacingErrorMessage(error: unknown, fallback = "Please try again.") {
+  if (error instanceof ApiClientError) {
+    const fieldMessages = getApiErrorFieldMessages(error);
+
+    if (fieldMessages.length > 0) {
+      return `Please fix these items: ${fieldMessages.join("; ")}`;
+    }
+
+    return error.message || fallback;
+  }
+
+  if (error instanceof Error) {
+    return error.message || fallback;
+  }
+
+  return fallback;
+}
+
 function dispatchSessionExpired() {
   window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
 }
@@ -849,17 +904,54 @@ async function executeRequest<T>(path: string, options: ApiRequestOptions, acces
     headers["Content-Type"] = "application/json";
   }
 
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${getApiBaseUrl()}${path}`, {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined
+    });
+  } catch (error) {
+    throw new ApiClientError(
+      "We couldn't reach NileHive right now. Check your connection and try again shortly.",
+      {
+        status: 0,
+        code: "NETWORK_ERROR",
+        details: {
+          cause: error instanceof Error ? error.message : "Unknown network failure"
+        }
+      }
+    );
+  }
 
   const responseText = await response.text();
-  const responseJson = responseText ? JSON.parse(responseText) : null;
+  let responseJson: unknown = null;
+
+  if (responseText) {
+    try {
+      responseJson = JSON.parse(responseText);
+    } catch {
+      throw new ApiClientError(
+        response.ok
+          ? "NileHive returned an unreadable response. Please try again."
+          : "NileHive returned an unreadable error response. Please try again.",
+        {
+          status: response.status,
+          code: "INVALID_RESPONSE_BODY",
+          details: {
+            body_preview: responseText.slice(0, 200)
+          }
+        }
+      );
+    }
+  }
 
   if (!response.ok) {
-    const apiError = responseJson?.error;
+    const apiError =
+      responseJson && typeof responseJson === "object" && "error" in responseJson
+        ? (responseJson as { error?: { message?: string; code?: string; details?: unknown } }).error
+        : undefined;
 
     throw new ApiClientError(apiError?.message || "Request failed", {
       status: response.status,

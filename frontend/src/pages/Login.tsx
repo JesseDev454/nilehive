@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { getMicrosoftPasswordHelpUrl, isPasswordAuthEnabled } from "@/lib/env";
+import { getUserFacingErrorMessage } from "@/lib/api";
 
 function isRoleSensitivePath(pathname: string) {
   return (
@@ -45,7 +46,7 @@ export default function Login() {
       toast.success("Welcome back to Club Services");
     } catch (error) {
       toast.error("Login failed", {
-        description: error instanceof Error ? error.message : "Please check your credentials and try again."
+        description: getUserFacingErrorMessage(error, "Please check your credentials and try again.")
       });
     } finally {
       setIsSubmitting(false);
@@ -160,7 +161,7 @@ export default function Login() {
                 <div className="border-2 border-foreground bg-muted p-4 text-sm">
                   New club officer or student?{" "}
                   <Link className="font-black underline underline-offset-4" to="/signup">
-                    Set up your profile
+                    Create an account
                   </Link>
                 </div>
 

@@ -25,6 +25,7 @@ import {
   ApiClientError,
   createProposal,
   getClubs,
+  getUserFacingErrorMessage,
   getPresidentProposal,
   updatePresidentProposal,
   type BudgetLineItem,
@@ -191,19 +192,7 @@ function hasProposalDraftContent(
 
 function getSubmissionErrorMessage(error: unknown) {
   if (error instanceof ApiClientError) {
-    const details = error.details as
-      | {
-          fields?: Array<{ message?: string }>;
-        }
-      | undefined;
-
-    const fieldMessages = details?.fields?.map((field) => field.message).filter(Boolean);
-
-    if (fieldMessages?.length) {
-      return `Please complete these items: ${fieldMessages.join("; ")}`;
-    }
-
-    return error.message;
+    return getUserFacingErrorMessage(error, "Unable to submit proposal right now.");
   }
 
   if (error instanceof Error) {

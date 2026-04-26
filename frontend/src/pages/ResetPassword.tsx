@@ -6,6 +6,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getUserFacingErrorMessage } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 
 export default function ResetPassword() {
@@ -75,7 +76,7 @@ export default function ResetPassword() {
       navigate("/login", { replace: true });
     } catch (error) {
       toast.error("Could not reset password", {
-        description: error instanceof Error ? error.message : "Please request a new reset link and try again."
+        description: getUserFacingErrorMessage(error, "Please request a new reset link and try again.")
       });
     } finally {
       setIsSubmitting(false);
