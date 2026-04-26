@@ -271,15 +271,19 @@ export default function Dues() {
                   rows={3}
                 />
               </div>
-              <div className="lg:col-span-2 flex justify-end">
-                <Button type="submit" disabled={saveSharedProfileMutation.isPending}>
+              <div className="flex lg:col-span-2 justify-stretch sm:justify-end">
+                <Button
+                  type="submit"
+                  disabled={saveSharedProfileMutation.isPending}
+                  className="w-full max-w-full whitespace-normal break-words text-center sm:w-auto"
+                >
                   {saveSharedProfileMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Applying...
                     </>
                   ) : (
-                    "Apply Shared Profile To All Clubs"
+                    "Apply to all clubs"
                   )}
                 </Button>
               </div>
