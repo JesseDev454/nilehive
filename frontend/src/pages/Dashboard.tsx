@@ -1527,7 +1527,8 @@ function StudentDashboard() {
     retry: false
   });
   const notifications = notificationsPage?.items ?? [];
-  const upcomingEvents = events.filter(isAttendableEvent).slice(0, 3);
+  const upcomingApprovedEvents = events.filter(isAttendableEvent);
+  const upcomingEvents = upcomingApprovedEvents.slice(0, 3);
   const engagementQueries = useQueries({
     queries: upcomingEvents.map((event) => ({
       queryKey: ["event-engagement", event.proposal_id],
@@ -1622,8 +1623,8 @@ function StudentDashboard() {
         />
         <AdminMetricCard
           title="Upcoming Events"
-          value={formatNumber(events.length)}
-          detail="Events currently visible to students."
+          value={formatNumber(upcomingApprovedEvents.length)}
+          detail="Approved events coming up for students."
           icon={CalendarDays}
           variant="blue"
         />
@@ -1703,7 +1704,7 @@ function StudentDashboard() {
             <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <CardTitle className="text-lg">Events for you</CardTitle>
-                <p className="mt-1 text-sm text-muted-foreground">Only final admin-approved events show here.</p>
+                <p className="mt-1 text-sm text-muted-foreground">See the approved events coming up for you.</p>
               </div>
               <Button asChild variant="outline" size="sm">
                 <Link to="/events">Open events</Link>
@@ -1715,8 +1716,8 @@ function StudentDashboard() {
               ) : upcomingEvents.length === 0 ? (
                 <AdminEmptyState
                   icon={CalendarDays}
-                    title="No events yet"
-                  message="When Club Services gives final approval, events will appear here for students."
+                  title="No events yet"
+                  message="Approved events will show up here once they are ready."
                 />
               ) : (
                 <div className="space-y-3">

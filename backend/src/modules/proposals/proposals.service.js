@@ -382,11 +382,20 @@ async function listPresidentProposals(options) {
     throw new ApiError(403, "Only presidents can view their proposals", "FORBIDDEN");
   }
 
-  const proposals = ensurePaginatedResult(await database.listExecutiveProposals(actor.id, {
-    pagination,
-    sort: pagination?.sort,
-    order: pagination?.order
-  }), pagination);
+  if (!actor.clubId) {
+    return pagination ? paginateArray([], pagination) : [];
+  }
+
+  const allClubProposals = typeof database.listProposalsByClubId === "function"
+    ? await database.listProposalsByClubId(actor.clubId)
+    : await database.listExecutiveProposals(actor.id, {
+        sort: pagination?.sort,
+        order: pagination?.order
+      });
+  const proposals = ensurePaginatedResult(
+    pagination ? paginateArray(allClubProposals, pagination) : allClubProposals,
+    pagination
+  );
   const proposalItems = pagination ? proposals.items : proposals;
   const latestApprovalsByProposalId = await database.getLatestApprovalsByProposalIds(
     proposalItems.map((proposal) => proposal.id)
@@ -416,7 +425,7 @@ async function getPresidentProposalDetail(options) {
 
   const proposal = await database.getProposalById(proposalId);
 
-  if (!proposal || proposal.submitted_by !== actor.id) {
+  if (!proposal || !actor.clubId || proposal.club_id !== actor.clubId) {
     throw new ApiError(404, "Proposal not found", "PROPOSAL_NOT_FOUND");
   }
 

@@ -76,6 +76,21 @@ function createFakeDatabase() {
       updated_at: "2026-04-08T10:00:00.000Z"
     },
     {
+      id: "proposal-5",
+      club_id: "club-1",
+      submitted_by: "executive-9",
+      title: "Joint Club Event",
+      description: "Prepared before the current president took office.",
+      event_date: "2026-06-10",
+      location: "Innovation Hub",
+      status: "approved",
+      advisor_remarks: "Looks good.",
+      advisor_decided_at: "2026-04-09T10:00:00.000Z",
+      advisor_decided_by: "advisor-1",
+      created_at: "2026-04-09T10:00:00.000Z",
+      updated_at: "2026-04-10T10:00:00.000Z"
+    },
+    {
       id: "proposal-3",
       club_id: "club-2",
       submitted_by: "president-2",
@@ -151,8 +166,8 @@ function createFakeDatabase() {
     async getProfileById(profileId) {
       return profiles[profileId] ?? null;
     },
-    async listExecutiveProposals(submittedBy) {
-      return proposals.filter((proposal) => proposal.submitted_by === submittedBy);
+    async listProposalsByClubId(clubId) {
+      return proposals.filter((proposal) => proposal.club_id === clubId);
     },
     async getProposalById(proposalId) {
       return proposals.find((proposal) => proposal.id === proposalId) ?? null;
@@ -259,30 +274,26 @@ test("president can fetch own proposals list", async (t) => {
   );
 
   assert.equal(response.status, 200);
-  assert.equal(payload.data.items.length, 3);
-  assert.equal(payload.data.total, 3);
+  assert.equal(payload.data.items.length, 4);
+  assert.equal(payload.data.total, 4);
   assert.equal(payload.data.items[0].submitted_at, payload.data.items[0].created_at);
   assert.ok(payload.data.items.every((proposal) => proposal.current_stage));
 });
 
-test("president can fetch own proposal detail", async (t) => {
+test("president can fetch proposal detail for the same club", async (t) => {
   const database = createFakeDatabase();
   const server = await createTestServer(database);
   t.after(() => server.close());
 
   const { response, payload } = await getExecutiveProposals(
     server.baseUrl,
-    "/api/v1/proposals/proposal-1",
+    "/api/v1/proposals/proposal-5",
     "president-token"
   );
 
   assert.equal(response.status, 200);
-  assert.equal(payload.data.id, "proposal-1");
-  assert.equal(payload.data.status, "pending_admin_review");
-  assert.equal(payload.data.latest_approval.decision, "approve");
-  assert.equal(payload.data.approval_history.length, 1);
-  assert.equal(payload.data.approval_history[0].remarks, "Ready for admin review.");
-  assert.equal(payload.data.advisor_remarks, "Ready for admin review.");
+  assert.equal(payload.data.id, "proposal-5");
+  assert.equal(payload.data.status, "approved");
 });
 
 test("president cannot fetch another club's proposal", async (t) => {

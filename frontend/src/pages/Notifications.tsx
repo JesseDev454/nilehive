@@ -66,9 +66,6 @@ export default function Notifications() {
                           </Badge>
                         </div>
                         <p className="mt-1 text-sm text-muted-foreground">{notification.message}</p>
-                        <p className="mt-2 text-xs text-muted-foreground">
-                          Proposal ID: {notification.proposal_id}
-                        </p>
                       </div>
                     </div>
                     <p className="whitespace-nowrap text-xs text-muted-foreground">

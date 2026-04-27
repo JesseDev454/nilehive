@@ -430,9 +430,9 @@ export default function EventCalendar() {
   return (
     <div className="nh-page">
       <NeoPageHeader
-        eyebrow="Official Events"
+        eyebrow="Events"
         title="Events"
-        description="Only events with final Club Services approval appear here."
+        description="See approved events, RSVP updates, and reminders in one place."
       />
 
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6">
@@ -460,9 +460,7 @@ export default function EventCalendar() {
                 <div className="nh-empty">
                   <CalendarDays className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
                   <p className="font-medium">No events yet</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Events will show here after admin final approval.
-                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">Approved events will appear here once they are ready.</p>
                 </div>
               ) : (
                 <div className="space-y-8">
