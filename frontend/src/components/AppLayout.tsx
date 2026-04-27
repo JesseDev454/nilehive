@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { BrandLogo } from "@/components/BrandLogo";
+import { SiteFooter } from "@/components/SiteFooter";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
@@ -95,6 +96,7 @@ export function AppLayout() {
           <main className="flex-1 p-4 md:p-6">
             <Outlet />
           </main>
+          <SiteFooter />
         </div>
       </div>
     </SidebarProvider>

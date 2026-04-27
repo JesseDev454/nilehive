@@ -1,6 +1,7 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { CheckCircle2, MailCheck } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
+import { SiteFooter } from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
 
 export default function SignupConfirmation() {
@@ -8,8 +9,9 @@ export default function SignupConfirmation() {
   const email = searchParams.get("email")?.trim() ?? "";
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background p-5 text-foreground">
-      <section className="w-full max-w-2xl">
+    <main className="flex min-h-screen flex-col bg-background text-foreground">
+      <section className="flex flex-1 items-center justify-center p-5">
+        <div className="w-full max-w-2xl">
         <div className="nh-card bg-card p-6 md:p-10">
           <BrandLogo
             size="lg"
@@ -50,7 +52,9 @@ export default function SignupConfirmation() {
             </div>
           </div>
         </div>
+        </div>
       </section>
+      <SiteFooter />
     </main>
   );
 }

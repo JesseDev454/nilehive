@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowRight, Lock, Mail, ShieldCheck } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
+import { SiteFooter } from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,8 +55,8 @@ export default function Login() {
   }
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <section className="grid min-h-screen lg:grid-cols-[1fr_0.95fr]">
+    <main className="flex min-h-screen flex-col bg-background text-foreground">
+      <section className="grid min-h-screen flex-1 lg:grid-cols-[1fr_0.95fr]">
         <aside className="relative hidden overflow-hidden bg-primary p-12 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
           <div className="absolute inset-10 border-2 border-primary-foreground/20" />
           <div className="absolute -right-28 top-20 h-80 w-80 rotate-45 border-[18px] border-secondary/30" />
@@ -174,6 +175,7 @@ export default function Login() {
           </div>
         </div>
       </section>
+      <SiteFooter />
     </main>
   );
 }

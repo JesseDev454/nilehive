@@ -5,6 +5,7 @@ import { Link, Navigate, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowRight, CheckCircle2, Loader2, ShieldCheck, Users } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
+import { SiteFooter } from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -283,19 +284,15 @@ export default function SignUp() {
   }
 
   return (
-    <main className="min-h-screen bg-background p-5 text-foreground md:p-10">
-      <section className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[0.88fr_1.12fr] lg:items-start">
+    <main className="flex min-h-screen flex-col bg-background text-foreground">
+      <section className="mx-auto grid w-full max-w-7xl flex-1 gap-6 p-5 md:p-10 lg:grid-cols-[0.88fr_1.12fr] lg:items-start">
         <aside className="space-y-5 pt-2">
-          <div className="space-y-3">
+          <div>
             <BrandLogo
               size="lg"
               variant="plain"
               className="h-24 w-[22rem] max-w-full sm:h-28 sm:w-[24rem]"
             />
-            <div>
-              <p className="nh-eyebrow">Official university platform</p>
-              <h1 className="text-2xl font-black uppercase">Club Services</h1>
-            </div>
           </div>
 
           <div className="nh-card-dark p-7">
@@ -607,6 +604,7 @@ export default function SignUp() {
           </div>
         </form>
       </section>
+      <SiteFooter />
     </main>
   );
 }
