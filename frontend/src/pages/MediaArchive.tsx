@@ -136,12 +136,13 @@ export default function MediaArchive() {
     retry: false
   });
   const reports = reportsPage.items;
-  const { data: approvedEvents = [] } = useQuery({
+  const { data: approvedEventsPage = emptyPaginatedResponse() } = useQuery({
     queryKey: ["approved-events", "report-form"],
-    queryFn: () => getApprovedEvents(),
+    queryFn: () => getApprovedEvents({ page: 1, page_size: 100 }),
     enabled: canSubmitReports,
     retry: false
   });
+  const approvedEvents = approvedEventsPage.items;
   const reportedProposalIds = useMemo(
     () => new Set(reports.map((report) => report.proposal_id)),
     [reports]

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { ElementType, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
@@ -282,12 +283,35 @@ export function NeoListItem({
 export function NeoLoadingState({
   title = "Loading Club Services",
   message = "Preparing the latest workspace data.",
-  compact = false
+  compact = false,
+  delayedMessage,
+  delayedMessageDelayMs = 8000
 }: {
   title?: string;
   message?: string;
   compact?: boolean;
+  delayedMessage?: string;
+  delayedMessageDelayMs?: number;
 }) {
+  const [showDelayedMessage, setShowDelayedMessage] = useState(false);
+
+  useEffect(() => {
+    if (!delayedMessage) {
+      setShowDelayedMessage(false);
+      return undefined;
+    }
+
+    setShowDelayedMessage(false);
+
+    const timer = window.setTimeout(() => {
+      setShowDelayedMessage(true);
+    }, delayedMessageDelayMs);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [delayedMessage, delayedMessageDelayMs]);
+
   return (
     <div className={cn("nh-card overflow-hidden bg-background", compact ? "p-5" : "p-8")}>
       <div className="mb-5 h-3 border-2 border-foreground bg-primary" />
@@ -303,6 +327,9 @@ export function NeoLoadingState({
             {title}
           </h2>
           <p className="mt-2 max-w-xl text-sm text-muted-foreground">{message}</p>
+          {showDelayedMessage ? (
+            <p className="mt-3 max-w-xl text-sm font-medium text-warning">{delayedMessage}</p>
+          ) : null}
         </div>
       </div>
     </div>

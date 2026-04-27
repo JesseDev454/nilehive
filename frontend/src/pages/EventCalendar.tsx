@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { Bell, CalendarDays, CheckCircle2, Clock, Loader2, MapPin, MessageSquare, Users } from "lucide-react";
 import { NeoLoadingState, NeoPageHeader } from "@/components/NeoBrutal";
+import { DataPagination } from "@/components/DataPagination";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import {
   type EventReminderRecord,
   type EventRsvpRecord
 } from "@/lib/api";
+import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 import { actionError, actionSuccess } from "@/lib/notify";
 
 function getErrorMessage(error: unknown) {
@@ -387,14 +389,26 @@ function ReminderCard({ reminder }: { reminder: EventReminderRecord }) {
 }
 
 export default function EventCalendar() {
+  const [upcomingPage, setUpcomingPage] = useState(1);
+  const [pastPage, setPastPage] = useState(1);
   const {
-    data: events = [],
-    isLoading: eventsLoading,
-    isError: eventsError,
-    error: eventsErrorValue
+    data: upcomingEventsPage = emptyPaginatedResponse<ApprovedEventRecord>(),
+    isLoading: upcomingLoading,
+    isError: upcomingError,
+    error: upcomingErrorValue
   } = useQuery({
-    queryKey: ["approved-events"],
-    queryFn: () => getApprovedEvents(),
+    queryKey: ["approved-events", "upcoming", upcomingPage],
+    queryFn: () => getApprovedEvents({ lifecycle: "upcoming", page: upcomingPage, page_size: DEFAULT_PAGE_SIZE }),
+    retry: false
+  });
+  const {
+    data: pastEventsPage = emptyPaginatedResponse<ApprovedEventRecord>(),
+    isLoading: pastLoading,
+    isError: pastError,
+    error: pastErrorValue
+  } = useQuery({
+    queryKey: ["approved-events", "past", pastPage],
+    queryFn: () => getApprovedEvents({ lifecycle: "past", page: pastPage, page_size: DEFAULT_PAGE_SIZE }),
     retry: false
   });
   const {
@@ -407,8 +421,11 @@ export default function EventCalendar() {
     queryFn: () => getEventReminders(),
     retry: false
   });
-  const activeEvents = events.filter((event) => !isPastEvent(event));
-  const pastEvents = events.filter(isPastEvent);
+  const activeEvents = upcomingEventsPage.items;
+  const pastEvents = pastEventsPage.items;
+  const eventsLoading = upcomingLoading || pastLoading;
+  const eventsError = upcomingError || pastError;
+  const eventsErrorValue = upcomingErrorValue || pastErrorValue;
 
   return (
     <div className="nh-page">
@@ -426,15 +443,20 @@ export default function EventCalendar() {
             </CardHeader>
             <CardContent className="space-y-3">
               {eventsLoading ? (
-                <NeoLoadingState title="Loading events" message="We are preparing the official event calendar." compact />
+                <NeoLoadingState
+                  title="Getting events ready"
+                  message="Please wait while we load the events you can see."
+                  delayedMessage="This is taking longer than usual. Please check your network connection."
+                  compact
+                />
               ) : eventsError ? (
                 <div className="nh-empty border-destructive bg-destructive/5">
-                  <p className="font-medium">Unable to load events</p>
+                  <p className="font-medium">We couldn’t load events right now</p>
                   <p className="text-sm text-muted-foreground mt-1">
                     {getErrorMessage(eventsErrorValue)}
                   </p>
                 </div>
-              ) : events.length === 0 ? (
+              ) : activeEvents.length === 0 && pastEvents.length === 0 ? (
                 <div className="nh-empty">
                   <CalendarDays className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
                   <p className="font-medium">No events yet</p>
@@ -455,7 +477,16 @@ export default function EventCalendar() {
                         <p className="mt-1 text-sm text-muted-foreground">Past events are still available below for memories and feedback.</p>
                       </div>
                     ) : (
-                      activeEvents.map((event) => <EventCard key={event.id} event={event} />)
+                      <>
+                        {activeEvents.map((event) => <EventCard key={event.id} event={event} />)}
+                        <DataPagination
+                          page={upcomingEventsPage.page}
+                          pageSize={upcomingEventsPage.page_size}
+                          total={upcomingEventsPage.total}
+                          hasNext={upcomingEventsPage.has_next}
+                          onPageChange={setUpcomingPage}
+                        />
+                      </>
                     )}
                   </section>
 
@@ -470,7 +501,16 @@ export default function EventCalendar() {
                         <p className="mt-1 text-sm text-muted-foreground">Completed events will appear here after their event date passes.</p>
                       </div>
                     ) : (
-                      pastEvents.map((event) => <EventCard key={event.id} event={event} />)
+                      <>
+                        {pastEvents.map((event) => <EventCard key={event.id} event={event} />)}
+                        <DataPagination
+                          page={pastEventsPage.page}
+                          pageSize={pastEventsPage.page_size}
+                          total={pastEventsPage.total}
+                          hasNext={pastEventsPage.has_next}
+                          onPageChange={setPastPage}
+                        />
+                      </>
                     )}
                   </section>
                 </div>
@@ -481,14 +521,19 @@ export default function EventCalendar() {
 
         <Card className="h-fit">
           <CardHeader>
-            <CardTitle className="text-lg">Event Reminders</CardTitle>
+          <CardTitle className="text-lg">Event Reminders</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {remindersLoading ? (
-              <NeoLoadingState title="Loading reminders" message="We are checking upcoming events." compact />
+              <NeoLoadingState
+                title="Getting reminders ready"
+                message="Please wait while we load your event reminders."
+                delayedMessage="This is taking longer than usual. Please check your network connection."
+                compact
+              />
             ) : remindersError ? (
               <div className="nh-empty border-destructive bg-destructive/5">
-                <p className="font-medium">Unable to load reminders</p>
+                <p className="font-medium">We couldn’t load reminders right now</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   {getErrorMessage(remindersErrorValue)}
                 </p>

@@ -63,6 +63,7 @@ import {
   useAdvisorPendingProposals
 } from "@/hooks/use-advisor-pending-proposals";
 import { isAttendableEvent } from "@/lib/eventLifecycle";
+import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 import { canViewProposalDetails } from "@/lib/roleAccess";
 
 function StatCard({
@@ -559,15 +560,16 @@ function ExecutiveDashboard() {
   const notifications = notificationsPage?.items ?? [];
 
   const {
-    data: approvedEvents = [],
+    data: approvedEventsPage = emptyPaginatedResponse<ApprovedEventRecord>(),
     isLoading: isEventsLoading,
     isError: isEventsError,
     error: eventsError
   } = useQuery({
     queryKey: ["executive-dashboard", "approved-events"],
-    queryFn: () => getApprovedEvents(),
+    queryFn: () => getApprovedEvents({ page: 1, page_size: DEFAULT_PAGE_SIZE }),
     retry: false
   });
+  const approvedEvents = approvedEventsPage.items;
 
   const isLoading = isTasksLoading || isNotificationsLoading || isEventsLoading;
   const isError = isTasksError || isNotificationsError || isEventsError;
@@ -1504,15 +1506,16 @@ function StudentDashboard() {
     retry: false
   });
   const {
-    data: events = [],
+    data: eventsPage = emptyPaginatedResponse<ApprovedEventRecord>(),
     isLoading: eventsLoading,
     isError: eventsFailed,
     error: eventsError
   } = useQuery({
     queryKey: ["approved-events"],
-    queryFn: () => getApprovedEvents(),
+    queryFn: () => getApprovedEvents({ page: 1, page_size: 100 }),
     retry: false
   });
+  const events = eventsPage.items;
   const { data: reminders = [] } = useQuery({
     queryKey: ["event-reminders"],
     queryFn: () => getEventReminders(),

@@ -45,8 +45,8 @@ export default function Login() {
       await signIn(email, password);
       toast.success("Welcome back to Club Services");
     } catch (error) {
-      toast.error("Login failed", {
-        description: getUserFacingErrorMessage(error, "Please check your credentials and try again.")
+      toast.error("We couldn’t sign you in", {
+        description: getUserFacingErrorMessage(error, "Please check your email, password, and network connection, then try again.")
       });
     } finally {
       setIsSubmitting(false);

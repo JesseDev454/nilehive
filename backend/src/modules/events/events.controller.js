@@ -1,4 +1,5 @@
 const asyncHandler = require("../../shared/asyncHandler");
+const { parsePaginationQuery } = require("../../shared/pagination");
 const {
   getEventEngagement,
   listApprovedEvents,
@@ -13,6 +14,14 @@ function createEventsController(options = {}) {
     listApprovedEvents: asyncHandler(async (req, res) => {
       const events = await listApprovedEvents({
         actor: req.user,
+        filters: {
+          lifecycle: req.query.lifecycle
+        },
+        pagination: parsePaginationQuery(req.query, {
+          defaultSort: "event_date",
+          defaultOrder: "asc",
+          allowedSorts: ["event_date", "created_at"]
+        }),
         database
       });
 

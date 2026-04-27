@@ -874,10 +874,18 @@ export function getUserFacingErrorMessage(error: unknown, fallback = "Please try
       return `Please fix these items: ${fieldMessages.join("; ")}`;
     }
 
+    if (error.code === "NETWORK_ERROR" || error.status === 0) {
+      return "We couldn’t reach NileHive right now. Please check your network and try again shortly.";
+    }
+
     return error.message || fallback;
   }
 
   if (error instanceof Error) {
+    if (error.message.toLowerCase().includes("failed to fetch")) {
+      return "We couldn’t reach NileHive right now. Please check your network and try again shortly.";
+    }
+
     return error.message || fallback;
   }
 
@@ -1325,8 +1333,22 @@ export async function getNotifications(pagination: PaginationQuery = {}, token?:
   return response.data;
 }
 
-export async function getApprovedEvents(token?: string) {
-  const response = await request<ApiEnvelope<ApprovedEventRecord[]>>("/api/v1/events/approved", {
+export async function getApprovedEvents(
+  filters: ({ lifecycle?: "upcoming" | "past" } & PaginationQuery) = {},
+  token?: string
+) {
+  const params = new URLSearchParams();
+
+  if (filters.lifecycle) {
+    params.set("lifecycle", filters.lifecycle);
+  }
+
+  appendPaginationParams(params, filters);
+
+  const query = params.toString();
+  const response = await request<ApiEnvelope<PaginatedResponse<ApprovedEventRecord>>>(
+    `/api/v1/events/approved${query ? `?${query}` : ""}`,
+    {
     method: "GET",
     token
   });

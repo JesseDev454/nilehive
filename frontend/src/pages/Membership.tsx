@@ -802,7 +802,7 @@ function StudentMembershipView() {
         <CardHeader>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <CardTitle className="text-lg">Official Clubs</CardTitle>
+              <CardTitle className="text-lg">Clubs</CardTitle>
               <p className="text-sm text-muted-foreground">
                 Tap any club to read more and continue to its dedicated join form.
               </p>

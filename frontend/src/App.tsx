@@ -42,8 +42,9 @@ function ProtectedRoutes() {
       <div className="flex min-h-screen items-center justify-center bg-background p-6">
         <div className="w-full max-w-xl">
           <NeoLoadingState
-            title="Opening your Club Services workspace"
-            message="We are checking your session and preparing the right dashboard for your role."
+            title="Getting your account ready"
+            message="Please wait while we open your Club Services workspace."
+            delayedMessage="This is taking longer than usual. Please check your network connection."
           />
         </div>
       </div>
