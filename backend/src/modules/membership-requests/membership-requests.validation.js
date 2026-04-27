@@ -91,7 +91,7 @@ function validateCreateMembershipRequestPayload(payload = {}) {
     payment_account_name: readRequiredString(payload, "payment_account_name", "Name on account"),
     payment_reference: readRequiredString(payload, "payment_reference", "Payment reference"),
     payment_paid_at: readOptionalDate(payload, "payment_paid_at"),
-    proof_url: readOptionalString(payload, "proof_url"),
+    proof_url: readRequiredString(payload, "proof_url", "Receipt upload"),
     payer_note: readOptionalString(payload, "payer_note"),
     academic_session: readOptionalString(payload, "academic_session")
   };

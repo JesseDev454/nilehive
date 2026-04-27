@@ -2,7 +2,7 @@ export const PROPOSAL_STATUS_META: Record<string, { label: string; className: st
   draft: { label: "Draft", className: "border-muted-foreground bg-muted text-muted-foreground" },
   pending_advisor_review: { label: "Awaiting Advisor Review", className: "border-warning bg-warning text-warning-foreground" },
   pending_admin_review: { label: "Awaiting Club Services Final Review", className: "border-primary bg-primary text-primary-foreground" },
-  approved: { label: "Approved Event", className: "border-success bg-success text-success-foreground" },
+  approved: { label: "Event", className: "border-success bg-success text-success-foreground" },
   advisor_rejected: { label: "Returned by Advisor", className: "border-destructive bg-destructive text-destructive-foreground" },
   admin_rejected: { label: "Returned by Club Services", className: "border-destructive bg-destructive text-destructive-foreground" }
 };
@@ -32,7 +32,7 @@ export function getProposalNextAction(status: string) {
     pending_admin_review: "Waiting for Club Services to give the final decision.",
     advisor_rejected: "Review the advisor remarks, edit the proposal, then resubmit.",
     admin_rejected: "Review the Club Services remarks, edit the proposal, then resubmit.",
-    approved: "This proposal is now an approved event."
+    approved: "This proposal is now an event."
   };
 
   return actions[status] ?? "Check the proposal details for the next step.";
@@ -56,7 +56,7 @@ export function getProposalPrimaryActionLabel(status: string) {
   }
 
   if (status === "approved") {
-    return "View Approved Event Details";
+    return "View Event Details";
   }
 
   return "View Progress";

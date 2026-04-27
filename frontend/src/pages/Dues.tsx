@@ -220,7 +220,7 @@ export default function Dues() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Shared Club Services Payment Profile</CardTitle>
+          <CardTitle className="text-lg">Club Services Account</CardTitle>
           <p className="text-sm text-muted-foreground">
             All clubs use one payment destination. Freshers and returning students are charged from this shared profile.
           </p>

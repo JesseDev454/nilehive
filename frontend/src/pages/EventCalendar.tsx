@@ -30,7 +30,7 @@ function getErrorMessage(error: unknown) {
     return error.message;
   }
 
-  return "Unable to load approved events right now.";
+  return "Unable to load events right now.";
 }
 
 function getDateLabel(value?: string | null) {
@@ -414,7 +414,7 @@ export default function EventCalendar() {
     <div className="nh-page">
       <NeoPageHeader
         eyebrow="Official Events"
-        title="Approved Events"
+        title="Events"
         description="Only events with final Club Services approval appear here."
       />
 
@@ -426,10 +426,10 @@ export default function EventCalendar() {
             </CardHeader>
             <CardContent className="space-y-3">
               {eventsLoading ? (
-                <NeoLoadingState title="Loading approved events" message="We are preparing the official event calendar." compact />
+                <NeoLoadingState title="Loading events" message="We are preparing the official event calendar." compact />
               ) : eventsError ? (
                 <div className="nh-empty border-destructive bg-destructive/5">
-                  <p className="font-medium">Unable to load approved events</p>
+                  <p className="font-medium">Unable to load events</p>
                   <p className="text-sm text-muted-foreground mt-1">
                     {getErrorMessage(eventsErrorValue)}
                   </p>
@@ -437,7 +437,7 @@ export default function EventCalendar() {
               ) : events.length === 0 ? (
                 <div className="nh-empty">
                   <CalendarDays className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="font-medium">No approved events yet</p>
+                  <p className="font-medium">No events yet</p>
                   <p className="text-sm text-muted-foreground mt-1">
                     Events will show here after admin final approval.
                   </p>
@@ -451,7 +451,7 @@ export default function EventCalendar() {
                     </div>
                     {activeEvents.length === 0 ? (
                       <div className="nh-empty">
-                        <p className="font-medium">No upcoming approved events</p>
+                        <p className="font-medium">No upcoming events</p>
                         <p className="mt-1 text-sm text-muted-foreground">Past events are still available below for memories and feedback.</p>
                       </div>
                     ) : (
@@ -466,7 +466,7 @@ export default function EventCalendar() {
                     </div>
                     {pastEvents.length === 0 ? (
                       <div className="nh-empty">
-                        <p className="font-medium">No past approved events yet</p>
+                        <p className="font-medium">No past events yet</p>
                         <p className="mt-1 text-sm text-muted-foreground">Completed events will appear here after their event date passes.</p>
                       </div>
                     ) : (
@@ -481,11 +481,11 @@ export default function EventCalendar() {
 
         <Card className="h-fit">
           <CardHeader>
-            <CardTitle className="text-lg">Approved Event Reminders</CardTitle>
+            <CardTitle className="text-lg">Event Reminders</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {remindersLoading ? (
-              <NeoLoadingState title="Loading reminders" message="We are checking upcoming approved events." compact />
+              <NeoLoadingState title="Loading reminders" message="We are checking upcoming events." compact />
             ) : remindersError ? (
               <div className="nh-empty border-destructive bg-destructive/5">
                 <p className="font-medium">Unable to load reminders</p>
@@ -495,7 +495,7 @@ export default function EventCalendar() {
               </div>
             ) : reminders.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No approved event reminders for your account yet.
+                No event reminders for your account yet.
               </p>
             ) : (
               reminders.map((reminder) => <ReminderCard key={reminder.id} reminder={reminder} />)

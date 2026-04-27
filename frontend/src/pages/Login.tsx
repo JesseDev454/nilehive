@@ -67,7 +67,7 @@ export default function Login() {
               Campus clubs, proposals, and records.
             </h2>
             <p className="mt-6 border-l-4 border-secondary pl-5 text-lg leading-8 text-primary-foreground/82">
-              The official workspace for club leadership, student membership, approved events, and Club Services review.
+              The official workspace for club leadership, student membership, events, and Club Services review.
             </p>
           </div>
 

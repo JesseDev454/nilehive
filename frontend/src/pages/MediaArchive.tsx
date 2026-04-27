@@ -204,7 +204,7 @@ export default function MediaArchive() {
     }
 
     if (!selectedEvent?.club_id) {
-      toast.error("Select approved event first", {
+      toast.error("Select event first", {
         description: "Choose the event before uploading images so they are scoped to the correct club."
       });
       event.target.value = "";
@@ -283,7 +283,7 @@ export default function MediaArchive() {
       <NeoPageHeader
         eyebrow="Archive"
         title="Reports & Media Archive"
-        description="Document completed approved events and keep a central Club Services record."
+        description="Document completed events and keep a central Club Services record."
       />
 
       {canSubmitReports ? (
@@ -294,10 +294,10 @@ export default function MediaArchive() {
           <CardContent>
             <form onSubmit={handleSubmitReport} className="nh-form-grid">
               <div className="space-y-2 lg:col-span-2">
-                <Label htmlFor="proposal_id">Approved Event</Label>
+                <Label htmlFor="proposal_id">Event</Label>
                 <Select value={proposalId} onValueChange={setProposalId}>
                   <SelectTrigger id="proposal_id">
-                    <SelectValue placeholder="Select an approved event" />
+                    <SelectValue placeholder="Select an event" />
                   </SelectTrigger>
                   <SelectContent>
                     {reportableEvents.map((event) => (
@@ -309,7 +309,7 @@ export default function MediaArchive() {
                 </Select>
                 {!reportableEvents.length ? (
                   <p className="text-xs text-muted-foreground">
-                    No approved events without reports are available right now.
+                    No events without reports are available right now.
                   </p>
                 ) : null}
               </div>
@@ -433,7 +433,7 @@ export default function MediaArchive() {
               <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
               <p className="font-medium">No event reports yet</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Reports will appear here after presidents document approved events.
+                Reports will appear here after presidents document events.
               </p>
             </div>
           ) : (

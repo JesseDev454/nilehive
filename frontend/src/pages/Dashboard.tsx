@@ -525,7 +525,7 @@ function UpcomingEventsCard({ events }: { events: ApprovedEventRecord[] }) {
         </h3>
         <div className="mt-auto pt-4">
           <p className="text-xs font-medium italic text-muted-foreground">
-            {nextEvent ? `Next: ${nextEvent.title}` : "No approved events yet"}
+            {nextEvent ? `Next: ${nextEvent.title}` : "No events yet"}
           </p>
         </div>
       </CardContent>
@@ -686,7 +686,7 @@ function ExecutiveDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg">Upcoming Approved Events</CardTitle>
+            <CardTitle className="text-lg">Upcoming Events</CardTitle>
             <Button asChild variant="outline" size="sm">
               <Link to="/events">Calendar</Link>
             </Button>
@@ -697,7 +697,7 @@ function ExecutiveDashboard() {
                 isLoading={isLoading}
                 isError={isError}
                 error={error}
-                emptyMessage="No approved events yet."
+                emptyMessage="No events yet."
               />
             ) : (
               <UpcomingEventsList events={approvedEvents} canOpenProposal={canViewProposalDetails("executive")} />
@@ -819,7 +819,7 @@ function AdminDashboard() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard title="Approved Events" value={summary?.approved_events ?? 0} icon={CheckCircle} variant="success" />
+            <StatCard title="Events" value={summary?.approved_events ?? 0} icon={CheckCircle} variant="success" />
             <StatCard title="Dues Submitted" value={summary?.submitted_dues_payments ?? 0} icon={CreditCard} variant="warning" />
             <StatCard title="Attendance" value={summary?.event_attendance_count ?? 0} icon={BarChart3} />
             <StatCard title="Open Tasks" value={summary?.open_tasks ?? 0} icon={FileText} />
@@ -956,9 +956,9 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <NeoLoadingState title="Checking report gaps" message="We are finding approved events that need documentation." compact />
+                  <NeoLoadingState title="Checking report gaps" message="We are finding events that still need documentation." compact />
                 ) : !dashboard?.missing_reports.length ? (
-                  <p className="text-sm text-muted-foreground">No past approved events are missing reports.</p>
+                  <p className="text-sm text-muted-foreground">No past events are missing reports.</p>
                 ) : (
                   <div className="space-y-3">
                     {dashboard.missing_reports.map((report) => (
@@ -1323,7 +1323,7 @@ function PolishedAdminDashboard() {
                 <div>
                   <CardTitle className="text-lg text-primary-foreground">Reports to chase</CardTitle>
                   <p className="mt-1 text-sm text-primary-foreground/70">
-                    Approved events should not disappear after the day ends.
+                    Events should not disappear after the day ends.
                   </p>
                 </div>
                 <Button asChild variant="secondary" size="sm">
@@ -1336,7 +1336,7 @@ function PolishedAdminDashboard() {
                     <CheckCircle className="mx-auto h-8 w-8 text-success" />
                     <p className="mt-3 font-semibold">No missing reports right now</p>
                     <p className="mt-1 text-sm text-primary-foreground/70">
-                      Every past approved event currently has its documentation covered.
+                      Every past event currently has its documentation covered.
                     </p>
                   </div>
                 ) : (
@@ -1567,7 +1567,7 @@ function StudentDashboard() {
               Welcome back, {profile?.full_name?.split(" ")[0] || "student"}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75 md:text-base">
-              Track your club membership, dues, approved events, RSVP choices, and reminders from one simple home base.
+              Track your club membership, dues, events, RSVP choices, and reminders from one simple home base.
             </p>
           </div>
           <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
@@ -1578,7 +1578,7 @@ function StudentDashboard() {
         </div>
         <div className="relative mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <StudentQuickLink title="Find clubs" description="Discover clubs and request to join." to="/membership" icon={UserPlus} />
-          <StudentQuickLink title="Approved events" description="See official events and RSVP." to="/events" icon={CalendarDays} />
+            <StudentQuickLink title="Events" description="See official events and RSVP." to="/events" icon={CalendarDays} />
           <StudentQuickLink title="Announcements" description="Catch updates from clubs and admins." to="/communications" icon={MessageSquare} />
           <StudentQuickLink title="Notifications" description="Review your latest Club Services alerts." to="/notifications" icon={Bell} />
         </div>
@@ -1620,7 +1620,7 @@ function StudentDashboard() {
         <AdminMetricCard
           title="Upcoming Events"
           value={formatNumber(events.length)}
-          detail="Approved events currently visible to students."
+          detail="Events currently visible to students."
           icon={CalendarDays}
           variant="blue"
         />
@@ -1699,7 +1699,7 @@ function StudentDashboard() {
           <Card>
             <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle className="text-lg">Approved events for you</CardTitle>
+                <CardTitle className="text-lg">Events for you</CardTitle>
                 <p className="mt-1 text-sm text-muted-foreground">Only final admin-approved events show here.</p>
               </div>
               <Button asChild variant="outline" size="sm">
@@ -1708,11 +1708,11 @@ function StudentDashboard() {
             </CardHeader>
             <CardContent>
               {eventsLoading ? (
-                <NeoLoadingState title="Loading approved events" message="We are preparing the student event feed." compact />
+                <NeoLoadingState title="Loading events" message="We are preparing the student event feed." compact />
               ) : upcomingEvents.length === 0 ? (
                 <AdminEmptyState
                   icon={CalendarDays}
-                  title="No approved events yet"
+                    title="No events yet"
                   message="When Club Services gives final approval, events will appear here for students."
                 />
               ) : (
@@ -1842,7 +1842,7 @@ function PresidentDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard title="Total Proposals" value={summary?.total_proposals ?? 0} icon={FileText} />
             <StatCard title="Pending" value={summary?.pending_proposals ?? 0} icon={Clock} variant="warning" />
-            <StatCard title="Approved Events" value={summary?.upcoming_events ?? 0} icon={CalendarDays} variant="success" />
+            <StatCard title="Events" value={summary?.upcoming_events ?? 0} icon={CalendarDays} variant="success" />
             <StatCard title="Executives" value={summary?.executive_count ?? 0} icon={Users} />
           </div>
 
@@ -1867,7 +1867,7 @@ function PresidentDashboard() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Upcoming Approved Events</CardTitle>
+                <CardTitle className="text-lg">Upcoming Events</CardTitle>
               </CardHeader>
               <CardContent>
                 {isLoading || !dashboard?.upcoming_events.length ? (
@@ -1875,7 +1875,7 @@ function PresidentDashboard() {
                     isLoading={isLoading}
                     isError={false}
                     error={null}
-                    emptyMessage="No approved events yet."
+                    emptyMessage="No events yet."
                   />
                 ) : (
                   <UpcomingEventsList events={dashboard.upcoming_events} canOpenProposal={canViewProposalDetails("president")} />

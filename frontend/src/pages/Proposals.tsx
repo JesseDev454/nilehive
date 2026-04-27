@@ -130,7 +130,7 @@ export default function Proposals() {
         <NeoStateCard
           icon={FileText}
           title="Proposal access is restricted"
-          message="Presidents create proposals here, while advisors and Club Services review them. Executives can follow club work through tasks and approved events."
+          message="Presidents create proposals here, while advisors and Club Services review them. Executives can follow club work through tasks and events."
         />
       ) : isLoading ? (
         <NeoLoadingState title="Loading proposals" message="We are getting the latest proposal updates." />

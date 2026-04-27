@@ -630,7 +630,7 @@ export default function NewProposal() {
         <NeoStateCard
           icon={Building2}
           title="Proposal access is for club presidents"
-          message="Club presidents create and resubmit proposals here. Executives can keep up with club work through tasks and approved events."
+          message="Club presidents create and resubmit proposals here. Executives can keep up with club work through tasks and events."
         />
       </div>
     );

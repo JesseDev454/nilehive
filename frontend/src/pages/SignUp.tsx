@@ -67,6 +67,12 @@ export default function SignUp() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingReceipt, setIsUploadingReceipt] = useState(false);
   const [signupError, setSignupError] = useState<string | null>(null);
+  const [pendingReceiptUpload, setPendingReceiptUpload] = useState<{
+    userId: string;
+    clubId: string;
+    needsEmailConfirmation: boolean;
+    email: string;
+  } | null>(null);
   const {
     data: clubs = [],
     isLoading: isLoadingClubs,
@@ -110,6 +116,46 @@ export default function SignUp() {
     setSignupError(null);
     setProofFile(file);
     setProofFileName(file.name);
+  }
+
+  async function uploadRequiredReceipt(userId: string, selectedClubId: string) {
+    if (!proofFile) {
+      throw new Error("Please upload your payment receipt before completing signup.");
+    }
+
+    setIsUploadingReceipt(true);
+
+    try {
+      const fileDataUrl = await readFileAsDataUrl(proofFile);
+      await uploadSignupReceipt({
+        user_id: userId,
+        club_id: selectedClubId,
+        file_name: proofFile.name,
+        content_type: proofFile.type,
+        file_data_url: fileDataUrl
+      });
+    } finally {
+      setIsUploadingReceipt(false);
+    }
+  }
+
+  function finishSignup(needsEmailConfirmation: boolean, accountEmail: string) {
+    setPendingReceiptUpload(null);
+
+    if (needsEmailConfirmation) {
+      toast.success("Verification email sent", {
+        description: "Check your Nile University inbox, confirm your email, then sign in."
+      });
+      navigate(`/signup/confirm?email=${encodeURIComponent(accountEmail.trim().toLowerCase())}`, {
+        replace: true
+      });
+      return;
+    }
+
+    toast.success("Account created", {
+      description: "Your Club Services access is ready."
+    });
+    navigate("/", { replace: true });
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -164,7 +210,21 @@ export default function SignUp() {
       return;
     }
 
+    if (requestedRole === "student" && !proofFile) {
+      const message = "Please upload your payment receipt before completing signup.";
+      setSignupError(message);
+      toast.error("Receipt required", { description: message });
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
+      if (pendingReceiptUpload) {
+        await uploadRequiredReceipt(pendingReceiptUpload.userId, pendingReceiptUpload.clubId);
+        finishSignup(pendingReceiptUpload.needsEmailConfirmation, pendingReceiptUpload.email);
+        return;
+      }
+
       const selectedClub = clubs.find((club) => club.id === clubId);
       const result = await signUp({
         email,
@@ -184,43 +244,33 @@ export default function SignUp() {
         proofUrl: null
       });
 
-      if (requestedRole === "student" && proofFile && result.userId) {
+      if (requestedRole === "student") {
+        if (!result.userId) {
+          throw new Error("Your account was created, but we could not attach the required receipt yet. Please try again.");
+        }
+
         try {
-          setIsUploadingReceipt(true);
-          const fileDataUrl = await readFileAsDataUrl(proofFile);
-          await uploadSignupReceipt({
-            user_id: result.userId,
-            club_id: clubId,
-            file_name: proofFile.name,
-            content_type: proofFile.type,
-            file_data_url: fileDataUrl
-          });
+          await uploadRequiredReceipt(result.userId, clubId);
         } catch (uploadError) {
-          toast.error("Account created, but receipt upload failed", {
-            description: getUserFacingErrorMessage(
-              uploadError,
-              "Finish signup anyway, then upload your receipt again after signing in if needed."
-            )
+          const message = getUserFacingErrorMessage(
+            uploadError,
+            "We created your account, but your receipt still needs to upload before signup can finish. Please retry now."
+          );
+          setPendingReceiptUpload({
+            userId: result.userId,
+            clubId,
+            needsEmailConfirmation: result.needsEmailConfirmation,
+            email: email.trim().toLowerCase()
           });
-        } finally {
-          setIsUploadingReceipt(false);
+          setSignupError(message);
+          toast.error("Receipt upload required", {
+            description: message
+          });
+          return;
         }
       }
 
-      if (result.needsEmailConfirmation) {
-        toast.success("Verification email sent", {
-          description: "Check your Nile University inbox, confirm your email, then sign in."
-        });
-        navigate(`/signup/confirm?email=${encodeURIComponent(email.trim().toLowerCase())}`, {
-          replace: true
-        });
-        return;
-      }
-
-      toast.success("Account created", {
-        description: "Your Club Services access is ready."
-      });
-      navigate("/", { replace: true });
+      finishSignup(result.needsEmailConfirmation, email);
     } catch (error) {
       const message = getUserFacingErrorMessage(error, "Please check the form and try again.");
       setSignupError(message);
@@ -481,7 +531,7 @@ export default function SignUp() {
 
                 <div className="space-y-2">
                   <Label className="font-black uppercase tracking-[0.12em]" htmlFor="proof-upload">
-                    Upload Receipt (Optional)
+                    Upload Receipt
                   </Label>
                   <Input
                     id="proof-upload"
@@ -493,7 +543,7 @@ export default function SignUp() {
                   {proofFileName ? (
                     <p className="text-xs text-muted-foreground">Selected: {proofFileName}</p>
                   ) : (
-                    <p className="text-xs text-muted-foreground">Upload an image of the payment receipt if you have it ready now.</p>
+                    <p className="text-xs text-muted-foreground">Upload an image of the payment receipt to complete signup.</p>
                   )}
                 </div>
 
@@ -525,11 +575,15 @@ export default function SignUp() {
               {isSubmitting ? (
                 <>
                   {isUploadingReceipt ? <Loader2 className="h-5 w-5 animate-spin" /> : null}
-                  {isUploadingReceipt ? "Uploading receipt..." : "Creating account..."}
+                  {isUploadingReceipt
+                    ? "Uploading receipt..."
+                    : pendingReceiptUpload
+                      ? "Retrying receipt upload..."
+                      : "Creating account..."}
                 </>
               ) : (
                 <>
-                  Complete registration
+                  {pendingReceiptUpload ? "Retry receipt upload" : "Complete registration"}
                   <ArrowRight className="h-5 w-5" />
                 </>
               )}

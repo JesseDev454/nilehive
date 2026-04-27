@@ -26,7 +26,7 @@ export function AppSidebar() {
     { title: "Dashboard", url: "/", icon: Home },
     { title: "My Tasks", url: "/tasks", icon: ClipboardList },
     { title: "Announcements", url: "/communications", icon: MessageSquare },
-    { title: "Approved Events", url: "/events", icon: CalendarDays },
+    { title: "Events", url: "/events", icon: CalendarDays },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
 
@@ -34,7 +34,7 @@ export function AppSidebar() {
     { title: "Dashboard", url: "/", icon: Home },
     { title: "Pending Approvals", url: "/approvals", icon: Clock },
     { title: "Announcements", url: "/communications", icon: MessageSquare },
-    { title: "Approved Events", url: "/events", icon: CalendarDays },
+    { title: "Events", url: "/events", icon: CalendarDays },
     { title: "Reports Archive", url: "/archive", icon: FileText },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
@@ -48,7 +48,7 @@ export function AppSidebar() {
     { title: "Tasks", url: "/tasks", icon: ClipboardList },
     { title: "Dues", url: "/dues", icon: CreditCard },
     { title: "Announcements", url: "/communications", icon: MessageSquare },
-    { title: "Approved Events", url: "/events", icon: CalendarDays },
+    { title: "Events", url: "/events", icon: CalendarDays },
     { title: "Reports Archive", url: "/archive", icon: FileText },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
@@ -62,7 +62,7 @@ export function AppSidebar() {
     { title: "Members", url: "/members", icon: Users },
     { title: "Dues", url: "/dues", icon: CreditCard },
     { title: "Announcements", url: "/communications", icon: MessageSquare },
-    { title: "Approved Events", url: "/events", icon: CalendarDays },
+    { title: "Events", url: "/events", icon: CalendarDays },
     { title: "Reports Archive", url: "/archive", icon: FileText },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
@@ -70,7 +70,7 @@ export function AppSidebar() {
   const studentItems = [
     { title: "Home", url: "/", icon: Home },
     { title: "Discover Clubs", url: "/membership", icon: UserPlus },
-    { title: "Approved Events", url: "/events", icon: CalendarDays },
+    { title: "Events", url: "/events", icon: CalendarDays },
     { title: "Announcements", url: "/communications", icon: MessageSquare },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
@@ -150,11 +150,11 @@ export function AppSidebar() {
                       to={item.url}
                       end={item.url === "/"}
                       activeOverride={getActiveOverride(item.url)}
-                      className="border-2 border-transparent font-bold uppercase tracking-[0.08em] transition-all duration-200 hover:border-sidebar-primary hover:bg-sidebar-accent/50"
+                      className="flex min-w-0 items-center border-2 border-transparent font-bold uppercase tracking-[0.08em] transition-all duration-200 hover:border-sidebar-primary hover:bg-sidebar-accent/50"
                       activeClassName="translate-x-1 border-sidebar-primary bg-sidebar-accent text-sidebar-accent-foreground shadow-[4px_4px_0_hsl(var(--sidebar-primary))]"
                     >
                       <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                      {!collapsed && <span className="min-w-0 flex-1 truncate">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

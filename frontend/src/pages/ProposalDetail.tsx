@@ -108,9 +108,9 @@ function buildApprovalSteps(proposal: ProposalRecord) {
       timestamp: getDateTimeLabel(adminDecision?.decided_at ?? proposal.admin_decided_at)
     },
     {
-      label: "Approved Event",
+      label: "Event",
       status: proposal.status === "approved" ? "completed" as const : "pending" as const,
-      remarks: proposal.status === "approved" ? "Ready to appear in approved events." : undefined
+      remarks: proposal.status === "approved" ? "Ready to appear in events." : undefined
     }
   ];
 }
@@ -151,7 +151,7 @@ export default function ProposalDetail() {
         <NeoStateCard
           icon={FileText}
           title="Proposal access is restricted"
-          message="This area is for club presidents, advisors, and Club Services reviewers. Executives can keep up with club work through tasks and approved events."
+          message="This area is for club presidents, advisors, and Club Services reviewers. Executives can keep up with club work through tasks and events."
         />
       </div>
     );

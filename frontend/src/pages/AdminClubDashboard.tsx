@@ -200,7 +200,7 @@ export default function AdminClubDashboard() {
               <strong>{summary.total_proposals}</strong>
             </div>
             <div className="nh-list-card flex items-center justify-between">
-              <span>Approved events</span>
+              <span>Events</span>
               <strong>{summary.approved_events}</strong>
             </div>
             <div className="nh-list-card flex items-center justify-between">
@@ -255,7 +255,7 @@ export default function AdminClubDashboard() {
         <CardContent className="grid gap-4 md:grid-cols-3">
           <div className="nh-list-card">
             <CalendarDays className="mb-2 h-5 w-5 text-primary" />
-            <p className="font-black">{summary.approved_events} approved event(s)</p>
+            <p className="font-black">{summary.approved_events} event(s)</p>
             <p className="text-sm text-muted-foreground">Official events for this club.</p>
           </div>
           <div className="nh-list-card">

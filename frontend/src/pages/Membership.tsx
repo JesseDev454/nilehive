@@ -286,6 +286,12 @@ function DuesConfirmationCard({
         className="grid gap-3 sm:grid-cols-2"
         onSubmit={(event) => {
           event.preventDefault();
+          if (!proofUrl) {
+            toast.error("Receipt required", {
+              description: "Please upload your receipt before resending payment details."
+            });
+            return;
+          }
           submitMutation.mutate();
         }}
       >
@@ -302,7 +308,7 @@ function DuesConfirmationCard({
           <Input type="date" value={paidAt} onChange={(event) => setPaidAt(event.target.value)} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor={`membership_proof_upload_${request.id}`}>Upload receipt (optional)</Label>
+          <Label htmlFor={`membership_proof_upload_${request.id}`}>Upload receipt</Label>
           <Input
             id={`membership_proof_upload_${request.id}`}
             type="file"
@@ -312,10 +318,6 @@ function DuesConfirmationCard({
           />
           {proofFileName ? <p className="text-xs text-muted-foreground">Uploaded: {proofFileName}</p> : null}
           {proofUrl ? <p className="text-xs text-muted-foreground break-all">Stored path: {proofUrl}</p> : null}
-        </div>
-        <div className="space-y-2">
-          <Label>Proof URL or path</Label>
-          <Input value={proofUrl} onChange={(event) => setProofUrl(event.target.value)} placeholder="Optional receipt link" />
         </div>
         <div className="space-y-2 sm:col-span-2">
           <Label>Note</Label>
@@ -494,7 +496,7 @@ function JoinClubCard({
 
         {settings ? (
           <div className="nh-card-soft space-y-2 p-4 text-sm">
-            <p className="font-semibold">Shared Club Services payment account</p>
+            <p className="font-semibold">Club Services Account</p>
             <p><span className="text-muted-foreground">Bank:</span> {settings.bank_name}</p>
             <p><span className="text-muted-foreground">Account:</span> {settings.account_number}</p>
             <p><span className="text-muted-foreground">Name:</span> {settings.account_name}</p>
@@ -513,6 +515,12 @@ function JoinClubCard({
             className="space-y-3"
             onSubmit={(event: FormEvent<HTMLFormElement>) => {
               event.preventDefault();
+              if (!proofUrl) {
+                toast.error("Receipt required", {
+                  description: "Please upload your receipt before sending this join request."
+                });
+                return;
+              }
               createRequestMutation.mutate();
             }}
           >
@@ -533,7 +541,7 @@ function JoinClubCard({
               <Input type="date" value={paidAt} onChange={(event) => setPaidAt(event.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor={`join-proof-${club.id}`}>Upload proof (optional)</Label>
+              <Label htmlFor={`join-proof-${club.id}`}>Upload proof</Label>
               <Input
                 id={`join-proof-${club.id}`}
                 type="file"
@@ -543,10 +551,6 @@ function JoinClubCard({
               />
               {proofFileName ? <p className="text-xs text-muted-foreground">Uploaded: {proofFileName}</p> : null}
               {proofUrl ? <p className="text-xs text-muted-foreground break-all">Stored path: {proofUrl}</p> : null}
-            </div>
-            <div className="space-y-2">
-              <Label>Proof URL or path</Label>
-              <Input value={proofUrl} onChange={(event) => setProofUrl(event.target.value)} placeholder="Optional receipt link" />
             </div>
             <div className="space-y-2">
               <Label>Note (Optional)</Label>
