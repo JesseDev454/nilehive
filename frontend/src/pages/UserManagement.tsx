@@ -220,23 +220,31 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
 export default function UserManagement() {
   const { role } = useRole();
   const [roleFilter, setRoleFilter] = useState("all");
+  const [clubFilter, setClubFilter] = useState("all");
   const [requestedRoleFilter, setRequestedRoleFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [selectedUser, setSelectedUser] = useState<AdminUserProfileRecord | null>(null);
   useEffect(() => {
     setPage(1);
-  }, [roleFilter, requestedRoleFilter, query]);
+  }, [roleFilter, clubFilter, requestedRoleFilter, query]);
+  const { data: clubs = [] } = useQuery({
+    queryKey: ["admin-user-management-clubs"],
+    queryFn: () => getClubs(),
+    enabled: role === "admin",
+    retry: false
+  });
   const {
     data: usersPage = emptyPaginatedResponse<AdminUserProfileRecord>(),
     isLoading,
     isError,
     error
   } = useQuery({
-    queryKey: ["admin-users", roleFilter, requestedRoleFilter, query, page],
+    queryKey: ["admin-users", roleFilter, clubFilter, requestedRoleFilter, query, page],
     queryFn: () =>
       getAdminUsers({
         role: roleFilter === "all" ? undefined : roleFilter,
+        club_id: clubFilter === "all" ? undefined : clubFilter,
         requested_role: requestedRoleFilter === "all" ? undefined : requestedRoleFilter,
         q: query || undefined,
         page,
@@ -279,7 +287,7 @@ export default function UserManagement() {
       />
 
       <div className="nh-metric-grid">
-        <NeoMetricCard title="Visible Users" value={summary.total} icon={Users} tone="navy" />
+        <NeoMetricCard title="Users" value={summary.total} icon={Users} tone="navy" />
         <NeoMetricCard title="Students" value={summary.students} icon={UserCog} tone="gold" />
         <NeoMetricCard title="Presidents / Executives" value={`${summary.presidents} / ${summary.executives}`} icon={ShieldCheck} tone="green" />
         <NeoMetricCard title="Advisors / Requests" value={`${summary.advisors} / ${summary.advisorRequests}`} icon={Users} />
@@ -320,7 +328,7 @@ export default function UserManagement() {
               <Users className="h-5 w-5" />
               User Directory
             </CardTitle>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <Input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
@@ -335,6 +343,19 @@ export default function UserManagement() {
                   {ROLE_OPTIONS.map((nextRole) => (
                     <SelectItem key={nextRole} value={nextRole}>
                       <span className="capitalize">{nextRole}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={clubFilter} onValueChange={setClubFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Club" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All clubs</SelectItem>
+                  {clubs.map((club) => (
+                    <SelectItem key={club.id} value={club.id}>
+                      {club.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
