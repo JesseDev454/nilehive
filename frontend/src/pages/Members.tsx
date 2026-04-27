@@ -1,26 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
-import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { DataPagination } from "@/components/DataPagination";
 import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRole } from "@/contexts/RoleContext";
 import {
   ApiClientError,
-  createClubMember,
   getClubs,
   getClubMembers,
   updateClubMember,
   type ClubMemberRecord
 } from "@/lib/api";
 import { actionError, actionSuccess } from "@/lib/notify";
-import { isValidStudentId, normalizeStudentId, STUDENT_ID_ERROR_MESSAGE, STUDENT_ID_PLACEHOLDER } from "@/lib/studentId";
 import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 
 function getErrorMessage(error: unknown) {
@@ -56,15 +51,8 @@ function StatusBadge({ status }: { status: ClubMemberRecord["membership_status"]
 export default function Members() {
   const { role } = useRole();
   const queryClient = useQueryClient();
-  const [fullName, setFullName] = useState("");
-  const [studentId, setStudentId] = useState("");
-  const [email, setEmail] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [selectedClubId, setSelectedClubId] = useState("");
   const [memberClubFilter, setMemberClubFilter] = useState("all");
   const [page, setPage] = useState(1);
-  const [clubRole, setClubRole] = useState<ClubMemberRecord["club_role"]>("member");
-  const [membershipStatus, setMembershipStatus] = useState<ClubMemberRecord["membership_status"]>("inactive");
   const canViewMembers = role === "president" || role === "executive" || role === "admin";
   const canManageMembers = role === "president" || role === "admin";
   const availableClubRoles: ClubMemberRecord["club_role"][] = role === "admin"
@@ -131,35 +119,6 @@ export default function Members() {
 
     return Array.from(groups.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [clubNameById, members, role]);
-  const createMutation = useMutation({
-    mutationFn: () =>
-      createClubMember({
-        club_id: role === "admin" ? selectedClubId : undefined,
-        full_name: fullName,
-        student_id: studentId,
-        email: email || null,
-        phone_number: phoneNumber || null,
-        club_role: clubRole,
-        membership_status: membershipStatus
-      }),
-    onSuccess: async () => {
-      actionSuccess("Member added", "The club member database has been updated.");
-      setFullName("");
-      setStudentId("");
-      setEmail("");
-      setPhoneNumber("");
-      setSelectedClubId("");
-      setClubRole("member");
-      setMembershipStatus("inactive");
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["club-members"] }),
-        queryClient.invalidateQueries({ queryKey: ["president-dashboard"] })
-      ]);
-    },
-    onError: (mutationError) => {
-      actionError("Could not add member", mutationError, getErrorMessage(mutationError));
-    }
-  });
   const updateMutation = useMutation({
     mutationFn: ({
       member,
@@ -179,17 +138,6 @@ export default function Members() {
       actionError("Could not update member", mutationError, getErrorMessage(mutationError));
     }
   });
-
-  function handleAddMember(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (!isValidStudentId(studentId)) {
-      actionError("Check student ID", new Error(STUDENT_ID_ERROR_MESSAGE), STUDENT_ID_ERROR_MESSAGE);
-      return;
-    }
-
-    createMutation.mutate();
-  }
 
   function renderMembersTable(memberList: ClubMemberRecord[]) {
     return (
@@ -347,128 +295,6 @@ export default function Members() {
         </Card>
       ) : null}
 
-      {canManageMembers ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Add Member</CardTitle>
-            <p className="text-sm text-muted-foreground">
-              New members start inactive until dues are verified for the current academic session.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Adding a member here updates club records only. It does not create a login account, so the person should sign up separately with a Nile University email if they need app access.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Club Services assigns presidents. Presidents can choose executives only from active dues-verified members.
-            </p>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleAddMember} className="nh-form-grid">
-              <div className="space-y-2">
-                <Label htmlFor="full_name">Full Name</Label>
-                <Input
-                  id="full_name"
-                  value={fullName}
-                  onChange={(event) => setFullName(event.target.value)}
-                  placeholder="Amina Yusuf"
-                  required
-                />
-              </div>
-              {role === "admin" ? (
-                <div className="space-y-2">
-                  <Label htmlFor="club_id">Club</Label>
-                  <Select value={selectedClubId} onValueChange={setSelectedClubId}>
-                    <SelectTrigger id="club_id">
-                      <SelectValue placeholder="Select club" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clubs.map((club) => (
-                        <SelectItem key={club.id} value={club.id}>
-                          {club.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ) : null}
-              <div className="space-y-2">
-                <Label htmlFor="student_id">Student ID</Label>
-                <Input
-                  id="student_id"
-                  inputMode="numeric"
-                  maxLength={9}
-                  pattern="[0-9]{9}"
-                  value={studentId}
-                  onChange={(event) => setStudentId(normalizeStudentId(event.target.value))}
-                  placeholder={STUDENT_ID_PLACEHOLDER}
-                  required
-                />
-                <p className="text-xs text-muted-foreground">Enter exactly 9 digits.</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(event) => setEmail(event.target.value)}
-                  placeholder="student@nileuniversity.edu.ng"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone_number">Phone Number</Label>
-                <Input
-                  id="phone_number"
-                  value={phoneNumber}
-                  onChange={(event) => setPhoneNumber(event.target.value)}
-                  placeholder="08000000000"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="club_role">Club Role</Label>
-                <Select value={clubRole} onValueChange={(value) => setClubRole(value as ClubMemberRecord["club_role"])}>
-                  <SelectTrigger id="club_role">
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableClubRoles.map((clubRoleOption) => (
-                      <SelectItem key={clubRoleOption} value={clubRoleOption}>
-                        {clubRoleOption.charAt(0).toUpperCase() + clubRoleOption.slice(1)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="membership_status">Status</Label>
-                <Select
-                  value={membershipStatus}
-                  onValueChange={(value) => setMembershipStatus(value as ClubMemberRecord["membership_status"])}
-                >
-                  <SelectTrigger id="membership_status">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="lg:col-span-2 flex justify-end">
-                <Button type="submit" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Adding...
-                    </>
-                  ) : (
-                    "Add Member"
-                  )}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      ) : null}
-
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Club Members</CardTitle>
@@ -486,7 +312,7 @@ export default function Members() {
               <Users className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
               <p className="font-medium">No member records yet</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Add the first member above to start building the club database.
+                Member records will appear here once students join clubs and dues are verified.
               </p>
             </div>
           ) : role === "admin" ? (
