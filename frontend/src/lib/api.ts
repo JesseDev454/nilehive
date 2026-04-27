@@ -132,20 +132,6 @@ export interface ProfileOnboardingPayload {
   requested_role?: "student" | "advisor";
 }
 
-export interface SignupReceiptUploadPayload {
-  user_id: string;
-  club_id: string;
-  file_name: string;
-  content_type: string;
-  file_data_url: string;
-}
-
-export interface SignupReceiptUploadResult {
-  proof_url: string;
-  due_payment_id: string;
-  user_id: string;
-  club_id: string;
-}
 
 export interface ProposalRecord {
   id: string;
@@ -1103,14 +1089,6 @@ export async function completeProfileOnboarding(payload: ProfileOnboardingPayloa
   return response.data;
 }
 
-export async function uploadSignupReceipt(payload: SignupReceiptUploadPayload) {
-  const response = await request<ApiEnvelope<SignupReceiptUploadResult>>("/api/v1/profile/signup-receipt", {
-    method: "POST",
-    body: payload
-  });
-
-  return response.data;
-}
 
 export async function getPendingAdvisorProposals(token?: string) {
   const response = await request<ApiEnvelope<ProposalRecord[]>>(
@@ -1560,6 +1538,9 @@ export async function createMembershipRequest(
     club_id: string;
     requested_role?: ClubMemberRecord["club_role"];
     remarks?: string;
+    student_id?: string | null;
+    phone_number?: string | null;
+    department?: string | null;
     student_type?: "fresher" | "returning" | null;
     join_reason?: string | null;
     payment_account_name: string;

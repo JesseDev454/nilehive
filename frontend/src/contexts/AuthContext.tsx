@@ -3,7 +3,6 @@ import type { Session, User } from "@supabase/supabase-js";
 import { SESSION_EXPIRED_EVENT } from "@/lib/api";
 import { getAllowedEmailDomainLabel, isAllowedEmailDomain, isPasswordAuthEnabled } from "@/lib/env";
 import { queryClient } from "@/lib/queryClient";
-import { isValidStudentId, normalizeStudentId, STUDENT_ID_ERROR_MESSAGE } from "@/lib/studentId";
 import { supabase, SUPABASE_AUTH_STORAGE_KEY } from "@/lib/supabase";
 
 export type AppRole = "executive" | "advisor" | "admin" | "president" | "student";
@@ -37,18 +36,6 @@ interface AuthContextType {
     password: string;
     fullName: string;
     requestedRole: "student" | "advisor";
-    clubId: string;
-    clubName: string;
-    studentId?: string;
-    phoneNumber?: string;
-    department?: string;
-    studentType?: "fresher" | "returning";
-    joinReason?: string;
-    paymentAccountName?: string;
-    paymentReference?: string;
-    paymentPaidAt?: string | null;
-    proofUrl?: string | null;
-    payerNote?: string | null;
   }) => Promise<{ needsEmailConfirmation: boolean; userId: string | null }>;
   signOut: () => Promise<void>;
   getAccessToken: () => string;
@@ -392,19 +379,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email,
         password,
         fullName,
-        requestedRole,
-        clubId,
-        clubName,
-        studentId,
-        phoneNumber,
-        department,
-        studentType,
-        joinReason,
-        paymentAccountName,
-        paymentReference,
-        paymentPaidAt,
-        proofUrl,
-        payerNote
+        requestedRole
       }) {
         if (!isPasswordAuthEnabled()) {
           throw new Error("Password signup is disabled. Please continue with your Nile University Microsoft account.");
@@ -416,33 +391,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           throw new Error(`Please use your Nile University email address (${getAllowedEmailDomainLabel()}).`);
         }
 
-        const normalizedStudentId = requestedRole === "student"
-          ? normalizeStudentId(studentId ?? "")
-          : "";
-
-        if (requestedRole === "student" && normalizedStudentId && !isValidStudentId(normalizedStudentId)) {
-          throw new Error(STUDENT_ID_ERROR_MESSAGE);
-        }
-
         const { data, error } = await supabase.auth.signUp({
           email: normalizedEmail,
           password,
           options: {
             data: {
               full_name: fullName.trim(),
-              requested_role: requestedRole,
-              requested_club_id: clubId,
-              requested_club: clubName.trim(),
-              student_id: requestedRole === "student" ? normalizedStudentId || null : null,
-              phone_number: phoneNumber?.trim() || null,
-              department: department?.trim() || null,
-              student_type: requestedRole === "student" ? studentType || "returning" : null,
-              join_reason: requestedRole === "student" ? joinReason?.trim() || null : null,
-              payment_account_name: requestedRole === "student" ? paymentAccountName?.trim() || null : null,
-              payment_reference: requestedRole === "student" ? paymentReference?.trim() || null : null,
-              payment_paid_at: requestedRole === "student" ? paymentPaidAt || null : null,
-              proof_url: requestedRole === "student" ? proofUrl?.trim() || null : null,
-              payer_note: requestedRole === "student" ? payerNote?.trim() || null : null
+              requested_role: requestedRole
             }
           }
         });

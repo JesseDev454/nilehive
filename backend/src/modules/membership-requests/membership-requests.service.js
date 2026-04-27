@@ -147,12 +147,39 @@ async function createMembershipRequest(options) {
     : null;
   const duesAmount = resolveJoinDuesAmount(studentType, paymentSettings);
   const academicSession = validatedPayload.academic_session || getCurrentAcademicSession();
+
+  // Upsert reusable profile fields provided through the join form so they
+  // are pre-filled on the next club join instead of being retyped each time.
+  if (database.updateProfile) {
+    const profileUpdates = {};
+
+    if (validatedPayload.student_id) {
+      profileUpdates.student_id = validatedPayload.student_id;
+    }
+
+    if (validatedPayload.phone_number) {
+      profileUpdates.phone_number = validatedPayload.phone_number;
+    }
+
+    if (validatedPayload.department) {
+      profileUpdates.department = validatedPayload.department;
+    }
+
+    if (validatedPayload.student_type) {
+      profileUpdates.student_type = studentType;
+    }
+
+    if (Object.keys(profileUpdates).length > 0) {
+      await database.updateProfile(actor.id, profileUpdates);
+    }
+  }
+
   const member = existingMember
     ? await database.updateClubMember(existingMember.id, {
         full_name: profile.full_name,
-        student_id: profile.student_id,
+        student_id: validatedPayload.student_id || profile.student_id,
         email: existingMember.email,
-        phone_number: profile.phone_number || existingMember.phone_number,
+        phone_number: validatedPayload.phone_number || profile.phone_number || existingMember.phone_number,
         club_role: validatedPayload.requested_role,
         membership_status: "inactive"
       })
@@ -160,9 +187,9 @@ async function createMembershipRequest(options) {
         club_id: validatedPayload.club_id,
         profile_id: actor.id,
         full_name: profile.full_name,
-        student_id: profile.student_id,
+        student_id: validatedPayload.student_id || profile.student_id,
         email: null,
-        phone_number: profile.phone_number || null,
+        phone_number: validatedPayload.phone_number || profile.phone_number || null,
         club_role: validatedPayload.requested_role,
         membership_status: "inactive"
       });
@@ -273,6 +300,16 @@ async function approveMembershipRequest({ actor, request, decisionPayload, datab
     member_id: activeMember.id,
     due_payment_id: payment?.id || request.due_payment_id
   });
+
+  // Assign the approved club to the user's profile if they are not yet
+  // linked to any club (i.e. they signed up after the slim-signup change).
+  if (database.updateProfile && request.profile_id) {
+    const profileToLink = await database.getProfileById(request.profile_id);
+
+    if (profileToLink && !profileToLink.club_id) {
+      await database.updateProfile(request.profile_id, { club_id: request.club_id });
+    }
+  }
 
   return {
     request: formatMembershipRequest(updatedRequest),

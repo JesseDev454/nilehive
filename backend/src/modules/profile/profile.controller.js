@@ -1,8 +1,7 @@
 const asyncHandler = require("../../shared/asyncHandler");
 const {
   completeProfileOnboarding,
-  getMyProfile,
-  uploadSignupReceipt
+  getMyProfile
 } = require("./profile.service");
 
 function createProfileController(options = {}) {
@@ -19,14 +18,6 @@ function createProfileController(options = {}) {
       res.status(200).json({ data });
     }),
 
-    uploadSignupReceipt: asyncHandler(async (req, res) => {
-      const data = await uploadSignupReceipt({
-        payload: req.body,
-        database
-      });
-
-      res.status(201).json({ data });
-    }),
 
     completeOnboarding: asyncHandler(async (req, res) => {
       const profile = await completeProfileOnboarding({

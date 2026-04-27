@@ -386,15 +386,24 @@ function DuesConfirmationCard({
 function JoinClubPanel({
   club,
   existingRequest,
-  defaultStudentType
+  defaultStudentType,
+  defaultStudentId,
+  defaultPhoneNumber,
+  defaultDepartment
 }: {
   club: ClubRecord;
   existingRequest?: MembershipRequestRecord;
   defaultStudentType?: "fresher" | "returning" | null;
+  defaultStudentId?: string | null;
+  defaultPhoneNumber?: string | null;
+  defaultDepartment?: string | null;
 }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [studentType, setStudentType] = useState<"fresher" | "returning">(defaultStudentType || "returning");
+  const [studentId, setStudentId] = useState(defaultStudentId || "");
+  const [phoneNumber, setPhoneNumber] = useState(defaultPhoneNumber || "");
+  const [department, setDepartment] = useState(defaultDepartment || "");
   const [joinReason, setJoinReason] = useState("");
   const [accountName, setAccountName] = useState("");
   const [reference, setReference] = useState("");
@@ -415,6 +424,19 @@ function JoinClubPanel({
     }
   }, [defaultStudentType]);
 
+  useEffect(() => {
+    if (defaultStudentId) setStudentId(defaultStudentId);
+  }, [defaultStudentId]);
+
+  useEffect(() => {
+    if (defaultPhoneNumber) setPhoneNumber(defaultPhoneNumber);
+  }, [defaultPhoneNumber]);
+
+  useEffect(() => {
+    if (defaultDepartment) setDepartment(defaultDepartment);
+  }, [defaultDepartment]);
+
+
   const joinAmount = resolveJoinAmount(studentType, settings);
 
   const createRequestMutation = useMutation({
@@ -422,6 +444,9 @@ function JoinClubPanel({
       createMembershipRequest({
         club_id: club.id,
         requested_role: "member",
+        student_id: studentId || null,
+        phone_number: phoneNumber || null,
+        department: department || null,
         student_type: studentType,
         join_reason: joinReason || null,
         payment_account_name: accountName,
@@ -434,6 +459,9 @@ function JoinClubPanel({
       toast.success("Join request submitted", {
         description: "Your payment details were attached and the club can now review your membership."
       });
+      setStudentId("");
+      setPhoneNumber("");
+      setDepartment("");
       setJoinReason("");
       setAccountName("");
       setReference("");
@@ -567,6 +595,38 @@ function JoinClubPanel({
               createRequestMutation.mutate();
             }}
           >
+            <p className="text-xs text-muted-foreground">
+              These details will be saved to your profile so you don't have to retype them for future club joins.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor={`join-student-id-${club.id}`}>Student ID (Optional)</Label>
+              <Input
+                id={`join-student-id-${club.id}`}
+                placeholder="e.g. 020232255"
+                value={studentId}
+                onChange={(event) => setStudentId(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`join-phone-${club.id}`}>Phone Number (WhatsApp)</Label>
+              <Input
+                id={`join-phone-${club.id}`}
+                placeholder="08000000000"
+                value={phoneNumber}
+                onChange={(event) => setPhoneNumber(event.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`join-department-${club.id}`}>Department</Label>
+              <Input
+                id={`join-department-${club.id}`}
+                placeholder="Computer Science"
+                value={department}
+                onChange={(event) => setDepartment(event.target.value)}
+                required
+              />
+            </div>
             <div className="space-y-2">
               <Label>Why did you join this club? (Optional)</Label>
               <Textarea value={joinReason} onChange={(event) => setJoinReason(event.target.value)} rows={3} />
@@ -665,7 +725,10 @@ function StudentClubJoinPage({
   clubsError,
   requestsFailed,
   requestsError,
-  defaultStudentType
+  defaultStudentType,
+  defaultStudentId,
+  defaultPhoneNumber,
+  defaultDepartment
 }: {
   clubs: ClubRecord[];
   myRequests: MembershipRequestRecord[];
@@ -676,6 +739,9 @@ function StudentClubJoinPage({
   requestsFailed: boolean;
   requestsError: unknown;
   defaultStudentType?: "fresher" | "returning" | null;
+  defaultStudentId?: string | null;
+  defaultPhoneNumber?: string | null;
+  defaultDepartment?: string | null;
 }) {
   const { clubId } = useParams();
   const club = clubs.find((item) => item.id === clubId);
@@ -725,6 +791,9 @@ function StudentClubJoinPage({
             club={club}
             existingRequest={existingRequest}
             defaultStudentType={defaultStudentType}
+            defaultStudentId={defaultStudentId}
+            defaultPhoneNumber={defaultPhoneNumber}
+            defaultDepartment={defaultDepartment}
           />
         </>
       )}
@@ -786,6 +855,9 @@ function StudentMembershipView() {
         requestsFailed={requestsFailed}
         requestsError={requestsError}
         defaultStudentType={profile?.student_type || undefined}
+        defaultStudentId={profile?.student_id ?? null}
+        defaultPhoneNumber={profile?.phone_number ?? null}
+        defaultDepartment={profile?.department ?? null}
       />
     );
   }

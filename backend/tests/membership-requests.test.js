@@ -98,6 +98,9 @@ test("student can create a paid membership request", async () => {
     async getClubPaymentSettings() {
       return null;
     },
+    async updateProfile() {
+      // no profile fields in this payload — should not be called, but harmless if it is
+    },
     async createClubMember(member) {
       createdMember = member;
       return createMember(member);
@@ -153,6 +156,59 @@ test("student can create a paid membership request", async () => {
   assert.equal(createdPayment.status, "submitted");
   assert.equal(createdRequest.dues_amount, 5000);
   assert.equal(request.requested_role, "member");
+});
+
+test("join form fields are saved back to the user profile", async () => {
+  let savedProfileUpdates;
+  const fakeDatabase = {
+    async getClubById() {
+      return { id: "club-1", name: "Nile Innovators Club", dues_amount: 5000 };
+    },
+    async getClubMemberByProfileAndClub() {
+      return null;
+    },
+    async getOpenMembershipRequest() {
+      return null;
+    },
+    async getProfileById() {
+      return createProfile({ student_id: null, phone_number: null, department: null });
+    },
+    async getClubPaymentSettings() {
+      return null;
+    },
+    async updateProfile(profileId, updates) {
+      savedProfileUpdates = { profileId, updates };
+    },
+    async createClubMember(member) {
+      return createMember(member);
+    },
+    async createDuePayment(payment) {
+      return createPayment({ ...payment, status: "submitted" });
+    },
+    async createMembershipRequest(request) {
+      return createRequest({ ...request });
+    }
+  };
+
+  await createMembershipRequest({
+    actor: { id: "student-1", role: "student", clubId: "club-1" },
+    payload: {
+      club_id: "club-1",
+      student_id: "020232255",
+      phone_number: "08012345678",
+      department: "Computer Science",
+      payment_account_name: "Ada Student",
+      payment_reference: "JOIN-002",
+      proof_url: "receipts/club-1/proof.png"
+    },
+    database: fakeDatabase
+  });
+
+  assert.ok(savedProfileUpdates, "updateProfile should have been called");
+  assert.equal(savedProfileUpdates.profileId, "student-1");
+  assert.equal(savedProfileUpdates.updates.student_id, "020232255");
+  assert.equal(savedProfileUpdates.updates.phone_number, "08012345678");
+  assert.equal(savedProfileUpdates.updates.department, "Computer Science");
 });
 
 test("membership request creation rejects leadership roles", async () => {
@@ -232,6 +288,13 @@ test("president approval activates membership and verifies the submitted payment
         academic_session: "2025/2026",
         ...update
       });
+    },
+    async getProfileById() {
+      // Profile already has a club_id (old-flow user) — updateProfile must NOT be called.
+      return createProfile({ club_id: "club-1" });
+    },
+    async updateProfile() {
+      throw new Error("updateProfile should not be called when club_id is already set");
     }
   };
 
@@ -253,6 +316,52 @@ test("president approval activates membership and verifies the submitted payment
   assert.equal(memberStatusUpdate.membership_status, "active");
   assert.equal(requestUpdate.status, "active");
   assert.equal(result.request.status, "active");
+});
+
+test("approving a membership request sets club_id on a profile with no club", async () => {
+  let profileUpdateCall;
+  const fakeDatabase = {
+    async getMembershipRequestById() {
+      return createRequest({
+        profile_id: "student-1",
+        club_id: "club-1",
+        member_id: "member-1",
+        due_payment_id: "payment-1",
+        dues_amount: 5000,
+        academic_session: "2025/2026"
+      });
+    },
+    async getClubMemberById() {
+      return createMember();
+    },
+    async updateDuePayment(paymentId, update) {
+      return createPayment({ id: paymentId, ...update });
+    },
+    async updateClubMember(memberId, update) {
+      return createMember({ id: memberId, ...update });
+    },
+    async updateMembershipRequest(requestId, update) {
+      return createRequest({ id: requestId, ...update });
+    },
+    async getProfileById(profileId) {
+      // Slim-signup user: club_id is null
+      return createProfile({ id: profileId, club_id: null });
+    },
+    async updateProfile(profileId, updates) {
+      profileUpdateCall = { profileId, updates };
+    }
+  };
+
+  await decideMembershipRequest({
+    actor: { id: "president-1", role: "president", clubId: "club-1" },
+    requestId: "request-1",
+    payload: { decision: "approve", remarks: "Welcome aboard." },
+    database: fakeDatabase
+  });
+
+  assert.ok(profileUpdateCall, "updateProfile should have been called to set club_id");
+  assert.equal(profileUpdateCall.profileId, "student-1");
+  assert.equal(profileUpdateCall.updates.club_id, "club-1");
 });
 
 test("president cannot review membership requests for another club", async () => {
