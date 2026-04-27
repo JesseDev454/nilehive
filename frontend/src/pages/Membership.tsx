@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Search, ShieldCheck, Users } from "lucide-react";
+import { ArrowLeft, Loader2, Search, ShieldCheck, Users } from "lucide-react";
+import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { DataPagination } from "@/components/DataPagination";
 import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
@@ -35,6 +36,36 @@ const STUDENT_TYPES = [
   { value: "fresher", label: "Fresher" },
   { value: "returning", label: "Returning Student" }
 ] as const;
+const CLUB_DESCRIPTION_OVERRIDES: Record<string, string> = {
+  "Nile Book Club":
+    "Dive into the world of literature with fellow bookworms. Discover new genres, share your favourite reads, and engage in lively discussions that will broaden your horizons.",
+  "Nile Business Club":
+    "Explore the world of entrepreneurship and business. This club offers networking opportunities, workshops, and events to help you develop your entrepreneurial skills and business acumen.",
+  "Nile Charity Club":
+    "Make a meaningful impact on the community by participating in philanthropic endeavours. Join hands with fellow students to contribute to social causes and promote compassion.",
+  "Nile Climate Initiatives Club":
+    "Be part of the solution to environmental challenges. Join this club to engage in sustainability projects, raise awareness about climate issues, and work towards a greener future.",
+  "Nile Creative Arts Club":
+    "Unleash your creativity and explore various forms of artistic expression. This club is a hub for aspiring artists, musicians, and performers to collaborate and showcase their talents.",
+  "Nile Debate Club":
+    "Sharpen your argumentative skills, engage in thought-provoking discussions, and let your voice be heard. Whether you are passionate about politics and philosophy or simply love a good debate, this club is the perfect platform for you.",
+  "Nile Games Club":
+    "Embrace your competitive spirit and love for games. Whether you're into board games, video games, or sports, this club offers a fun way to relax and connect with others who share your passion.",
+  "Nile Google Developers":
+    "Join a global community of developers and tech enthusiasts. This club offers opportunities to learn, collaborate on projects, and stay updated with the latest in technology from Google.",
+  "Nile Model United Nations Club":
+    "Become a global diplomat and tackle pressing international issues. Model UN offers you a chance to develop your negotiation, research, and diplomacy skills while simulating the workings of the United Nations.",
+  "Nile Photography Club":
+    "Capture the world through your lens. Whether you're a seasoned photographer or a novice with a camera, this club is the perfect place to learn and showcase your photography skills.",
+  "Nile Startup Campus":
+    "Dive into the world of startups, innovation, and entrepreneurship. Connect with like-minded individuals, learn from successful entrepreneurs, and turn your ideas into reality.",
+  "Nile Toastmaster's Club":
+    "Unleash your inner orator and conquer your fear of public speaking. Toastmasters is where you can refine your communication skills, boost your confidence, and become a captivating speaker.",
+  "TEDx Nile Club":
+    "Inspire and be inspired. This club brings the power of TED Talks to your university, allowing you to organize and participate in TEDx events that showcase groundbreaking ideas.",
+  "Women in Tech Club":
+    "Break boundaries and inspire innovation. Join a community of like-minded women who are shaping the future of technology and making strides in a traditionally male-dominated field."
+};
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -86,6 +117,18 @@ function MembershipStatusBadge({ status }: { status: MembershipRequestRecord["st
 
 function getStudentTypeLabel(value: "fresher" | "returning" | null | undefined) {
   return value === "fresher" ? "Fresher" : "Returning Student";
+}
+
+function getClubDescription(club: ClubRecord) {
+  return club.description?.trim() || CLUB_DESCRIPTION_OVERRIDES[club.name] || "Learn more about this club and the kind of community it offers before you continue to the join form.";
+}
+
+function getClubDescriptionPreview(description: string, maxLength = 180) {
+  if (description.length <= maxLength) {
+    return description;
+  }
+
+  return `${description.slice(0, maxLength).trimEnd()}...`;
 }
 
 function resolveJoinAmount(
@@ -340,7 +383,7 @@ function DuesConfirmationCard({
   );
 }
 
-function JoinClubCard({
+function JoinClubPanel({
   club,
   existingRequest,
   defaultStudentType
@@ -580,8 +623,118 @@ function JoinClubCard({
   );
 }
 
+function DiscoverClubCard({
+  club,
+  existingRequest
+}: {
+  club: ClubRecord;
+  existingRequest?: MembershipRequestRecord;
+}) {
+  const description = getClubDescription(club);
+  const buttonLabel = existingRequest ? "Open request" : "Open join form";
+
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="border-b-2 border-foreground bg-primary/10">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <CardTitle className="text-lg">{club.name}</CardTitle>
+            <p className="text-sm text-muted-foreground">{club.code || "Nile University club"}</p>
+          </div>
+          {existingRequest ? <MembershipStatusBadge status={existingRequest.status} /> : null}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4 p-5">
+        <p className="text-sm leading-6 text-muted-foreground">
+          {getClubDescriptionPreview(description)}
+        </p>
+        <Button asChild className="w-full sm:w-auto">
+          <Link to={`/membership/clubs/${club.id}`}>{buttonLabel}</Link>
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+function StudentClubJoinPage({
+  clubs,
+  myRequests,
+  isLoadingClubs,
+  isLoadingRequests,
+  clubsFailed,
+  clubsError,
+  requestsFailed,
+  requestsError,
+  defaultStudentType
+}: {
+  clubs: ClubRecord[];
+  myRequests: MembershipRequestRecord[];
+  isLoadingClubs: boolean;
+  isLoadingRequests: boolean;
+  clubsFailed: boolean;
+  clubsError: unknown;
+  requestsFailed: boolean;
+  requestsError: unknown;
+  defaultStudentType?: "fresher" | "returning" | null;
+}) {
+  const { clubId } = useParams();
+  const club = clubs.find((item) => item.id === clubId);
+  const existingRequest = myRequests.find((request) => request.club_id === clubId);
+
+  return (
+    <div className="nh-page">
+      <div className="flex items-center">
+        <Button asChild variant="outline" className="gap-2">
+          <Link to="/membership">
+            <ArrowLeft className="h-4 w-4" />
+            Back to clubs
+          </Link>
+        </Button>
+      </div>
+
+      {isLoadingClubs || isLoadingRequests ? (
+        <NeoLoadingState title="Opening club join form" message="We are loading the club details and your current request status." compact />
+      ) : clubsFailed ? (
+        <Card>
+          <CardContent className="p-8">
+            <p className="font-medium">Unable to load clubs</p>
+            <p className="mt-1 text-sm text-muted-foreground">{getErrorMessage(clubsError)}</p>
+          </CardContent>
+        </Card>
+      ) : requestsFailed ? (
+        <Card>
+          <CardContent className="p-8">
+            <p className="font-medium">Unable to load your membership requests</p>
+            <p className="mt-1 text-sm text-muted-foreground">{getErrorMessage(requestsError)}</p>
+          </CardContent>
+        </Card>
+      ) : !club ? (
+        <NeoStateCard
+          icon={Users}
+          title="Club not found"
+          message="We couldn't find that club. Please go back to the discover page and choose another one."
+        />
+      ) : (
+        <>
+          <NeoPageHeader
+            eyebrow="Membership"
+            title={`Join ${club.name}`}
+            description={getClubDescription(club)}
+          />
+          <JoinClubPanel
+            club={club}
+            existingRequest={existingRequest}
+            defaultStudentType={defaultStudentType}
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
 function StudentMembershipView() {
   const { profile } = useAuth();
+  const { clubId } = useParams();
   const [search, setSearch] = useState("");
   const {
     data: clubs = [],
@@ -617,16 +770,32 @@ function StudentMembershipView() {
     }
 
     return clubs.filter((club) =>
-      [club.name, club.code].filter(Boolean).some((value) => value?.toLowerCase().includes(normalizedSearch))
+      [club.name, club.code, getClubDescription(club)].filter(Boolean).some((value) => value?.toLowerCase().includes(normalizedSearch))
     );
   }, [clubs, search]);
+
+  if (clubId) {
+    return (
+      <StudentClubJoinPage
+        clubs={clubs}
+        myRequests={myRequests}
+        isLoadingClubs={isLoadingClubs}
+        isLoadingRequests={isLoadingRequests}
+        clubsFailed={clubsFailed}
+        clubsError={clubsError}
+        requestsFailed={requestsFailed}
+        requestsError={requestsError}
+        defaultStudentType={profile?.student_type || undefined}
+      />
+    );
+  }
 
   return (
     <div className="nh-page">
       <NeoPageHeader
         eyebrow="Membership"
-        title="Join A Club"
-        description="Choose a club, pay the dues for your student type, and send the payment details in one step."
+        title="Discover Clubs"
+        description="Explore each club first, then open its join form when you are ready to submit your payment details."
       />
 
       <Card>
@@ -635,7 +804,7 @@ function StudentMembershipView() {
             <div>
               <CardTitle className="text-lg">Official Clubs</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Your payment details create the dues record immediately. Club leaders verify the payment after submission.
+                Tap any club to read more and continue to its dedicated join form.
               </p>
             </div>
             <div className="relative sm:w-80">
@@ -681,11 +850,10 @@ function StudentMembershipView() {
             const existingRequest = requestByClubId.get(club.id);
 
             return (
-              <JoinClubCard
+              <DiscoverClubCard
                 key={club.id}
                 club={club}
                 existingRequest={existingRequest}
-                defaultStudentType={profile?.student_type || undefined}
               />
             );
           })}
