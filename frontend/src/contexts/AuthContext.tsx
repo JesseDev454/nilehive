@@ -4,7 +4,7 @@ import { SESSION_EXPIRED_EVENT } from "@/lib/api";
 import { getAllowedEmailDomainLabel, isAllowedEmailDomain, isPasswordAuthEnabled } from "@/lib/env";
 import { queryClient } from "@/lib/queryClient";
 import { isValidStudentId, normalizeStudentId, STUDENT_ID_ERROR_MESSAGE } from "@/lib/studentId";
-import { supabase } from "@/lib/supabase";
+import { supabase, SUPABASE_AUTH_STORAGE_KEY } from "@/lib/supabase";
 
 export type AppRole = "executive" | "advisor" | "admin" | "president" | "student";
 
@@ -61,6 +61,40 @@ const ACTIVITY_EVENTS = ["click", "keydown", "mousemove", "scroll", "touchstart"
 const UNSUPPORTED_EMAIL_MESSAGE = `Please use your Nile University Microsoft account (${getAllowedEmailDomainLabel()}).`;
 const PROFILE_FETCH_RETRY_ATTEMPTS = 5;
 const PROFILE_FETCH_RETRY_DELAY_MS = 500;
+const LAST_ACTIVITY_STORAGE_KEY = `${SUPABASE_AUTH_STORAGE_KEY}:last-activity-at`;
+
+function readLastActivityAt() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const rawValue = window.localStorage.getItem(LAST_ACTIVITY_STORAGE_KEY);
+  const timestamp = rawValue ? Number(rawValue) : NaN;
+
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+
+function writeLastActivityAt(timestamp = Date.now()) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(LAST_ACTIVITY_STORAGE_KEY, String(timestamp));
+}
+
+function clearLastActivityAt() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(LAST_ACTIVITY_STORAGE_KEY);
+}
+
+function hasValidPersistedActivity() {
+  const lastActivityAt = readLastActivityAt();
+
+  return lastActivityAt !== null && Date.now() - lastActivityAt < INACTIVITY_TIMEOUT_MS;
+}
 
 async function fetchProfile(userId: string) {
   const { data, error } = await supabase
@@ -89,6 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   function clearAuthState() {
+    clearLastActivityAt();
     currentUserIdRef.current = null;
     queryClient.clear();
     setSession(null);
@@ -96,6 +131,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfileError(null);
     setRequiresProfileRecovery(false);
     setIsLoading(false);
+  }
+
+  async function expireSessionForInactivity() {
+    clearAuthState();
+    await supabase.auth.signOut();
   }
 
   function prepareForSession(nextSession: Session | null) {
@@ -179,6 +219,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      if (currentSession?.user && !hasValidPersistedActivity()) {
+        await expireSessionForInactivity();
+        return;
+      }
+
+      if (currentSession?.user) {
+        writeLastActivityAt();
+      }
+
       prepareForSession(currentSession);
 
       await loadProfileForSession(currentSession);
@@ -194,7 +243,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const {
       data: { subscription }
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setIsLoading(true);
 
       if (!nextSession?.user) {
@@ -202,6 +251,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      if (event !== "SIGNED_IN" && !hasValidPersistedActivity()) {
+        void expireSessionForInactivity();
+        return;
+      }
+
+      writeLastActivityAt();
       prepareForSession(nextSession);
       loadProfileForSession(nextSession).finally(() => setIsLoading(false));
     });
@@ -232,24 +287,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     let timeoutId: ReturnType<typeof window.setTimeout>;
 
-    function resetTimer() {
+    function scheduleTimeout(lastActivityAt = readLastActivityAt() ?? Date.now()) {
       window.clearTimeout(timeoutId);
+      const remainingTime = Math.max(INACTIVITY_TIMEOUT_MS - (Date.now() - lastActivityAt), 0);
       timeoutId = window.setTimeout(() => {
+        clearLastActivityAt();
         void supabase.auth.signOut();
-      }, INACTIVITY_TIMEOUT_MS);
+      }, remainingTime);
     }
 
-    resetTimer();
+    function handleActivity() {
+      if (!hasValidPersistedActivity()) {
+        clearLastActivityAt();
+        void supabase.auth.signOut();
+        return;
+      }
+
+      const timestamp = Date.now();
+      writeLastActivityAt(timestamp);
+      scheduleTimeout(timestamp);
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        handleActivity();
+      }
+    }
+
+    function handleStorage(event: StorageEvent) {
+      if (event.key !== LAST_ACTIVITY_STORAGE_KEY) {
+        return;
+      }
+
+      if (!event.newValue) {
+        window.clearTimeout(timeoutId);
+        return;
+      }
+
+      const timestamp = Number(event.newValue);
+
+      if (Number.isFinite(timestamp)) {
+        scheduleTimeout(timestamp);
+      }
+    }
+
+    writeLastActivityAt();
+    scheduleTimeout();
 
     ACTIVITY_EVENTS.forEach((eventName) => {
-      window.addEventListener(eventName, resetTimer, { passive: true });
+      window.addEventListener(eventName, handleActivity, { passive: true });
     });
+    window.addEventListener("focus", handleActivity);
+    window.addEventListener("storage", handleStorage);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       window.clearTimeout(timeoutId);
       ACTIVITY_EVENTS.forEach((eventName) => {
-        window.removeEventListener(eventName, resetTimer);
+        window.removeEventListener(eventName, handleActivity);
       });
+      window.removeEventListener("focus", handleActivity);
+      window.removeEventListener("storage", handleStorage);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [session]);
 
@@ -353,6 +452,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         if (data.session) {
+          writeLastActivityAt();
           prepareForSession(data.session);
           await loadProfileForSession(data.session);
         }

@@ -11,12 +11,12 @@ function getSupabaseProjectRef(url: string) {
 }
 
 const supabaseUrl = getSupabaseUrl();
-const storageKey = `nilehive-auth-${getSupabaseProjectRef(supabaseUrl)}`;
+export const SUPABASE_AUTH_STORAGE_KEY = `nilehive-auth-${getSupabaseProjectRef(supabaseUrl)}`;
 
 if (typeof window !== "undefined") {
   const legacyStorageKey = "nilehive-auth";
 
-  if (legacyStorageKey !== storageKey) {
+  if (legacyStorageKey !== SUPABASE_AUTH_STORAGE_KEY) {
     window.localStorage.removeItem(legacyStorageKey);
   }
 }
@@ -26,6 +26,6 @@ export const supabase = createClient(supabaseUrl, getSupabaseAnonKey(), {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    storageKey
+    storageKey: SUPABASE_AUTH_STORAGE_KEY
   }
 });
