@@ -5,7 +5,7 @@
   "outputDirectory": "frontend/dist",
   "rewrites": [
     {
-      "source": "/((?!assets/|favicon.ico|robots.txt).*)",
+      "source": "/((?!assets/|robots.txt).*)",
       "destination": "/index.html"
     }
   ]
