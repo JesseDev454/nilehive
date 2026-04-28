@@ -278,7 +278,7 @@ export default function Members() {
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="nh-card-soft p-3">
-                  <p className="nh-panel-title text-muted-foreground">Visible Members</p>
+                  <p className="nh-panel-title text-muted-foreground">Members</p>
                   <p className="mt-1 text-2xl font-black">{members.length}</p>
                 </div>
                 <div className="nh-card-soft p-3">
