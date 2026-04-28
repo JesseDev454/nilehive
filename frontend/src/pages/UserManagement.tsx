@@ -1,6 +1,7 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, ShieldCheck, UserCog, Users } from "lucide-react";
+import { DataPagination } from "@/components/DataPagination";
 import { NeoLoadingState, NeoMetricCard, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,13 +14,14 @@ import { useRole } from "@/contexts/RoleContext";
 import {
   ApiClientError,
   assignAdminUserAdvisor,
+  getClubs,
   getAdminUsers,
-  getPublicClubs,
   updateAdminUserRole,
   type AdminUserProfileRecord,
   type ProfileRecord
 } from "@/lib/api";
 import { actionError, actionSuccess } from "@/lib/notify";
+import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 
 const ROLE_OPTIONS: ProfileRecord["role"][] = ["student", "executive", "president", "advisor", "admin"];
 
@@ -58,10 +60,9 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
   const [role, setRole] = useState<ProfileRecord["role"]>(user.role);
   const [clubId, setClubId] = useState(user.club_id || "none");
   const [remarks, setRemarks] = useState("");
-  const [replaceExisting, setReplaceExisting] = useState(false);
   const { data: clubs = [] } = useQuery({
     queryKey: ["admin-user-management-clubs"],
-    queryFn: getPublicClubs,
+    queryFn: () => getClubs(),
     retry: false
   });
   const roleMutation = useMutation({
@@ -84,14 +85,13 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
     mutationFn: () =>
       assignAdminUserAdvisor(user.id, {
         club_id: clubId === "none" ? "" : clubId,
-        replace_existing: replaceExisting,
         remarks: remarks || null
       }),
     onSuccess: async () => {
       actionSuccess("Advisor assigned", `${user.full_name || "User"} is now assigned as club advisor.`);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["admin-users"] }),
-        queryClient.invalidateQueries({ queryKey: ["public-clubs"] })
+        queryClient.invalidateQueries({ queryKey: ["admin-user-management-clubs"] })
       ]);
       onClose();
     },
@@ -120,7 +120,7 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
           <div>
             <CardTitle className="text-lg">Manage User Access</CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">
-              Promote users, assign club context, and record why the role changed.
+              Update access for someone who has already signed up with a Nile University email.
             </p>
           </div>
           <Button type="button" variant="outline" onClick={onClose}>
@@ -137,6 +137,9 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
             </p>
             <p className="mt-2 text-sm text-muted-foreground">
               Requested role: <span className="capitalize">{user.requested_role || "student"}</span>
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              This updates an existing signed-up user. It does not create a new login account.
             </p>
           </div>
 
@@ -173,15 +176,15 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
             </Select>
           </div>
 
-          {role === "advisor" ? (
-            <label className="flex items-center gap-2 border-2 border-foreground bg-background p-3 text-sm lg:col-span-2">
-              <input
-                type="checkbox"
-                checked={replaceExisting}
-                onChange={(event) => setReplaceExisting(event.target.checked)}
-              />
-              Replace the current advisor if this club already has one.
-            </label>
+          {role === "advisor" && user.advisor_assignments?.length ? (
+            <div className="nh-card-soft p-4 text-sm lg:col-span-2">
+              <p className="font-semibold">Current advisor clubs</p>
+              <p className="mt-2 text-muted-foreground">
+                {user.advisor_assignments
+                  .map((assignment) => assignment.club?.name || "Unknown club")
+                  .join(", ")}
+              </p>
+            </div>
           ) : null}
 
           <div className="space-y-2 lg:col-span-2">
@@ -217,33 +220,50 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
 export default function UserManagement() {
   const { role } = useRole();
   const [roleFilter, setRoleFilter] = useState("all");
+  const [clubFilter, setClubFilter] = useState("all");
   const [requestedRoleFilter, setRequestedRoleFilter] = useState("all");
   const [query, setQuery] = useState("");
+  const [page, setPage] = useState(1);
   const [selectedUser, setSelectedUser] = useState<AdminUserProfileRecord | null>(null);
+  useEffect(() => {
+    setPage(1);
+  }, [roleFilter, clubFilter, requestedRoleFilter, query]);
+  const { data: clubs = [] } = useQuery({
+    queryKey: ["admin-user-management-clubs"],
+    queryFn: () => getClubs(),
+    enabled: role === "admin",
+    retry: false
+  });
   const {
-    data: users = [],
+    data: usersPage = emptyPaginatedResponse<AdminUserProfileRecord>(),
     isLoading,
     isError,
     error
   } = useQuery({
-    queryKey: ["admin-users", roleFilter, requestedRoleFilter, query],
+    queryKey: ["admin-users", roleFilter, clubFilter, requestedRoleFilter, query, page],
     queryFn: () =>
       getAdminUsers({
         role: roleFilter === "all" ? undefined : roleFilter,
+        club_id: clubFilter === "all" ? undefined : clubFilter,
         requested_role: requestedRoleFilter === "all" ? undefined : requestedRoleFilter,
-        q: query || undefined
+        q: query || undefined,
+        page,
+        page_size: DEFAULT_PAGE_SIZE
       }),
     enabled: role === "admin",
     retry: false
   });
+  const users = usersPage.items;
   const summary = useMemo(
     () => ({
-      total: users.length,
+      total: usersPage.total,
       students: users.filter((user) => user.role === "student").length,
-      leadershipRequests: users.filter((user) => ["executive", "president"].includes(user.requested_role || "")).length,
-      advisors: users.filter((user) => user.role === "advisor").length
+      presidents: users.filter((user) => user.role === "president").length,
+      executives: users.filter((user) => user.role === "executive").length,
+      advisors: users.filter((user) => user.role === "advisor").length,
+      advisorRequests: users.filter((user) => user.requested_role === "advisor").length
     }),
-    [users]
+    [users, usersPage.total]
   );
 
   if (role !== "admin") {
@@ -263,15 +283,41 @@ export default function UserManagement() {
       <NeoPageHeader
         eyebrow="Admin Controls"
         title="User Management"
-        description="Approve leadership access, promote trusted users, and assign advisors without opening Supabase."
+        description="Review signed-up users, adjust their role, and assign club access from one place."
       />
 
       <div className="nh-metric-grid">
-        <NeoMetricCard title="Visible Users" value={summary.total} icon={Users} tone="navy" />
+        <NeoMetricCard title="Users" value={summary.total} icon={Users} tone="navy" />
         <NeoMetricCard title="Students" value={summary.students} icon={UserCog} tone="gold" />
-        <NeoMetricCard title="Leadership Requests" value={summary.leadershipRequests} icon={ShieldCheck} tone="green" />
-        <NeoMetricCard title="Advisors" value={summary.advisors} icon={Users} />
+        <NeoMetricCard title="Presidents / Executives" value={`${summary.presidents} / ${summary.executives}`} icon={ShieldCheck} tone="green" />
+        <NeoMetricCard title="Advisors / Requests" value={`${summary.advisors} / ${summary.advisorRequests}`} icon={Users} />
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">How access works</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3 md:grid-cols-3">
+          <div className="nh-card-soft p-4">
+            <p className="font-semibold">1. User signs up first</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              The user signs up with a Nile University email first. Students can submit their first club join during signup.
+            </p>
+          </div>
+          <div className="nh-card-soft p-4">
+            <p className="font-semibold">2. Club Services updates access</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Use this page to assign president access, adjust club context, or attach advisor access after signup.
+            </p>
+          </div>
+          <div className="nh-card-soft p-4">
+            <p className="font-semibold">3. They log in with the new role</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Presidents can then choose executives from active club members. Users see the new role on their next refresh or sign-in.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {selectedUser ? <UserActionPanel user={selectedUser} onClose={() => setSelectedUser(null)} /> : null}
 
@@ -282,7 +328,7 @@ export default function UserManagement() {
               <Users className="h-5 w-5" />
               User Directory
             </CardTitle>
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <Input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
@@ -301,6 +347,19 @@ export default function UserManagement() {
                   ))}
                 </SelectContent>
               </Select>
+              <Select value={clubFilter} onValueChange={setClubFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Club" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All clubs</SelectItem>
+                  {clubs.map((club) => (
+                    <SelectItem key={club.id} value={club.id}>
+                      {club.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Select value={requestedRoleFilter} onValueChange={setRequestedRoleFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Requested role" />
@@ -308,8 +367,7 @@ export default function UserManagement() {
                 <SelectContent>
                   <SelectItem value="all">All requests</SelectItem>
                   <SelectItem value="student">Student</SelectItem>
-                  <SelectItem value="executive">Executive</SelectItem>
-                  <SelectItem value="president">President</SelectItem>
+                  <SelectItem value="advisor">Advisor</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -330,32 +388,48 @@ export default function UserManagement() {
               <p className="mt-1 text-sm text-muted-foreground">Try another role filter or search term.</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {users.map((user) => (
-                <div
-                  key={user.id}
-                  className="nh-list-card flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
-                >
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-semibold">{user.full_name || "Unnamed user"}</p>
-                      <RoleBadge role={user.role} />
-                      {["executive", "president"].includes(user.requested_role || "") && user.role === "student" ? (
-                        <Badge className="bg-primary/15 text-primary hover:bg-primary/15">
-                          Requests {user.requested_role}
-                        </Badge>
+            <div>
+              <div className="space-y-3">
+                {users.map((user) => (
+                  <div
+                    key={user.id}
+                    className="nh-list-card flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-semibold">{user.full_name || "Unnamed user"}</p>
+                        <RoleBadge role={user.role} />
+                        {user.requested_role === "advisor" && user.role === "student" ? (
+                          <Badge className="bg-primary/15 text-primary hover:bg-primary/15">
+                            Requests advisor access
+                          </Badge>
+                        ) : null}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {(user.student_id || (user.requested_role === "advisor" || user.role === "advisor"
+                          ? "No University ID required"
+                          : "University ID not set"))} - {user.club?.name || "No club assigned"}
+                      </p>
+                      {user.advisor_assignments?.length ? (
+                        <p className="text-xs text-muted-foreground">
+                          Advisor clubs: {user.advisor_assignments.map((assignment) => assignment.club?.name || "Unknown club").join(", ")}
+                        </p>
                       ) : null}
+                      <p className="text-xs text-muted-foreground">Joined {formatDate(user.created_at)}</p>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      {user.student_id || "University ID not set"} - {user.club?.name || "No club assigned"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Joined {formatDate(user.created_at)}</p>
+                    <Button type="button" onClick={() => setSelectedUser(user)}>
+                      Manage Access
+                    </Button>
                   </div>
-                  <Button type="button" onClick={() => setSelectedUser(user)}>
-                    Manage Access
-                  </Button>
-                </div>
-              ))}
+                ))}
+              </div>
+              <DataPagination
+                page={usersPage.page}
+                pageSize={usersPage.page_size}
+                total={usersPage.total}
+                hasNext={usersPage.has_next}
+                onPageChange={setPage}
+              />
             </div>
           )}
         </CardContent>

@@ -131,6 +131,21 @@ function createFakeDatabase(overrides = {}) {
       assert.equal(advisorId, "advisor-1");
       return ["club-2"];
     },
+    async getActiveClubIdsByProfileId(profileId) {
+      if (profileId === "student-1") {
+        return ["club-1"];
+      }
+
+      if (profileId === "executive-1") {
+        return [];
+      }
+
+      if (profileId === "president-1") {
+        return [];
+      }
+
+      return [];
+    },
     async listApprovedProposals(filters = {}) {
       if (!filters.clubIds) {
         return proposals;
@@ -225,11 +240,12 @@ test("admin can fetch all approved events", async (t) => {
   const { response, payload } = await getApprovedEvents(server.baseUrl, "admin-token");
 
   assert.equal(response.status, 200);
-  assert.equal(payload.data.length, 2);
-  assert.ok(payload.data.every((event) => event.status === "approved"));
-  assert.ok(payload.data.every((event) => ["upcoming", "happening_today", "past"].includes(event.event_lifecycle)));
-  assert.ok(payload.data.every((event) => typeof event.can_rsvp === "boolean"));
-  assert.ok(payload.data.every((event) => typeof event.can_submit_feedback === "boolean"));
+  assert.equal(payload.data.total, 2);
+  assert.equal(payload.data.items.length, 2);
+  assert.ok(payload.data.items.every((event) => event.status === "approved"));
+  assert.ok(payload.data.items.every((event) => ["upcoming", "happening_today", "past"].includes(event.event_lifecycle)));
+  assert.ok(payload.data.items.every((event) => typeof event.can_rsvp === "boolean"));
+  assert.ok(payload.data.items.every((event) => typeof event.can_submit_feedback === "boolean"));
 });
 
 test("executive can fetch approved events for their club", async (t) => {
@@ -239,9 +255,10 @@ test("executive can fetch approved events for their club", async (t) => {
   const { response, payload } = await getApprovedEvents(server.baseUrl, "executive-token");
 
   assert.equal(response.status, 200);
-  assert.equal(payload.data.length, 1);
-  assert.equal(payload.data[0].club_id, "club-1");
-  assert.equal(payload.data[0].proposal_id, "proposal-1");
+  assert.equal(payload.data.total, 1);
+  assert.equal(payload.data.items.length, 1);
+  assert.equal(payload.data.items[0].club_id, "club-1");
+  assert.equal(payload.data.items[0].proposal_id, "proposal-1");
 });
 
 test("advisor can fetch approved events for assigned clubs", async (t) => {
@@ -251,8 +268,9 @@ test("advisor can fetch approved events for assigned clubs", async (t) => {
   const { response, payload } = await getApprovedEvents(server.baseUrl, "advisor-token");
 
   assert.equal(response.status, 200);
-  assert.equal(payload.data.length, 1);
-  assert.equal(payload.data[0].club_id, "club-2");
+  assert.equal(payload.data.total, 1);
+  assert.equal(payload.data.items.length, 1);
+  assert.equal(payload.data.items[0].club_id, "club-2");
 });
 
 test("student can fetch approved events feed", async (t) => {
@@ -262,8 +280,10 @@ test("student can fetch approved events feed", async (t) => {
   const { response, payload } = await getApprovedEvents(server.baseUrl, "student-token");
 
   assert.equal(response.status, 200);
-  assert.equal(payload.data.length, 2);
-  assert.ok(payload.data.every((event) => event.status === "approved"));
+  assert.equal(payload.data.total, 1);
+  assert.equal(payload.data.items.length, 1);
+  assert.ok(payload.data.items.every((event) => event.status === "approved"));
+  assert.ok(payload.data.items.every((event) => event.club_id === "club-1"));
 });
 
 test("missing-token access is blocked for approved events", async (t) => {

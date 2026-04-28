@@ -1,4 +1,5 @@
 const asyncHandler = require("../../shared/asyncHandler");
+const { parsePaginationQuery } = require("../../shared/pagination");
 const {
   createEventReport,
   getEventReportDetail,
@@ -26,6 +27,11 @@ function createReportsController(options = {}) {
           club_id: req.query.club_id,
           proposal_id: req.query.proposal_id
         },
+        pagination: parsePaginationQuery(req.query, {
+          defaultSort: "submitted_at",
+          defaultOrder: "desc",
+          allowedSorts: ["submitted_at", "created_at", "attendance_count", "budget_used"]
+        }),
         database
       });
 

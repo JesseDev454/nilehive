@@ -77,12 +77,14 @@ function createPayment(overrides = {}) {
   };
 }
 
-test("student can create a membership request", async () => {
+test("student can create a paid membership request", async () => {
+  let createdMember;
+  let createdPayment;
   let createdRequest;
   const fakeDatabase = {
     async getClubById(clubId) {
       assert.equal(clubId, "club-1");
-      return { id: "club-1", name: "Nile Innovators Club" };
+      return { id: "club-1", name: "Nile Innovators Club", dues_amount: 5000 };
     },
     async getClubMemberByProfileAndClub() {
       return null;
@@ -90,9 +92,42 @@ test("student can create a membership request", async () => {
     async getOpenMembershipRequest() {
       return null;
     },
+    async getProfileById() {
+      return createProfile();
+    },
+    async getClubPaymentSettings() {
+      return null;
+    },
+    async updateProfile() {
+      // no profile fields in this payload — should not be called, but harmless if it is
+    },
+    async createClubMember(member) {
+      createdMember = member;
+      return createMember(member);
+    },
+    async createDuePayment(payment) {
+      createdPayment = payment;
+      return createPayment({
+        ...payment,
+        status: "submitted",
+        payment_account_name: "Ada Student",
+        payment_reference: "JOIN-001"
+      });
+    },
     async createMembershipRequest(request) {
       createdRequest = request;
-      return createRequest(request);
+      return createRequest({
+        ...request,
+        due_payment: createPayment({
+          id: request.due_payment_id,
+          member_id: request.member_id,
+          amount: request.dues_amount,
+          academic_session: request.academic_session,
+          status: "submitted",
+          payment_account_name: "Ada Student",
+          payment_reference: "JOIN-001"
+        })
+      });
     }
   };
 
@@ -105,14 +140,75 @@ test("student can create a membership request", async () => {
     payload: {
       club_id: "club-1",
       requested_role: "member",
-      remarks: "I want to help run events."
+      remarks: "I want to help run events.",
+      payment_account_name: "Ada Student",
+      payment_reference: "JOIN-001",
+      payment_paid_at: "2026-04-18",
+      proof_url: "https://example.com/proof.png",
+      payer_note: "Paid this morning."
     },
     database: fakeDatabase
   });
 
   assert.equal(createdRequest.profile_id, "student-1");
   assert.equal(createdRequest.status, "pending");
+  assert.equal(createdMember.membership_status, "inactive");
+  assert.equal(createdPayment.status, "submitted");
+  assert.equal(createdRequest.dues_amount, 5000);
   assert.equal(request.requested_role, "member");
+});
+
+test("join form fields are saved back to the user profile", async () => {
+  let savedProfileUpdates;
+  const fakeDatabase = {
+    async getClubById() {
+      return { id: "club-1", name: "Nile Innovators Club", dues_amount: 5000 };
+    },
+    async getClubMemberByProfileAndClub() {
+      return null;
+    },
+    async getOpenMembershipRequest() {
+      return null;
+    },
+    async getProfileById() {
+      return createProfile({ student_id: null, phone_number: null, department: null });
+    },
+    async getClubPaymentSettings() {
+      return null;
+    },
+    async updateProfile(profileId, updates) {
+      savedProfileUpdates = { profileId, updates };
+    },
+    async createClubMember(member) {
+      return createMember(member);
+    },
+    async createDuePayment(payment) {
+      return createPayment({ ...payment, status: "submitted" });
+    },
+    async createMembershipRequest(request) {
+      return createRequest({ ...request });
+    }
+  };
+
+  await createMembershipRequest({
+    actor: { id: "student-1", role: "student", clubId: "club-1" },
+    payload: {
+      club_id: "club-1",
+      student_id: "020232255",
+      phone_number: "08012345678",
+      department: "Computer Science",
+      payment_account_name: "Ada Student",
+      payment_reference: "JOIN-002",
+      proof_url: "receipts/club-1/proof.png"
+    },
+    database: fakeDatabase
+  });
+
+  assert.ok(savedProfileUpdates, "updateProfile should have been called");
+  assert.equal(savedProfileUpdates.profileId, "student-1");
+  assert.equal(savedProfileUpdates.updates.student_id, "020232255");
+  assert.equal(savedProfileUpdates.updates.phone_number, "08012345678");
+  assert.equal(savedProfileUpdates.updates.department, "Computer Science");
 });
 
 test("membership request creation rejects leadership roles", async () => {
@@ -139,7 +235,9 @@ test("membership request creation rejects leadership roles", async () => {
         payload: {
           club_id: "club-1",
           requested_role: "executive",
-          remarks: "I want to help run events."
+          remarks: "I want to help run events.",
+          payment_account_name: "Ada Student",
+          payment_reference: "JOIN-001"
         },
         database: fakeDatabase
       }),
@@ -147,36 +245,56 @@ test("membership request creation rejects leadership roles", async () => {
   );
 });
 
-test("president approval creates inactive member and unpaid dues record", async () => {
-  let createdMember;
-  let createdPayment;
+test("president approval activates membership and verifies the submitted payment", async () => {
+  let updatedPayment;
+  let memberStatusUpdate;
   let requestUpdate;
   const fakeDatabase = {
     async getMembershipRequestById(requestId) {
       assert.equal(requestId, "request-1");
-      return createRequest();
+      return createRequest({
+        member_id: "member-1",
+        due_payment_id: "payment-1",
+        dues_amount: 5000,
+        academic_session: "2025/2026"
+      });
     },
-    async getProfileById(profileId) {
-      assert.equal(profileId, "student-1");
-      return createProfile();
+    async getClubMemberById(memberId) {
+      assert.equal(memberId, "member-1");
+      return createMember();
     },
-    async getClubMemberByProfileAndClub() {
-      return null;
+    async updateDuePayment(paymentId, update) {
+      updatedPayment = update;
+      return createPayment({
+        id: paymentId,
+        status: "paid",
+        ...update
+      });
     },
-    async createClubMember(member) {
-      createdMember = member;
-      return createMember(member);
-    },
-    async createDuePayment(payment) {
-      createdPayment = payment;
-      return createPayment(payment);
+    async updateClubMember(memberId, update) {
+      memberStatusUpdate = update;
+      return createMember({
+        id: memberId,
+        ...update
+      });
     },
     async updateMembershipRequest(requestId, update) {
       requestUpdate = update;
       return createRequest({
         id: requestId,
+        member_id: "member-1",
+        due_payment_id: "payment-1",
+        dues_amount: 5000,
+        academic_session: "2025/2026",
         ...update
       });
+    },
+    async getProfileById() {
+      // Profile already has a club_id (old-flow user) — updateProfile must NOT be called.
+      return createProfile({ club_id: "club-1" });
+    },
+    async updateProfile() {
+      throw new Error("updateProfile should not be called when club_id is already set");
     }
   };
 
@@ -189,26 +307,68 @@ test("president approval creates inactive member and unpaid dues record", async 
     requestId: "request-1",
     payload: {
       decision: "approve",
-      dues_amount: 5000,
-      academic_session: "2025/2026",
-      remarks: "Pay dues to complete membership."
+      remarks: "Payment verified."
     },
     database: fakeDatabase
   });
 
-  assert.equal(createdMember.membership_status, "inactive");
-  assert.equal(createdMember.club_role, "member");
-  assert.equal(createdPayment.status, "unpaid");
-  assert.equal(createdPayment.amount, 5000);
-  assert.equal(requestUpdate.status, "approved_pending_dues");
-  assert.equal(result.request.status, "approved_pending_dues");
+  assert.equal(updatedPayment.status, "paid");
+  assert.equal(memberStatusUpdate.membership_status, "active");
+  assert.equal(requestUpdate.status, "active");
+  assert.equal(result.request.status, "active");
 });
 
-test("president cannot approve president membership requests", async () => {
+test("approving a membership request sets club_id on a profile with no club", async () => {
+  let profileUpdateCall;
   const fakeDatabase = {
     async getMembershipRequestById() {
       return createRequest({
-        requested_role: "president"
+        profile_id: "student-1",
+        club_id: "club-1",
+        member_id: "member-1",
+        due_payment_id: "payment-1",
+        dues_amount: 5000,
+        academic_session: "2025/2026"
+      });
+    },
+    async getClubMemberById() {
+      return createMember();
+    },
+    async updateDuePayment(paymentId, update) {
+      return createPayment({ id: paymentId, ...update });
+    },
+    async updateClubMember(memberId, update) {
+      return createMember({ id: memberId, ...update });
+    },
+    async updateMembershipRequest(requestId, update) {
+      return createRequest({ id: requestId, ...update });
+    },
+    async getProfileById(profileId) {
+      // Slim-signup user: club_id is null
+      return createProfile({ id: profileId, club_id: null });
+    },
+    async updateProfile(profileId, updates) {
+      profileUpdateCall = { profileId, updates };
+    }
+  };
+
+  await decideMembershipRequest({
+    actor: { id: "president-1", role: "president", clubId: "club-1" },
+    requestId: "request-1",
+    payload: { decision: "approve", remarks: "Welcome aboard." },
+    database: fakeDatabase
+  });
+
+  assert.ok(profileUpdateCall, "updateProfile should have been called to set club_id");
+  assert.equal(profileUpdateCall.profileId, "student-1");
+  assert.equal(profileUpdateCall.updates.club_id, "club-1");
+});
+
+test("president cannot review membership requests for another club", async () => {
+  const fakeDatabase = {
+    async getMembershipRequestById() {
+      return createRequest({
+        club_id: "club-2"
       });
     }
   };
@@ -224,8 +384,7 @@ test("president cannot approve president membership requests", async () => {
         requestId: "request-1",
         payload: {
           decision: "approve",
-          dues_amount: 5000,
-          academic_session: "2025/2026"
+          remarks: "Not allowed"
         },
         database: fakeDatabase
       }),
@@ -233,12 +392,10 @@ test("president cannot approve president membership requests", async () => {
   );
 });
 
-test("president cannot approve executive membership requests", async () => {
+test("executive cannot review membership requests", async () => {
   const fakeDatabase = {
     async getMembershipRequestById() {
-      return createRequest({
-        requested_role: "executive"
-      });
+      return createRequest();
     }
   };
 
@@ -246,15 +403,14 @@ test("president cannot approve executive membership requests", async () => {
     () =>
       decideMembershipRequest({
         actor: {
-          id: "president-1",
-          role: "president",
+          id: "executive-1",
+          role: "executive",
           clubId: "club-1"
         },
         requestId: "request-1",
         payload: {
           decision: "approve",
-          dues_amount: 5000,
-          academic_session: "2025/2026"
+          remarks: "Not allowed"
         },
         database: fakeDatabase
       }),
@@ -262,9 +418,8 @@ test("president cannot approve executive membership requests", async () => {
   );
 });
 
-test("dues payment verification activates membership and requested role", async () => {
+test("dues payment verification activates membership and updates request state", async () => {
   let memberUpdate;
-  let profileUpdate;
   let requestUpdate;
   const fakeDatabase = {
     async getDuePaymentById() {
@@ -281,7 +436,6 @@ test("dues payment verification activates membership and requested role", async 
     async getMembershipRequestByMemberId(memberId) {
       assert.equal(memberId, "member-1");
       return createRequest({
-        requested_role: "executive",
         status: "approved_pending_dues",
         member_id: "member-1",
         due_payment_id: "payment-1"
@@ -291,13 +445,6 @@ test("dues payment verification activates membership and requested role", async 
       memberUpdate = update;
       return createMember({
         id: memberId,
-        ...update
-      });
-    },
-    async updateProfile(profileId, update) {
-      profileUpdate = update;
-      return createProfile({
-        id: profileId,
         ...update
       });
     },
@@ -326,8 +473,6 @@ test("dues payment verification activates membership and requested role", async 
 
   assert.equal(payment.status, "paid");
   assert.equal(memberUpdate.membership_status, "active");
-  assert.equal(profileUpdate.role, "executive");
-  assert.equal(profileUpdate.club_id, "club-1");
   assert.equal(requestUpdate.status, "active");
 });
 

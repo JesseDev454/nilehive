@@ -105,7 +105,8 @@ test("executive can list members in their club", async () => {
       assert.deepEqual(filters, {
         clubId: "club-1",
         clubRoles: undefined,
-        membershipStatus: undefined
+        membershipStatus: undefined,
+        excludeMembershipStatuses: ["alumni"]
       });
       return [createMemberRecord()];
     }
@@ -130,7 +131,8 @@ test("admin can list all members with club details", async () => {
       assert.deepEqual(filters, {
         clubId: null,
         clubRoles: undefined,
-        membershipStatus: undefined
+        membershipStatus: undefined,
+        excludeMembershipStatuses: ["alumni"]
       });
       return [
         createMemberRecord(),
@@ -169,7 +171,8 @@ test("president can list executive team members", async () => {
       assert.deepEqual(filters, {
         clubId: "club-1",
         clubRoles: ["executive", "president"],
-        membershipStatus: undefined
+        membershipStatus: undefined,
+        excludeMembershipStatuses: ["alumni"]
       });
       return [
         createMemberRecord({

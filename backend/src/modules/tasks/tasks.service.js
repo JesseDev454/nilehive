@@ -1,5 +1,6 @@
 const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
+const { ensurePaginatedResult, mapPaginatedResult } = require("../../shared/pagination");
 const {
   validateCreateTaskPayload,
   validateUpdateTaskStatusPayload
@@ -84,36 +85,47 @@ async function createTask(options) {
 }
 
 async function listVisibleTasks(options) {
-  const { actor, filters = {}, database = db } = options;
+  const { actor, filters = {}, pagination, database = db } = options;
   requireActor(actor);
+
+  const buildListTaskFilters = (baseFilters) => ({
+    ...baseFilters,
+    ...(pagination
+      ? {
+          pagination,
+          sort: pagination.sort,
+          order: pagination.order
+        }
+      : {})
+  });
 
   if (actor.role === "president") {
     requireClubLinked(actor);
 
-    const tasks = await database.listTasks({
+    const tasks = ensurePaginatedResult(await database.listTasks(buildListTaskFilters({
       clubId: actor.clubId,
       status: filters.status
-    });
+    })), pagination);
 
-    return tasks.map((task) => formatTask(task));
+    return pagination ? mapPaginatedResult(tasks, (task) => formatTask(task)) : tasks.map((task) => formatTask(task));
   }
 
   if (actor.role === "admin") {
-    const tasks = await database.listTasks({
+    const tasks = ensurePaginatedResult(await database.listTasks(buildListTaskFilters({
       clubId: filters.club_id,
       status: filters.status
-    });
+    })), pagination);
 
-    return tasks.map((task) => formatTask(task));
+    return pagination ? mapPaginatedResult(tasks, (task) => formatTask(task)) : tasks.map((task) => formatTask(task));
   }
 
   if (actor.role === "executive") {
-    const tasks = await database.listTasks({
+    const tasks = ensurePaginatedResult(await database.listTasks(buildListTaskFilters({
       assignedTo: actor.id,
       status: filters.status
-    });
+    })), pagination);
 
-    return tasks.map((task) => formatTask(task));
+    return pagination ? mapPaginatedResult(tasks, (task) => formatTask(task)) : tasks.map((task) => formatTask(task));
   }
 
   throw new ApiError(403, "This role cannot view task delegation", "FORBIDDEN");

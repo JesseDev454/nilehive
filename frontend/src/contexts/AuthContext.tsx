@@ -3,8 +3,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { SESSION_EXPIRED_EVENT } from "@/lib/api";
 import { getAllowedEmailDomainLabel, isAllowedEmailDomain, isPasswordAuthEnabled } from "@/lib/env";
 import { queryClient } from "@/lib/queryClient";
-import { isValidStudentId, normalizeStudentId, STUDENT_ID_ERROR_MESSAGE } from "@/lib/studentId";
-import { supabase } from "@/lib/supabase";
+import { supabase, SUPABASE_AUTH_STORAGE_KEY } from "@/lib/supabase";
 
 export type AppRole = "executive" | "advisor" | "admin" | "president" | "student";
 
@@ -14,6 +13,10 @@ export interface AppProfile {
   role: AppRole;
   club_id: string | null;
   student_id?: string | null;
+  phone_number?: string | null;
+  department?: string | null;
+  student_type?: "fresher" | "returning" | null;
+  join_reason?: string | null;
   requested_role?: AppRole | null;
   onboarding_status?: string | null;
 }
@@ -25,16 +28,15 @@ interface AuthContextType {
   role: AppRole | null;
   isLoading: boolean;
   profileError: string | null;
+  requiresProfileRecovery: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signInWithMicrosoft: (redirectTo?: string) => Promise<void>;
   signUp: (input: {
     email: string;
     password: string;
     fullName: string;
-    requestedRole: string;
-    clubName: string;
-    studentId: string;
-  }) => Promise<void>;
+    requestedRole: "student" | "advisor";
+  }) => Promise<{ needsEmailConfirmation: boolean; userId: string | null }>;
   signOut: () => Promise<void>;
   getAccessToken: () => string;
   refreshProfile: () => Promise<AppProfile | null>;
@@ -44,11 +46,47 @@ const AuthContext = createContext<AuthContextType | null>(null);
 const INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000;
 const ACTIVITY_EVENTS = ["click", "keydown", "mousemove", "scroll", "touchstart"] as const;
 const UNSUPPORTED_EMAIL_MESSAGE = `Please use your Nile University Microsoft account (${getAllowedEmailDomainLabel()}).`;
+const PROFILE_FETCH_RETRY_ATTEMPTS = 5;
+const PROFILE_FETCH_RETRY_DELAY_MS = 500;
+const LAST_ACTIVITY_STORAGE_KEY = `${SUPABASE_AUTH_STORAGE_KEY}:last-activity-at`;
+
+function readLastActivityAt() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const rawValue = window.localStorage.getItem(LAST_ACTIVITY_STORAGE_KEY);
+  const timestamp = rawValue ? Number(rawValue) : NaN;
+
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+
+function writeLastActivityAt(timestamp = Date.now()) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(LAST_ACTIVITY_STORAGE_KEY, String(timestamp));
+}
+
+function clearLastActivityAt() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(LAST_ACTIVITY_STORAGE_KEY);
+}
+
+function hasValidPersistedActivity() {
+  const lastActivityAt = readLastActivityAt();
+
+  return lastActivityAt !== null && Date.now() - lastActivityAt < INACTIVITY_TIMEOUT_MS;
+}
 
 async function fetchProfile(userId: string) {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, full_name, role, club_id, student_id, requested_role, onboarding_status")
+    .select("id, full_name, role, club_id, student_id, phone_number, department, student_type, join_reason, requested_role, onboarding_status")
     .eq("id", userId)
     .maybeSingle();
 
@@ -63,16 +101,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<AppProfile | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [requiresProfileRecovery, setRequiresProfileRecovery] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const currentUserIdRef = useRef<string | null>(null);
 
+  async function waitForProfileProvisioning() {
+    await new Promise((resolve) => window.setTimeout(resolve, PROFILE_FETCH_RETRY_DELAY_MS));
+  }
+
   function clearAuthState() {
+    clearLastActivityAt();
     currentUserIdRef.current = null;
     queryClient.clear();
     setSession(null);
     setProfile(null);
     setProfileError(null);
+    setRequiresProfileRecovery(false);
     setIsLoading(false);
+  }
+
+  async function expireSessionForInactivity() {
+    clearAuthState();
+    await supabase.auth.signOut();
   }
 
   function prepareForSession(nextSession: Session | null) {
@@ -89,6 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (userChanged) {
       setProfile(null);
       setProfileError(null);
+      setRequiresProfileRecovery(false);
     }
   }
 
@@ -96,22 +147,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!nextSession?.user) {
       setProfile(null);
       setProfileError(null);
+      setRequiresProfileRecovery(false);
       return;
     }
 
     if (!isAllowedEmailDomain(nextSession.user.email ?? "")) {
       setProfile(null);
       setProfileError(UNSUPPORTED_EMAIL_MESSAGE);
+      setRequiresProfileRecovery(false);
       return;
     }
 
     try {
-      const currentProfile = await fetchProfile(nextSession.user.id);
-      setProfile(currentProfile);
-      setProfileError(currentProfile ? null : "No application profile was found for this user.");
+      let currentProfile: AppProfile | null = null;
+
+      for (let attempt = 0; attempt < PROFILE_FETCH_RETRY_ATTEMPTS; attempt += 1) {
+        currentProfile = await fetchProfile(nextSession.user.id);
+
+        if (currentProfile) {
+          break;
+        }
+
+        if (attempt < PROFILE_FETCH_RETRY_ATTEMPTS - 1) {
+          await waitForProfileProvisioning();
+        }
+      }
+
+      if (currentProfile) {
+        setProfile(currentProfile);
+        setProfileError(null);
+        setRequiresProfileRecovery(false);
+        return;
+      }
+
+      setProfile(null);
+      setProfileError(
+        "We couldn't finish loading your Club Services profile automatically. If this is an older account, use the recovery form below once."
+      );
+      setRequiresProfileRecovery(true);
     } catch (error) {
       setProfile(null);
-      setProfileError(error instanceof Error ? error.message : "Unable to load user profile.");
+      setRequiresProfileRecovery(false);
+      setProfileError(error instanceof Error ? error.message : "Unable to load your Club Services profile right now.");
     }
   }
 
@@ -129,6 +206,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      if (currentSession?.user && !hasValidPersistedActivity()) {
+        await expireSessionForInactivity();
+        return;
+      }
+
+      if (currentSession?.user) {
+        writeLastActivityAt();
+      }
+
       prepareForSession(currentSession);
 
       await loadProfileForSession(currentSession);
@@ -144,7 +230,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const {
       data: { subscription }
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setIsLoading(true);
 
       if (!nextSession?.user) {
@@ -152,6 +238,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      if (event !== "SIGNED_IN" && !hasValidPersistedActivity()) {
+        void expireSessionForInactivity();
+        return;
+      }
+
+      writeLastActivityAt();
       prepareForSession(nextSession);
       loadProfileForSession(nextSession).finally(() => setIsLoading(false));
     });
@@ -182,24 +274,68 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     let timeoutId: ReturnType<typeof window.setTimeout>;
 
-    function resetTimer() {
+    function scheduleTimeout(lastActivityAt = readLastActivityAt() ?? Date.now()) {
       window.clearTimeout(timeoutId);
+      const remainingTime = Math.max(INACTIVITY_TIMEOUT_MS - (Date.now() - lastActivityAt), 0);
       timeoutId = window.setTimeout(() => {
+        clearLastActivityAt();
         void supabase.auth.signOut();
-      }, INACTIVITY_TIMEOUT_MS);
+      }, remainingTime);
     }
 
-    resetTimer();
+    function handleActivity() {
+      if (!hasValidPersistedActivity()) {
+        clearLastActivityAt();
+        void supabase.auth.signOut();
+        return;
+      }
+
+      const timestamp = Date.now();
+      writeLastActivityAt(timestamp);
+      scheduleTimeout(timestamp);
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        handleActivity();
+      }
+    }
+
+    function handleStorage(event: StorageEvent) {
+      if (event.key !== LAST_ACTIVITY_STORAGE_KEY) {
+        return;
+      }
+
+      if (!event.newValue) {
+        window.clearTimeout(timeoutId);
+        return;
+      }
+
+      const timestamp = Number(event.newValue);
+
+      if (Number.isFinite(timestamp)) {
+        scheduleTimeout(timestamp);
+      }
+    }
+
+    writeLastActivityAt();
+    scheduleTimeout();
 
     ACTIVITY_EVENTS.forEach((eventName) => {
-      window.addEventListener(eventName, resetTimer, { passive: true });
+      window.addEventListener(eventName, handleActivity, { passive: true });
     });
+    window.addEventListener("focus", handleActivity);
+    window.addEventListener("storage", handleStorage);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       window.clearTimeout(timeoutId);
       ACTIVITY_EVENTS.forEach((eventName) => {
-        window.removeEventListener(eventName, resetTimer);
+        window.removeEventListener(eventName, handleActivity);
       });
+      window.removeEventListener("focus", handleActivity);
+      window.removeEventListener("storage", handleStorage);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [session]);
 
@@ -211,6 +347,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       role: profile?.role ?? null,
       isLoading,
       profileError,
+      requiresProfileRecovery,
       async signIn(email, password) {
         if (!isPasswordAuthEnabled()) {
           throw new Error("Password login is disabled. Please continue with your Nile University Microsoft account.");
@@ -238,7 +375,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           throw error;
         }
       },
-      async signUp({ email, password, fullName, requestedRole, clubName, studentId }) {
+      async signUp({
+        email,
+        password,
+        fullName,
+        requestedRole
+      }) {
         if (!isPasswordAuthEnabled()) {
           throw new Error("Password signup is disabled. Please continue with your Nile University Microsoft account.");
         }
@@ -249,21 +391,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           throw new Error(`Please use your Nile University email address (${getAllowedEmailDomainLabel()}).`);
         }
 
-        const normalizedStudentId = normalizeStudentId(studentId);
-
-        if (!isValidStudentId(normalizedStudentId)) {
-          throw new Error(STUDENT_ID_ERROR_MESSAGE);
-        }
-
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: normalizedEmail,
           password,
           options: {
             data: {
               full_name: fullName.trim(),
-              requested_role: requestedRole,
-              requested_club: clubName.trim(),
-              student_id: normalizedStudentId
+              requested_role: requestedRole
             }
           }
         });
@@ -272,7 +406,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           throw error;
         }
 
-        await supabase.auth.signOut();
+        if (data.session) {
+          writeLastActivityAt();
+          prepareForSession(data.session);
+          await loadProfileForSession(data.session);
+        }
+
+        return {
+          needsEmailConfirmation: !data.session,
+          userId: data.user?.id ?? null
+        };
       },
       async signOut() {
         clearAuthState();
@@ -285,16 +428,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!session?.user) {
           setProfile(null);
           setProfileError(null);
+          setRequiresProfileRecovery(false);
           return null;
         }
 
         const nextProfile = await fetchProfile(session.user.id);
         setProfile(nextProfile);
-        setProfileError(nextProfile ? null : "No application profile was found for this user.");
+        setProfileError(
+          nextProfile
+            ? null
+            : "We couldn't finish loading your Club Services profile automatically. If this is an older account, use the recovery form below once."
+        );
+        setRequiresProfileRecovery(!nextProfile);
         return nextProfile;
       }
     }),
-    [isLoading, profile, profileError, session]
+    [isLoading, profile, profileError, requiresProfileRecovery, session]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

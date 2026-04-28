@@ -1,5 +1,6 @@
 const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
+const { ensurePaginatedResult, mapPaginatedResult } = require("../../shared/pagination");
 const {
   validateCreateMemberPayload,
   validateUpdateMemberPayload
@@ -44,6 +45,98 @@ function requirePresidentOrAdmin(actor) {
   }
 }
 
+function ensureAllowedClubRoleChange(actor, requestedClubRole) {
+  if (actor.role === "president" && requestedClubRole === "president") {
+    throw new ApiError(403, "Only Club Services admins can assign president access", "FORBIDDEN");
+  }
+}
+
+async function syncLinkedProfileRole({
+  database,
+  actor,
+  member,
+  previousClubRole = null,
+  nextClubRole
+}) {
+  if (!member?.profile_id || !nextClubRole || previousClubRole === nextClubRole) {
+    return null;
+  }
+
+  const profile = await database.getProfileById(member.profile_id);
+
+  if (!profile) {
+    return null;
+  }
+
+  if (nextClubRole === "president") {
+    const updatedProfile = await database.updateProfile(profile.id, {
+      role: "president",
+      club_id: member.club_id
+    });
+
+    if (database.createProfileRoleHistory) {
+      await database.createProfileRoleHistory({
+        profile_id: profile.id,
+        previous_role: profile.role,
+        new_role: "president",
+        previous_club_id: profile.club_id ?? null,
+        new_club_id: member.club_id,
+        changed_by: actor.id,
+        remarks: "Club president assigned from member management."
+      });
+    }
+
+    return updatedProfile;
+  }
+
+  if (nextClubRole === "executive") {
+    const updatedProfile = await database.updateProfile(profile.id, {
+      role: "executive",
+      club_id: member.club_id
+    });
+
+    if (database.createProfileRoleHistory) {
+      await database.createProfileRoleHistory({
+        profile_id: profile.id,
+        previous_role: profile.role,
+        new_role: "executive",
+        previous_club_id: profile.club_id ?? null,
+        new_club_id: member.club_id,
+        changed_by: actor.id,
+        remarks:
+          actor.role === "president"
+            ? "Executive assigned by club president."
+            : "Executive assigned from member management."
+      });
+    }
+
+    return updatedProfile;
+  }
+
+  if (nextClubRole === "member" && ["executive", "president"].includes(profile.role) && profile.club_id === member.club_id) {
+    const updatedProfile = await database.updateProfile(profile.id, {
+      role: "student",
+      club_id: member.club_id
+    });
+
+    if (database.createProfileRoleHistory) {
+      await database.createProfileRoleHistory({
+        profile_id: profile.id,
+        previous_role: profile.role,
+        new_role: "student",
+        previous_club_id: profile.club_id ?? null,
+        new_club_id: member.club_id,
+        changed_by: actor.id,
+        remarks: "Leadership access removed from member management."
+      });
+    }
+
+    return updatedProfile;
+  }
+
+  return null;
+}
+
 function formatMember(member) {
   return {
     id: member.id,
@@ -68,18 +161,26 @@ function formatMember(member) {
 }
 
 async function listMembers(options) {
-  const { actor, filters = {}, database = db } = options;
+  const { actor, filters = {}, pagination, database = db } = options;
   requireActor(actor);
   requireSupportedMemberRole(actor);
 
   const clubId = getScopedClubId(actor, filters.club_id);
-  const members = await database.listClubMembers({
+  const members = ensurePaginatedResult(await database.listClubMembers({
     clubId,
     clubRoles: filters.team === "executive" ? ["executive", "president"] : undefined,
-    membershipStatus: filters.membership_status
-  });
+    membershipStatus: filters.membership_status,
+    excludeMembershipStatuses: filters.membership_status ? undefined : ["alumni"],
+    ...(pagination
+      ? {
+          pagination,
+          sort: pagination.sort,
+          order: pagination.order
+        }
+      : {})
+  }), pagination);
 
-  return members.map(formatMember);
+  return pagination ? mapPaginatedResult(members, formatMember) : members.map(formatMember);
 }
 
 async function createMember(options) {
@@ -105,11 +206,21 @@ async function createMember(options) {
     }
   }
 
+  ensureAllowedClubRoleChange(actor, validatedPayload.club_role);
+
   if (validatedPayload.membership_status === "active") {
     throw new ApiError(
       409,
       `Members become active only after dues are verified for ${getCurrentAcademicSession()}`,
       "DUES_NOT_VERIFIED"
+    );
+  }
+
+  if (actor.role === "president" && validatedPayload.club_role === "executive" && validatedPayload.membership_status !== "active") {
+    throw new ApiError(
+      409,
+      "Presidents can only choose executives from active dues-verified members.",
+      "ACTIVE_MEMBERSHIP_REQUIRED"
     );
   }
 
@@ -126,6 +237,14 @@ async function createMember(options) {
     phone_number: validatedPayload.phone_number,
     club_role: validatedPayload.club_role,
     membership_status: validatedPayload.membership_status
+  });
+
+  await syncLinkedProfileRole({
+    database,
+    actor,
+    member,
+    previousClubRole: null,
+    nextClubRole: validatedPayload.club_role
   });
 
   return formatMember(member);
@@ -147,6 +266,11 @@ async function updateMember(options) {
 
   const update = validateUpdateMemberPayload(payload);
   const requestedStatus = update.membership_status;
+  const requestedClubRole = update.club_role;
+
+  if (requestedClubRole) {
+    ensureAllowedClubRoleChange(actor, requestedClubRole);
+  }
 
   if (requestedStatus === "alumni" && actor.role !== "admin") {
     throw new ApiError(403, "Only Club Services admins can mark members as alumni", "FORBIDDEN");
@@ -164,7 +288,29 @@ async function updateMember(options) {
     }
   }
 
+  if (actor.role === "president" && requestedClubRole === "executive") {
+    const effectiveStatus = requestedStatus || member.membership_status;
+
+    if (effectiveStatus !== "active") {
+      throw new ApiError(
+        409,
+        "Presidents can only choose executives from active dues-verified members.",
+        "ACTIVE_MEMBERSHIP_REQUIRED"
+      );
+    }
+  }
+
   const updatedMember = await database.updateClubMember(memberId, update);
+
+  if (requestedClubRole) {
+    await syncLinkedProfileRole({
+      database,
+      actor,
+      member: updatedMember,
+      previousClubRole: member.club_role,
+      nextClubRole: requestedClubRole
+    });
+  }
 
   if (requestedStatus && requestedStatus !== member.membership_status) {
     await recordMemberStatusHistory({

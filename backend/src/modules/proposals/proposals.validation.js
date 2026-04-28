@@ -1,4 +1,5 @@
 const ApiError = require("../../shared/ApiError");
+const { assertPlainText } = require("../../shared/plainText");
 const { isValidStudentId, STUDENT_ID_ERROR_MESSAGE } = require("../../shared/studentId");
 
 const MAX_RESPONSIBLE_MEMBERS = 10;
@@ -337,7 +338,7 @@ function readSaveAsDraft(payload = {}) {
 
 function validateAdvisorDecisionPayload(payload = {}) {
   const decision = normalizeString(payload.decision);
-  const remarks = normalizeString(payload.remarks);
+  const remarks = payload.remarks === undefined ? "" : assertPlainText(payload.remarks, "remarks", "Remarks");
   const fieldErrors = [];
 
   if (!decision) {
@@ -358,7 +359,7 @@ function validateAdvisorDecisionPayload(payload = {}) {
 
   return {
     decision,
-    remarks: remarks || null
+    remarks: normalizeString(remarks) || null
   };
 }
 

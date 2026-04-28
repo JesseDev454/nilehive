@@ -18,6 +18,7 @@ function createProfileController(options = {}) {
       res.status(200).json({ data });
     }),
 
+
     completeOnboarding: asyncHandler(async (req, res) => {
       const profile = await completeProfileOnboarding({
         authUser: req.authUser,

@@ -416,6 +416,8 @@ test("admin can fetch operations dashboard data", async (t) => {
   assert.equal(payload.data.summary.attendance_rate, 100);
   assert.equal(payload.data.club_performance.length, 2);
   assert.equal(payload.data.club_performance[0].club_name, "Nile Innovators Club");
+  assert.equal(payload.data.queue.status, "not_required");
+  assert.equal(payload.data.ops_status.queue.worker_status, "not_required");
   assert.ok(payload.data.proposal_bottlenecks.length > 0);
   assert.ok(payload.data.pending_actions.some((action) => action.type === "membership_requests"));
   assert.ok(payload.data.recent_activity.length > 0);

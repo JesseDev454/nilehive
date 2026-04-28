@@ -1,32 +1,32 @@
-import { FormEvent, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Link, Navigate } from "react-router-dom";
+import type { FormEvent } from "react";
+import { useState } from "react";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowRight, Building2, CheckCircle2, ShieldCheck, Users } from "lucide-react";
+import { ArrowRight, CheckCircle2, Loader2, ShieldCheck, Users } from "lucide-react";
+import { BrandLogo } from "@/components/BrandLogo";
+import { SiteFooter } from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { NhStudentId } from "@/components/NhStudentId";
 import { useAuth } from "@/contexts/AuthContext";
-import { getPublicClubs } from "@/lib/api";
 import { getAllowedEmailDomainLabel, isAllowedEmailDomain } from "@/lib/env";
-import { isValidStudentId, STUDENT_ID_ERROR_MESSAGE } from "@/lib/studentId";
+import { getUserFacingErrorMessage } from "@/lib/api";
+
+const REQUESTED_ROLES = [
+  { value: "student", label: "Student" },
+  { value: "advisor", label: "Advisor" }
+] as const;
 
 export default function SignUp() {
   const { signUp, session, isLoading } = useAuth();
+  const navigate = useNavigate();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [studentId, setStudentId] = useState("");
-  const [clubName, setClubName] = useState("");
+  const [requestedRole, setRequestedRole] = useState<(typeof REQUESTED_ROLES)[number]["value"]>("student");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signupError, setSignupError] = useState<string | null>(null);
-  const { data: clubs = [], isLoading: isLoadingClubs } = useQuery({
-    queryKey: ["public-clubs"],
-    queryFn: getPublicClubs,
-    retry: false
-  });
 
   if (!isLoading && session) {
     return <Navigate to="/" replace />;
@@ -37,14 +37,6 @@ export default function SignUp() {
     setIsSubmitting(true);
     setSignupError(null);
 
-    if (!clubName) {
-      const message = "Please select your club before creating an account.";
-      setSignupError(message);
-      toast.error("Signup failed", { description: message });
-      setIsSubmitting(false);
-      return;
-    }
-
     if (!isAllowedEmailDomain(email)) {
       const message = `Please use your Nile University email address (${getAllowedEmailDomainLabel()}).`;
       setSignupError(message);
@@ -53,27 +45,30 @@ export default function SignUp() {
       return;
     }
 
-    if (!isValidStudentId(studentId)) {
-      setSignupError(STUDENT_ID_ERROR_MESSAGE);
-      toast.error("Signup failed", { description: STUDENT_ID_ERROR_MESSAGE });
-      setIsSubmitting(false);
-      return;
-    }
-
     try {
-      await signUp({
+      const result = await signUp({
         email,
         password,
         fullName,
-        requestedRole: "student",
-        clubName,
-        studentId
+        requestedRole
       });
-      toast.success("Account request created", {
-        description: "After confirming your email, log in and complete your Club Services profile setup."
+
+      if (result.needsEmailConfirmation) {
+        toast.success("Verification email sent", {
+          description: "Check your Nile University inbox, confirm your email, then sign in."
+        });
+        navigate(`/signup/confirm?email=${encodeURIComponent(email.trim().toLowerCase())}`, {
+          replace: true
+        });
+        return;
+      }
+
+      toast.success("Account created", {
+        description: "Your Club Services account is ready. Explore and join a club from Discover Clubs."
       });
+      navigate("/", { replace: true });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Please check the form and try again.";
+      const message = getUserFacingErrorMessage(error, "Please check the form and try again.");
       setSignupError(message);
       toast.error("Signup failed", {
         description: message
@@ -84,51 +79,65 @@ export default function SignUp() {
   }
 
   return (
-    <main className="min-h-screen bg-background p-5 text-foreground md:p-10">
-      <section className="mx-auto grid min-h-[calc(100vh-5rem)] max-w-7xl items-center gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-        <aside className="space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center border-2 border-foreground bg-secondary text-secondary-foreground shadow-[4px_4px_0_hsl(var(--foreground))]">
-              <Building2 className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="nh-eyebrow">Nile University</p>
-              <h1 className="text-2xl font-black uppercase">Club Services</h1>
-            </div>
+    <main className="flex min-h-screen flex-col bg-background text-foreground">
+      <section className="mx-auto grid w-full max-w-7xl flex-1 gap-6 p-5 md:p-10 lg:grid-cols-[0.88fr_1.12fr] lg:items-start">
+        <aside className="space-y-5 pt-2">
+          <div>
+            <BrandLogo
+              size="lg"
+              variant="plain"
+              className="h-24 w-[22rem] max-w-full sm:h-28 sm:w-[24rem]"
+            />
           </div>
 
-          <div className="nh-card-dark p-8">
-            <p className="nh-eyebrow text-primary-foreground/70">New Profile</p>
-            <h2 className="mt-3 text-5xl font-black uppercase leading-none md:text-6xl">Join an official club workspace.</h2>
-            <p className="mt-5 border-l-4 border-secondary pl-4 text-primary-foreground/80">
-              Create your account, pick your club, and start with safe student access. Leadership applications happen after dues verification.
+          <div className="nh-card-dark p-7">
+            <p className="nh-eyebrow text-primary-foreground/70">New Account</p>
+            <h2 className="mt-3 text-4xl font-black uppercase leading-none md:text-5xl">Create your account first, then join a club.</h2>
+            <p className="mt-4 border-l-4 border-secondary pl-4 text-primary-foreground/80">
+              Signup takes under a minute. Once inside, browse the clubs directory and submit your paid membership request from the club's join page.
             </p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="nh-card p-5">
+            <div className="nh-card p-4">
               <ShieldCheck className="h-7 w-7 text-secondary" />
-              <h3 className="mt-4 font-black uppercase">Official access</h3>
-              <p className="mt-2 text-sm text-muted-foreground">Advisor and admin roles are assigned by Club Services.</p>
+              <h3 className="mt-3 font-black uppercase">Official access</h3>
+              <p className="mt-2 text-sm text-muted-foreground">Choose the role that matches your real university position — student or faculty advisor.</p>
             </div>
-            <div className="nh-card p-5">
+            <div className="nh-card p-4">
               <Users className="h-7 w-7 text-secondary" />
-              <h3 className="mt-4 font-black uppercase">Club context</h3>
-              <p className="mt-2 text-sm text-muted-foreground">Your club selection helps route your first membership request.</p>
+              <h3 className="mt-3 font-black uppercase">Join after signup</h3>
+              <p className="mt-2 text-sm text-muted-foreground">Explore every club and submit your payment details from the dedicated join page at your own pace.</p>
             </div>
           </div>
         </aside>
 
-        <form className="nh-card bg-card p-6 md:p-10" onSubmit={handleSubmit}>
-          <div className="mb-8 border-b-2 border-foreground pb-6">
-            <p className="nh-eyebrow">Profile Setup</p>
-            <h2 className="mt-2 text-4xl font-black uppercase">Create Account</h2>
+        <form className="nh-card bg-card p-5 md:p-8" onSubmit={handleSubmit}>
+          <div className="mb-6 border-b-2 border-foreground pb-5">
+            <p className="nh-eyebrow">Account Creation</p>
+            <h2 className="mt-2 text-3xl font-black uppercase md:text-4xl">Create Account</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Use your Nile University email. You will complete your profile after email confirmation.
+              Use your Nile University email. You will join a club separately after account creation.
             </p>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-5 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label className="font-black uppercase tracking-[0.12em]">User Role</Label>
+              <Select value={requestedRole} onValueChange={(value) => setRequestedRole(value as (typeof REQUESTED_ROLES)[number]["value"])}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose your user role" />
+                </SelectTrigger>
+                <SelectContent>
+                  {REQUESTED_ROLES.map((roleOption) => (
+                    <SelectItem key={roleOption.value} value={roleOption.value}>
+                      {roleOption.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-2">
               <Label className="font-black uppercase tracking-[0.12em]" htmlFor="full-name">
                 Full Name
@@ -140,13 +149,6 @@ export default function SignUp() {
                 onChange={(event) => setFullName(event.target.value)}
                 required
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label className="font-black uppercase tracking-[0.12em]" htmlFor="student-id">
-                University ID
-              </Label>
-              <NhStudentId id="student-id" value={studentId} onChange={setStudentId} required />
             </div>
 
             <div className="space-y-2 md:col-span-2">
@@ -164,32 +166,6 @@ export default function SignUp() {
               <p className="text-xs text-muted-foreground">Allowed domain: {getAllowedEmailDomainLabel()}</p>
             </div>
 
-            <div className="space-y-2">
-              <Label className="font-black uppercase tracking-[0.12em]">Club Association</Label>
-              <Select disabled={isLoadingClubs} value={clubName} onValueChange={setClubName}>
-                <SelectTrigger className="border-2 border-input bg-card">
-                  <SelectValue placeholder={isLoadingClubs ? "Loading clubs..." : "Select primary club"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {clubs.map((club) => (
-                    <SelectItem key={club.id} value={club.name}>
-                      {club.name}{club.code ? ` (${club.code})` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="font-black uppercase tracking-[0.12em]">Starting Access</Label>
-              <div className="border-2 border-input bg-card px-4 py-3 text-sm font-black uppercase">
-                Student
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Executive and president applications open after your membership is active.
-              </p>
-            </div>
-
             <div className="space-y-2 md:col-span-2">
               <Label className="font-black uppercase tracking-[0.12em]" htmlFor="signup-password">
                 Password
@@ -203,6 +179,11 @@ export default function SignUp() {
                 required
                 minLength={8}
               />
+              <p className="text-xs text-muted-foreground">
+                {requestedRole === "advisor"
+                  ? "Advisor accounts are assigned to a club by Club Services after account creation."
+                  : "After signup, go to Discover Clubs to browse clubs and submit your membership payment."}
+              </p>
             </div>
           </div>
 
@@ -213,15 +194,26 @@ export default function SignUp() {
           )}
 
           <div className="mt-8 space-y-4">
-            <Button className="h-14 w-full" disabled={isSubmitting} type="submit">
-              {isSubmitting ? "Creating account..." : "Complete registration"}
-              <ArrowRight className="h-5 w-5" />
+            <Button className="h-14 w-full" disabled={isSubmitting} type="submit" id="signup-submit-button">
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Creating account...
+                </>
+              ) : (
+                <>
+                  Create account
+                  <ArrowRight className="h-5 w-5" />
+                </>
+              )}
             </Button>
 
             <div className="flex items-start gap-3 border-2 border-foreground bg-muted p-4 text-sm">
               <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-secondary" />
               <p>
-                Everyone starts safely as a student. Advisor and admin roles are assigned by Club Services.
+                {requestedRole === "advisor"
+                  ? "Advisor accounts use your Nile email. Club Services assigns you to the right club after your account is active."
+                  : "Students sign up with their Nile email, then pick a club and attach payment details from the Discover Clubs page."}
               </p>
             </div>
 
@@ -234,6 +226,7 @@ export default function SignUp() {
           </div>
         </form>
       </section>
+      <SiteFooter />
     </main>
   );
 }

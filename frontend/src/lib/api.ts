@@ -42,7 +42,13 @@ export interface ClubRecord {
   name: string;
   description: string | null;
   code: string | null;
-  advisor_id: string | null;
+  dues_amount: number;
+  advisor_id?: string | null;
+  advisors?: Array<{
+    id: string;
+    full_name: string | null;
+    role: ProfileRecord["role"];
+  }> | null;
   created_at: string;
 }
 
@@ -53,10 +59,29 @@ export interface ProfileRecord {
   role: "executive" | "advisor" | "admin" | "president" | "student";
   club_id: string | null;
   student_id?: string | null;
+  phone_number?: string | null;
+  department?: string | null;
+  student_type?: "fresher" | "returning" | null;
+  join_reason?: string | null;
   requested_role?: "executive" | "advisor" | "admin" | "president" | "student" | null;
   onboarding_status?: string | null;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  page: number;
+  page_size: number;
+  total: number;
+  has_next: boolean;
+}
+
+export interface PaginationQuery {
+  page?: number;
+  page_size?: number;
+  sort?: string;
+  order?: "asc" | "desc";
 }
 
 export interface AdminUserProfileRecord extends ProfileRecord {
@@ -65,6 +90,18 @@ export interface AdminUserProfileRecord extends ProfileRecord {
     name: string;
     code: string | null;
   } | null;
+  advisor_assignments?: Array<{
+    id: string;
+    club_id: string;
+    assigned_by: string | null;
+    remarks: string | null;
+    created_at: string | null;
+    club: {
+      id: string;
+      name: string;
+      code: string | null;
+    } | null;
+  }>;
 }
 
 export interface ProfileRoleHistoryRecord {
@@ -90,14 +127,20 @@ export interface AdminAdvisorAssignmentResult extends AdminRoleChangeResult {
 
 export interface ProfileOnboardingPayload {
   full_name: string;
-  student_id: string;
+  student_id?: string | null;
   club_id: string;
-  requested_role?: "student";
+  requested_role?: "student" | "advisor";
 }
+
 
 export interface ProposalRecord {
   id: string;
   club_id?: string;
+  club?: {
+    id: string;
+    name: string;
+    code: string | null;
+  } | null;
   submitted_by?: string;
   title: string;
   description?: string | null;
@@ -203,6 +246,7 @@ export interface DashboardProposalSummary {
   id: string;
   title: string;
   club_id: string;
+  club_name?: string | null;
   event_date: string;
   event_time?: string | null;
   location?: string | null;
@@ -319,6 +363,7 @@ export interface AdminOperationsDashboardRecord {
     id: string;
     type: string;
     club_id: string;
+    club_name?: string | null;
     title: string;
     message: string;
     created_at: string;
@@ -425,6 +470,9 @@ export interface MembershipRequestRecord {
     name: string;
     code: string | null;
   } | null;
+  due_payment?: DuePaymentRecord | null;
+  student_type?: "fresher" | "returning" | null;
+  join_reason?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -505,6 +553,8 @@ export interface ClubPaymentSettingsRecord {
   account_number: string;
   account_name: string;
   payment_instructions: string | null;
+  fresher_dues_amount: number;
+  returning_student_dues_amount: number;
   created_at: string;
   updated_at: string;
 }
@@ -523,6 +573,8 @@ export interface PaymentSettingsPayload {
   account_number: string;
   account_name: string;
   payment_instructions?: string | null;
+  fresher_dues_amount: number;
+  returning_student_dues_amount: number;
 }
 
 export interface MembershipRequestDecisionResult {
@@ -727,6 +779,28 @@ interface ApiRequestOptions {
 const TOKEN_REFRESH_BUFFER_SECONDS = 60;
 export const SESSION_EXPIRED_EVENT = "nilehive:session-expired";
 
+function appendPaginationParams(params: URLSearchParams, pagination?: PaginationQuery) {
+  if (!pagination) {
+    return;
+  }
+
+  if (pagination.page) {
+    params.set("page", String(pagination.page));
+  }
+
+  if (pagination.page_size) {
+    params.set("page_size", String(pagination.page_size));
+  }
+
+  if (pagination.sort) {
+    params.set("sort", pagination.sort);
+  }
+
+  if (pagination.order) {
+    params.set("order", pagination.order);
+  }
+}
+
 export class ApiClientError extends Error {
   status: number;
   code?: string;
@@ -739,6 +813,69 @@ export class ApiClientError extends Error {
     this.code = options.code;
     this.details = options.details;
   }
+}
+
+interface ApiValidationFieldDetail {
+  field?: string;
+  message?: string;
+}
+
+function extractValidationFieldMessages(details: unknown) {
+  if (!details || typeof details !== "object") {
+    return [];
+  }
+
+  const validationDetails = details as {
+    fields?: ApiValidationFieldDetail[];
+    field?: string;
+    message?: string;
+  };
+
+  if (Array.isArray(validationDetails.fields)) {
+    return validationDetails.fields
+      .map((field) => field?.message?.trim())
+      .filter((message): message is string => Boolean(message));
+  }
+
+  if (typeof validationDetails.message === "string" && validationDetails.message.trim()) {
+    return [validationDetails.message.trim()];
+  }
+
+  return [];
+}
+
+export function getApiErrorFieldMessages(error: unknown) {
+  if (!(error instanceof ApiClientError)) {
+    return [];
+  }
+
+  return extractValidationFieldMessages(error.details);
+}
+
+export function getUserFacingErrorMessage(error: unknown, fallback = "Please try again.") {
+  if (error instanceof ApiClientError) {
+    const fieldMessages = getApiErrorFieldMessages(error);
+
+    if (fieldMessages.length > 0) {
+      return `Please fix these items: ${fieldMessages.join("; ")}`;
+    }
+
+    if (error.code === "NETWORK_ERROR" || error.status === 0) {
+      return "We couldn’t reach NileHive right now. Please check your network and try again shortly.";
+    }
+
+    return error.message || fallback;
+  }
+
+  if (error instanceof Error) {
+    if (error.message.toLowerCase().includes("failed to fetch")) {
+      return "We couldn’t reach NileHive right now. Please check your network and try again shortly.";
+    }
+
+    return error.message || fallback;
+  }
+
+  return fallback;
 }
 
 function dispatchSessionExpired() {
@@ -795,17 +932,54 @@ async function executeRequest<T>(path: string, options: ApiRequestOptions, acces
     headers["Content-Type"] = "application/json";
   }
 
-  const response = await fetch(`${getApiBaseUrl()}${path}`, {
-    method,
-    headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${getApiBaseUrl()}${path}`, {
+      method,
+      headers,
+      body: body !== undefined ? JSON.stringify(body) : undefined
+    });
+  } catch (error) {
+    throw new ApiClientError(
+      "We couldn't reach NileHive right now. Check your connection and try again shortly.",
+      {
+        status: 0,
+        code: "NETWORK_ERROR",
+        details: {
+          cause: error instanceof Error ? error.message : "Unknown network failure"
+        }
+      }
+    );
+  }
 
   const responseText = await response.text();
-  const responseJson = responseText ? JSON.parse(responseText) : null;
+  let responseJson: unknown = null;
+
+  if (responseText) {
+    try {
+      responseJson = JSON.parse(responseText);
+    } catch {
+      throw new ApiClientError(
+        response.ok
+          ? "NileHive returned an unreadable response. Please try again."
+          : "NileHive returned an unreadable error response. Please try again.",
+        {
+          status: response.status,
+          code: "INVALID_RESPONSE_BODY",
+          details: {
+            body_preview: responseText.slice(0, 200)
+          }
+        }
+      );
+    }
+  }
 
   if (!response.ok) {
-    const apiError = responseJson?.error;
+    const apiError =
+      responseJson && typeof responseJson === "object" && "error" in responseJson
+        ? (responseJson as { error?: { message?: string; code?: string; details?: unknown } }).error
+        : undefined;
 
     throw new ApiClientError(apiError?.message || "Request failed", {
       status: response.status,
@@ -915,6 +1089,7 @@ export async function completeProfileOnboarding(payload: ProfileOnboardingPayloa
   return response.data;
 }
 
+
 export async function getPendingAdvisorProposals(token?: string) {
   const response = await request<ApiEnvelope<ProposalRecord[]>>(
     "/api/v1/proposals/pending-advisor",
@@ -944,11 +1119,20 @@ export async function submitAdvisorDecision(
   return response.data;
 }
 
-export async function getPresidentProposals(token?: string) {
-  const response = await request<ApiEnvelope<ProposalRecord[]>>("/api/v1/proposals", {
-    method: "GET",
-    token
-  });
+export async function getPresidentProposals(
+  pagination: PaginationQuery = {},
+  token?: string
+) {
+  const params = new URLSearchParams();
+  appendPaginationParams(params, pagination);
+  const query = params.toString();
+  const response = await request<ApiEnvelope<PaginatedResponse<ProposalRecord>>>(
+    `/api/v1/proposals${query ? `?${query}` : ""}`,
+    {
+      method: "GET",
+      token
+    }
+  );
 
   return response.data;
 }
@@ -974,7 +1158,10 @@ export async function getAdvisorProposal(proposalId: string, token?: string) {
   return response.data;
 }
 
-export async function getAdminProposals(filters: { status?: string; current_stage?: string } = {}, token?: string) {
+export async function getAdminProposals(
+  filters: { status?: string; current_stage?: string; club_id?: string } & PaginationQuery = {},
+  token?: string
+) {
   const params = new URLSearchParams();
 
   if (filters.status) {
@@ -985,8 +1172,14 @@ export async function getAdminProposals(filters: { status?: string; current_stag
     params.set("current_stage", filters.current_stage);
   }
 
+  if (filters.club_id) {
+    params.set("club_id", filters.club_id);
+  }
+
+  appendPaginationParams(params, filters);
+
   const query = params.toString();
-  const response = await request<ApiEnvelope<ProposalRecord[]>>(
+  const response = await request<ApiEnvelope<PaginatedResponse<ProposalRecord>>>(
     `/api/v1/proposals/admin${query ? `?${query}` : ""}`,
     {
       method: "GET",
@@ -1010,7 +1203,7 @@ export async function getAdminProposal(proposalId: string, token?: string) {
 }
 
 export async function getAdminUsers(
-  filters: { role?: string; club_id?: string; requested_role?: string; q?: string } = {},
+  filters: { role?: string; club_id?: string; requested_role?: string; q?: string } & PaginationQuery = {},
   token?: string
 ) {
   const params = new URLSearchParams();
@@ -1031,8 +1224,10 @@ export async function getAdminUsers(
     params.set("q", filters.q);
   }
 
+  appendPaginationParams(params, filters);
+
   const query = params.toString();
-  const response = await request<ApiEnvelope<AdminUserProfileRecord[]>>(
+  const response = await request<ApiEnvelope<PaginatedResponse<AdminUserProfileRecord>>>(
     `/api/v1/admin/users${query ? `?${query}` : ""}`,
     {
       method: "GET",
@@ -1068,7 +1263,6 @@ export async function assignAdminUserAdvisor(
   profileId: string,
   payload: {
     club_id: string;
-    replace_existing?: boolean;
     remarks?: string | null;
   },
   token?: string
@@ -1102,17 +1296,37 @@ export async function submitAdminDecision(
   return response.data;
 }
 
-export async function getNotifications(token?: string) {
-  const response = await request<ApiEnvelope<NotificationRecord[]>>("/api/v1/notifications", {
-    method: "GET",
-    token
-  });
+export async function getNotifications(pagination: PaginationQuery = {}, token?: string) {
+  const params = new URLSearchParams();
+  appendPaginationParams(params, pagination);
+  const query = params.toString();
+  const response = await request<ApiEnvelope<PaginatedResponse<NotificationRecord>>>(
+    `/api/v1/notifications${query ? `?${query}` : ""}`,
+    {
+      method: "GET",
+      token
+    }
+  );
 
   return response.data;
 }
 
-export async function getApprovedEvents(token?: string) {
-  const response = await request<ApiEnvelope<ApprovedEventRecord[]>>("/api/v1/events/approved", {
+export async function getApprovedEvents(
+  filters: ({ lifecycle?: "upcoming" | "past" } & PaginationQuery) = {},
+  token?: string
+) {
+  const params = new URLSearchParams();
+
+  if (filters.lifecycle) {
+    params.set("lifecycle", filters.lifecycle);
+  }
+
+  appendPaginationParams(params, filters);
+
+  const query = params.toString();
+  const response = await request<ApiEnvelope<PaginatedResponse<ApprovedEventRecord>>>(
+    `/api/v1/events/approved${query ? `?${query}` : ""}`,
+    {
     method: "GET",
     token
   });
@@ -1153,7 +1367,7 @@ export async function getPresidentDashboard(token?: string) {
   return response.data;
 }
 
-export async function getTasks(filters: { status?: string; club_id?: string } = {}, token?: string) {
+export async function getTasks(filters: { status?: string; club_id?: string } & PaginationQuery = {}, token?: string) {
   const params = new URLSearchParams();
 
   if (filters.status) {
@@ -1164,8 +1378,10 @@ export async function getTasks(filters: { status?: string; club_id?: string } = 
     params.set("club_id", filters.club_id);
   }
 
+  appendPaginationParams(params, filters);
+
   const query = params.toString();
-  const response = await request<ApiEnvelope<TaskRecord[]>>(
+  const response = await request<ApiEnvelope<PaginatedResponse<TaskRecord>>>(
     `/api/v1/tasks${query ? `?${query}` : ""}`,
     {
       method: "GET",
@@ -1201,7 +1417,7 @@ export async function updateTaskStatus(
 }
 
 export async function getClubMembers(
-  filters: { team?: "executive"; membership_status?: string; club_id?: string } = {},
+  filters: { team?: "executive"; membership_status?: string; club_id?: string } & PaginationQuery = {},
   token?: string
 ) {
   const params = new URLSearchParams();
@@ -1218,8 +1434,10 @@ export async function getClubMembers(
     params.set("club_id", filters.club_id);
   }
 
+  appendPaginationParams(params, filters);
+
   const query = params.toString();
-  const response = await request<ApiEnvelope<ClubMemberRecord[]>>(
+  const response = await request<ApiEnvelope<PaginatedResponse<ClubMemberRecord>>>(
     `/api/v1/members${query ? `?${query}` : ""}`,
     {
       method: "GET",
@@ -1320,6 +1538,17 @@ export async function createMembershipRequest(
     club_id: string;
     requested_role?: ClubMemberRecord["club_role"];
     remarks?: string;
+    student_id?: string | null;
+    phone_number?: string | null;
+    department?: string | null;
+    student_type?: "fresher" | "returning" | null;
+    join_reason?: string | null;
+    payment_account_name: string;
+    payment_reference: string;
+    payment_paid_at?: string | null;
+    proof_url?: string | null;
+    payer_note?: string | null;
+    academic_session?: string | null;
   },
   token?: string
 ) {
@@ -1345,7 +1574,7 @@ export async function getMyMembershipRequests(token?: string) {
 }
 
 export async function getMembershipRequests(
-  filters: { status?: string; club_id?: string } = {},
+  filters: { status?: string; club_id?: string; requested_role?: string } & PaginationQuery = {},
   token?: string
 ) {
   const params = new URLSearchParams();
@@ -1358,8 +1587,14 @@ export async function getMembershipRequests(
     params.set("club_id", filters.club_id);
   }
 
+  if (filters.requested_role) {
+    params.set("requested_role", filters.requested_role);
+  }
+
+  appendPaginationParams(params, filters);
+
   const query = params.toString();
-  const response = await request<ApiEnvelope<MembershipRequestRecord[]>>(
+  const response = await request<ApiEnvelope<PaginatedResponse<MembershipRequestRecord>>>(
     `/api/v1/membership-requests${query ? `?${query}` : ""}`,
     {
       method: "GET",
@@ -1425,7 +1660,7 @@ export async function getMyLeadershipApplications(token?: string) {
 }
 
 export async function getLeadershipApplications(
-  filters: { status?: string; club_id?: string; requested_role?: string } = {},
+  filters: { status?: string; club_id?: string; requested_role?: string } & PaginationQuery = {},
   token?: string
 ) {
   const params = new URLSearchParams();
@@ -1442,8 +1677,10 @@ export async function getLeadershipApplications(
     params.set("requested_role", filters.requested_role);
   }
 
+  appendPaginationParams(params, filters);
+
   const query = params.toString();
-  const response = await request<ApiEnvelope<LeadershipApplicationRecord[]>>(
+  const response = await request<ApiEnvelope<PaginatedResponse<LeadershipApplicationRecord>>>(
     `/api/v1/leadership-applications${query ? `?${query}` : ""}`,
     {
       method: "GET",
@@ -1543,6 +1780,70 @@ export async function saveClubPaymentSettings(payload: PaymentSettingsPayload, t
   return response.data;
 }
 
+export async function applyClubDuesAmountToAll(dues_amount: number, token?: string) {
+  const response = await request<ApiEnvelope<{ dues_amount: number; clubs_updated: number }>>(
+    "/api/v1/dues/payment-settings/apply-all",
+    {
+      method: "POST",
+      token,
+      body: { dues_amount }
+    }
+  );
+
+  return response.data;
+}
+
+export async function applyClubPaymentSettingsToAll(
+  payload: Pick<PaymentSettingsPayload, "bank_name" | "account_number" | "account_name" | "payment_instructions">,
+  token?: string,
+) {
+  const response = await request<
+    ApiEnvelope<{
+      bank_name: string;
+      account_number: string;
+      account_name: string;
+      payment_instructions: string | null;
+      clubs_updated: number;
+    }>
+  >("/api/v1/dues/payment-settings/apply-account-all", {
+    method: "POST",
+    token,
+    body: payload
+  });
+
+  return response.data;
+}
+
+export async function applyClubPaymentProfileToAll(
+  payload: {
+    bank_name: string;
+    account_number: string;
+    account_name: string;
+    payment_instructions?: string | null;
+    fresher_dues_amount: number;
+    returning_student_dues_amount: number;
+  },
+  token?: string,
+) {
+  const response = await request<
+    ApiEnvelope<{
+      bank_name: string;
+      account_number: string;
+      account_name: string;
+      payment_instructions: string | null;
+      fresher_dues_amount: number;
+      returning_student_dues_amount: number;
+      clubs_updated: number;
+    }>
+  >("/api/v1/dues/payment-settings/apply-club-profile-all", {
+    method: "POST",
+    token,
+    body: payload
+  });
+
+  return response.data;
+}
+
 export async function createDuePayment(payload: CreateDuePaymentPayload, token?: string) {
   const response = await request<ApiEnvelope<DuePaymentRecord>>("/api/v1/dues", {
     method: "POST",
@@ -1581,7 +1882,10 @@ export async function submitDuePaymentConfirmation(
   return response.data;
 }
 
-export async function getEventReports(filters: { proposal_id?: string; club_id?: string } = {}, token?: string) {
+export async function getEventReports(
+  filters: { proposal_id?: string; club_id?: string } & PaginationQuery = {},
+  token?: string
+) {
   const params = new URLSearchParams();
 
   if (filters.proposal_id) {
@@ -1592,8 +1896,10 @@ export async function getEventReports(filters: { proposal_id?: string; club_id?:
     params.set("club_id", filters.club_id);
   }
 
+  appendPaginationParams(params, filters);
+
   const query = params.toString();
-  const response = await request<ApiEnvelope<EventReportRecord[]>>(
+  const response = await request<ApiEnvelope<PaginatedResponse<EventReportRecord>>>(
     `/api/v1/reports${query ? `?${query}` : ""}`,
     {
       method: "GET",
@@ -1615,7 +1921,7 @@ export async function createEventReport(payload: CreateEventReportPayload, token
 }
 
 export async function getAnnouncements(
-  filters: { audience?: string; club_id?: string; priority?: string; unread?: boolean } = {},
+  filters: { audience?: string; club_id?: string; priority?: string; unread?: boolean } & PaginationQuery = {},
   token?: string
 ) {
   const params = new URLSearchParams();
@@ -1636,8 +1942,10 @@ export async function getAnnouncements(
     params.set("unread", "true");
   }
 
+  appendPaginationParams(params, filters);
+
   const query = params.toString();
-  const response = await request<ApiEnvelope<AnnouncementRecord[]>>(
+  const response = await request<ApiEnvelope<PaginatedResponse<AnnouncementRecord>>>(
     `/api/v1/communications/announcements${query ? `?${query}` : ""}`,
     {
       method: "GET",

@@ -1,5 +1,7 @@
 import { CalendarDays, ClipboardList, CreditCard, FileText, Home, Plus, Clock, Bell, Users, MessageSquare, UserPlus, UserCog } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
+import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/contexts/RoleContext";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -8,7 +10,9 @@ import {
 
 export function AppSidebar() {
   const { role } = useRole();
+  const { profile } = useAuth();
   const { state } = useSidebar();
+  const { pathname } = useLocation();
   const collapsed = state === "collapsed";
   const roleLabels = {
     executive: "Executive",
@@ -21,9 +25,8 @@ export function AppSidebar() {
   const execItems = [
     { title: "Dashboard", url: "/", icon: Home },
     { title: "My Tasks", url: "/tasks", icon: ClipboardList },
-    { title: "Leadership", url: "/membership", icon: UserPlus },
     { title: "Announcements", url: "/communications", icon: MessageSquare },
-    { title: "Approved Events", url: "/events", icon: CalendarDays },
+    { title: "Events", url: "/events", icon: CalendarDays },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
 
@@ -31,7 +34,7 @@ export function AppSidebar() {
     { title: "Dashboard", url: "/", icon: Home },
     { title: "Pending Approvals", url: "/approvals", icon: Clock },
     { title: "Announcements", url: "/communications", icon: MessageSquare },
-    { title: "Approved Events", url: "/events", icon: CalendarDays },
+    { title: "Events", url: "/events", icon: CalendarDays },
     { title: "Reports Archive", url: "/archive", icon: FileText },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
@@ -45,7 +48,7 @@ export function AppSidebar() {
     { title: "Tasks", url: "/tasks", icon: ClipboardList },
     { title: "Dues", url: "/dues", icon: CreditCard },
     { title: "Announcements", url: "/communications", icon: MessageSquare },
-    { title: "Approved Events", url: "/events", icon: CalendarDays },
+    { title: "Events", url: "/events", icon: CalendarDays },
     { title: "Reports Archive", url: "/archive", icon: FileText },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
@@ -59,7 +62,7 @@ export function AppSidebar() {
     { title: "Members", url: "/members", icon: Users },
     { title: "Dues", url: "/dues", icon: CreditCard },
     { title: "Announcements", url: "/communications", icon: MessageSquare },
-    { title: "Approved Events", url: "/events", icon: CalendarDays },
+    { title: "Events", url: "/events", icon: CalendarDays },
     { title: "Reports Archive", url: "/archive", icon: FileText },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
@@ -67,7 +70,7 @@ export function AppSidebar() {
   const studentItems = [
     { title: "Home", url: "/", icon: Home },
     { title: "Discover Clubs", url: "/membership", icon: UserPlus },
-    { title: "Approved Events", url: "/events", icon: CalendarDays },
+    { title: "Events", url: "/events", icon: CalendarDays },
     { title: "Announcements", url: "/communications", icon: MessageSquare },
     { title: "Notifications", url: "/notifications", icon: Bell },
   ];
@@ -81,26 +84,54 @@ export function AppSidebar() {
   };
 
   const items = role ? itemsMap[role] : [];
+  const displayName = profile?.full_name?.trim() || "Club Services User";
+  const identityLabel = role ? roleLabels[role] : "Loading View";
+  const initials = displayName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "CU";
+
+  function getActiveOverride(url: string) {
+    if (role !== "president") {
+      return undefined;
+    }
+
+    if (url === "/proposals/new") {
+      return pathname === "/proposals/new";
+    }
+
+    if (url === "/proposals") {
+      return pathname.startsWith("/proposals") && pathname !== "/proposals/new";
+    }
+
+    return undefined;
+  }
 
   return (
     <Sidebar collapsible="icon" className="border-r-2 border-foreground">
-      <SidebarHeader className="border-b-2 border-sidebar-border p-4">
+      <SidebarHeader className={collapsed ? "border-b-2 border-sidebar-border px-1 py-3" : "border-b-2 border-sidebar-border p-4"}>
         {!collapsed && (
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center border-2 border-sidebar-primary bg-sidebar-accent shadow-[3px_3px_0_hsl(var(--sidebar-primary))]">
-              <span className="text-sm font-black text-sidebar-accent-foreground">CS</span>
-            </div>
-            <div>
-              <h2 className="text-sm font-black uppercase tracking-[0.16em] text-sidebar-primary">Club Services</h2>
-              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-sidebar-foreground/70">
-                {role ? roleLabels[role] : "Loading"} View
-              </p>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center border-2 border-sidebar-primary bg-sidebar-accent text-sidebar-accent-foreground shadow-[3px_3px_0_hsl(var(--sidebar-primary))]">
+                <span className="text-sm font-black uppercase tracking-[0.08em]">{initials}</span>
+              </div>
+              <div className="min-w-0">
+                <h2 className="truncate text-sm font-black uppercase tracking-[0.12em] text-sidebar-primary">
+                  {displayName}
+                </h2>
+                <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-sidebar-foreground/70">
+                  {identityLabel}
+                </p>
+              </div>
             </div>
           </div>
         )}
         {collapsed && (
-          <div className="mx-auto flex h-10 w-10 items-center justify-center border-2 border-sidebar-primary bg-sidebar-accent">
-            <span className="text-xs font-black text-sidebar-accent-foreground">CS</span>
+          <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-md border-2 border-sidebar-primary bg-sidebar-accent text-sidebar-accent-foreground shadow-none">
+            <span className="text-xs font-black uppercase tracking-[0.06em]">{initials}</span>
           </div>
         )}
       </SidebarHeader>
@@ -118,11 +149,12 @@ export function AppSidebar() {
                     <NavLink
                       to={item.url}
                       end={item.url === "/"}
-                      className="border-2 border-transparent font-bold uppercase tracking-[0.08em] transition-all duration-200 hover:border-sidebar-primary hover:bg-sidebar-accent/50"
-                      activeClassName="translate-x-1 border-warning bg-sidebar-accent text-sidebar-accent-foreground shadow-[4px_4px_0_hsl(var(--sidebar-primary))]"
+                      activeOverride={getActiveOverride(item.url)}
+                      className="flex min-w-0 items-center border-2 border-transparent font-bold uppercase tracking-[0.08em] transition-all duration-200 hover:border-sidebar-primary hover:bg-sidebar-accent/50"
+                      activeClassName="translate-x-1 border-sidebar-primary bg-sidebar-accent text-sidebar-accent-foreground shadow-[4px_4px_0_hsl(var(--sidebar-primary))]"
                     >
                       <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
+                      {!collapsed && <span className="min-w-0 flex-1 truncate">{item.title}</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

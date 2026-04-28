@@ -58,6 +58,10 @@ function formatCurrency(value?: number | null) {
   }).format(value || 0);
 }
 
+function getProposalClubLabel(proposal: ProposalRecord) {
+  return proposal.club?.name || "Unknown club";
+}
+
 function buildApprovalSteps(proposal: ProposalRecord) {
   const advisorDecision = proposal.approval_history?.find((approval) => approval.reviewer_role === "advisor");
   const adminDecision = proposal.approval_history?.find((approval) => approval.reviewer_role === "admin");
@@ -104,9 +108,9 @@ function buildApprovalSteps(proposal: ProposalRecord) {
       timestamp: getDateTimeLabel(adminDecision?.decided_at ?? proposal.admin_decided_at)
     },
     {
-      label: "Approved Event",
+      label: "Event",
       status: proposal.status === "approved" ? "completed" as const : "pending" as const,
-      remarks: proposal.status === "approved" ? "Ready to appear in approved events." : undefined
+      remarks: proposal.status === "approved" ? "Ready to appear in events." : undefined
     }
   ];
 }
@@ -147,7 +151,7 @@ export default function ProposalDetail() {
         <NeoStateCard
           icon={FileText}
           title="Proposal access is restricted"
-          message="Executives use tasks and approved events. Proposal creation and review belong to presidents, advisors, and Club Services."
+          message="This area is for club presidents, advisors, and Club Services reviewers. Executives can keep up with club work through tasks and events."
         />
       </div>
     );
@@ -227,19 +231,19 @@ export default function ProposalDetail() {
       ) : (
         <>
           <NeoPageHeader
-            eyebrow={role === "admin" ? "Club Services Final Review" : role === "advisor" ? "Advisor Review" : "Club Proposal"}
+            eyebrow={role === "admin" ? "Club Services Review" : role === "advisor" ? "Advisor Review" : "Club Proposal"}
             title={proposal.title}
             description={`${
               role === "admin" || role === "advisor"
-                ? `Submitted by the club president for club ${proposal.club_id ?? "-"}`
-                : "President-owned club proposal"
-            } - ${getDateLabel(proposal.created_at)}`}
+                ? `Submitted by the club president for ${getProposalClubLabel(proposal)}`
+                : "Created for your club"
+            }. Added ${getDateLabel(proposal.created_at)}.`}
             actions={<StatusBadge status={proposal.status} />}
           />
 
           <Card className="nh-card-dark text-white">
             <CardHeader>
-              <CardTitle className="nh-panel-title text-white">Workflow Status</CardTitle>
+              <CardTitle className="nh-panel-title text-white">Where this proposal stands</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
               <div>
@@ -247,7 +251,7 @@ export default function ProposalDetail() {
                 <p className="mt-1 font-semibold">{getProposalStatusMeta(proposal.status).label}</p>
               </div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-white/50">Currently With</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-white/50">Waiting On</p>
                 <p className="mt-1 font-semibold">{getProposalOwnerLabel(proposal.current_owner_role)}</p>
               </div>
               <div>
@@ -259,7 +263,7 @@ export default function ProposalDetail() {
                 <p className="mt-1 font-semibold">{getDateLabel(proposal.updated_at)}</p>
               </div>
               <div className="border-2 border-primary-foreground/30 bg-white/10 p-4 sm:col-span-2 lg:col-span-4">
-                <p className="text-xs font-bold uppercase tracking-wide text-[#F5B942]">Next Action</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-[#D4A437]">Next Action</p>
                 <p className="mt-1 text-white/90">{getProposalNextAction(proposal.status)}</p>
               </div>
             </CardContent>
@@ -328,11 +332,11 @@ export default function ProposalDetail() {
                       <p className="font-medium mt-1">{formatCurrency(proposal.budget_estimate)}</p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Current Stage</span>
+                      <span className="text-muted-foreground">Review Step</span>
                       <p className="font-medium mt-1">{getProposalStatusMeta(proposal.status).label}</p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Currently With</span>
+                      <span className="text-muted-foreground">Waiting On</span>
                       <p className="font-medium mt-1">{getProposalOwnerLabel(proposal.current_owner_role)}</p>
                     </div>
                     <div>
@@ -362,12 +366,12 @@ export default function ProposalDetail() {
               {(proposal.aim_objectives || proposal.proposed_activity) && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Proposal Form 2.0 Context</CardTitle>
+                    <CardTitle className="text-base">Proposal Background</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm">
                     {proposal.proposed_activity && (
                       <div>
-                        <span className="text-muted-foreground">Proposed Activity</span>
+                        <span className="text-muted-foreground">Event Name</span>
                         <p className="mt-1">{proposal.proposed_activity}</p>
                       </div>
                     )}
@@ -423,18 +427,18 @@ export default function ProposalDetail() {
               {role === "admin" && proposal.status === "pending_admin_review" && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Final Admin Verification</CardTitle>
+                    <CardTitle className="text-base">Club Services Decision</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <Textarea
-                      placeholder="Add admin verification remarks..."
+                      placeholder="Add notes for the club president or advisor..."
                       rows={3}
                       value={adminRemarks}
                       onChange={(event) => setAdminRemarks(event.target.value)}
                     />
                     <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
                       <Button variant="secondary" disabled={adminDecision !== null} onClick={() => handleAdminDecision("approve")}>
-                        {adminDecision === "approve" ? "Approving..." : "Approve Final"}
+                        {adminDecision === "approve" ? "Approving..." : "Approve Proposal"}
                       </Button>
                       <Button variant="destructive" disabled={adminDecision !== null} onClick={() => handleAdminDecision("reject")}>
                         {adminDecision === "reject" ? "Rejecting..." : "Reject"}
@@ -470,7 +474,7 @@ export default function ProposalDetail() {
                     )}
                     {proposal.latest_approval && (
                       <div className="border-2 border-foreground p-3">
-                        <span className="font-medium">Latest decision</span>
+                        <span className="font-medium">Most recent decision</span>
                         <p className="mt-1">
                           {proposal.latest_approval.reviewer_role} {proposal.latest_approval.decision} on{" "}
                           {getDateLabel(proposal.latest_approval.decided_at)}
@@ -488,7 +492,7 @@ export default function ProposalDetail() {
             <div>
               <Card className="sticky top-4">
                 <CardHeader>
-                  <CardTitle className="nh-panel-title">Approval Timeline</CardTitle>
+                  <CardTitle className="nh-panel-title">Review Timeline</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ApprovalStepper steps={buildApprovalSteps(proposal)} />
@@ -501,3 +505,4 @@ export default function ProposalDetail() {
     </div>
   );
 }
+

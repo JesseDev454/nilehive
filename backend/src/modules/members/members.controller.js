@@ -1,4 +1,5 @@
 const asyncHandler = require("../../shared/asyncHandler");
+const { parsePaginationQuery } = require("../../shared/pagination");
 const {
   createMember,
   listMembers,
@@ -17,6 +18,11 @@ function createMembersController(options = {}) {
           team: req.query.team,
           membership_status: req.query.membership_status
         },
+        pagination: parsePaginationQuery(req.query, {
+          defaultSort: "full_name",
+          defaultOrder: "asc",
+          allowedSorts: ["full_name", "created_at", "updated_at"]
+        }),
         database
       });
 

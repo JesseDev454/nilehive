@@ -8,7 +8,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   pending: { label: "Pending", className: "border-warning bg-warning text-warning-foreground" },
   pending_advisor_review: { label: "Awaiting Advisor Review", className: "border-warning bg-warning text-warning-foreground" },
   pending_admin_review: { label: "Awaiting Club Services Final Review", className: "border-primary bg-primary text-primary-foreground" },
-  approved: { label: "Approved Event", className: "border-success bg-success text-success-foreground" },
+  approved: { label: "Event", className: "border-success bg-success text-success-foreground" },
   advisor_approved: { label: "Advisor Approved", className: "border-success bg-success text-success-foreground" },
   active: { label: "Active", className: "border-success bg-success text-success-foreground" },
   paid: { label: "Paid", className: "border-success bg-success text-success-foreground" },

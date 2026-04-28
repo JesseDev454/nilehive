@@ -2,9 +2,12 @@ import { FormEvent, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, Mail, ShieldCheck } from "lucide-react";
+import { BrandLogo } from "@/components/BrandLogo";
+import { SiteFooter } from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { getUserFacingErrorMessage } from "@/lib/api";
 import { getAllowedEmailDomainLabel, getMicrosoftPasswordHelpUrl, isAllowedEmailDomain, isPasswordAuthEnabled } from "@/lib/env";
 import { supabase } from "@/lib/supabase";
 
@@ -43,7 +46,7 @@ export default function ForgotPassword() {
       });
     } catch (error) {
       toast.error("Could not send reset email", {
-        description: error instanceof Error ? error.message : "Please try again."
+        description: getUserFacingErrorMessage(error, "Please try again.")
       });
     } finally {
       setIsSubmitting(false);
@@ -51,14 +54,19 @@ export default function ForgotPassword() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background p-5 text-foreground">
-      <section className="w-full max-w-xl">
+    <main className="flex min-h-screen flex-col bg-background text-foreground">
+      <section className="flex flex-1 items-center justify-center p-5">
+        <div className="w-full max-w-xl">
         <Link className="mb-5 inline-flex items-center gap-2 text-sm font-black uppercase tracking-[0.12em]" to="/login">
           <ArrowLeft className="h-4 w-4" />
           Back to sign in
         </Link>
 
         <div className="nh-card bg-card p-6 md:p-10">
+          <BrandLogo
+            size="lg"
+            className="mb-6 h-20 w-[19rem] max-w-full sm:h-24 sm:w-[21rem]"
+          />
           <div className="mb-8 border-b-2 border-foreground pb-6">
             <p className="nh-eyebrow">Account Recovery</p>
             <h1 className="mt-2 text-4xl font-black uppercase">Reset Password</h1>
@@ -125,7 +133,9 @@ export default function ForgotPassword() {
             </p>
           </div>
         </div>
+        </div>
       </section>
+      <SiteFooter />
     </main>
   );
 }

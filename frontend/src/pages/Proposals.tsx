@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { FileText, Plus } from "lucide-react";
+import { DataPagination } from "@/components/DataPagination";
 import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,9 +13,9 @@ import { ApiClientError, getAdminProposals, getPresidentProposals, type Proposal
 import {
   getProposalOwnerLabel,
   getProposalPrimaryActionLabel,
-  getProposalStatusMeta,
   isProposalEditable
 } from "@/lib/proposalWorkflow";
+import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -28,42 +29,56 @@ function getDateLabel(value?: string) {
   return value ? value.slice(0, 10) : "-";
 }
 
+function getProposalClubLabel(proposal: ProposalRecord) {
+  return proposal.club?.name || "Unknown club";
+}
+
 export default function Proposals() {
   const { role } = useRole();
   const [statusFilter, setStatusFilter] = useState("all");
+  const [page, setPage] = useState(1);
   const isAdmin = role === "admin";
   const isPresident = role === "president";
   const canFetch = isAdmin || isPresident;
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, role]);
 
-  const { data: proposals = [], isLoading, isError, error } = useQuery({
-    queryKey: ["proposals", role, statusFilter],
+  const { data: proposalsPage = emptyPaginatedResponse<ProposalRecord>(), isLoading, isError, error } = useQuery({
+    queryKey: ["proposals", role, statusFilter, page],
     queryFn: async () => {
       if (isAdmin) {
         return getAdminProposals({
-          status: statusFilter === "all" ? undefined : statusFilter
+          status: statusFilter === "all" ? undefined : statusFilter,
+          page,
+          page_size: DEFAULT_PAGE_SIZE
         });
       }
 
-      return getPresidentProposals();
+      return getPresidentProposals({
+        page,
+        page_size: DEFAULT_PAGE_SIZE
+      });
     },
     enabled: canFetch,
     retry: false
   });
+  const proposals = proposalsPage.items;
 
   const pageCopy = useMemo(() => {
     if (isAdmin) {
       return {
         eyebrow: "Club Services Review",
         title: "Final Review",
-        description: "Review proposal movement across clubs without changing president-owned proposal access."
+        description: "See what each club has submitted and step in when Club Services review is needed."
       };
     }
 
     if (isPresident) {
       return {
-        eyebrow: "Club Leadership",
+        eyebrow: "Club Planning",
         title: "Club Proposals",
-        description: "Create, continue, resubmit, and track proposals submitted by the club president."
+        description: "Start a new proposal, continue a draft, and keep track of feedback for your club."
       };
     }
 
@@ -115,14 +130,14 @@ export default function Proposals() {
         <NeoStateCard
           icon={FileText}
           title="Proposal access is restricted"
-          message="Executives use tasks and approved events. Proposal creation and review belong to presidents, advisors, and Club Services."
+          message="Presidents create proposals here, while advisors and Club Services review them. Executives can follow club work through tasks and events."
         />
       ) : isLoading ? (
-        <NeoLoadingState title="Loading proposal records" message="We are getting the latest proposal records." />
+        <NeoLoadingState title="Loading proposals" message="We are getting the latest proposal updates." />
       ) : isError ? (
         <NeoStateCard icon={FileText} title="Unable to load proposals" message={getErrorMessage(error)} tone="danger" />
       ) : proposals.length === 0 ? (
-        <NeoStateCard icon={FileText} title="No proposals found" message="Proposal records will appear here once the club president starts a proposal." />
+        <NeoStateCard icon={FileText} title="No proposals yet" message="Your club's proposals will appear here once one has been started." />
       ) : (
         <Card>
           <CardContent className="p-0">
@@ -132,7 +147,7 @@ export default function Proposals() {
                   <tr className="border-b-2 border-foreground bg-primary text-primary-foreground">
                     <th className="p-4 text-left text-xs font-black uppercase tracking-[0.14em]">Title</th>
                     <th className="hidden p-4 text-left text-xs font-black uppercase tracking-[0.14em] md:table-cell">
-                      {isAdmin ? "Club ID" : "Currently With"}
+                      {isAdmin ? "Club" : "Waiting On"}
                     </th>
                     <th className="hidden p-4 text-left text-xs font-black uppercase tracking-[0.14em] sm:table-cell">Date</th>
                     <th className="p-4 text-left text-xs font-black uppercase tracking-[0.14em]">Status</th>
@@ -148,7 +163,7 @@ export default function Proposals() {
                         </Link>
                       </td>
                       <td className="hidden p-4 text-muted-foreground md:table-cell">
-                        {isAdmin ? proposal.club_id ?? "-" : getProposalOwnerLabel(proposal.current_owner_role)}
+                        {isAdmin ? getProposalClubLabel(proposal) : getProposalOwnerLabel(proposal.current_owner_role)}
                       </td>
                       <td className="hidden p-4 text-muted-foreground sm:table-cell">
                         {getDateLabel(proposal.event_date)}
@@ -168,9 +183,6 @@ export default function Proposals() {
                             {isPresident ? getProposalPrimaryActionLabel(proposal.status) : "View"}
                           </Link>
                         </Button>
-                        <p className="mt-1 text-xs text-muted-foreground hidden lg:block">
-                          {getProposalStatusMeta(proposal.status).label}
-                        </p>
                       </td>
                     </tr>
                   ))}
@@ -192,7 +204,7 @@ export default function Proposals() {
                     <StatusBadge status={proposal.status} />
                   </div>
                   <p className="mt-3 text-sm text-muted-foreground">
-                    {isAdmin ? `Club ${proposal.club_id ?? "-"}` : getProposalOwnerLabel(proposal.current_owner_role)}
+                    {isAdmin ? getProposalClubLabel(proposal) : getProposalOwnerLabel(proposal.current_owner_role)}
                   </p>
                   <Button asChild variant="outline" size="sm" className="mt-4 w-full">
                     <Link
@@ -208,6 +220,13 @@ export default function Proposals() {
                 </div>
               ))}
             </div>
+            <DataPagination
+              page={proposalsPage.page}
+              pageSize={proposalsPage.page_size}
+              total={proposalsPage.total}
+              hasNext={proposalsPage.has_next}
+              onPageChange={setPage}
+            />
           </CardContent>
         </Card>
       )}

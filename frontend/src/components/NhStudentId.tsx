@@ -56,16 +56,16 @@ export function NhStudentId({ value, onChange, id, required, disabled, className
   return (
     <div className={cn("w-full", className)}>
       <div className="relative">
-        <IdCard className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#75777f]" />
+        <IdCard className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
         <input
           ref={inputRef}
           autoComplete="off"
           className={cn(
-            "w-full border-2 border-foreground bg-card py-6 pl-12 pr-12 text-sm font-semibold tracking-wider text-[#181c1e] shadow-[3px_3px_0_hsl(var(--foreground))]",
-            "placeholder:font-normal placeholder:tracking-normal placeholder:text-[#c4c6cf]",
-            "transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0d5bbc]/30",
-            showSuccess && "bg-white ring-2 ring-[#299e5c]/30",
-            showError && "bg-[#fff8f7] ring-2 ring-[#ba1a1a]/30",
+            "w-full border-2 border-foreground bg-card py-6 pl-12 pr-12 text-sm font-semibold tracking-wider text-foreground shadow-[3px_3px_0_hsl(var(--foreground))]",
+            "placeholder:font-normal placeholder:tracking-normal placeholder:text-muted-foreground/55",
+            "transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+            showSuccess && "bg-white ring-2 ring-success/30",
+            showError && "bg-destructive/5 ring-2 ring-destructive/30",
             disabled && "cursor-not-allowed opacity-70"
           )}
           disabled={disabled}
@@ -82,16 +82,16 @@ export function NhStudentId({ value, onChange, id, required, disabled, className
           value={displayValue}
         />
         {showSuccess && (
-          <BadgeCheck className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#299e5c]" />
+          <BadgeCheck className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-success" />
         )}
         {showError && (
-          <AlertCircle className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#ba1a1a]" />
+          <AlertCircle className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-destructive" />
         )}
       </div>
       <p
         className={cn(
           "mt-1 px-1 text-[11px] font-medium",
-          showSuccess ? "text-[#299e5c]" : showError ? "text-[#ba1a1a]" : "text-[#75777f]"
+          showSuccess ? "text-success" : showError ? "text-destructive" : "text-muted-foreground"
         )}
       >
         {showSuccess

@@ -21,6 +21,7 @@ function createFakeDatabase() {
       student_id: "020232255",
       requested_role: "student",
       onboarding_status: "complete",
+      account_status: "active",
       created_at: "2026-04-15T10:00:00.000Z",
       updated_at: "2026-04-15T10:00:00.000Z"
     }
@@ -140,6 +141,42 @@ test("new user can complete student profile onboarding", async (t) => {
   assert.equal(payload.data.role, "student");
   assert.equal(payload.data.requested_role, "student");
   assert.equal(payload.data.club_id, "club-1");
+  assert.equal(payload.data.account_status, "active");
+});
+
+test("advisor can complete profile onboarding without a student ID", async (t) => {
+  const database = createFakeDatabase();
+  database.getUserByAccessToken = async (accessToken) => {
+    if (accessToken === "advisor-token") {
+      return {
+        id: "advisor-1",
+        email: "advisor@nileuniversity.edu.ng",
+        user_metadata: {}
+      };
+    }
+
+    return null;
+  };
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const { response, payload } = await requestJson(
+    server.baseUrl,
+    "/api/v1/profile/onboarding",
+    "advisor-token",
+    {
+      full_name: "Daniel Advisor",
+      student_id: null,
+      club_id: "club-1",
+      requested_role: "advisor"
+    }
+  );
+
+  assert.equal(response.status, 201);
+  assert.equal(payload.data.role, "advisor");
+  assert.equal(payload.data.requested_role, "advisor");
+  assert.equal(payload.data.student_id, null);
+  assert.equal(payload.data.club_id, "club-1");
 });
 
 test("profile onboarding rejects leadership self-service roles", async (t) => {
@@ -221,4 +258,37 @@ test("profile onboarding is blocked when profile already exists", async (t) => {
 
   assert.equal(response.status, 409);
   assert.equal(payload.error.code, "PROFILE_ALREADY_EXISTS");
+});
+
+test("suspended profiles are blocked before entering the app shell", async (t) => {
+  const database = createFakeDatabase();
+  database.getProfileById = async (profileId) => {
+    if (profileId === "student-1") {
+      return {
+        id: "student-1",
+        full_name: "Ada Student",
+        role: "student",
+        club_id: "club-1",
+        student_id: "020232255",
+        requested_role: "student",
+        onboarding_status: "complete",
+        account_status: "suspended",
+        created_at: "2026-04-15T10:00:00.000Z",
+        updated_at: "2026-04-15T10:00:00.000Z"
+      };
+    }
+
+    return null;
+  };
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const { response, payload } = await requestJson(
+    server.baseUrl,
+    "/api/v1/profile/me",
+    "student-token"
+  );
+
+  assert.equal(response.status, 403);
+  assert.equal(payload.error.code, "ACCOUNT_SUSPENDED");
 });

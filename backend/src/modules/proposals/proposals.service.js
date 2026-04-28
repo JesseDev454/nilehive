@@ -1,5 +1,12 @@
 const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
+const { writeAuditLog } = require("../../shared/auditLog");
+const { ensurePaginatedResult, mapPaginatedResult, paginateArray } = require("../../shared/pagination");
+const {
+  areAsyncJobsEnabled,
+  enqueueEventReminderGeneration,
+  enqueueMissingReportPrompt
+} = require("../../jobs/queue");
 const {
   validateAdvisorDecisionPayload,
   validateCreateProposalPayload,
@@ -117,6 +124,16 @@ function buildApprovedEventReminderMessage(proposal) {
   return `Approved event "${proposal.proposed_activity || proposal.title}" is scheduled for ${proposal.event_date}.`;
 }
 
+function assertProposalIsNotSelfReviewed(actor, proposal) {
+  if (proposal.submitted_by && proposal.submitted_by === actor.id) {
+    throw new ApiError(
+      403,
+      "You cannot approve or reject a proposal that you submitted yourself",
+      "SELF_REVIEW_FORBIDDEN"
+    );
+  }
+}
+
 function getApprovedEventReminderAt(proposal) {
   return `${proposal.event_date}T09:00:00.000Z`;
 }
@@ -172,6 +189,18 @@ function formatApproval(approval) {
   };
 }
 
+function formatClubReference(club) {
+  if (!club) {
+    return null;
+  }
+
+  return {
+    id: club.id,
+    name: club.name,
+    code: club.code ?? null
+  };
+}
+
 function withApprovalHistory(formattedProposal, approvalHistory) {
   if (!Array.isArray(approvalHistory)) {
     return formattedProposal;
@@ -187,6 +216,7 @@ function formatExecutiveProposal(proposal, latestApproval = null, approvalHistor
   return withApprovalHistory({
     id: proposal.id,
     club_id: proposal.club_id,
+    club: formatClubReference(proposal.club),
     title: proposal.title,
     description: proposal.description,
     event_date: proposal.event_date,
@@ -222,6 +252,7 @@ function formatAdminProposal(proposal, latestApproval = null, approvalHistory = 
     title: proposal.title,
     description: proposal.description,
     club_id: proposal.club_id,
+    club: formatClubReference(proposal.club),
     submitted_by: proposal.submitted_by,
     event_date: proposal.event_date,
     location: proposal.location,
@@ -341,7 +372,7 @@ async function getPendingAdvisorProposals(options) {
 }
 
 async function listPresidentProposals(options) {
-  const { actor, database = db } = options;
+  const { actor, pagination, database = db } = options;
 
   if (!actor) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
@@ -351,10 +382,30 @@ async function listPresidentProposals(options) {
     throw new ApiError(403, "Only presidents can view their proposals", "FORBIDDEN");
   }
 
-  const proposals = await database.listExecutiveProposals(actor.id);
-  const latestApprovalsByProposalId = await database.getLatestApprovalsByProposalIds(
-    proposals.map((proposal) => proposal.id)
+  if (!actor.clubId) {
+    return pagination ? paginateArray([], pagination) : [];
+  }
+
+  const allClubProposals = typeof database.listProposalsByClubId === "function"
+    ? await database.listProposalsByClubId(actor.clubId)
+    : await database.listExecutiveProposals(actor.id, {
+        sort: pagination?.sort,
+        order: pagination?.order
+      });
+  const proposals = ensurePaginatedResult(
+    pagination ? paginateArray(allClubProposals, pagination) : allClubProposals,
+    pagination
   );
+  const proposalItems = pagination ? proposals.items : proposals;
+  const latestApprovalsByProposalId = await database.getLatestApprovalsByProposalIds(
+    proposalItems.map((proposal) => proposal.id)
+  );
+
+  if (pagination) {
+    return mapPaginatedResult(proposals, (proposal) =>
+      formatExecutiveProposal(proposal, latestApprovalsByProposalId[proposal.id] ?? null)
+    );
+  }
 
   return proposals.map((proposal) =>
     formatExecutiveProposal(proposal, latestApprovalsByProposalId[proposal.id] ?? null)
@@ -374,7 +425,7 @@ async function getPresidentProposalDetail(options) {
 
   const proposal = await database.getProposalById(proposalId);
 
-  if (!proposal || proposal.submitted_by !== actor.id) {
+  if (!proposal || !actor.clubId || proposal.club_id !== actor.clubId) {
     throw new ApiError(404, "Proposal not found", "PROPOSAL_NOT_FOUND");
   }
 
@@ -527,7 +578,7 @@ async function getAdvisorProposalDetail(options) {
 }
 
 async function listAdminProposals(options) {
-  const { actor, filters = {}, database = db } = options;
+  const { actor, filters = {}, pagination, database = db } = options;
 
   if (!actor) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
@@ -537,20 +588,41 @@ async function listAdminProposals(options) {
     throw new ApiError(403, "Only admins can view dashboard proposals", "FORBIDDEN");
   }
 
-  const proposals = await database.listAdminProposals({
-    status: filters.status
-  });
-
   const stageStatuses = filters.current_stage ? getStatusesForStage(filters.current_stage) : null;
-  const filteredProposals = stageStatuses
-    ? proposals.filter((proposal) => stageStatuses.includes(proposal.status))
-    : proposals;
+  const dbFilters = {
+    ...(filters.status ? { status: filters.status } : {}),
+    ...(stageStatuses?.length ? { statuses: stageStatuses } : {}),
+    ...(filters.club_id ? { clubId: filters.club_id } : {}),
+    ...(pagination
+      ? {
+          pagination,
+          sort: pagination.sort,
+          order: pagination.order
+        }
+      : {})
+  };
 
+  const rawProposals = await database.listAdminProposals(dbFilters);
+  const proposals = Array.isArray(rawProposals) && stageStatuses?.length
+    ? (pagination
+        ? paginateArray(
+            rawProposals.filter((proposal) => stageStatuses.includes(proposal.status)),
+            pagination
+          )
+        : rawProposals.filter((proposal) => stageStatuses.includes(proposal.status)))
+    : ensurePaginatedResult(rawProposals, pagination);
+  const proposalItems = pagination ? proposals.items : proposals;
   const latestApprovalsByProposalId = await database.getLatestApprovalsByProposalIds(
-    filteredProposals.map((proposal) => proposal.id)
+    proposalItems.map((proposal) => proposal.id)
   );
 
-  return filteredProposals.map((proposal) =>
+  if (pagination) {
+    return mapPaginatedResult(proposals, (proposal) =>
+      formatAdminProposal(proposal, latestApprovalsByProposalId[proposal.id] ?? null)
+    );
+  }
+
+  return proposals.map((proposal) =>
     formatAdminProposal(proposal, latestApprovalsByProposalId[proposal.id] ?? null)
   );
 }
@@ -605,6 +677,8 @@ async function submitAdvisorDecision(options) {
   if (!clubIds.includes(proposal.club_id)) {
     throw new ApiError(403, "You do not have access to this proposal", "FORBIDDEN");
   }
+
+  assertProposalIsNotSelfReviewed(actor, proposal);
 
   const decidedAt = new Date().toISOString();
   const nextStatus = getNextProposalStatus(proposal.status, validatedPayload.decision);
@@ -664,12 +738,26 @@ async function submitAdvisorDecision(options) {
   }
 
   await createNotificationBatch(database, notifications);
+  await writeAuditLog(database, {
+    actor_id: actor.id,
+    entity_type: "proposal",
+    action: "proposal_reviewed",
+    club_id: updatedProposal.club_id,
+    proposal_id: updatedProposal.id,
+    remarks: validatedPayload.remarks,
+    metadata: {
+      stage: "advisor",
+      decision: validatedPayload.decision,
+      previous_status: proposal.status,
+      new_status: updatedProposal.status
+    }
+  });
 
   return updatedProposal;
 }
 
 async function submitAdminDecision(options) {
-  const { actor, proposalId, payload, database = db } = options;
+  const { actor, proposalId, payload, database = db, queueService } = options;
 
   if (!actor) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
@@ -685,6 +773,8 @@ async function submitAdminDecision(options) {
   if (!proposal) {
     throw new ApiError(404, "Proposal not found", "PROPOSAL_NOT_FOUND");
   }
+
+  assertProposalIsNotSelfReviewed(actor, proposal);
 
   const decidedAt = new Date().toISOString();
   const nextStatus = getNextAdminProposalStatus(proposal.status, validatedPayload.decision);
@@ -729,9 +819,42 @@ async function submitAdminDecision(options) {
     }))
   );
 
+  const asyncJobService = queueService ?? {
+    areAsyncJobsEnabled,
+    enqueueEventReminderGeneration,
+    enqueueMissingReportPrompt
+  };
+
   if (validatedPayload.decision === "approve") {
-    await createApprovedEventReminders(database, updatedProposal, recipientIds);
+    if (asyncJobService.areAsyncJobsEnabled()) {
+      await asyncJobService.enqueueEventReminderGeneration({
+        proposalId: updatedProposal.id,
+        recipientUserIds: recipientIds
+      });
+      await asyncJobService.enqueueMissingReportPrompt({
+        proposalId: updatedProposal.id,
+        clubId: updatedProposal.club_id,
+        eventDate: updatedProposal.event_date
+      });
+    } else {
+      await createApprovedEventReminders(database, updatedProposal, recipientIds);
+    }
   }
+
+  await writeAuditLog(database, {
+    actor_id: actor.id,
+    entity_type: "proposal",
+    action: "proposal_reviewed",
+    club_id: updatedProposal.club_id,
+    proposal_id: updatedProposal.id,
+    remarks: validatedPayload.remarks,
+    metadata: {
+      stage: "admin",
+      decision: validatedPayload.decision,
+      previous_status: proposal.status,
+      new_status: updatedProposal.status
+    }
+  });
 
   return updatedProposal;
 }

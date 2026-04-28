@@ -1,7 +1,10 @@
 const ApiError = require("../../shared/ApiError");
+const { assertPlainText } = require("../../shared/plainText");
 
 function readRequiredString(payload, fieldName, label) {
-  const value = typeof payload[fieldName] === "string" ? payload[fieldName].trim() : "";
+  const value = typeof payload[fieldName] === "string"
+    ? assertPlainText(payload[fieldName], fieldName, label)
+    : "";
 
   if (!value) {
     throw new ApiError(400, `${label} is required`, "VALIDATION_ERROR", {
@@ -13,7 +16,9 @@ function readRequiredString(payload, fieldName, label) {
 }
 
 function readOptionalString(payload, fieldName) {
-  const value = typeof payload[fieldName] === "string" ? payload[fieldName].trim() : "";
+  const value = typeof payload[fieldName] === "string"
+    ? assertPlainText(payload[fieldName], fieldName, fieldName)
+    : "";
   return value || null;
 }
 

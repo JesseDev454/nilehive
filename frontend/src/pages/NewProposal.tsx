@@ -25,6 +25,7 @@ import {
   ApiClientError,
   createProposal,
   getClubs,
+  getUserFacingErrorMessage,
   getPresidentProposal,
   updatePresidentProposal,
   type BudgetLineItem,
@@ -41,7 +42,7 @@ import {
 import { normalizeStudentId, STUDENT_ID_PLACEHOLDER } from "@/lib/studentId";
 import { cn } from "@/lib/utils";
 
-const steps = ["Club Context", "Activity", "Budget", "Members", "Review"];
+const steps = ["Club Details", "Event Plan", "Budget", "Team", "Review"];
 const MAX_RESPONSIBLE_MEMBERS = 10;
 const PROPOSAL_AUTOSAVE_DELAY_MS = 1000;
 
@@ -191,19 +192,7 @@ function hasProposalDraftContent(
 
 function getSubmissionErrorMessage(error: unknown) {
   if (error instanceof ApiClientError) {
-    const details = error.details as
-      | {
-          fields?: Array<{ message?: string }>;
-        }
-      | undefined;
-
-    const fieldMessages = details?.fields?.map((field) => field.message).filter(Boolean);
-
-    if (fieldMessages?.length) {
-      return `Please complete these items: ${fieldMessages.join("; ")}`;
-    }
-
-    return error.message;
+    return getUserFacingErrorMessage(error, "Unable to submit proposal right now.");
   }
 
   if (error instanceof Error) {
@@ -640,8 +629,8 @@ export default function NewProposal() {
       <div className="nh-page max-w-3xl">
         <NeoStateCard
           icon={Building2}
-          title="President proposal area"
-          message="Club proposals are created and resubmitted by club presidents. Executives use tasks and approved events for their work."
+          title="Proposal access is for club presidents"
+          message="Club presidents create and resubmit proposals here. Executives can keep up with club work through tasks and events."
         />
       </div>
     );
@@ -652,8 +641,8 @@ export default function NewProposal() {
       <div className="nh-page max-w-3xl">
         <NeoStateCard
           icon={Building2}
-          title="Club profile required"
-          message="Your president profile is not linked to a club yet. Club Services must assign your club before you can create or edit proposals."
+          title="Your club assignment is still needed"
+          message="Your president profile is not linked to a club yet. Club Services needs to assign your club before you can create or edit proposals."
           tone="warning"
         />
       </div>
@@ -663,12 +652,12 @@ export default function NewProposal() {
   return (
     <div className="nh-page max-w-6xl">
       <NeoPageHeader
-        eyebrow="Proposal Form"
+        eyebrow="Event Proposal"
         title={isEditMode ? "Edit Proposal" : "Create Proposal"}
         description={
           isEditMode
             ? "Update a draft or returned proposal before sending it back for review."
-            : "Capture your club event plan, budget estimates, and responsible members."
+            : "Share your event plan, budget estimate, and team members for review."
         }
         actions={
           <div className="flex flex-wrap items-center gap-2">
@@ -720,8 +709,8 @@ export default function NewProposal() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-lg">
-                  <Building2 className="h-5 w-5 text-[#0d5bbc]" />
-                  Section A: Club Context
+                  <Building2 className="h-5 w-5 text-[#1D4DA1]" />
+                  Club Details
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -730,23 +719,23 @@ export default function NewProposal() {
                   <div className="nh-card-soft rounded-xl p-4">
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                       <div>
-                        <p className="text-lg font-black uppercase text-[#000d27]">{clubContextName}</p>
+                        <p className="text-lg font-black uppercase text-[#163B7A]">{clubContextName}</p>
                         <p className="text-sm text-muted-foreground">
                           {clubContextCode ? `Club code: ${clubContextCode}` : "Club code will appear here when available."}
                         </p>
                       </div>
                       <span className="nh-status border-secondary bg-secondary text-secondary-foreground">
-                        Submitted by Club President
+                        Club president
                       </span>
                     </div>
                   </div>
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="aim-objectives">Aim &amp; Objectives of the Event</Label>
+                  <Label htmlFor="aim-objectives">Purpose and goals</Label>
                   <Textarea
                     id="aim-objectives"
-                    className="rounded-xl bg-[#f1f4f7]"
-                    placeholder="Define the purpose, goals, and expected outcomes of this proposal..."
+                    className="rounded-xl bg-[#EEF3FB]"
+                    placeholder="Explain why this event matters and what your club wants to achieve..."
                     rows={5}
                     value={form.aimObjectives}
                     onChange={(event) => setForm({ ...form, aimObjectives: event.target.value })}
@@ -760,16 +749,16 @@ export default function NewProposal() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-lg">
-                  <Rocket className="h-5 w-5 text-[#0d5bbc]" />
-                  Section B: Activity Details
+                  <Rocket className="h-5 w-5 text-[#1D4DA1]" />
+                  Event Details
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="activity">Proposed Activity/Event</Label>
+                  <Label htmlFor="activity">Event name</Label>
                   <Input
                     id="activity"
-                    className="rounded-xl bg-[#f1f4f7]"
+                    className="rounded-xl bg-[#EEF3FB]"
                     placeholder="e.g. Annual Innovation Summit"
                     value={form.proposedActivity}
                     onChange={(event) => setForm({ ...form, proposedActivity: event.target.value })}
@@ -791,7 +780,7 @@ export default function NewProposal() {
                     {form.eventDates.map((date, index) => (
                       <div key={index} className="flex items-center gap-2">
                         <Input
-                          className="rounded-xl bg-[#f1f4f7]"
+                          className="rounded-xl bg-[#EEF3FB]"
                           type="date"
                           value={date}
                           onChange={(event) => {
@@ -827,7 +816,7 @@ export default function NewProposal() {
                         value={form.eventTime}
                         onValueChange={(val) => setForm({ ...form, eventTime: val })}
                       >
-                        <SelectTrigger className="rounded-xl bg-[#f1f4f7]">
+                        <SelectTrigger className="rounded-xl bg-[#EEF3FB]">
                           <SelectValue placeholder="Select start time" />
                         </SelectTrigger>
                         <SelectContent className="max-h-[250px]">
@@ -847,7 +836,7 @@ export default function NewProposal() {
                         onValueChange={(val) => setForm({ ...form, eventEndTime: val })}
                       >
                         <SelectTrigger
-                          className={`rounded-xl bg-[#f1f4f7] ${
+                          className={`rounded-xl bg-[#EEF3FB] ${
                             durationValidationMessage
                               ? "border-destructive focus-visible:ring-destructive text-destructive"
                               : ""
@@ -870,7 +859,7 @@ export default function NewProposal() {
                           className={`rounded-full px-3 py-1 text-xs font-bold ${
                             durationValidationMessage
                               ? "bg-destructive/10 text-destructive"
-                              : "bg-[#299e5c]/10 text-[#299e5c]"
+                              : "bg-[#2E7D5B]/10 text-[#2E7D5B]"
                           }`}
                         >
                           {formatDuration(form.eventTime, form.eventEndTime)}
@@ -888,7 +877,7 @@ export default function NewProposal() {
                     value={form.venue}
                     onValueChange={(venue) => setForm({ ...form, venue, venueOther: "" })}
                   >
-                    <SelectTrigger className="rounded-xl bg-[#f1f4f7]">
+                    <SelectTrigger className="rounded-xl bg-[#EEF3FB]">
                       <SelectValue placeholder="Select venue" />
                     </SelectTrigger>
                     <SelectContent>
@@ -900,7 +889,7 @@ export default function NewProposal() {
                   </Select>
                   {form.venue === "other" && (
                     <Input
-                      className="rounded-xl bg-[#f1f4f7] mt-2"
+                      className="rounded-xl bg-[#EEF3FB] mt-2"
                       placeholder="Enter venue name"
                       value={form.venueOther}
                       onChange={(e) => setForm({ ...form, venueOther: e.target.value })}
@@ -911,7 +900,7 @@ export default function NewProposal() {
                   <Label htmlFor="room-number">Room Number <span className="text-muted-foreground font-normal">(optional)</span></Label>
                   <Input
                     id="room-number"
-                    className="rounded-xl bg-[#f1f4f7]"
+                    className="rounded-xl bg-[#EEF3FB]"
                     inputMode="numeric"
                     maxLength={3}
                     placeholder="e.g. 204"
@@ -923,7 +912,7 @@ export default function NewProposal() {
                   <Label htmlFor="participants">Number of Participants</Label>
                   <Input
                     id="participants"
-                    className="rounded-xl bg-[#f1f4f7]"
+                    className="rounded-xl bg-[#EEF3FB]"
                     inputMode="numeric"
                     maxLength={3}
                     placeholder="e.g. 120"
@@ -935,8 +924,8 @@ export default function NewProposal() {
                   <Label htmlFor="description">Detailed Description</Label>
                   <Textarea
                     id="description"
-                    className="rounded-xl bg-[#f1f4f7]"
-                    placeholder="Provide a comprehensive breakdown of the planned activity..."
+                    className="rounded-xl bg-[#EEF3FB]"
+                    placeholder="Share the full plan for the event, including what will happen and how it will run..."
                     rows={5}
                     value={form.description}
                     onChange={(event) => setForm({ ...form, description: event.target.value })}
@@ -950,8 +939,8 @@ export default function NewProposal() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-3 text-lg">
-                  <WalletCards className="h-5 w-5 text-[#0d5bbc]" />
-                  Section C: Budget Items
+                  <WalletCards className="h-5 w-5 text-[#1D4DA1]" />
+                  Budget Details
                 </CardTitle>
                 <Button variant="outline" size="sm" onClick={() => setBudgetItems([...budgetItems, createBudgetItem()])}>
                   <Plus className="h-4 w-4 mr-2" />
@@ -962,7 +951,7 @@ export default function NewProposal() {
                 {budgetItems.map((item, index) => (
                   <div key={item.id} className="nh-card-soft grid grid-cols-1 gap-3 p-4 md:grid-cols-12">
                     <div className="space-y-2 md:col-span-3">
-                      <Label>Items</Label>
+                      <Label>Item</Label>
                       <Input
                         className="rounded-xl bg-white"
                         placeholder="Venue rental"
@@ -1027,8 +1016,8 @@ export default function NewProposal() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="flex items-center gap-3 text-lg">
-                  <Users className="h-5 w-5 text-[#0d5bbc]" />
-                  Section D: Responsible Club Members
+                  <Users className="h-5 w-5 text-[#1D4DA1]" />
+                  Team Members Responsible
                 </CardTitle>
                 <Button
                   variant="outline"
@@ -1044,7 +1033,7 @@ export default function NewProposal() {
                 {responsibleMembers.map((member, index) => (
                   <div key={member.id} className="nh-card-soft p-4">
                     <div className="mb-4 flex items-center justify-between">
-                      <p className="font-bold text-[#000d27]">Responsible Member {index + 1}</p>
+                      <p className="font-bold text-[#163B7A]">Responsible Member {index + 1}</p>
                       <Button
                         className="text-destructive hover:bg-destructive/10"
                         disabled={responsibleMembers.length === 1}
@@ -1064,7 +1053,7 @@ export default function NewProposal() {
                       <div className="space-y-2">
                         <Label>Name</Label>
                         <Input
-                          className="rounded-xl bg-[#f1f4f7]"
+                          className="rounded-xl bg-[#EEF3FB]"
                           value={member.name}
                           onChange={(event) => updateResponsibleMember(member.id, { name: event.target.value })}
                         />
@@ -1072,7 +1061,7 @@ export default function NewProposal() {
                       <div className="space-y-2">
                         <Label>Student ID</Label>
                         <Input
-                          className="rounded-xl bg-[#f1f4f7]"
+                          className="rounded-xl bg-[#EEF3FB]"
                           inputMode="numeric"
                           maxLength={9}
                           pattern="[0-9]{9}"
@@ -1089,7 +1078,7 @@ export default function NewProposal() {
                       <div className="space-y-2">
                         <Label>Phone Number</Label>
                         <Input
-                          className="rounded-xl bg-[#f1f4f7]"
+                          className="rounded-xl bg-[#EEF3FB]"
                           inputMode="numeric"
                           placeholder="e.g. 08012345678"
                           value={member.phoneNumber}
@@ -1108,7 +1097,7 @@ export default function NewProposal() {
                             updateResponsibleMember(member.id, { position, positionOther: "" })
                           }
                         >
-                          <SelectTrigger className="rounded-xl bg-[#f1f4f7]">
+                          <SelectTrigger className="rounded-xl bg-[#EEF3FB]">
                             <SelectValue placeholder="Select position" />
                           </SelectTrigger>
                           <SelectContent>
@@ -1120,7 +1109,7 @@ export default function NewProposal() {
                         </Select>
                         {member.position === "other" && (
                           <Input
-                            className="rounded-xl bg-[#f1f4f7] mt-2"
+                            className="rounded-xl bg-[#EEF3FB] mt-2"
                             placeholder="Enter position title"
                             value={member.positionOther}
                             onChange={(e) =>
@@ -1133,7 +1122,7 @@ export default function NewProposal() {
                   </div>
                 ))}
                 <p className="text-xs text-muted-foreground">
-                  Enter each member's actual name and position. Club roles vary, so these are not pre-filled.
+                  Add the people who will help deliver this event, using their real names and roles.
                 </p>
               </CardContent>
             </Card>
@@ -1142,20 +1131,20 @@ export default function NewProposal() {
           {step === 4 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Review Your Proposal Package</CardTitle>
-                <p className="text-xs text-muted-foreground mt-1">Please review all details before submitting.</p>
+                <CardTitle className="text-lg">Review before submitting</CardTitle>
+                <p className="text-xs text-muted-foreground mt-1">Please confirm the details below before you send this for review.</p>
               </CardHeader>
               <CardContent className="space-y-6 text-sm">
 
                 {/* Section A: Club Context */}
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#0d5bbc] mb-3">A - Club Context</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#1D4DA1] mb-3">Club Details</p>
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <ReviewItem label="Club" value={clubContextName || "-"} />
                     <ReviewItem label="Club Code" value={clubContextCode || "-"} />
                   </div>
                   <div className="nh-card-soft mt-3 p-4">
-                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Aim &amp; Objectives of the Event</p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Purpose and goals</p>
                     <p className="mt-2 leading-relaxed">{form.aimObjectives || "-"}</p>
                   </div>
                 </div>
@@ -1164,11 +1153,11 @@ export default function NewProposal() {
 
                 {/* Section B: Activity Details */}
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#0d5bbc] mb-3">B - Activity Details</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#1D4DA1] mb-3">Event Details</p>
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                    <ReviewItem label="Proposed Activity/Event" value={form.proposedActivity || "-"} />
+                    <ReviewItem label="Event Name" value={form.proposedActivity || "-"} />
                     <ReviewItem
-                      label="Proposed Event Date(s)"
+                      label="Event Date(s)"
                       value={form.eventDates.filter(Boolean).join(", ") || "-"}
                     />
                     <ReviewItem
@@ -1184,13 +1173,13 @@ export default function NewProposal() {
                       value={formatDuration(form.eventTime, form.eventEndTime)}
                     />
                     <ReviewItem
-                      label="Proposed Venue"
+                      label="Venue"
                       value={(() => {
                         const venueName = form.venue === "other" ? form.venueOther : form.venue;
                         return [venueName, form.roomNumber ? `Room ${form.roomNumber}` : ""].filter(Boolean).join(", ") || "-";
                       })()}
                     />
-                    <ReviewItem label="Expected No. of Participants" value={form.numberOfParticipants || "-"} />
+                    <ReviewItem label="Expected Participants" value={form.numberOfParticipants || "-"} />
                   </div>
                   <div className="nh-card-soft mt-3 p-4">
                     <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Detailed Description</p>
@@ -1202,12 +1191,12 @@ export default function NewProposal() {
 
                 {/* Section C: Budget */}
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#0d5bbc] mb-3">C - Budget</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#1D4DA1] mb-3">Budget</p>
                   {toBudgetLineItems(budgetItems).length > 0 ? (
                     <div className="rounded-2xl overflow-hidden ring-1 ring-[#ebeef1]">
                       <table className="w-full text-xs">
                         <thead>
-                          <tr className="bg-[#f1f4f7]">
+                          <tr className="bg-[#EEF3FB]">
                             <th className="text-left p-3 font-semibold text-muted-foreground">#</th>
                             <th className="text-left p-3 font-semibold text-muted-foreground">Items</th>
                             <th className="text-left p-3 font-semibold text-muted-foreground">Qty</th>
@@ -1227,9 +1216,9 @@ export default function NewProposal() {
                           ))}
                         </tbody>
                         <tfoot>
-                          <tr className="border-t-2 border-[#0d5bbc]/20 bg-[#f1f4f7]">
-                            <td colSpan={4} className="p-3 font-bold text-[#000d27]">Total Budget Request</td>
-                            <td className="p-3 text-right font-black text-[#0d5bbc] font-mono">{formatCurrency(budgetTotal)}</td>
+                          <tr className="border-t-2 border-[#1D4DA1]/20 bg-[#EEF3FB]">
+                            <td colSpan={4} className="p-3 font-bold text-[#163B7A]">Total Budget Request</td>
+                            <td className="p-3 text-right font-black text-[#1D4DA1] font-mono">{formatCurrency(budgetTotal)}</td>
                           </tr>
                         </tfoot>
                       </table>
@@ -1243,12 +1232,12 @@ export default function NewProposal() {
 
                 {/* Section D: Responsible Members */}
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-[#0d5bbc] mb-3">D - Responsible Members</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-[#1D4DA1] mb-3">Team Members Responsible</p>
                   {toResponsibleMembers(responsibleMembers).length > 0 ? (
                     <div className="space-y-3">
                       {toResponsibleMembers(responsibleMembers).map((member, i) => (
                         <div key={i} className="nh-card-soft p-4">
-                          <p className="font-bold text-[#000d27] mb-2">Responsible Member {i + 1}</p>
+                          <p className="font-bold text-[#163B7A] mb-2">Team Member {i + 1}</p>
                           <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
                             <span className="text-muted-foreground">Name</span>
                             <span className="font-medium">{member.name || "-"}</span>
@@ -1273,10 +1262,10 @@ export default function NewProposal() {
         </div>
 
         <aside className="lg:col-span-4 space-y-5">
-          <Card className="overflow-hidden bg-[#000d27] text-white">
+          <Card className="overflow-hidden bg-[#163B7A] text-white">
             <CardContent className="relative p-7">
-              <div className="absolute -right-8 -top-8 h-32 w-32 border-2 border-white/20 bg-[#F5B942]/20" />
-              <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#F5B942]">Budget Estimation</p>
+              <div className="absolute -right-8 -top-8 h-32 w-32 border-2 border-white/20 bg-[#D4A437]/20" />
+              <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#D4A437]">Budget Summary</p>
               <div className="mt-6 space-y-3">
                 {toBudgetLineItems(budgetItems).slice(0, 4).map((item) => (
                   <div key={`${item.item}-${item.description}`} className="flex justify-between border-b border-white/10 pb-2">
@@ -1289,7 +1278,7 @@ export default function NewProposal() {
                     <p className="text-xs font-bold uppercase text-white/50">Total Request</p>
                     <p className="text-3xl font-black">{formatCurrency(budgetTotal)}</p>
                   </div>
-                  <WalletCards className="h-10 w-10 text-[#F5B942]" />
+                  <WalletCards className="h-10 w-10 text-[#D4A437]" />
                 </div>
               </div>
             </CardContent>
@@ -1298,11 +1287,11 @@ export default function NewProposal() {
           <Card className="bg-[#e5e8eb]/50">
             <CardContent className="p-5">
               <div className="flex gap-3">
-                <Lightbulb className="h-5 w-5 shrink-0 text-[#0d5bbc]" />
+                <Lightbulb className="h-5 w-5 shrink-0 text-[#1D4DA1]" />
                 <div>
-                  <p className="font-semibold text-[#000d27]">Pro Tip</p>
+                  <p className="font-semibold text-[#163B7A]">Pro Tip</p>
                   <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                    Detailed budget items and verified member IDs make the advisor and Club Services review much easier.
+                    Clear budget lines and correct student IDs make advisor and Club Services review much faster.
                   </p>
                 </div>
               </div>
@@ -1324,14 +1313,14 @@ export default function NewProposal() {
             {isSavingDraft ? "Saving..." : "Save Draft"}
           </Button>
           {step < steps.length - 1 ? (
-            <Button className="bg-[#0d5bbc] hover:bg-[#004493]" onClick={next} disabled={isSubmitting}>
+            <Button className="bg-[#1D4DA1] hover:bg-[#173C7E]" onClick={next} disabled={isSubmitting}>
               Continue
             </Button>
           ) : (
             <Button
               onClick={() => submit()}
               disabled={isSubmitting || isSavingDraft}
-              className="bg-[#0d5bbc] hover:bg-[#004493] text-white"
+              className="bg-[#1D4DA1] hover:bg-[#173C7E] text-white"
             >
               {isSubmitting ? "Saving..." : isEditMode ? "Save Changes" : "Submit Proposal"}
             </Button>
@@ -1346,7 +1335,8 @@ function ReviewItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="nh-card-soft p-4">
       <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
-      <p className="mt-2 font-semibold text-[#000d27]">{value}</p>
+      <p className="mt-2 font-semibold text-[#163B7A]">{value}</p>
     </div>
   );
 }
+

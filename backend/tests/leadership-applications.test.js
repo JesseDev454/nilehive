@@ -57,57 +57,7 @@ function createMember(overrides = {}) {
   };
 }
 
-test("active member can apply for executive leadership", async () => {
-  let createdApplication;
-  const fakeDatabase = {
-    async getClubById() {
-      return { id: "club-1", name: "Nile Innovators Club" };
-    },
-    async getClubMemberByProfileAndClub() {
-      return createMember();
-    },
-    async getOpenLeadershipApplication() {
-      return null;
-    },
-    async getLatestRejectedLeadershipApplication() {
-      return null;
-    },
-    async createLeadershipApplication(application) {
-      createdApplication = application;
-      return createApplication(application);
-    }
-  };
-
-  const application = await createLeadershipApplication({
-    actor: {
-      id: "student-1",
-      role: "student",
-      clubId: "club-1"
-    },
-    payload: {
-      club_id: "club-1",
-      requested_role: "executive",
-      reason: "I have supported events and want to serve the club officially.",
-      experience: "I helped organize two approved events."
-    },
-    database: fakeDatabase
-  });
-
-  assert.equal(createdApplication.profile_id, "student-1");
-  assert.equal(createdApplication.status, "pending");
-  assert.equal(application.requested_role, "executive");
-});
-
-test("student without active membership cannot apply for leadership", async () => {
-  const fakeDatabase = {
-    async getClubById() {
-      return { id: "club-1", name: "Nile Innovators Club" };
-    },
-    async getClubMemberByProfileAndClub() {
-      return null;
-    }
-  };
-
+test("students can no longer self-submit leadership applications", async () => {
   await assert.rejects(
     () =>
       createLeadershipApplication({
@@ -119,65 +69,36 @@ test("student without active membership cannot apply for leadership", async () =
         payload: {
           club_id: "club-1",
           requested_role: "executive",
-          reason: "I have supported events and want to serve the club officially."
+          reason: "I have supported events and want to serve the club officially.",
+          experience: "I helped organize two approved events."
         },
-        database: fakeDatabase
+        database: {}
       }),
-    (error) => error.statusCode === 403 && error.code === "ACTIVE_MEMBERSHIP_REQUIRED"
+    (error) => error.statusCode === 403 && error.code === "LEADERSHIP_SELF_SERVICE_DISABLED"
   );
 });
 
-test("duplicate open leadership applications are blocked", async () => {
-  const fakeDatabase = {
-    async getClubById() {
-      return { id: "club-1", name: "Nile Innovators Club" };
-    },
-    async getClubMemberByProfileAndClub() {
-      return createMember();
-    },
-    async getOpenLeadershipApplication() {
-      return createApplication();
-    }
-  };
-
+test("executives can no longer self-submit president applications", async () => {
   await assert.rejects(
     () =>
       createLeadershipApplication({
         actor: {
-          id: "student-1",
-          role: "student",
+          id: "executive-1",
+          role: "executive",
           clubId: "club-1"
         },
         payload: {
           club_id: "club-1",
-          requested_role: "executive",
+          requested_role: "president",
           reason: "I have supported events and want to serve the club officially."
         },
-        database: fakeDatabase
+        database: {}
       }),
-    (error) => error.statusCode === 409 && error.code === "APPLICATION_ALREADY_OPEN"
+    (error) => error.statusCode === 403 && error.code === "LEADERSHIP_SELF_SERVICE_DISABLED"
   );
 });
 
-test("recently rejected applicant cannot reapply during cooldown", async () => {
-  const fakeDatabase = {
-    async getClubById() {
-      return { id: "club-1", name: "Nile Innovators Club" };
-    },
-    async getClubMemberByProfileAndClub() {
-      return createMember();
-    },
-    async getOpenLeadershipApplication() {
-      return null;
-    },
-    async getLatestRejectedLeadershipApplication() {
-      return createApplication({
-        status: "rejected",
-        reviewed_at: new Date().toISOString()
-      });
-    }
-  };
-
+test("leadership self-service stays disabled even if there is already an open request", async () => {
   await assert.rejects(
     () =>
       createLeadershipApplication({
@@ -191,9 +112,40 @@ test("recently rejected applicant cannot reapply during cooldown", async () => {
           requested_role: "executive",
           reason: "I have supported events and want to serve the club officially."
         },
-        database: fakeDatabase
+        database: {
+          async getOpenLeadershipApplication() {
+            return createApplication();
+          }
+        }
       }),
-    (error) => error.statusCode === 409 && error.code === "LEADERSHIP_COOLDOWN_ACTIVE"
+    (error) => error.statusCode === 403 && error.code === "LEADERSHIP_SELF_SERVICE_DISABLED"
+  );
+});
+
+test("leadership self-service stays disabled even for cooldown scenarios", async () => {
+  await assert.rejects(
+    () =>
+      createLeadershipApplication({
+        actor: {
+          id: "student-1",
+          role: "student",
+          clubId: "club-1"
+        },
+        payload: {
+          club_id: "club-1",
+          requested_role: "executive",
+          reason: "I have supported events and want to serve the club officially."
+        },
+        database: {
+          async getLatestRejectedLeadershipApplication() {
+            return createApplication({
+              status: "rejected",
+              reviewed_at: new Date().toISOString()
+            });
+          }
+        }
+      }),
+    (error) => error.statusCode === 403 && error.code === "LEADERSHIP_SELF_SERVICE_DISABLED"
   );
 });
 

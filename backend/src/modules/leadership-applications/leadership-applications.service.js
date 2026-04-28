@@ -1,5 +1,7 @@
 const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
+const { writeAuditLog } = require("../../shared/auditLog");
+const { ensurePaginatedResult, mapPaginatedResult } = require("../../shared/pagination");
 const {
   validateCreateLeadershipApplicationPayload,
   validateLeadershipApplicationDecisionPayload
@@ -134,33 +136,13 @@ async function assertLeadershipEligibility({ actor, payload, database }) {
 }
 
 async function createLeadershipApplication(options) {
-  const { actor, payload, database = db } = options;
+  const { actor } = options;
   requireActor(actor);
-
-  const validatedPayload = validateCreateLeadershipApplicationPayload(payload);
-  const { member } = await assertLeadershipEligibility({
-    actor,
-    payload: validatedPayload,
-    database
-  });
-
-  if (member.club_role === validatedPayload.requested_role) {
-    throw new ApiError(409, `You are already listed as ${validatedPayload.requested_role} for this club`, "ROLE_ALREADY_ACTIVE");
-  }
-
-  const application = await database.createLeadershipApplication({
-    profile_id: actor.id,
-    club_id: validatedPayload.club_id,
-    current_app_role: actor.role,
-    requested_role: validatedPayload.requested_role,
-    status: "pending",
-    reason: validatedPayload.reason,
-    experience: validatedPayload.experience,
-    goals: validatedPayload.goals,
-    availability: validatedPayload.availability
-  });
-
-  return formatLeadershipApplication(application);
+  throw new ApiError(
+    403,
+    "Leadership roles are no longer self-requested. Club Services assigns presidents, and presidents choose executives from active members.",
+    "LEADERSHIP_SELF_SERVICE_DISABLED"
+  );
 }
 
 async function listMyLeadershipApplications(options) {
@@ -175,16 +157,21 @@ async function listMyLeadershipApplications(options) {
 }
 
 async function listLeadershipApplications(options) {
-  const { actor, filters = {}, database = db } = options;
+  const { actor, filters = {}, pagination, database = db } = options;
   requireAdmin(actor);
 
-  const applications = await database.listLeadershipApplications({
+  const applications = ensurePaginatedResult(await database.listLeadershipApplications({
     clubId: filters.club_id,
     status: filters.status,
-    requestedRole: filters.requested_role
-  });
+    requestedRole: filters.requested_role,
+    pagination,
+    sort: pagination?.sort,
+    order: pagination?.order
+  }), pagination);
 
-  return applications.map(formatLeadershipApplication);
+  return pagination
+    ? mapPaginatedResult(applications, formatLeadershipApplication)
+    : applications.map(formatLeadershipApplication);
 }
 
 async function replaceExistingPresidentIfNeeded({ actor, application, database, replaceExistingPresident }) {
@@ -289,6 +276,22 @@ async function approveLeadershipApplication({ actor, application, decisionPayloa
       })
     : null;
 
+  await writeAuditLog(database, {
+    actor_id: actor.id,
+    entity_type: "leadership_application",
+    action: "leadership_application_reviewed",
+    target_profile_id: profile.id,
+    club_id: application.club_id,
+    leadership_application_id: application.id,
+    remarks: decisionPayload.remarks,
+    metadata: {
+      decision: "approve",
+      requested_role: application.requested_role,
+      previous_role: profile.role,
+      demoted_president_count: demotedPresidents.length
+    }
+  });
+
   return {
     application: formatLeadershipApplication(updatedApplication),
     profile: updatedProfile,
@@ -329,6 +332,21 @@ async function decideLeadershipApplication(options) {
     reviewed_by: actor.id,
     reviewed_at: new Date().toISOString(),
     decision_remarks: decisionPayload.remarks
+  });
+
+  await writeAuditLog(database, {
+    actor_id: actor.id,
+    entity_type: "leadership_application",
+    action: "leadership_application_reviewed",
+    target_profile_id: application.profile_id,
+    club_id: application.club_id,
+    leadership_application_id: application.id,
+    remarks: decisionPayload.remarks,
+    metadata: {
+      decision: decisionPayload.decision,
+      requested_role: application.requested_role,
+      new_status: status
+    }
   });
 
   return {

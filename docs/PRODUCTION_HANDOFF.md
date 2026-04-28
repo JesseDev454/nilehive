@@ -2,15 +2,51 @@
 
 This checklist prepares NileHive for a real Club Services demo or first production deployment.
 
+If production has already been contaminated by local/demo data, use:
+
+```text
+docs/PRODUCTION_FRESH_START.md
+```
+
+before following the normal handoff steps below.
+
+## Environment Separation
+
+Keep local/demo and production fully separate:
+
+- local/demo Supabase project
+- production Supabase project
+
+Rules:
+
+- local/demo may use `nileuniversity.edu.ng,nilehive.test`
+- production must use `nileuniversity.edu.ng` only
+- `backend/supabase/demo_seed.sql` and `backend/supabase/seed.sql` are never run against production
+- `backend/supabase/bootstrap_admin.sql` is production/bootstrap only
+- `backend/supabase/bootstrap_clubs.sql` is the production-safe place to insert the real official clubs
+
 ## Deployment Shape
 
 Recommended first deployment:
 
 - Frontend: Vercel
-- Backend: Render or Railway
+- Backend API: Render or Railway
+- Backend worker: Render worker service running `npm run worker`
 - Database/auth/storage: managed Supabase
+- Redis: managed Redis
 
 The frontend should call only the deployed backend API. The Supabase service role key must stay backend-only.
+
+Repo deployment helpers:
+
+- `vercel.json` builds `frontend/` and rewrites SPA routes to `index.html`
+- `render.yaml` provisions the backend API service with async jobs disabled by default
+- `.nvmrc` pins Node `20`
+
+Deployment UI note:
+
+- In Vercel, import the repo root. `vercel.json` already points build/install/output to `frontend/`.
+- In Render, use the repo blueprint or create the web service from `backend/`.
 
 ## Production Environment Variables
 
@@ -19,12 +55,21 @@ Backend:
 ```env
 NODE_ENV=production
 PORT=4000
+REQUEST_TIMEOUT_MS=15000
 SUPABASE_URL=
 SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 ALLOWED_EMAIL_DOMAINS=nileuniversity.edu.ng
 FRONTEND_APP_URL=https://your-frontend-domain
 CURRENT_ACADEMIC_SESSION=2025/2026
+ASYNC_JOBS_ENABLED=false
+REDIS_URL=
+REDIS_QUEUE_PREFIX=nilehive
+JOB_CHUNK_SIZE=250
+JOB_DEFAULT_ATTEMPTS=3
+JOB_BACKOFF_MS=5000
+SENTRY_DSN_BACKEND=
+SENTRY_DSN_FRONTEND=
 EMAIL_DELIVERY_ENABLED=false
 EMAIL_PROVIDER=microsoft_graph
 MICROSOFT_TENANT_ID=
@@ -48,9 +93,16 @@ Notes:
 
 - `SUPABASE_SERVICE_ROLE_KEY` is never shared with frontend developers.
 - `VITE_SUPABASE_ANON_KEY` is safe for the frontend.
+- `VITE_API_BASE_URL` should be the backend origin only, without `/api/v1`.
+- `REQUEST_TIMEOUT_MS` should stay low enough to fail fast instead of letting requests hang.
+- `ASYNC_JOBS_ENABLED` should stay `false` until Redis and the worker service are ready.
+- `REDIS_URL` is used by both shared rate limiting and BullMQ background jobs.
+- When `ASYNC_JOBS_ENABLED=true`, `/api/v1/ready` expects both Redis and the worker heartbeat to be healthy.
 - Microsoft Graph variables can remain blank while `EMAIL_DELIVERY_ENABLED=false`.
 - Supabase Auth site URL and redirect URLs must include the deployed frontend URL.
 - Backend CORS must allow `FRONTEND_APP_URL`.
+- Local/demo env files should point to a non-production Supabase project.
+- Production env files should never point to a demo/local Supabase project.
 
 ## First Admin Bootstrap
 
@@ -66,6 +118,7 @@ Production should not seed fake `auth.users`.
 5. Run the SQL once in Supabase SQL Editor.
 
 The bootstrap script is idempotent. It upserts the admin profile and records one role-history entry.
+It does not create login credentials by itself. The auth user must already exist before you run it.
 
 ## Demo Seed
 
@@ -95,6 +148,8 @@ Suggested demo flow:
 4. Login as executive and show task-focused dashboard only.
 5. Login as student and show membership/dues status plus approved events.
 
+`backend/supabase/seed.sql` is also local/dev-only and should not be used on production data.
+
 ## RLS And Storage Audit
 
 Final production role model:
@@ -116,6 +171,7 @@ Table policy checklist:
 - `announcements`: admin global/club/role; president own club/student/executive targets; read state is per user.
 - `profile_role_history`: admin-only select.
 - `email_deliveries`: admin-only select.
+- `audit_logs`: admin-only select.
 
 Storage path conventions:
 
@@ -131,6 +187,17 @@ Storage policy checklist:
 - Executives should not have private dues/report storage access.
 
 ## Release Checks
+
+Deployment order:
+
+1. Apply Supabase migrations in staging/production.
+2. Deploy backend API on Render with env vars from this file.
+3. Set frontend env vars in Vercel and deploy the Vite app.
+4. Add Supabase Auth site URL and redirect URLs for the deployed frontend domain.
+5. Create the first real admin account and run `backend/supabase/bootstrap_admin.sql`.
+6. Insert the real official clubs with `backend/supabase/bootstrap_clubs.sql` if production should offer club selection immediately.
+7. Verify `/api/v1/health` and `/api/v1/ready`.
+8. Enable the Render worker and Redis later only when async jobs are funded and ready.
 
 Run before demo or deployment:
 
@@ -151,4 +218,5 @@ Manual checks:
 - Student can submit dues proof only for their own membership flow.
 - Advisor sees assigned-club proposal queue.
 - Admin can manage users and final approvals.
+- `/api/v1/ready` returns healthy status before promoting a deployment.
 - Outlook email delivery is skipped safely while disabled.

@@ -3,16 +3,18 @@ import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from "rea
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { RoleProvider } from "@/contexts/RoleContext";
 import { AppLayout } from "@/components/AppLayout";
-import { NeoLoadingState } from "@/components/NeoBrutal";
+import { NeoLoadingState, NeoStateCard } from "@/components/NeoBrutal";
 import Dashboard from "@/pages/Dashboard";
 import ForgotPassword from "@/pages/ForgotPassword";
 import Login from "@/pages/Login";
 import ProfileSetup from "@/pages/ProfileSetup";
 import ResetPassword from "@/pages/ResetPassword";
 import SignUp from "@/pages/SignUp";
+import SignupConfirmation from "@/pages/SignupConfirmation";
 import NewProposal from "@/pages/NewProposal";
 import Proposals from "@/pages/Proposals";
 import ProposalDetail from "@/pages/ProposalDetail";
@@ -32,7 +34,7 @@ import NotFound from "@/pages/NotFound";
 import { queryClient } from "@/lib/queryClient";
 
 function ProtectedRoutes() {
-  const { profile, session, isLoading } = useAuth();
+  const { profile, session, isLoading, profileError, requiresProfileRecovery, signOut } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -40,8 +42,9 @@ function ProtectedRoutes() {
       <div className="flex min-h-screen items-center justify-center bg-background p-6">
         <div className="w-full max-w-xl">
           <NeoLoadingState
-            title="Opening your Club Services workspace"
-            message="We are checking your session and preparing the right dashboard for your role."
+            title="Getting your account ready"
+            message="Please wait while we open your Club Services workspace."
+            delayedMessage="This is taking longer than usual. Please check your network connection."
           />
         </div>
       </div>
@@ -53,6 +56,28 @@ function ProtectedRoutes() {
   }
 
   if (!profile) {
+    if (requiresProfileRecovery) {
+      return <ProfileSetup />;
+    }
+
+    if (profileError) {
+      return (
+        <div className="flex min-h-screen items-center justify-center bg-background p-6">
+          <div className="w-full max-w-xl">
+            <NeoStateCard
+              title="We couldn't open your workspace yet"
+              message={profileError}
+              tone="danger"
+            >
+              <Button onClick={() => void signOut()} variant="outline">
+                Sign out
+              </Button>
+            </NeoStateCard>
+          </div>
+        </div>
+      );
+    }
+
     return <ProfileSetup />;
   }
 
@@ -70,6 +95,7 @@ const App = () => (
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<SignUp />} />
+              <Route path="/signup/confirm" element={<SignupConfirmation />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route element={<ProtectedRoutes />}>
@@ -82,6 +108,7 @@ const App = () => (
                   <Route path="/notifications" element={<Notifications />} />
                   <Route path="/events" element={<EventCalendar />} />
                   <Route path="/membership" element={<Membership />} />
+                  <Route path="/membership/clubs/:clubId" element={<Membership />} />
                   <Route path="/members" element={<Members />} />
                   <Route path="/dues" element={<Dues />} />
                   <Route path="/communications" element={<Communications />} />

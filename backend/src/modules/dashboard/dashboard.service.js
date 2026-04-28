@@ -1,5 +1,6 @@
 const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
+const { getQueueHealth } = require("../../jobs/queue");
 
 function isPendingStatus(status) {
   return status === "pending_advisor_review" || status === "pending_admin_review";
@@ -37,6 +38,7 @@ function formatProposalSummary(proposal) {
     id: proposal.id,
     title: proposal.title,
     club_id: proposal.club_id,
+    club_name: proposal.club?.name || null,
     event_date: proposal.event_date,
     event_time: proposal.event_time,
     location: proposal.location,
@@ -153,6 +155,7 @@ function buildRecentActivity({
     id: `proposal-${proposal.id}`,
     type: "proposal",
     club_id: proposal.club_id,
+    club_name: proposal.club?.name || null,
     title: proposal.title,
     message: `Proposal "${proposal.title}" is ${proposal.status.replace(/_/g, " ")}.`,
     created_at: proposal.updated_at || proposal.created_at
@@ -161,6 +164,7 @@ function buildRecentActivity({
     id: `membership-${request.id}`,
     type: "membership_request",
     club_id: request.club_id,
+    club_name: request.club?.name || null,
     title: "Membership request",
     message: `Membership request is ${request.status.replace(/_/g, " ")}.`,
     created_at: request.updated_at || request.created_at
@@ -169,6 +173,7 @@ function buildRecentActivity({
     id: `dues-${payment.id}`,
     type: "dues",
     club_id: payment.club_id,
+    club_name: null,
     title: "Dues payment",
     message: `Dues payment is ${payment.status}.`,
     created_at: payment.updated_at || payment.created_at
@@ -177,6 +182,7 @@ function buildRecentActivity({
     id: `report-${report.id}`,
     type: "event_report",
     club_id: report.club_id,
+    club_name: null,
     title: "Event report submitted",
     message: `Event report submitted with ${report.attendance_count} attendee(s).`,
     created_at: report.submitted_at || report.updated_at || report.created_at
@@ -185,6 +191,7 @@ function buildRecentActivity({
     id: `feedback-${item.id}`,
     type: "feedback",
     club_id: item.club_id,
+    club_name: null,
     title: "Event feedback",
     message: item.rating ? `Feedback received with ${item.rating}/5 rating.` : "Feedback received.",
     created_at: item.updated_at || item.created_at
@@ -193,6 +200,7 @@ function buildRecentActivity({
     id: `task-${task.id}`,
     type: "task",
     club_id: task.club_id,
+    club_name: null,
     title: task.title,
     message: `Task "${task.title}" is ${task.status.replace(/_/g, " ")}.`,
     created_at: task.updated_at || task.created_at
@@ -490,7 +498,8 @@ async function getAdminOperationsDashboard(options) {
     tasks,
     feedback,
     rsvps,
-    attendance
+    attendance,
+    queue
   ] = await Promise.all([
     database.listClubs ? database.listClubs() : [],
     database.listAdminProposals ? database.listAdminProposals() : [],
@@ -502,7 +511,8 @@ async function getAdminOperationsDashboard(options) {
     database.listTasks ? database.listTasks() : [],
     database.listFeedback ? database.listFeedback() : [],
     database.listEventRsvps ? database.listEventRsvps() : [],
-    database.listEventAttendance ? database.listEventAttendance() : []
+    database.listEventAttendance ? database.listEventAttendance() : [],
+    getQueueHealth()
   ]);
   const approvedEventIdsWithReports = new Set(reports.map((report) => report.proposal_id));
   const allMissingReports = approvedEvents
@@ -571,6 +581,7 @@ async function getAdminOperationsDashboard(options) {
       feedback,
       tasks
     }),
+    queue,
     missing_reports: missingReports,
     recent_activity: buildRecentActivity({
       proposals,
@@ -579,7 +590,17 @@ async function getAdminOperationsDashboard(options) {
       reports,
       feedback,
       tasks
-    })
+    }),
+    ops_status: {
+      queue: {
+        status: queue.status,
+        worker_status: queue.worker_status,
+        waiting: queue.waiting,
+        active: queue.active,
+        failed: queue.failed,
+        delayed: queue.delayed
+      }
+    }
   };
 }
 

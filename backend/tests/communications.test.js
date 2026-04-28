@@ -122,6 +122,53 @@ test("admin can create a global announcement", async () => {
   assert.ok(createdNotifications.every((notification) => notification.announcement_id === "announcement-1"));
 });
 
+test("async announcement mode queues fanout and skips inline notification creation", async () => {
+  let createNotificationsCalled = false;
+  const queuedFanouts = [];
+  const fakeDatabase = {
+    async createAnnouncement(announcement) {
+      return createAnnouncementRecord({
+        ...announcement,
+        id: "announcement-async-1",
+        club_id: null
+      });
+    },
+    async createNotifications() {
+      createNotificationsCalled = true;
+      return [];
+    }
+  };
+
+  const announcement = await createAnnouncement({
+    actor: {
+      id: "admin-1",
+      role: "admin",
+      clubId: null
+    },
+    payload: {
+      title: "Queued delivery",
+      message: "This should fan out in the background.",
+      audience: "all_users",
+      priority: "urgent"
+    },
+    database: fakeDatabase,
+    queueService: {
+      areAsyncJobsEnabled() {
+        return true;
+      },
+      async enqueueAnnouncementFanout(payload) {
+        queuedFanouts.push(payload);
+        return { queued: true };
+      }
+    },
+    logger: { warn() {} }
+  });
+
+  assert.equal(announcement.id, "announcement-async-1");
+  assert.equal(createNotificationsCalled, false);
+  assert.deepEqual(queuedFanouts, [{ announcementId: "announcement-async-1" }]);
+});
+
 test("high-priority announcements trigger best-effort email delivery", async () => {
   const sentEmails = [];
   const fakeDatabase = {
@@ -303,11 +350,8 @@ test("admin can create an all-clubs announcement", async () => {
         { profile_id: "executive-1" }
       ];
     },
-    async listClubs() {
-      return [
-        { id: "club-1", advisor_id: "advisor-1" },
-        { id: "club-2", advisor_id: null }
-      ];
+    async getAllAdvisorProfileIds() {
+      return ["advisor-1"];
     },
     async createNotifications(notifications) {
       createdNotifications = notifications;

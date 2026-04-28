@@ -1,13 +1,15 @@
 import { FormEvent, useState } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowRight, Building2, Lock, Mail, ShieldCheck } from "lucide-react";
+import { ArrowRight, Lock, Mail, ShieldCheck } from "lucide-react";
+import { BrandLogo } from "@/components/BrandLogo";
+import { SiteFooter } from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { NhStudentId } from "@/components/NhStudentId";
 import { useAuth } from "@/contexts/AuthContext";
 import { getMicrosoftPasswordHelpUrl, isPasswordAuthEnabled } from "@/lib/env";
+import { getUserFacingErrorMessage } from "@/lib/api";
 
 function isRoleSensitivePath(pathname: string) {
   return (
@@ -25,7 +27,6 @@ export default function Login() {
   const { signIn, session, isLoading } = useAuth();
   const location = useLocation();
   const [email, setEmail] = useState("");
-  const [studentId, setStudentId] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -45,8 +46,8 @@ export default function Login() {
       await signIn(email, password);
       toast.success("Welcome back to Club Services");
     } catch (error) {
-      toast.error("Login failed", {
-        description: error instanceof Error ? error.message : "Please check your credentials and try again."
+      toast.error("We couldn’t sign you in", {
+        description: getUserFacingErrorMessage(error, "Please check your email, password, and network connection, then try again.")
       });
     } finally {
       setIsSubmitting(false);
@@ -54,22 +55,12 @@ export default function Login() {
   }
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <section className="grid min-h-screen lg:grid-cols-[1fr_0.95fr]">
+    <main className="flex min-h-screen flex-col bg-background text-foreground">
+      <section className="grid min-h-screen flex-1 lg:grid-cols-[1fr_0.95fr]">
         <aside className="relative hidden overflow-hidden bg-primary p-12 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
           <div className="absolute inset-10 border-2 border-primary-foreground/20" />
           <div className="absolute -right-28 top-20 h-80 w-80 rotate-45 border-[18px] border-secondary/30" />
           <div className="absolute -bottom-20 left-12 h-72 w-72 rotate-12 border-[18px] border-accent/30" />
-
-          <div className="relative z-10 flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center border-2 border-primary-foreground bg-secondary shadow-[4px_4px_0_hsl(var(--primary-foreground))]">
-              <Building2 className="h-6 w-6" />
-            </div>
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-primary-foreground/70">Nile University</p>
-              <h1 className="text-2xl font-black uppercase tracking-tight">Club Services</h1>
-            </div>
-          </div>
 
           <div className="relative z-10 max-w-xl">
             <p className="nh-eyebrow text-primary-foreground/70">Institutional Access</p>
@@ -77,7 +68,7 @@ export default function Login() {
               Campus clubs, proposals, and records.
             </h2>
             <p className="mt-6 border-l-4 border-secondary pl-5 text-lg leading-8 text-primary-foreground/82">
-              The official workspace for club leadership, student membership, approved events, and Club Services review.
+              The official workspace for club leadership, student membership, events, and Club Services review.
             </p>
           </div>
 
@@ -91,7 +82,12 @@ export default function Login() {
 
         <div className="flex items-center justify-center p-5 md:p-10">
           <div className="w-full max-w-xl">
-            <div className="mb-8 lg:hidden">
+            <div className="mb-8 flex flex-col items-center text-center">
+              <BrandLogo
+                size="lg"
+                variant="plain"
+                className="mx-auto mb-4 h-24 w-[22rem] max-w-full sm:h-28 sm:w-[24rem]"
+              />
               <p className="nh-eyebrow">Nile University</p>
               <h1 className="nh-title mt-2">Club Services</h1>
             </div>
@@ -121,16 +117,6 @@ export default function Login() {
                       required
                     />
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="font-black uppercase tracking-[0.12em]" htmlFor="login-student-id">
-                    University ID
-                  </Label>
-                  <NhStudentId id="login-student-id" value={studentId} onChange={setStudentId} disabled />
-                  <p className="text-xs text-muted-foreground">
-                    University ID login needs account mapping first. Use your university email for now.
-                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -176,19 +162,20 @@ export default function Login() {
                 <div className="border-2 border-foreground bg-muted p-4 text-sm">
                   New club officer or student?{" "}
                   <Link className="font-black underline underline-offset-4" to="/signup">
-                    Set up your profile
+                    Create an account
                   </Link>
                 </div>
 
                 <div className="flex items-start gap-3 text-xs text-muted-foreground">
                   <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
-                  <p>Real users should use a Nile University email address. Admin and advisor roles are assigned by Club Services.</p>
+                  <p>Real users should use a Nile University email address. Students and advisors sign in with email and password only.</p>
                 </div>
               </div>
             </form>
           </div>
         </div>
       </section>
+      <SiteFooter />
     </main>
   );
 }

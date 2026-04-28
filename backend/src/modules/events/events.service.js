@@ -1,5 +1,6 @@
 const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
+const { paginateArray } = require("../../shared/pagination");
 const {
   validateAttendancePayload,
   validateRsvpPayload
@@ -19,11 +20,17 @@ async function getVisibleClubIds(actor, database) {
   }
 
   if (actor.role === "executive" || actor.role === "president") {
-    return actor.clubId ? [actor.clubId] : [];
+    const membershipClubIds = database.getActiveClubIdsByProfileId
+      ? await database.getActiveClubIdsByProfileId(actor.id)
+      : [];
+
+    return [...new Set([...(actor.clubId ? [actor.clubId] : []), ...membershipClubIds])];
   }
 
   if (actor.role === "student") {
-    return null;
+    return database.getActiveClubIdsByProfileId
+      ? await database.getActiveClubIdsByProfileId(actor.id)
+      : [];
   }
 
   return [];
@@ -147,10 +154,18 @@ async function assertCanManageEvent(actor, proposal, database) {
 }
 
 async function listApprovedEvents(options) {
-  const { actor, database = db } = options;
+  const { actor, filters = {}, pagination, database = db } = options;
 
   if (!actor) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
+  }
+
+  const lifecycleFilter = filters.lifecycle ? String(filters.lifecycle).toLowerCase() : null;
+
+  if (lifecycleFilter && !["upcoming", "past"].includes(lifecycleFilter)) {
+    throw new ApiError(400, "lifecycle must be either upcoming or past", "VALIDATION_ERROR", {
+      field: "lifecycle"
+    });
   }
 
   const clubIds = await getVisibleClubIds(actor, database);
@@ -172,11 +187,25 @@ async function listApprovedEvents(options) {
       .map((record) => record.proposal_id)
   );
 
-  return proposals.map((proposal) => formatApprovedEvent(proposal, {
+  let events = proposals.map((proposal) => formatApprovedEvent(proposal, {
     actor,
     attendedProposalIds,
     submittedFeedbackProposalIds
   }));
+
+  if (lifecycleFilter === "upcoming") {
+    events = events.filter((event) => event.event_lifecycle !== "past");
+  } else if (lifecycleFilter === "past") {
+    events = events
+      .filter((event) => event.event_lifecycle === "past")
+      .sort((first, second) => new Date(second.event_date).getTime() - new Date(first.event_date).getTime());
+  }
+
+  if (pagination) {
+    return paginateArray(events, pagination);
+  }
+
+  return events;
 }
 
 async function submitEventRsvp(options) {

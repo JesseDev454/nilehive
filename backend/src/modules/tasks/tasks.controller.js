@@ -1,4 +1,5 @@
 const asyncHandler = require("../../shared/asyncHandler");
+const { parsePaginationQuery } = require("../../shared/pagination");
 const {
   createTask,
   getTaskDetail,
@@ -27,6 +28,11 @@ function createTasksController(options = {}) {
           status: req.query.status,
           club_id: req.query.club_id
         },
+        pagination: parsePaginationQuery(req.query, {
+          defaultSort: "created_at",
+          defaultOrder: "desc",
+          allowedSorts: ["created_at", "due_date", "updated_at", "priority"]
+        }),
         database
       });
 

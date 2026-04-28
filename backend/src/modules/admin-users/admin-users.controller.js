@@ -1,4 +1,5 @@
 const asyncHandler = require("../../shared/asyncHandler");
+const { parsePaginationQuery } = require("../../shared/pagination");
 const {
   assignAdvisorToClub,
   getAdminUser,
@@ -19,6 +20,11 @@ function createAdminUsersController(options = {}) {
           requested_role: req.query.requested_role,
           q: req.query.q
         },
+        pagination: parsePaginationQuery(req.query, {
+          defaultSort: "created_at",
+          defaultOrder: "desc",
+          allowedSorts: ["created_at", "full_name", "updated_at"]
+        }),
         database
       });
 

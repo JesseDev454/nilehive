@@ -3,6 +3,7 @@ import type { ChangeEvent, FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText, ImageIcon, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { DataPagination } from "@/components/DataPagination";
 import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ import {
 } from "@/lib/api";
 import { uploadStorageFile } from "@/lib/storage";
 import { actionError, actionSuccess } from "@/lib/notify";
+import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 
 const MAX_REPORT_MEDIA_IMAGES = 10;
 
@@ -118,26 +120,29 @@ export default function MediaArchive() {
   const [uploadedMediaUrls, setUploadedMediaUrls] = useState<string[]>([]);
   const [uploadedMediaNames, setUploadedMediaNames] = useState<string[]>([]);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+  const [page, setPage] = useState(1);
   const canSubmitReports = role === "president";
   const canViewReports = ["admin", "advisor", "president"].includes(role);
 
   const {
-    data: reports = [],
+    data: reportsPage = emptyPaginatedResponse<EventReportRecord>(),
     isLoading,
     isError,
     error
   } = useQuery({
-    queryKey: ["event-reports", role],
-    queryFn: () => getEventReports(),
+    queryKey: ["event-reports", role, page],
+    queryFn: () => getEventReports({ page, page_size: DEFAULT_PAGE_SIZE }),
     enabled: canViewReports,
     retry: false
   });
-  const { data: approvedEvents = [] } = useQuery({
+  const reports = reportsPage.items;
+  const { data: approvedEventsPage = emptyPaginatedResponse() } = useQuery({
     queryKey: ["approved-events", "report-form"],
-    queryFn: () => getApprovedEvents(),
+    queryFn: () => getApprovedEvents({ page: 1, page_size: 100 }),
     enabled: canSubmitReports,
     retry: false
   });
+  const approvedEvents = approvedEventsPage.items;
   const reportedProposalIds = useMemo(
     () => new Set(reports.map((report) => report.proposal_id)),
     [reports]
@@ -200,7 +205,7 @@ export default function MediaArchive() {
     }
 
     if (!selectedEvent?.club_id) {
-      toast.error("Select approved event first", {
+      toast.error("Select event first", {
         description: "Choose the event before uploading images so they are scoped to the correct club."
       });
       event.target.value = "";
@@ -279,7 +284,7 @@ export default function MediaArchive() {
       <NeoPageHeader
         eyebrow="Archive"
         title="Reports & Media Archive"
-        description="Document completed approved events and keep a central Club Services record."
+        description="Document completed events and keep a central Club Services record."
       />
 
       {canSubmitReports ? (
@@ -290,10 +295,10 @@ export default function MediaArchive() {
           <CardContent>
             <form onSubmit={handleSubmitReport} className="nh-form-grid">
               <div className="space-y-2 lg:col-span-2">
-                <Label htmlFor="proposal_id">Approved Event</Label>
+                <Label htmlFor="proposal_id">Event</Label>
                 <Select value={proposalId} onValueChange={setProposalId}>
                   <SelectTrigger id="proposal_id">
-                    <SelectValue placeholder="Select an approved event" />
+                    <SelectValue placeholder="Select an event" />
                   </SelectTrigger>
                   <SelectContent>
                     {reportableEvents.map((event) => (
@@ -305,7 +310,7 @@ export default function MediaArchive() {
                 </Select>
                 {!reportableEvents.length ? (
                   <p className="text-xs text-muted-foreground">
-                    No approved events without reports are available right now.
+                    No events without reports are available right now.
                   </p>
                 ) : null}
               </div>
@@ -429,14 +434,23 @@ export default function MediaArchive() {
               <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
               <p className="font-medium">No event reports yet</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Reports will appear here after presidents document approved events.
+                Reports will appear here after presidents document events.
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-              {reports.map((report) => (
-                <ReportCard key={report.id} report={report} />
-              ))}
+            <div>
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                {reports.map((report) => (
+                  <ReportCard key={report.id} report={report} />
+                ))}
+              </div>
+              <DataPagination
+                page={reportsPage.page}
+                pageSize={reportsPage.page_size}
+                total={reportsPage.total}
+                hasNext={reportsPage.has_next}
+                onPageChange={setPage}
+              />
             </div>
           )}
         </CardContent>

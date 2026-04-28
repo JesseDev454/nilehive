@@ -122,6 +122,7 @@ export default function AdminClubDashboard() {
   }
 
   const { club, summary } = dashboard;
+  const visibleRecentMembers = dashboard.recent_members.filter((member) => member.membership_status !== "alumni");
 
   return (
     <div className="nh-page">
@@ -199,7 +200,7 @@ export default function AdminClubDashboard() {
               <strong>{summary.total_proposals}</strong>
             </div>
             <div className="nh-list-card flex items-center justify-between">
-              <span>Approved events</span>
+              <span>Events</span>
               <strong>{summary.approved_events}</strong>
             </div>
             <div className="nh-list-card flex items-center justify-between">
@@ -214,10 +215,10 @@ export default function AdminClubDashboard() {
             <CardTitle className="text-lg">Recent Members</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {!dashboard.recent_members.length ? (
+            {!visibleRecentMembers.length ? (
               <p className="text-sm text-muted-foreground">No members are recorded yet.</p>
             ) : (
-              dashboard.recent_members.map((member) => (
+              visibleRecentMembers.map((member) => (
                 <div key={member.id} className="nh-list-card">
                   <p className="font-semibold">{member.full_name}</p>
                   <p className="text-xs text-muted-foreground">{member.student_id} - {member.club_role} - {member.membership_status}</p>
@@ -254,7 +255,7 @@ export default function AdminClubDashboard() {
         <CardContent className="grid gap-4 md:grid-cols-3">
           <div className="nh-list-card">
             <CalendarDays className="mb-2 h-5 w-5 text-primary" />
-            <p className="font-black">{summary.approved_events} approved event(s)</p>
+            <p className="font-black">{summary.approved_events} event(s)</p>
             <p className="text-sm text-muted-foreground">Official events for this club.</p>
           </div>
           <div className="nh-list-card">
