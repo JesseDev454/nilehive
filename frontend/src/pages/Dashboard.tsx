@@ -1394,11 +1394,39 @@ function PolishedAdminDashboard() {
 function getMembershipStatusLabel(status: MembershipRequestRecord["status"]) {
   return {
     pending: "Under review",
-    approved_pending_dues: "Dues required",
-    active: "Active member",
+    approved_pending_dues: "Payment under review",
+    active: "Active",
     rejected: "Rejected",
     cancelled: "Cancelled"
   }[status];
+}
+
+function isMembershipActive(request: MembershipRequestRecord, payment?: DuePaymentRecord) {
+  return request.status === "active" || payment?.status === "paid";
+}
+
+function getMembershipStatusSummary(request: MembershipRequestRecord, payment?: DuePaymentRecord) {
+  if (isMembershipActive(request, payment)) {
+    return "Your dues have been confirmed by Club Services. This membership is now active.";
+  }
+
+  if (request.status === "approved_pending_dues") {
+    if (payment?.status === "submitted") {
+      return "Your payment confirmation is in review. Once the president/admin confirms it, this will switch to active.";
+    }
+
+    return `Pay ${formatCurrency(request.dues_amount ?? 0)} for ${request.academic_session || "this session"} to finish activation.`;
+  }
+
+  if (request.status === "pending") {
+    return "Your club is still reviewing your request.";
+  }
+
+  if (request.status === "rejected") {
+    return "This request was rejected. Check the membership page for the next step.";
+  }
+
+  return "This membership is not active yet.";
 }
 
 function MembershipStatusPill({ status }: { status: MembershipRequestRecord["status"] }) {
@@ -1549,6 +1577,8 @@ function StudentDashboard() {
     () => new Map(duePayments.map((payment) => [payment.id, payment] as const)),
     [duePayments]
   );
+  const activeMembership = activeMemberships[0];
+  const activeMembershipPayment = activeMembership?.due_payment_id ? duesById.get(activeMembership.due_payment_id) : undefined;
   const firstDuesRequest = duesRequiredRequests[0];
   const firstDuesPayment = firstDuesRequest?.due_payment_id ? duesById.get(firstDuesRequest.due_payment_id) : undefined;
 
@@ -1650,33 +1680,45 @@ function StudentDashboard() {
                 <div className="grid gap-4 lg:grid-cols-2">
                   {membershipRequests.slice(0, 4).map((request) => {
                     const payment = request.due_payment_id ? duesById.get(request.due_payment_id) : undefined;
+                    const membershipActive = isMembershipActive(request, payment);
+                    const reviewStateLabel = membershipActive
+                      ? "Activated"
+                      : request.status === "approved_pending_dues"
+                        ? "Payment review"
+                        : "Under review";
 
                     return (
-                      <div key={request.id} className="nh-list-card">
+                      <div
+                        key={request.id}
+                        className={`nh-list-card ${membershipActive ? "border-success/20 bg-success/5" : ""}`}
+                      >
                         <div className="flex items-start justify-between gap-3">
                           <div>
                             <p className="font-semibold">{request.club?.name || "Selected club"}</p>
                             <p className="text-sm capitalize text-muted-foreground">Requested as {request.requested_role}</p>
                           </div>
-                          <MembershipStatusPill status={request.status} />
+                          <MembershipStatusPill status={membershipActive ? "active" : request.status} />
                         </div>
                         <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
                           <div className="border-2 border-foreground bg-success/10 p-2 text-success">Submitted</div>
-                          <div className={`border-2 border-foreground p-2 ${request.status === "pending" ? "bg-warning/15 text-warning" : "bg-success/10 text-success"}`}>
-                            Reviewed
+                          <div
+                            className={`border-2 border-foreground p-2 ${membershipActive || request.status === "approved_pending_dues" ? "bg-success/10 text-success" : "bg-warning/15 text-warning"}`}
+                          >
+                            {reviewStateLabel}
                           </div>
-                          <div className={`border-2 border-foreground p-2 ${request.status === "active" ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
+                          <div className={`border-2 border-foreground p-2 ${membershipActive ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
                             Active
                           </div>
                         </div>
-                        {request.status === "approved_pending_dues" ? (
+                        <p className="mt-4 text-sm text-muted-foreground">{getMembershipStatusSummary(request, payment)}</p>
+                        {request.status === "approved_pending_dues" && !membershipActive ? (
                           <div className="mt-4 border-2 border-foreground bg-primary/5 p-3 text-sm">
                             <p className="font-medium text-primary">Dues payment is the next step.</p>
                             <p className="mt-1 text-muted-foreground">
                               {request.dues_amount ? formatCurrency(request.dues_amount) : "Dues amount pending"} for {request.academic_session || "this session"}.
                             </p>
                             {payment?.status === "submitted" ? (
-                              <p className="mt-2 font-medium text-primary">Your confirmation is waiting for review.</p>
+                              <p className="mt-2 font-medium text-primary">Your payment confirmation is waiting for review.</p>
                             ) : (
                               <Button asChild size="sm" className="mt-3">
                                 <Link to="/membership">I have paid</Link>
@@ -1735,6 +1777,22 @@ function StudentDashboard() {
             <CardContent>
               {duesLoading ? (
                 <NeoLoadingState title="Checking dues records" message="We are checking your membership payment status." compact />
+              ) : activeMembership ? (
+                <div className="border-2 border-success/20 bg-success/5 p-4">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="mt-0.5 h-5 w-5 text-success" />
+                    <div>
+                      <p className="font-semibold text-success">Membership active</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {activeMembership.club?.name || "This club"} confirmed your dues payment. You are now an active member
+                        {activeMembership.academic_session ? ` for ${activeMembership.academic_session}` : ""}.
+                      </p>
+                      <Button asChild variant="outline" size="sm" className="mt-3">
+                        <Link to="/membership">View membership</Link>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               ) : firstDuesRequest ? (
                 <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
                   <p className="font-semibold">{firstDuesRequest.club?.name || "Selected club"}</p>
