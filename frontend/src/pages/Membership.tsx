@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Loader2, Search, ShieldCheck, Users } from "lucide-react";
@@ -27,6 +27,7 @@ import {
   type DuePaymentRecord,
   type MembershipRequestRecord
 } from "@/lib/api";
+import { clearJoinFormDraft, readJoinFormDraft, writeJoinFormDraft } from "@/lib/joinFormDraftStorage";
 import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 import { publicClubsQueryOptions } from "@/lib/publicClubsQuery";
 import { resolveStorageFileUrl, uploadStorageFile } from "@/lib/storage";
@@ -400,42 +401,73 @@ function JoinClubPanel({
 }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [studentType, setStudentType] = useState<"fresher" | "returning">(defaultStudentType || "returning");
-  const [studentId, setStudentId] = useState(defaultStudentId || "");
-  const [phoneNumber, setPhoneNumber] = useState(defaultPhoneNumber || "");
-  const [department, setDepartment] = useState(defaultDepartment || "");
-  const [joinReason, setJoinReason] = useState("");
-  const [accountName, setAccountName] = useState("");
-  const [reference, setReference] = useState("");
-  const [paidAt, setPaidAt] = useState("");
+
+  // ── Draft persistence ────────────────────────────────────────────────────
+  // Initialise state from a saved draft first, then fall back to profile
+  // defaults. This means the form survives page refreshes or accidental
+  // navigations away before the user submits.
+  const userId = user?.id ?? "";
+  const savedDraft = userId ? readJoinFormDraft(userId, club.id) : null;
+
+  const [studentType, setStudentType] = useState<"fresher" | "returning">(
+    savedDraft?.studentType ?? defaultStudentType ?? "returning"
+  );
+  const [studentId, setStudentId] = useState(savedDraft?.studentId ?? defaultStudentId ?? "");
+  const [phoneNumber, setPhoneNumber] = useState(savedDraft?.phoneNumber ?? defaultPhoneNumber ?? "");
+  const [department, setDepartment] = useState(savedDraft?.department ?? defaultDepartment ?? "");
+  const [joinReason, setJoinReason] = useState(savedDraft?.joinReason ?? "");
+  const [accountName, setAccountName] = useState(savedDraft?.accountName ?? "");
+  const [reference, setReference] = useState(savedDraft?.reference ?? "");
+  const [paidAt, setPaidAt] = useState(savedDraft?.paidAt ?? "");
   const [proofUrl, setProofUrl] = useState("");
   const [proofFileName, setProofFileName] = useState("");
-  const [note, setNote] = useState("");
+  const [note, setNote] = useState(savedDraft?.note ?? "");
   const [isUploadingProof, setIsUploadingProof] = useState(false);
+
+  // Apply profile defaults only once when they first arrive (e.g. on slow load)
+  // but don't overwrite what the user has already typed or what came from the draft.
+  const profileDefaultsApplied = useRef(false);
+  useEffect(() => {
+    if (profileDefaultsApplied.current || savedDraft) {
+      return;
+    }
+
+    if (defaultStudentType) setStudentType(defaultStudentType);
+    if (defaultStudentId) setStudentId(defaultStudentId);
+    if (defaultPhoneNumber) setPhoneNumber(defaultPhoneNumber);
+    if (defaultDepartment) setDepartment(defaultDepartment);
+    profileDefaultsApplied.current = true;
+  }, [defaultStudentType, defaultStudentId, defaultPhoneNumber, defaultDepartment, savedDraft]);
+
+  // Persist draft on every field change (debounced via useCallback identity).
+  const persistDraft = useCallback(() => {
+    if (!userId) {
+      return;
+    }
+
+    writeJoinFormDraft(userId, club.id, {
+      studentType,
+      studentId,
+      phoneNumber,
+      department,
+      joinReason,
+      accountName,
+      reference,
+      paidAt,
+      note
+    });
+  }, [userId, club.id, studentType, studentId, phoneNumber, department, joinReason, accountName, reference, paidAt, note]);
+
+  useEffect(() => {
+    persistDraft();
+  }, [persistDraft]);
+  // ── End draft persistence ────────────────────────────────────────────────
+
   const { data: settings } = useQuery({
     queryKey: ["club-payment-settings", club.id],
     queryFn: () => getClubPaymentSettings(club.id),
     retry: false
   });
-
-  useEffect(() => {
-    if (defaultStudentType) {
-      setStudentType(defaultStudentType);
-    }
-  }, [defaultStudentType]);
-
-  useEffect(() => {
-    if (defaultStudentId) setStudentId(defaultStudentId);
-  }, [defaultStudentId]);
-
-  useEffect(() => {
-    if (defaultPhoneNumber) setPhoneNumber(defaultPhoneNumber);
-  }, [defaultPhoneNumber]);
-
-  useEffect(() => {
-    if (defaultDepartment) setDepartment(defaultDepartment);
-  }, [defaultDepartment]);
-
 
   const joinAmount = resolveJoinAmount(studentType, settings);
 
@@ -459,6 +491,10 @@ function JoinClubPanel({
       toast.success("Join request submitted", {
         description: "Your payment details were attached and the club can now review your membership."
       });
+      // Clear the persisted draft now that it has been successfully submitted.
+      if (userId) {
+        clearJoinFormDraft(userId, club.id);
+      }
       setStudentId("");
       setPhoneNumber("");
       setDepartment("");
