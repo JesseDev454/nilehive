@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline-variant": "#c4c6cf",
+                    "on-error": "#ffffff",
+                    "on-primary-fixed": "#011b3f",
+                    "on-tertiary-container": "#299e5c",
+                    "tertiary": "#001105",
+                    "surface-container-lowest": "#ffffff",
+                    "primary-fixed-dim": "#b2c7f4",
+                    "surface-container": "#ebeef1",
+                    "error-container": "#ffdad6",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-fixed": "#00210e",
+                    "on-primary-container": "#778bb5",
+                    "surface-variant": "#e0e3e6",
+                    "secondary-fixed": "#d8e2ff",
+                    "secondary-container": "#629afe",
+                    "surface-dim": "#d7dadd",
+                    "secondary-fixed-dim": "#adc7ff",
+                    "background": "#f7fafd",
+                    "tertiary-fixed": "#8af9ae",
+                    "tertiary-fixed-dim": "#6edc94",
+                    "on-primary-fixed-variant": "#32476c",
+                    "on-secondary-fixed": "#001a41",
+                    "error": "#ba1a1a",
+                    "on-primary": "#ffffff",
+                    "on-background": "#181c1e",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-low": "#f1f4f7",
+                    "surface-container-highest": "#e0e3e6",
+                    "inverse-primary": "#b2c7f4",
+                    "surface": "#f7fafd",
+                    "on-surface": "#181c1e",
+                    "on-secondary-fixed-variant": "#004493",
+                    "inverse-surface": "#2d3133",
+                    "surface-tint": "#4a5e86",
+                    "surface-container-high": "#e5e8eb",
+                    "primary": "#000d27",
+                    "primary-fixed": "#d7e2ff",
+                    "on-tertiary-fixed-variant": "#00522a",
+                    "outline": "#75777f",
+                    "surface-bright": "#f7fafd",
+                    "secondary": "#0d5bbc",
+                    "inverse-on-surface": "#eef1f4",
+                    "on-error-container": "#93000a",
+                    "tertiary-container": "#002a13",
+                    "on-surface-variant": "#44474e",
+                    "primary-container": "#0b2347",
+                    "on-secondary-container": "#00316d"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #e5e8eb;
+        border-radius: 10px;
+      }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body min-h-screen flex">
+<!-- SideNavBar (Desktop) -->
+<aside class="h-screen w-64 hidden md:flex flex-col sticky top-0 left-0 bg-slate-50 dark:bg-slate-900 border-none shadow-sm z-50">
+<div class="flex flex-col h-full p-6">
+<div class="mb-8">
+<h1 class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white font-headline">NileHive</h1>
+<p class="text-xs font-medium text-on-primary-container mt-1">Executive Academic</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-blue-700 dark:text-blue-400 font-bold border-r-4 border-amber-400 bg-slate-100 dark:bg-slate-800 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">sensors</span>
+<span class="text-sm font-medium">Club Pulse</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">settings_applications</span>
+<span class="text-sm font-medium">Operations</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">campaign</span>
+<span class="text-sm font-medium">Announcements</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="text-sm font-medium">Directory</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">tune</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+</nav>
+<div class="mt-auto pt-6 border-t border-slate-100 dark:border-slate-800 space-y-1">
+<a class="flex items-center gap-3 px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="text-sm font-medium">Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="text-sm font-medium">Log Out</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="flex-1 min-w-0 flex flex-col relative">
+<!-- TopNavBar -->
+<header class="docked full-width top-0 sticky z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 shadow-sm flex justify-between items-center w-full px-6 py-3">
+<div class="flex items-center gap-8">
+<h2 class="text-xl font-black text-slate-900 dark:text-white font-headline md:hidden">NileHive</h2>
+<div class="hidden md:flex items-center gap-6">
+<a class="text-blue-700 border-b-2 border-amber-400 pb-1 font-manrope font-semibold text-sm" href="#">My Clubs</a>
+<a class="text-slate-500 hover:text-slate-900 font-manrope font-semibold text-sm transition-all duration-300" href="#">Events</a>
+<a class="text-slate-500 hover:text-slate-900 font-manrope font-semibold text-sm transition-all duration-300" href="#">Finance</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="hidden lg:flex items-center gap-2 bg-secondary text-on-secondary px-4 py-2 rounded-xl text-sm font-semibold shadow-sm hover:opacity-90 active:scale-95 transition-all">
+<span>New Announcement</span>
+</button>
+<div class="flex items-center gap-2 text-slate-500">
+<button class="p-2 hover:text-amber-500 transition-all"><span class="material-symbols-outlined">notifications</span></button>
+<button class="p-2 hover:text-amber-500 transition-all"><span class="material-symbols-outlined">account_balance_wallet</span></button>
+</div>
+<div class="h-8 w-8 rounded-full overflow-hidden bg-surface-container ml-2 ring-2 ring-primary/5">
+<img class="w-full h-full object-cover" data-alt="professional headshot of an executive administrator in a clean office setting with soft natural light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCEhAJE6_0sLXjGIuNIYqq2rorY_INtDZqPpk2pXhtPWPQJD-NYATkBZA2DeDiaVZ9hGmx143uOygu4Nsl2hgwNRzGso5zHpHb-6xA-hjElDk4DoOXtDDF-dIdC_D4Qnqs-oSNnPTPJLKsigllguVxOKiHW9cw1ZDOnxuDPElNB8HT1feczfecww_X1s6yIdOv19Q-XqI32FIOooUi5Kl1OSg697YyFahiBFWufwAnIdr6yV3hYcSFK-osarBNGjlqlJdPw48ExRsL8"/>
+</div>
+</div>
+</header>
+<!-- Content Area -->
+<div class="p-6 md:p-10 space-y-10 max-w-7xl mx-auto w-full">
+<!-- Hero Header -->
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<h1 class="text-4xl md:text-5xl font-extrabold text-primary font-headline tracking-tight">Executive Dashboard</h1>
+<p class="text-on-surface-variant mt-2 max-w-lg">Welcome back, Administrator. You have 4 pending reports and 2 approved events starting this week.</p>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center gap-2 px-5 py-3 bg-secondary text-on-secondary rounded-xl font-bold shadow-sm hover:opacity-95 transition-all">
+<span class="material-symbols-outlined text-sm">add_circle</span>
+<span>Create Proposal</span>
+</button>
+<button class="flex items-center gap-2 px-5 py-3 bg-surface-container-highest text-on-surface rounded-xl font-bold hover:bg-surface-variant transition-all">
+<span class="material-symbols-outlined text-sm">history_edu</span>
+<span>Submit Report</span>
+</button>
+</div>
+</section>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Assigned Tasks (Progress) -->
+<div class="md:col-span-7 bg-surface-container-lowest rounded-full p-8 shadow-sm">
+<div class="flex items-center justify-between mb-8">
+<h3 class="text-xl font-bold text-primary font-headline flex items-center gap-2">
+                            Assigned Tasks
+                            <span class="bg-tertiary-fixed text-on-tertiary-fixed text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">Active</span>
+</h3>
+<span class="text-sm font-medium text-secondary">View all</span>
+</div>
+<div class="space-y-6">
+<div class="group">
+<div class="flex justify-between items-center mb-2">
+<span class="text-sm font-semibold text-on-surface">Budget Reallocation Review</span>
+<span class="text-xs font-bold text-on-surface-variant">75%</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-secondary rounded-full transition-all duration-1000" style="width: 75%;"></div>
+</div>
+</div>
+<div class="group">
+<div class="flex justify-between items-center mb-2">
+<span class="text-sm font-semibold text-on-surface">Annual Gala Coordination</span>
+<span class="text-xs font-bold text-on-surface-variant">40%</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-secondary rounded-full transition-all duration-1000" style="width: 40%;"></div>
+</div>
+</div>
+<div class="group">
+<div class="flex justify-between items-center mb-2">
+<span class="text-sm font-semibold text-on-surface">Member Directory Audit</span>
+<span class="text-xs font-bold text-on-surface-variant">90%</span>
+</div>
+<div class="h-2 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full bg-tertiary-fixed-dim rounded-full transition-all duration-1000" style="width: 90%;"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Reminders / Quick Stats -->
+<div class="md:col-span-5 bg-primary-container text-white rounded-full p-8 relative overflow-hidden flex flex-col justify-between">
+<div class="absolute -right-10 -top-10 w-40 h-40 bg-amber-400/10 rounded-full blur-3xl"></div>
+<div class="relative z-10">
+<div class="flex items-center gap-3 mb-6">
+<div class="p-2 bg-white/10 rounded-lg">
+<span class="material-symbols-outlined text-amber-400">notification_important</span>
+</div>
+<h3 class="text-lg font-bold font-headline">Reminders Due</h3>
+</div>
+<div class="space-y-4">
+<div class="flex gap-4 items-start border-l-2 border-amber-400 pl-4 py-1">
+<div class="flex-1">
+<p class="text-sm font-bold">Innovation Hub Report</p>
+<p class="text-xs text-on-primary-container">Due in 4 hours</p>
+</div>
+<span class="material-symbols-outlined text-sm opacity-50">arrow_forward_ios</span>
+</div>
+<div class="flex gap-4 items-start border-l-2 border-slate-500 pl-4 py-1">
+<div class="flex-1">
+<p class="text-sm font-bold">Quarterly Financials</p>
+<p class="text-xs text-on-primary-container">Due Tomorrow</p>
+</div>
+<span class="material-symbols-outlined text-sm opacity-50">arrow_forward_ios</span>
+</div>
+</div>
+</div>
+<button class="w-full mt-8 py-3 bg-white text-primary rounded-xl font-bold text-sm shadow-lg hover:bg-slate-50 transition-colors">
+                        Process All Tasks
+                    </button>
+</div>
+<!-- Proposal Drafts -->
+<div class="md:col-span-4 bg-surface-container-low rounded-full p-8">
+<h3 class="text-lg font-bold text-primary font-headline mb-6 flex items-center justify-between">
+                        Proposal Drafts
+                        <span class="material-symbols-outlined text-secondary">edit_document</span>
+</h3>
+<div class="space-y-4">
+<div class="bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer border border-transparent hover:border-secondary/20">
+<p class="text-xs font-bold text-secondary mb-1">DRAFT #024</p>
+<h4 class="text-sm font-bold text-on-surface mb-2">Summer Tech Expo</h4>
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="avatar icon of a male student team lead" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAdyinT6uGuNqWKc76jKx35ZIPcbjT2BUmIEuXQ2Cg7gnmsR63ozCzEkDvStlzpohcUFdh2qS90bRKlvlx63be2093TAd0Lp7CgN9NR5nfFOf5NfUtZ2OJIo2oWhFdtFBR4GhtY6shW5O0KywR_Wx-8HHubdRGUHKIsVmMUt-vZhGw-u-mDv-InaFq86QbVfW6P7TWS0Rk00QARiJcHDrkIw0IECuqh2lUP5zOd86VGIdbsCKepiuDpvWDIt-Oke6J5JwNAMbX5_M9J"/>
+</div>
+<span class="text-[10px] font-medium text-on-surface-variant">Last edit: 2h ago</span>
+</div>
+</div>
+<div class="bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition-all cursor-pointer border border-transparent hover:border-secondary/20">
+<p class="text-xs font-bold text-secondary mb-1">DRAFT #019</p>
+<h4 class="text-sm font-bold text-on-surface mb-2">AI Ethics Seminar</h4>
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="avatar icon of a female academic coordinator" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAounfFDi8hpc6p2rVl4gOiiJB0NXuil3cAIkQEcj6ap-l3vXXpq7Vh26kVlXH0U4D6Hq2YgvbQnrRptCVxwlItXqYOdtj6n4vi-nEOwNz17LTeYto5ySb6xFCO8fsl0c_OGgsJdvFdwcLmN6b3hz6ZglSdWQXVPzsSdkldpKGCcgkn6sSm_6l1m8dLamyGdA_2mdonuAUFmfhAashGHbILTfsqhgt0Bn9g1Tquq3RNcuzxAPOfUm7zIb2WYJxrftCsyMUgmU_Fi6vi"/>
+</div>
+<span class="text-[10px] font-medium text-on-surface-variant">Last edit: 1d ago</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Submitted Proposals (Badges) -->
+<div class="md:col-span-8 bg-surface-container-lowest rounded-full p-8 shadow-sm">
+<h3 class="text-lg font-bold text-primary font-headline mb-6">Recent Submitted Proposals</h3>
+<div class="overflow-x-auto custom-scrollbar">
+<table class="w-full text-left border-separate border-spacing-y-3">
+<thead>
+<tr class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">
+<th class="px-4 pb-2">Proposal Name</th>
+<th class="px-4 pb-2">Submission Date</th>
+<th class="px-4 pb-2">Department</th>
+<th class="px-4 pb-2 text-right">Status</th>
+</tr>
+</thead>
+<tbody>
+<tr class="bg-surface-container-low/50 hover:bg-surface-container transition-colors rounded-xl">
+<td class="px-4 py-4 rounded-l-xl font-semibold text-sm">Global Alumni Meetup 2024</td>
+<td class="px-4 py-4 text-xs text-on-surface-variant font-medium">Oct 12, 2023</td>
+<td class="px-4 py-4 text-xs font-bold text-primary">External Affairs</td>
+<td class="px-4 py-4 rounded-r-xl text-right">
+<span class="bg-tertiary-fixed text-on-tertiary-fixed text-[10px] px-3 py-1 rounded-full font-bold">APPROVED</span>
+</td>
+</tr>
+<tr class="bg-surface-container-low/50 hover:bg-surface-container transition-colors rounded-xl">
+<td class="px-4 py-4 rounded-l-xl font-semibold text-sm">Campus Garden Initiative</td>
+<td class="px-4 py-4 text-xs text-on-surface-variant font-medium">Oct 14, 2023</td>
+<td class="px-4 py-4 text-xs font-bold text-primary">Sustainability</td>
+<td class="px-4 py-4 rounded-r-xl text-right">
+<span class="bg-blue-100 text-blue-700 text-[10px] px-3 py-1 rounded-full font-bold">UNDER REVIEW</span>
+</td>
+</tr>
+<tr class="bg-surface-container-low/50 hover:bg-surface-container transition-colors rounded-xl">
+<td class="px-4 py-4 rounded-l-xl font-semibold text-sm">Library Media Center Upgrade</td>
+<td class="px-4 py-4 text-xs text-on-surface-variant font-medium">Oct 15, 2023</td>
+<td class="px-4 py-4 text-xs font-bold text-primary">Academic Ops</td>
+<td class="px-4 py-4 rounded-r-xl text-right">
+<span class="bg-amber-100 text-amber-700 text-[10px] px-3 py-1 rounded-full font-bold">REVISION REQ.</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Upcoming Approved Events -->
+<div class="md:col-span-12 lg:col-span-12 grid grid-cols-1 lg:grid-cols-3 gap-6">
+<div class="lg:col-span-2 bg-surface-container-low rounded-full p-8">
+<div class="flex items-center justify-between mb-8">
+<h3 class="text-xl font-bold text-primary font-headline">Approved Events Roadmap</h3>
+<div class="flex gap-2">
+<button class="p-2 bg-white rounded-lg shadow-sm"><span class="material-symbols-outlined text-sm">chevron_left</span></button>
+<button class="p-2 bg-white rounded-lg shadow-sm"><span class="material-symbols-outlined text-sm">chevron_right</span></button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="bg-white p-6 rounded-2xl flex gap-5 shadow-sm border border-transparent hover:border-amber-400/30 transition-all">
+<div class="flex flex-col items-center justify-center px-4 py-2 bg-surface-container rounded-xl min-w-[70px]">
+<span class="text-xs font-bold text-secondary uppercase">Oct</span>
+<span class="text-2xl font-black text-primary">28</span>
+</div>
+<div class="flex-1">
+<h4 class="font-bold text-on-surface leading-tight">Nile Tech Summit 2023</h4>
+<p class="text-xs text-on-surface-variant mt-1 mb-3">Main Auditorium • 09:00 AM</p>
+<div class="flex -space-x-2">
+<img class="h-6 w-6 rounded-full ring-2 ring-white" data-alt="avatar for event organizer 1" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlNFhy9DOnuoF5i5EwUwM7UdWfQsU5nGP0WNuZgclp_IQHvo9lPsnsSLoyrIYfalowZ9jL0Wd9ywJthStU5EnPDysfOZttmmuXuNxtAF8JPkAX20v35GSfYThKBJdoVZYIqR262qf8csFRUlLy16Fy3C9K04VPrBe-lvl7za1m-gDLxxQEiDWEj9_5mtn-9_c9KqmPib3X-YCl1sV-FcdJu42IsdfUYEIiQ3IaPGtEMYO1IQLPvC5uC3kmIaW1-yaTOQbnYtUC6izI"/>
+<img class="h-6 w-6 rounded-full ring-2 ring-white" data-alt="avatar for event organizer 2" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4DpxSHxBHzi4IiiFWR9eLZvxkox9K8P6pg6yED3DXNCAkRaGyCRvWG-Cl0uroNneTWTS4iWjicTywmLprimOjkCEfab1Kejs8UZm9vLzMPePdrlDy1lSrPZEtt2MvzMdapYx_CmTNCkalrjZh2wr0JT6uXn0C-4hDpfov8Gh3gAz_BkiUv_Kyh3sRVBTwgqQdy2aTRp4H5b2SEI67pytyqlJ5lbXlJ0XwtBSnXhNEaVQSOunzwelmR4rFxUeuxktj4hKl2FyOU3ux"/>
+<div class="h-6 w-6 rounded-full bg-surface-container flex items-center justify-center text-[8px] font-bold ring-2 ring-white">+12</div>
+</div>
+</div>
+</div>
+<div class="bg-white p-6 rounded-2xl flex gap-5 shadow-sm border border-transparent hover:border-amber-400/30 transition-all">
+<div class="flex flex-col items-center justify-center px-4 py-2 bg-surface-container rounded-xl min-w-[70px]">
+<span class="text-xs font-bold text-secondary uppercase">Nov</span>
+<span class="text-2xl font-black text-primary">02</span>
+</div>
+<div class="flex-1">
+<h4 class="font-bold text-on-surface leading-tight">Career Catalyst Fair</h4>
+<p class="text-xs text-on-surface-variant mt-1 mb-3">Campus Square • 10:00 AM</p>
+<div class="flex -space-x-2">
+<img class="h-6 w-6 rounded-full ring-2 ring-white" data-alt="avatar for event organizer 3" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJ_0VIexmzZACUxxBA9KnGbkBXYk6ll_heJa2DhabHxMd4YRlRcRq5-gGGcHBjzUaiIW139Jlm3HykV4IZO_hsI4od0MpvDm27ceu_UQODzKy8EJ8radU9-HoEpvloi7I3Qg2f6mYSGmoImo0G2bIAQus74wMXsfuCc6nLJViGZf9S66cWeKDiyz3Zk2CJhk_OHh-6ruAjw6BCJZ7nzL4OvyftfPwOj-b8KE-HDd7T_vQyJDx2l3k8Lb8ODH586khgFGhK4Bhfhpez"/>
+<div class="h-6 w-6 rounded-full bg-surface-container flex items-center justify-center text-[8px] font-bold ring-2 ring-white">+5</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Club Pulse Bespoke Chip/Metric -->
+<div class="bg-white rounded-full p-8 shadow-sm flex flex-col justify-center items-center text-center">
+<div class="relative mb-4">
+<div class="w-24 h-24 rounded-full border-4 border-slate-50 flex items-center justify-center border-t-tertiary-fixed-dim">
+<span class="material-symbols-outlined text-4xl text-secondary">sensors</span>
+</div>
+<div class="absolute bottom-1 right-1 w-4 h-4 bg-tertiary-fixed rounded-full animate-pulse border-2 border-white"></div>
+</div>
+<h3 class="text-lg font-bold text-primary mb-1 font-headline">Club Pulse</h3>
+<p class="text-xs text-on-surface-variant mb-6">Real-time engagement tracking</p>
+<div class="inline-flex items-center gap-2 px-4 py-2 bg-tertiary-fixed/20 text-on-tertiary-fixed rounded-full font-bold text-xs">
+<span class="w-2 h-2 rounded-full bg-on-tertiary-fixed"></span>
+                            42 Clubs Active Now
+                        </div>
+</div>
+</div>
+</div>
+</div>
+<!-- Spacer for Bottom Nav -->
+<div class="h-20 md:hidden"></div>
+</main>
+<!-- BottomNavBar (Mobile) -->
+<nav class="fixed bottom-0 w-full md:hidden z-50 rounded-t-3xl bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shadow-[0_-4px_20px_rgba(11,35,71,0.06)] flex justify-around items-center px-4 py-3 pb-safe">
+<a class="flex flex-col items-center justify-center text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-xl px-3 py-1 scale-95 transition-all" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] font-medium Inter">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 active:bg-slate-50 transition-all" href="#">
+<span class="material-symbols-outlined">sensors</span>
+<span class="text-[10px] font-medium Inter">Pulse</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 active:bg-slate-50 transition-all" href="#">
+<span class="material-symbols-outlined">assignment</span>
+<span class="text-[10px] font-medium Inter">Tasks</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 active:bg-slate-50 transition-all" href="#">
+<span class="material-symbols-outlined">article</span>
+<span class="text-[10px] font-medium Inter">News</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 active:bg-slate-50 transition-all" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-medium Inter">Profile</span>
+</a>
+</nav>
+</body></html>

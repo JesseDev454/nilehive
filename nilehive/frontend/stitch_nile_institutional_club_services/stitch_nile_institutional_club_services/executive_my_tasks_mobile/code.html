@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Executive Tasks</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;600;700;800&amp;family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline-variant": "#c4c6ce",
+                    "error-container": "#ffdad6",
+                    "surface-container-high": "#eee8da",
+                    "on-surface-variant": "#44474d",
+                    "surface-bright": "#fff9eb",
+                    "surface-container-low": "#f9f3e5",
+                    "primary": "#00030c",
+                    "outline": "#74777e",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-dim": "#dfdacc",
+                    "on-secondary": "#ffffff",
+                    "secondary-fixed-dim": "#85d7b4",
+                    "on-primary-fixed": "#051b38",
+                    "on-surface": "#1d1c13",
+                    "on-tertiary-fixed-variant": "#5f4100",
+                    "tertiary-fixed": "#ffdeaa",
+                    "on-tertiary-fixed": "#271900",
+                    "inverse-primary": "#b4c7ec",
+                    "inverse-surface": "#333027",
+                    "tertiary-fixed-dim": "#f5bd58",
+                    "secondary-container": "#a0f3cf",
+                    "surface-variant": "#e8e2d4",
+                    "surface-tint": "#4c5f7f",
+                    "surface-container": "#f3eddf",
+                    "on-primary-container": "#7386a8",
+                    "tertiary-container": "#291a00",
+                    "on-primary-fixed-variant": "#354766",
+                    "tertiary": "#040200",
+                    "on-error-container": "#93000a",
+                    "inverse-on-surface": "#f6f0e2",
+                    "secondary": "#0c6b4f",
+                    "on-secondary-container": "#187255",
+                    "on-primary": "#ffffff",
+                    "surface": "#fff9eb",
+                    "on-secondary-fixed-variant": "#00513b",
+                    "on-tertiary-container": "#ac7c1a",
+                    "on-error": "#ffffff",
+                    "surface-container-highest": "#e8e2d4",
+                    "secondary-fixed": "#a0f3cf",
+                    "primary-fixed": "#d6e3ff",
+                    "on-tertiary": "#ffffff",
+                    "on-background": "#1d1c13",
+                    "error": "#ba1a1a",
+                    "background": "#fff9eb",
+                    "on-secondary-fixed": "#002116",
+                    "primary-fixed-dim": "#b4c7ec",
+                    "primary-container": "#071d3a"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0px",
+                    "lg": "0px",
+                    "xl": "0px",
+                    "full": "0px"
+            },
+            "spacing": {},
+            "fontFamily": {
+                    "headline": [
+                            "Work Sans"
+                    ],
+                    "body": [
+                            "Inter"
+                    ],
+                    "label": [
+                            "Inter"
+                    ]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #fff9eb; color: #00030c; }
+        h1, h2, h3, h4, h5, h6 { font-family: 'Work Sans', sans-serif; }
+        .hard-shadow { box-shadow: 4px 4px 0px 0px #00030c; }
+        .hard-shadow-sm { box-shadow: 2px 2px 0px 0px #00030c; }
+        .border-primary { border-color: #00030c; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .material-symbols-outlined.fill { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col pb-20">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-4 h-16 bg-[#fff9eb] border-b-2 border-[#00030c]">
+<div class="flex items-center gap-4">
+<button class="text-[#00030c] flex items-center justify-center w-10 h-10 border-2 border-transparent hover:border-[#00030c] transition-colors">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h1 class="font-['Work_Sans'] font-bold tracking-tight uppercase text-[#00030c] text-xl">Club Services</h1>
+</div>
+<div class="w-10 h-10 border-2 border-[#00030c] overflow-hidden bg-surface-variant flex items-center justify-center">
+<img alt="User profile avatar" class="w-full h-full object-cover grayscale" data-alt="Black and white portrait of a confident professional male looking directly at the camera with neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5zyfNZxd_6kf3yBV-_cB6R6wb_k4VGIc7LPr5w4_Ppvs0eUB-lYVPAXdF2V6opheBVpoI1rGkcd8kc6E4b1ANpUN2wCDDqQcD3WslODd7PIEZOqiluH-U6TC0ukDMhVRNYpknNbirBuzli8Al-Zy4n_Ju6OW8-BvwKIJBJDRS1qNQRy2xMZdlDT31KesF8pOY8vhB71nGMCmf5oK-4dHcGUk3f9sevbHtptGJEAZQQjU0WTbKEyVB8-AHrjhHmvORcqz817TEHImI"/>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow pt-20 px-4 max-w-3xl mx-auto w-full flex flex-col gap-6">
+<!-- Hero Section -->
+<section class="mb-2 mt-4">
+<h2 class="font-headline text-4xl font-extrabold tracking-tighter text-primary leading-tight mb-2">My Tasks</h2>
+<p class="font-body text-on-surface-variant text-sm font-semibold tracking-wide uppercase">Institutional Architect</p>
+</section>
+<!-- Task List -->
+<section class="flex flex-col gap-6">
+<!-- Task Item 1 (Active/Expanded) -->
+<article class="bg-surface border-2 border-primary hard-shadow flex flex-col">
+<div class="bg-surface-container-highest border-b-2 border-primary px-4 py-3 flex justify-between items-center">
+<span class="font-label text-xs font-bold tracking-widest uppercase text-primary">High Priority</span>
+<span class="font-label text-xs font-bold text-error border border-error px-2 py-0.5 uppercase tracking-wide">Due Today</span>
+</div>
+<div class="p-5 flex flex-col gap-4">
+<h3 class="font-headline text-2xl font-bold leading-tight text-primary">Review Annual Tech Symposium Guidelines</h3>
+<p class="font-body text-sm text-on-surface-variant leading-relaxed">
+                        Ensure all proposed guidelines align with the current university policy regarding external vendor sponsorships and student data protection.
+                    </p>
+<div class="grid grid-cols-2 gap-4 mt-2">
+<div class="border-2 border-primary p-3 bg-surface-container-low">
+<p class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Goal</p>
+<p class="font-body text-sm font-bold">Policy Alignment</p>
+</div>
+<div class="border-2 border-primary p-3 bg-surface-container-low">
+<p class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-1">Status</p>
+<p class="font-body text-sm font-bold flex items-center gap-1">
+<span class="w-2 h-2 bg-tertiary-fixed-dim inline-block"></span> Working
+                            </p>
+</div>
+</div>
+<div class="mt-4 flex flex-col gap-3">
+<button class="w-full bg-primary text-on-primary font-bold py-3 border-2 border-primary hard-shadow-sm hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-none transition-all active:translate-y-[4px] active:translate-x-[4px]">
+                            Update Progress
+                        </button>
+<div class="grid grid-cols-2 gap-3">
+<button class="w-full bg-surface-container-low text-primary font-bold py-2 border-2 border-primary hover:bg-error-container hover:text-on-error-container transition-colors text-sm flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">block</span> I'm Blocked
+                            </button>
+<button class="w-full bg-surface-container-low text-primary font-bold py-2 border-2 border-primary hover:bg-secondary hover:text-on-secondary transition-colors text-sm flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">check_circle</span> Mark Complete
+                            </button>
+</div>
+</div>
+</div>
+</article>
+<!-- Task Item 2 (Collapsed) -->
+<article class="bg-surface border-2 border-primary flex flex-col hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="p-4 flex gap-4 items-center">
+<div class="w-10 h-10 border-2 border-primary flex-shrink-0 flex items-center justify-center bg-surface-container-highest">
+<span class="material-symbols-outlined text-primary">groups</span>
+</div>
+<div class="flex-grow">
+<h3 class="font-headline text-lg font-bold text-primary leading-tight line-clamp-1">Approve New Club Charters</h3>
+<div class="flex gap-3 mt-1 items-center">
+<span class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">Due Oct 15</span>
+<span class="w-1 h-1 bg-primary rounded-none"></span>
+<span class="font-label text-[10px] uppercase tracking-widest text-primary font-bold">Medium Priority</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant">chevron_right</span>
+</div>
+</article>
+<!-- Task Item 3 (Collapsed) -->
+<article class="bg-surface border-2 border-primary flex flex-col hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="p-4 flex gap-4 items-center">
+<div class="w-10 h-10 border-2 border-primary flex-shrink-0 flex items-center justify-center bg-surface-container-highest">
+<span class="material-symbols-outlined text-primary">campaign</span>
+</div>
+<div class="flex-grow">
+<h3 class="font-headline text-lg font-bold text-primary leading-tight line-clamp-1">Draft Q4 Strategic Communications</h3>
+<div class="flex gap-3 mt-1 items-center">
+<span class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">Due Oct 22</span>
+<span class="w-1 h-1 bg-primary rounded-none"></span>
+<span class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant">Low Priority</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant">chevron_right</span>
+</div>
+</article>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-1 bg-[#fff9eb] border-t-2 border-[#00030c] shadow-[4px_0px_0px_0px_#00030c]">
+<a class="flex flex-col items-center justify-center text-[#00030c] p-2 hover:bg-[#e8e2d4] transition-all duration-100 active:scale-95 w-16" href="#">
+<span class="material-symbols-outlined mb-1">explore</span>
+<span class="font-['Inter'] text-[10px] font-bold tracking-widest uppercase">Discover</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#00030c] p-2 hover:bg-[#e8e2d4] transition-all duration-100 active:scale-95 w-16" href="#">
+<span class="material-symbols-outlined mb-1">assignment_ind</span>
+<span class="font-['Inter'] text-[10px] font-bold tracking-widest uppercase">Status</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#071d3a] text-white p-2 scale-105 transition-all duration-100 active:scale-95 w-16" href="#">
+<span class="material-symbols-outlined mb-1 fill">task_alt</span>
+<span class="font-['Inter'] text-[10px] font-bold tracking-widest uppercase">Tasks</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#00030c] p-2 hover:bg-[#e8e2d4] transition-all duration-100 active:scale-95 w-16" href="#">
+<span class="material-symbols-outlined mb-1">payments</span>
+<span class="font-['Inter'] text-[10px] font-bold tracking-widest uppercase">Dues</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#00030c] p-2 hover:bg-[#e8e2d4] transition-all duration-100 active:scale-95 w-16" href="#">
+<span class="material-symbols-outlined mb-1">admin_panel_settings</span>
+<span class="font-['Inter'] text-[10px] font-bold tracking-widest uppercase">Admin</span>
+</a>
+</nav>
+</body></html>

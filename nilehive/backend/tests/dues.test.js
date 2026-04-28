@@ -1,0 +1,607 @@
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const { createApp } = require("../src/app");
+const {
+  applyClubPaymentProfileToAllClubs,
+  applyPaymentSettingsToAllClubs,
+  applyDuesAmountToAllClubs,
+  createDuePayment,
+  getPaymentSettings,
+  listDuePayments,
+  listMyDuePayments,
+  submitDuePaymentConfirmation,
+  summarizeDues,
+  upsertPaymentSettings,
+  updateDuePayment
+} = require("../src/modules/dues/dues.service");
+
+function createMember(overrides = {}) {
+  return {
+    id: "member-1",
+    club_id: "club-1",
+    full_name: "Amina Member",
+    ...overrides
+  };
+}
+
+function createPayment(overrides = {}) {
+  return {
+    id: "payment-1",
+    club_id: "club-1",
+    member_id: "member-1",
+    amount: 5000,
+    academic_session: "2025/2026",
+    payment_reference: null,
+    proof_url: null,
+    payment_account_name: null,
+    payment_paid_at: null,
+    payer_note: null,
+    submitted_at: null,
+    status: "unpaid",
+    verified_by: null,
+    verified_at: null,
+    created_at: "2026-04-12T10:00:00.000Z",
+    updated_at: "2026-04-12T10:00:00.000Z",
+    ...overrides
+  };
+}
+
+test("president can create a due payment record for a club member", async () => {
+  let createdPayment;
+  const fakeDatabase = {
+    async getClubMemberById(memberId) {
+      assert.equal(memberId, "member-1");
+      return createMember();
+    },
+    async createDuePayment(payment) {
+      createdPayment = payment;
+      return createPayment(payment);
+    }
+  };
+
+  const payment = await createDuePayment({
+    actor: {
+      id: "president-1",
+      role: "president",
+      clubId: "club-1"
+    },
+    payload: {
+      member_id: "member-1",
+      amount: 5000,
+      academic_session: "2025/2026"
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(createdPayment.club_id, "club-1");
+  assert.equal(createdPayment.status, "unpaid");
+  assert.equal(payment.amount, 5000);
+});
+
+test("executive cannot list club due payments", async () => {
+  await assert.rejects(
+    () =>
+      listDuePayments({
+        actor: {
+          id: "executive-1",
+          role: "executive",
+          clubId: "club-1"
+        },
+        database: {}
+      }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
+});
+
+test("president can verify a submitted payment as paid", async () => {
+  let updatePayload;
+  const fakeDatabase = {
+    async getDuePaymentById(paymentId) {
+      assert.equal(paymentId, "payment-1");
+      return createPayment({
+        status: "submitted"
+      });
+    },
+    async updateDuePayment(paymentId, update) {
+      updatePayload = update;
+      return createPayment({
+        id: paymentId,
+        ...update
+      });
+    }
+  };
+
+  const payment = await updateDuePayment({
+    actor: {
+      id: "president-1",
+      role: "president",
+      clubId: "club-1"
+    },
+    paymentId: "payment-1",
+    payload: {
+      status: "paid",
+      payment_reference: "RECEIPT-001"
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(updatePayload.status, "paid");
+  assert.equal(updatePayload.verified_by, "president-1");
+  assert.ok(updatePayload.verified_at);
+  assert.equal(payment.status, "paid");
+});
+
+test("paid current-session dues activate an inactive member", async () => {
+  let memberUpdate;
+  let historyEntry;
+  const fakeDatabase = {
+    async getDuePaymentById() {
+      return createPayment({
+        status: "submitted",
+        academic_session: "2025/2026"
+      });
+    },
+    async updateDuePayment(paymentId, update) {
+      return createPayment({
+        id: paymentId,
+        academic_session: "2025/2026",
+        ...update
+      });
+    },
+    async getClubMemberById() {
+      return createMember({
+        id: "member-1",
+        membership_status: "inactive"
+      });
+    },
+    async updateClubMember(memberId, update) {
+      assert.equal(memberId, "member-1");
+      memberUpdate = update;
+      return createMember({
+        id: memberId,
+        ...update
+      });
+    },
+    async createClubMemberStatusHistory(entry) {
+      historyEntry = entry;
+      return entry;
+    }
+  };
+
+  await updateDuePayment({
+    actor: {
+      id: "president-1",
+      role: "president",
+      clubId: "club-1"
+    },
+    paymentId: "payment-1",
+    payload: {
+      status: "paid"
+    },
+    database: fakeDatabase
+  });
+
+  assert.deepEqual(memberUpdate, {
+    membership_status: "active"
+  });
+  assert.equal(historyEntry.previous_status, "inactive");
+  assert.equal(historyEntry.new_status, "active");
+});
+
+test("unpaid or rejected current-session dues keep a member inactive", async () => {
+  let memberUpdate;
+  const fakeDatabase = {
+    async getDuePaymentById() {
+      return createPayment({
+        status: "paid",
+        academic_session: "2025/2026"
+      });
+    },
+    async updateDuePayment(paymentId, update) {
+      return createPayment({
+        id: paymentId,
+        academic_session: "2025/2026",
+        ...update
+      });
+    },
+    async getClubMemberById() {
+      return createMember({
+        id: "member-1",
+        membership_status: "active"
+      });
+    },
+    async updateClubMember(memberId, update) {
+      assert.equal(memberId, "member-1");
+      memberUpdate = update;
+      return createMember({
+        id: memberId,
+        ...update
+      });
+    }
+  };
+
+  await updateDuePayment({
+    actor: {
+      id: "admin-1",
+      role: "admin",
+      clubId: null
+    },
+    paymentId: "payment-1",
+    payload: {
+      status: "rejected"
+    },
+    database: fakeDatabase
+  });
+
+  assert.deepEqual(memberUpdate, {
+    membership_status: "inactive"
+  });
+});
+
+test("student can list own dues payments", async () => {
+  const fakeDatabase = {
+    async listDuePaymentsForProfile(profileId) {
+      assert.equal(profileId, "student-1");
+      return [createPayment()];
+    }
+  };
+
+  const result = await listMyDuePayments({
+    actor: {
+      id: "student-1",
+      role: "student"
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(result.payments.length, 1);
+  assert.equal(result.summary.unpaid, 1);
+});
+
+test("student can submit payment confirmation for own unpaid dues", async () => {
+  let updatePayload;
+  const fakeDatabase = {
+    async getDuePaymentById(paymentId) {
+      assert.equal(paymentId, "payment-1");
+      return createPayment();
+    },
+    async getClubMemberById(memberId) {
+      assert.equal(memberId, "member-1");
+      return createMember({
+        profile_id: "student-1"
+      });
+    },
+    async updateDuePayment(paymentId, update) {
+      updatePayload = update;
+      return createPayment({
+        id: paymentId,
+        ...update
+      });
+    }
+  };
+
+  const payment = await submitDuePaymentConfirmation({
+    actor: {
+      id: "student-1",
+      role: "student"
+    },
+    paymentId: "payment-1",
+    payload: {
+      payment_account_name: "Ada Student",
+      payment_reference: "NUE-12345",
+      payment_paid_at: "2026-04-15",
+      proof_url: "https://example.com/receipt.png",
+      payer_note: "Paid from my GTBank account."
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(updatePayload.status, "submitted");
+  assert.equal(updatePayload.payment_account_name, "Ada Student");
+  assert.equal(updatePayload.payment_reference, "NUE-12345");
+  assert.ok(updatePayload.submitted_at);
+  assert.equal(payment.status, "submitted");
+});
+
+test("student cannot submit payment confirmation for another member", async () => {
+  const fakeDatabase = {
+    async getDuePaymentById() {
+      return createPayment();
+    },
+    async getClubMemberById() {
+      return createMember({
+        profile_id: "someone-else"
+      });
+    }
+  };
+
+  await assert.rejects(
+    () =>
+      submitDuePaymentConfirmation({
+        actor: {
+          id: "student-1",
+          role: "student"
+        },
+        paymentId: "payment-1",
+        payload: {
+          payment_account_name: "Ada Student",
+          payment_reference: "NUE-12345"
+        },
+        database: fakeDatabase
+      }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
+});
+
+test("president can save and fetch payment settings for their club", async () => {
+  let savedSettings;
+  let updatedClubDuesAmount;
+  const fakeDatabase = {
+    async updateClubDuesAmount(clubId, duesAmount) {
+      updatedClubDuesAmount = { clubId, duesAmount };
+      return { id: clubId, dues_amount: duesAmount };
+    },
+    async upsertClubPaymentSettings(settings) {
+      savedSettings = settings;
+      return {
+        id: "settings-1",
+        created_at: "2026-04-15T10:00:00.000Z",
+        updated_at: "2026-04-15T10:00:00.000Z",
+        ...settings
+      };
+    },
+    async getClubPaymentSettings(clubId) {
+      assert.equal(clubId, "club-1");
+      return {
+        id: "settings-1",
+        club_id: "club-1",
+        bank_name: "Zenith Bank",
+        account_number: "1234567890",
+        account_name: "Nile Innovators Club",
+        payment_instructions: "Use your student ID as narration.",
+        created_at: "2026-04-15T10:00:00.000Z",
+        updated_at: "2026-04-15T10:00:00.000Z"
+      };
+    }
+  };
+
+  const actor = {
+    id: "president-1",
+    role: "president",
+    clubId: "club-1"
+  };
+
+  const settings = await upsertPaymentSettings({
+    actor,
+    payload: {
+      dues_amount: 5000,
+      bank_name: "Zenith Bank",
+      account_number: "1234567890",
+      account_name: "Nile Innovators Club",
+      payment_instructions: "Use your student ID as narration."
+    },
+    database: fakeDatabase
+  });
+
+  const fetchedSettings = await getPaymentSettings({
+    actor,
+    database: fakeDatabase
+  });
+
+  assert.equal(savedSettings.club_id, "club-1");
+  assert.equal(updatedClubDuesAmount.duesAmount, 5000);
+  assert.equal(settings.bank_name, "Zenith Bank");
+  assert.equal(fetchedSettings.account_number, "1234567890");
+});
+
+test("admin can apply one dues amount to all clubs", async () => {
+  let appliedAmount;
+  const fakeDatabase = {
+    async updateAllClubDuesAmounts(duesAmount) {
+      appliedAmount = duesAmount;
+      return [{ id: "club-1" }, { id: "club-2" }];
+    }
+  };
+
+  const result = await applyDuesAmountToAllClubs({
+    actor: {
+      id: "admin-1",
+      role: "admin",
+      clubId: null
+    },
+    payload: {
+      dues_amount: 5000
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(appliedAmount, 5000);
+  assert.equal(result.clubs_updated, 2);
+});
+
+test("admin can apply one payment account to all clubs", async () => {
+  let savedSettings;
+  const fakeDatabase = {
+    async upsertAllClubPaymentSettings(settings) {
+      savedSettings = settings;
+      return [{ id: "settings-1" }, { id: "settings-2" }];
+    }
+  };
+
+  const result = await applyPaymentSettingsToAllClubs({
+    actor: {
+      id: "admin-1",
+      role: "admin",
+      clubId: null
+    },
+    payload: {
+      bank_name: "Zenith Bank",
+      account_number: "1234567890",
+      account_name: "Club Services Account",
+      payment_instructions: "Use your student ID as payment reference."
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(savedSettings.bank_name, "Zenith Bank");
+  assert.equal(savedSettings.account_number, "1234567890");
+  assert.equal(result.clubs_updated, 2);
+});
+
+test("admin can apply one dues amount and payment account profile to all clubs", async () => {
+  let appliedAmount;
+  let savedSettings;
+  const fakeDatabase = {
+    async updateAllClubDuesAmounts(duesAmount) {
+      appliedAmount = duesAmount;
+      return [{ id: "club-1" }, { id: "club-2" }];
+    },
+    async upsertAllClubPaymentSettings(settings) {
+      savedSettings = settings;
+      return [{ id: "settings-1" }, { id: "settings-2" }];
+    }
+  };
+
+  const result = await applyClubPaymentProfileToAllClubs({
+    actor: {
+      id: "admin-1",
+      role: "admin",
+      clubId: null
+    },
+    payload: {
+      dues_amount: 5000,
+      bank_name: "Zenith Bank",
+      account_number: "1234567890",
+      account_name: "Club Services Account",
+      payment_instructions: "Use your student ID as payment reference."
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(appliedAmount, 5000);
+  assert.equal(savedSettings.account_name, "Club Services Account");
+  assert.equal(result.clubs_updated, 2);
+});
+
+test("president cannot manage dues for another club", async () => {
+  const fakeDatabase = {
+    async getClubMemberById() {
+      return createMember({
+        club_id: "club-2"
+      });
+    }
+  };
+
+  await assert.rejects(
+    () =>
+      createDuePayment({
+        actor: {
+          id: "president-1",
+          role: "president",
+          clubId: "club-1"
+        },
+        payload: {
+          member_id: "member-1",
+          amount: 5000,
+          academic_session: "2025/2026"
+        },
+        database: fakeDatabase
+      }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
+});
+
+test("advisor cannot view dues tracking", async () => {
+  await assert.rejects(
+    () =>
+      listDuePayments({
+        actor: {
+          id: "advisor-1",
+          role: "advisor"
+        },
+        database: {}
+      }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
+});
+
+test("dues summary calculates collection rate and amounts", () => {
+  const summary = summarizeDues([
+    createPayment({ status: "paid", amount: 5000 }),
+    createPayment({ status: "paid", amount: 5000 }),
+    createPayment({ status: "unpaid", amount: 5000 }),
+    createPayment({ status: "submitted", amount: 5000 })
+  ]);
+
+  assert.equal(summary.total_records, 4);
+  assert.equal(summary.paid, 2);
+  assert.equal(summary.expected_amount, 20000);
+  assert.equal(summary.collected_amount, 10000);
+  assert.equal(summary.collection_rate, 50);
+});
+
+function createRouteDatabase() {
+  const profiles = {
+    "executive-1": {
+      id: "executive-1",
+      full_name: "Amina Executive",
+      role: "executive",
+      club_id: "club-1"
+    }
+  };
+
+  return {
+    async getUserByAccessToken(accessToken) {
+      if (accessToken !== "executive-token") {
+        return null;
+      }
+
+      return {
+        id: "executive-1",
+        email: "executive@nilehive.test"
+      };
+    },
+    async getProfileById(profileId) {
+      return profiles[profileId] ?? null;
+    },
+    async listDuePayments() {
+      return [createPayment()];
+    }
+  };
+}
+
+async function createTestServer(database) {
+  const app = createApp({ database });
+  const server = await new Promise((resolve) => {
+    const instance = app.listen(0, () => resolve(instance));
+  });
+
+  const address = server.address();
+  const baseUrl = `http://127.0.0.1:${address.port}`;
+
+  return {
+    baseUrl,
+    close: () =>
+      new Promise((resolve, reject) => {
+        server.close((error) => {
+          if (error) {
+            reject(error);
+            return;
+          }
+
+          resolve();
+        });
+      })
+  };
+}
+
+test("missing-token access is blocked for dues", async (t) => {
+  const server = await createTestServer(createRouteDatabase());
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/dues`);
+  const payload = await response.json();
+
+  assert.equal(response.status, 401);
+  assert.equal(payload.error.code, "AUTH_REQUIRED");
+});
