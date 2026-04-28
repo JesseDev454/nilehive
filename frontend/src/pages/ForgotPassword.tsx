@@ -57,23 +57,27 @@ export default function ForgotPassword() {
     <main className="flex min-h-screen flex-col bg-background text-foreground">
       <section className="flex flex-1 items-center justify-center p-5">
         <div className="w-full max-w-xl">
-        <Link className="mb-5 inline-flex items-center gap-2 text-sm font-black uppercase tracking-[0.12em]" to="/login">
-          <ArrowLeft className="h-4 w-4" />
-          Back to sign in
-        </Link>
+          <Link className="mb-5 inline-flex items-center gap-2 text-sm font-black uppercase tracking-[0.12em]" to="/login">
+            <ArrowLeft className="h-4 w-4" />
+            Back to sign in
+          </Link>
 
-        <div className="nh-card bg-card p-6 md:p-10">
-          <BrandLogo
-            size="lg"
-            className="mb-6 h-20 w-[19rem] max-w-full sm:h-24 sm:w-[21rem]"
-          />
-          <div className="mb-8 border-b-2 border-foreground pb-6">
+          <div className="mb-8 flex flex-col items-center text-center">
+            <BrandLogo
+              size="lg"
+              variant="plain"
+              className="mx-auto mb-4 h-24 w-[22rem] max-w-full sm:h-28 sm:w-[24rem]"
+            />
             <p className="nh-eyebrow">Account Recovery</p>
-            <h1 className="mt-2 text-4xl font-black uppercase">Reset Password</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Enter your Nile University email and we will send a secure reset link.
-            </p>
+            <h1 className="nh-title mt-2">Reset Password</h1>
           </div>
+
+          <div className="nh-card bg-card p-6 md:p-10">
+            <div className="mb-8 border-b-2 border-foreground pb-6">
+              <p className="mt-2 text-sm text-muted-foreground">
+                Enter your Nile University email and we will send a secure reset link.
+              </p>
+            </div>
 
           {passwordAuthEnabled ? (
             <form className="space-y-6" onSubmit={handleSubmit}>
