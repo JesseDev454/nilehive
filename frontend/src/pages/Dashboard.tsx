@@ -37,7 +37,6 @@ import {
   AlertTriangle,
   ArrowRight,
   Banknote,
-  Bell,
   BarChart3,
   CalendarDays,
   CheckCircle,
@@ -1521,12 +1520,6 @@ function StudentDashboard() {
     queryFn: () => getEventReminders(),
     retry: false
   });
-  const { data: notificationsPage } = useQuery({
-    queryKey: ["notifications"],
-    queryFn: () => getNotifications(),
-    retry: false
-  });
-  const notifications = notificationsPage?.items ?? [];
   const upcomingApprovedEvents = events.filter(isAttendableEvent);
   const upcomingEvents = upcomingApprovedEvents.slice(0, 3);
   const engagementQueries = useQueries({
@@ -1580,11 +1573,10 @@ function StudentDashboard() {
             <p className="text-sm text-white/70">{profile?.student_id || "Student ID not set"}</p>
           </div>
         </div>
-        <div className="relative mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="relative mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           <StudentQuickLink title="Find clubs" description="Discover clubs and request to join." to="/membership" icon={UserPlus} />
-            <StudentQuickLink title="Events" description="See official events and RSVP." to="/events" icon={CalendarDays} />
+          <StudentQuickLink title="Events" description="See official events and RSVP." to="/events" icon={CalendarDays} />
           <StudentQuickLink title="Announcements" description="Catch updates from clubs and admins." to="/communications" icon={MessageSquare} />
-          <StudentQuickLink title="Notifications" description="Review your latest Club Services alerts." to="/notifications" icon={Bell} />
         </div>
       </section>
 
@@ -1790,26 +1782,6 @@ function StudentDashboard() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Latest notifications</CardTitle>
-              <Button asChild variant="ghost" size="sm">
-                <Link to="/notifications">View all</Link>
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {notifications.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No notifications yet.</p>
-              ) : (
-                notifications.slice(0, 4).map((notification: NotificationRecord) => (
-                  <div key={notification.id} className="nh-list-card">
-                    <p className="text-sm font-medium">{notification.message}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{getDateLabel(notification.created_at)}</p>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
         </div>
       </div>
     </div>

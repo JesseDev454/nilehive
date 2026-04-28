@@ -72,7 +72,6 @@ export function AppSidebar() {
     { title: "Discover Clubs", url: "/membership", icon: UserPlus },
     { title: "Events", url: "/events", icon: CalendarDays },
     { title: "Announcements", url: "/communications", icon: MessageSquare },
-    { title: "Notifications", url: "/notifications", icon: Bell },
   ];
 
   const itemsMap = {
