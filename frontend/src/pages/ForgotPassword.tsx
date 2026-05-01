@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowLeft, Mail, ShieldCheck } from "lucide-react";
@@ -8,7 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getUserFacingErrorMessage } from "@/lib/api";
-import { getAllowedEmailDomainLabel, getMicrosoftPasswordHelpUrl, isAllowedEmailDomain, isPasswordAuthEnabled } from "@/lib/env";
+import {
+  getAllowedEmailDomainLabel,
+  getMicrosoftPasswordHelpUrl,
+  getPortalAuthUrl,
+  isAllowedEmailDomain,
+  isPasswordAuthEnabled,
+  isPortalAuthProvider
+} from "@/lib/env";
 import { supabase } from "@/lib/supabase";
 
 export default function ForgotPassword() {
@@ -16,6 +23,25 @@ export default function ForgotPassword() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sentEmail, setSentEmail] = useState("");
   const passwordAuthEnabled = isPasswordAuthEnabled();
+  const portalAuthEnabled = isPortalAuthProvider();
+
+  useEffect(() => {
+    if (portalAuthEnabled) {
+      window.location.assign(getPortalAuthUrl("forgot-password", window.location.origin));
+    }
+  }, [portalAuthEnabled]);
+
+  if (portalAuthEnabled) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background p-6">
+        <div className="nh-card max-w-md bg-card p-6 text-center">
+          <BrandLogo size="lg" variant="plain" className="mx-auto mb-4 h-20 w-72 max-w-full" />
+          <h1 className="text-2xl font-black uppercase">Opening account recovery</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Please wait while we send you to the shared portal.</p>
+        </div>
+      </main>
+    );
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

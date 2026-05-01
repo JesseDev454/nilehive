@@ -12,7 +12,7 @@ NileHive is the Club Services platform for Nile University of Nigeria. It replac
 
 NileHive currently supports:
 
-- password-based signup and sign-in with Nile University email restrictions
+- Supabase auth locally and Campus One portal auth for Buildathon production
 - slim account creation for students and advisors
 - Discover Clubs join flow with dues proof upload
 - membership request and dues verification workflows
@@ -20,7 +20,7 @@ NileHive currently supports:
 - approved events, reminders, and post-event reporting
 - member management, role assignment, announcements, notifications, and dashboards
 
-The codebase is organized as one frontend app, one backend API, and a Supabase project that handles auth, storage, and Postgres data.
+The codebase is organized as one frontend app, one backend API, and a Supabase project that handles storage and Postgres data. In local mode, Supabase can still own auth; in Buildathon production, the shared Campus One portal owns sign-in.
 
 ## Repository Structure
 
@@ -85,7 +85,7 @@ backend/supabase/migrations/
 Apply them in numeric order. The current checked-in migration ceiling is:
 
 ```text
-0042_fix_student_dues_receipt_upload_rls.sql
+0043_portal_auth_profile_bridge.sql
 ```
 
 ### 4. Start the services
@@ -111,13 +111,22 @@ Default local URLs:
 
 ## Data And Auth Model
 
-NileHive uses Supabase Auth for identity and `public.profiles` for app-level access.
+NileHive supports two auth providers:
 
-Important rule:
+- `supabase` for local development and standalone demos
+- `portal` for the Buildathon shared Campus One login flow
+
+In both modes, `public.profiles` remains the Club Services role table. In portal mode, profiles are linked by `portal_user_id` and email, while the app keeps local roles such as `student`, `president`, `advisor`, and `admin`.
+
+Buildathon production defaults:
 
 ```text
-auth.users.id = public.profiles.id
+Frontend: https://clubs.builtbysalih.com
+Portal:   https://portal.builtbysalih.com
+Auth API: https://api.builtbysalih.com
 ```
+
+The app backend must also be hosted under a `*.builtbysalih.com` domain for cookie-based Portal session forwarding to work reliably.
 
 Current signup behavior:
 

@@ -29,7 +29,7 @@ At a high level, the system has three layers:
 
 1. `frontend/` for the web UI
 2. `backend/` for the API and business rules
-3. Supabase for auth, storage, and Postgres data
+3. Supabase for storage and Postgres data, plus auth in local fallback mode
 
 ## Local Setup
 
@@ -95,9 +95,10 @@ Default local URLs:
 The frontend handles:
 
 - routing and protected screens
-- Supabase browser auth session management
+- Supabase browser auth session management in local mode
+- Campus One portal session handoff in Buildathon production mode
 - role-aware dashboards and UI
-- file uploads for dues receipts
+- file uploads for dues receipts and reports
 - typed calls into the backend API
 
 Most important files:
@@ -112,7 +113,7 @@ Most important files:
 
 The backend handles:
 
-- JWT-backed auth checks
+- Supabase or Campus One portal-backed auth checks
 - role enforcement
 - workflow validation
 - data access through the Supabase adapter
@@ -138,14 +139,23 @@ Feature modules typically follow:
 
 NileHive uses:
 
-1. `auth.users` for Supabase Auth
-2. `public.profiles` for app identity and role access
+1. Campus One Portal identity in Buildathon production
+2. Supabase Auth in local fallback mode
+3. `public.profiles` for Club Services roles and app access
 
-Rule:
+Local fallback rule:
 
 ```text
 auth.users.id = public.profiles.id
 ```
+
+Portal mode rule:
+
+```text
+public.profiles.portal_user_id = Campus One user id
+```
+
+In portal mode the profile ID remains the local Club Services user ID used by proposals, dues, membership, and notifications.
 
 ### App roles
 
@@ -159,13 +169,21 @@ The frontend hides or shows screens based on role, but the real security boundar
 
 ### Current signup model
 
-The current checked-in signup flow is intentionally slim:
+In local Supabase mode, the checked-in signup flow is intentionally slim:
 
 - the user submits full name, email, password, and role
 - the role is limited to `student` or `advisor` at signup time
 - Supabase creates the auth user
 - the provisioning trigger creates a minimal `public.profiles` row
 - no club membership or dues records are created during signup
+
+In Buildathon portal mode:
+
+- signup, login, logout, and password recovery redirect to `portal.builtbysalih.com`
+- the frontend calls the NileHive backend with cookies included
+- the backend forwards the cookie to `https://api.builtbysalih.com/api/session`
+- first-time Portal users get a local `public.profiles` row with role `student` and no club assignment
+- Club Services roles are still managed inside NileHive
 
 This behavior comes from:
 
@@ -200,7 +218,7 @@ Apply them in numeric order.
 Current migration ceiling:
 
 ```text
-0042_fix_student_dues_receipt_upload_rls.sql
+0043_portal_auth_profile_bridge.sql
 ```
 
 ### Production-safe SQL files

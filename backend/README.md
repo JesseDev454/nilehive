@@ -40,10 +40,15 @@ Most important variables:
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
+- `AUTH_PROVIDER`
+- `PORTAL_API_BASE_URL`
+- `PORTAL_ORIGIN`
 - `ALLOWED_EMAIL_DOMAINS`
 - `FRONTEND_APP_URL`
 
 Never expose `SUPABASE_SERVICE_ROLE_KEY` in the frontend.
+
+Use `AUTH_PROVIDER=supabase` for local fallback. Use `AUTH_PROVIDER=portal` for the Buildathon deployment so the backend verifies the Campus One session by forwarding cookies to `https://api.builtbysalih.com/api/session`.
 
 ## Run
 
@@ -89,6 +94,7 @@ Common route groups:
 - `/api/v1/proposals`
 - `/api/v1/events`
 - `/api/v1/reports`
+- `/api/v1/storage`
 - `/api/v1/communications`
 - `/api/v1/tasks`
 - `/api/v1/admin/users`

@@ -1,5 +1,5 @@
 import type { FormEvent } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowRight, CheckCircle2, Loader2, ShieldCheck, Users } from "lucide-react";
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
-import { getAllowedEmailDomainLabel, isAllowedEmailDomain } from "@/lib/env";
+import { getAllowedEmailDomainLabel, getPortalAuthUrl, isAllowedEmailDomain, isPortalAuthProvider } from "@/lib/env";
 import { getUserFacingErrorMessage } from "@/lib/api";
 
 const REQUESTED_ROLES = [
@@ -27,9 +27,28 @@ export default function SignUp() {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signupError, setSignupError] = useState<string | null>(null);
+  const portalAuthEnabled = isPortalAuthProvider();
+
+  useEffect(() => {
+    if (portalAuthEnabled && !isLoading && !session) {
+      window.location.assign(getPortalAuthUrl("sign-up", window.location.origin));
+    }
+  }, [isLoading, portalAuthEnabled, session]);
 
   if (!isLoading && session) {
     return <Navigate to="/" replace />;
+  }
+
+  if (portalAuthEnabled) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background p-6">
+        <div className="nh-card max-w-md bg-card p-6 text-center">
+          <BrandLogo size="lg" variant="plain" className="mx-auto mb-4 h-20 w-72 max-w-full" />
+          <h1 className="text-2xl font-black uppercase">Opening signup</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Please wait while we send you to the shared portal.</p>
+        </div>
+      </main>
+    );
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {

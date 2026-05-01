@@ -1,4 +1,4 @@
-import { getApiBaseUrl } from "@/lib/env";
+import { getApiBaseUrl, isPortalAuthProvider } from "@/lib/env";
 import { supabase } from "@/lib/supabase";
 
 export interface HealthCheckResponse {
@@ -887,6 +887,10 @@ function dispatchSessionExpired() {
 }
 
 async function getFreshAccessToken(explicitToken?: string, forceRefresh = false) {
+  if (isPortalAuthProvider()) {
+    return "";
+  }
+
   if (explicitToken) {
     return explicitToken;
   }
@@ -942,7 +946,8 @@ async function executeRequest<T>(path: string, options: ApiRequestOptions, acces
     response = await fetch(`${getApiBaseUrl()}${path}`, {
       method,
       headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      credentials: isPortalAuthProvider() ? "include" : "same-origin"
     });
   } catch (error) {
     throw new ApiClientError(
@@ -999,6 +1004,14 @@ async function request<T>(path: string, options: ApiRequestOptions = {}) {
   try {
     return await executeRequest<T>(path, options, accessToken);
   } catch (error) {
+    if (isPortalAuthProvider()) {
+      if (error instanceof ApiClientError && error.status === 401) {
+        dispatchSessionExpired();
+      }
+
+      throw error;
+    }
+
     if (
       options.token ||
       !(error instanceof ApiClientError) ||
@@ -1030,6 +1043,47 @@ async function request<T>(path: string, options: ApiRequestOptions = {}) {
 
 export async function getHealth() {
   return request<HealthCheckResponse>("/api/v1/health");
+}
+
+export interface MyProfileResponse {
+  user: {
+    id: string;
+    email: string | null;
+  };
+  profile: ProfileRecord | null;
+  requires_profile_setup: boolean;
+}
+
+export async function getMyProfile() {
+  const response = await request<ApiEnvelope<MyProfileResponse>>("/api/v1/profile/me");
+
+  return response.data;
+}
+
+export async function uploadStorageObject(payload: {
+  bucket: string;
+  path: string;
+  content_type: string;
+  base64: string;
+}) {
+  const response = await request<ApiEnvelope<{ bucket: string; path: string; url: string | null }>>(
+    "/api/v1/storage/upload",
+    {
+      method: "POST",
+      body: payload
+    }
+  );
+
+  return response.data;
+}
+
+export async function createStorageSignedUrl(payload: { bucket: string; path: string }) {
+  const response = await request<ApiEnvelope<{ url: string | null }>>("/api/v1/storage/signed-url", {
+    method: "POST",
+    body: payload
+  });
+
+  return response.data.url;
 }
 
 export async function createProposal(payload: CreateProposalPayload, token?: string) {

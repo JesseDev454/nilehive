@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getUserFacingErrorMessage } from "@/lib/api";
+import { getPortalAuthUrl, isPortalAuthProvider } from "@/lib/env";
 import { supabase } from "@/lib/supabase";
 
 export default function ResetPassword() {
@@ -17,8 +18,14 @@ export default function ResetPassword() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasRecoverySession, setHasRecoverySession] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const portalAuthEnabled = isPortalAuthProvider();
 
   useEffect(() => {
+    if (portalAuthEnabled) {
+      window.location.assign(getPortalAuthUrl("forgot-password", window.location.origin));
+      return;
+    }
+
     let isMounted = true;
 
     supabase.auth.getSession().then(({ data }) => {
@@ -42,7 +49,19 @@ export default function ResetPassword() {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [portalAuthEnabled]);
+
+  if (portalAuthEnabled) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background p-6">
+        <div className="nh-card max-w-md bg-card p-6 text-center">
+          <BrandLogo size="lg" variant="plain" className="mx-auto mb-4 h-20 w-72 max-w-full" />
+          <h1 className="text-2xl font-black uppercase">Opening account recovery</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Please wait while we send you to the shared portal.</p>
+        </div>
+      </main>
+    );
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

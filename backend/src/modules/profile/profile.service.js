@@ -6,7 +6,8 @@ const { validateCompleteProfilePayload } = require("./profile.validation");
 function formatProfile(profile, authUser = null) {
   return {
     id: profile.id,
-    email: authUser?.email ?? null,
+    email: profile.email ?? authUser?.email ?? null,
+    portal_user_id: profile.portal_user_id ?? null,
     full_name: profile.full_name,
     role: profile.role,
     club_id: profile.club_id,

@@ -20,6 +20,7 @@ const { createProfileRouter } = require("./modules/profile/profile.routes");
 const { createProposalsRouter } = require("./modules/proposals/proposals.routes");
 const { createRemindersRouter } = require("./modules/reminders/reminders.routes");
 const { createReportsRouter } = require("./modules/reports/reports.routes");
+const { createStorageRouter } = require("./modules/storage/storage.routes");
 const { createTasksRouter } = require("./modules/tasks/tasks.routes");
 const { getEnv } = require("./config/env");
 
@@ -68,7 +69,8 @@ function createApp(options = {}) {
     }
 
     res.header("Vary", "Origin");
-    res.header("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+    res.header("Access-Control-Allow-Credentials", "true");
+    res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
     res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Idempotency-Key, X-Request-Id");
 
     if (req.method === "OPTIONS") {
@@ -104,6 +106,7 @@ function createApp(options = {}) {
   app.use("/api/v1/proposals", createProposalsRouter({ database }));
   app.use("/api/v1/reminders", createRemindersRouter({ database }));
   app.use("/api/v1/reports", createReportsRouter({ database }));
+  app.use("/api/v1/storage", createStorageRouter({ database }));
   app.use("/api/v1/tasks", createTasksRouter({ database }));
 
   app.use((req, res, next) => {

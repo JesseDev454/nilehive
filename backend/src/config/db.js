@@ -37,11 +37,11 @@ const eventRsvpSelect =
 const eventAttendanceSelect =
   "id, proposal_id, club_id, user_id, attended, checked_in_by, checked_in_at, created_at, updated_at, profile:profiles!event_attendance_user_id_fkey(id, full_name, student_id, role)";
 const profileSelect =
-  "id, full_name, role, club_id, student_id, requested_role, onboarding_status, account_status, phone_number, department, student_type, join_reason, created_at, updated_at";
+  "id, portal_user_id, email, full_name, role, club_id, student_id, requested_role, onboarding_status, account_status, phone_number, department, student_type, join_reason, created_at, updated_at";
 const legacyProfileSelect =
   "id, full_name, role, club_id, student_id, requested_role, onboarding_status, created_at, updated_at";
 const profileWithClubSelect =
-  "id, full_name, role, club_id, student_id, requested_role, onboarding_status, account_status, phone_number, department, student_type, join_reason, created_at, updated_at, club:clubs!profiles_club_id_fkey(id, name, code)";
+  "id, portal_user_id, email, full_name, role, club_id, student_id, requested_role, onboarding_status, account_status, phone_number, department, student_type, join_reason, created_at, updated_at, club:clubs!profiles_club_id_fkey(id, name, code)";
 const legacyProfileWithClubSelect =
   "id, full_name, role, club_id, student_id, requested_role, onboarding_status, created_at, updated_at, club:clubs!profiles_club_id_fkey(id, name, code)";
 const membershipRequestSelect =
@@ -86,6 +86,14 @@ function createDatabase(options = {}) {
     return error?.code === "42703" && error?.message?.includes(columnName);
   }
 
+  function isMissingProfileCompatibilityColumn(error) {
+    return (
+      isMissingColumn(error, "account_status") ||
+      isMissingColumn(error, "portal_user_id") ||
+      isMissingColumn(error, "email")
+    );
+  }
+
   function isMissingRelation(error, relationName) {
     return error?.code === "42P01" && error?.message?.includes(relationName);
   }
@@ -95,10 +103,12 @@ function createDatabase(options = {}) {
       return null;
     }
 
-    return {
-      ...profile,
-      account_status: profile.account_status ?? "active",
-      phone_number: profile.phone_number ?? null,
+      return {
+        ...profile,
+      portal_user_id: profile.portal_user_id ?? null,
+      email: profile.email ?? null,
+        account_status: profile.account_status ?? "active",
+        phone_number: profile.phone_number ?? null,
       department: profile.department ?? null,
       student_type: profile.student_type ?? null,
       join_reason: profile.join_reason ?? null
@@ -254,10 +264,52 @@ function createDatabase(options = {}) {
     async getProfileById(profileId) {
       let { data, error } = await selectProfileById(profileId, profileSelect);
 
-      if (error && isMissingColumn(error, "account_status")) {
+      if (error && isMissingProfileCompatibilityColumn(error)) {
         const fallback = await selectProfileById(profileId, legacyProfileSelect);
         data = fallback.data;
         error = fallback.error;
+      }
+
+      if (error) {
+        throw error;
+      }
+
+      return normalizeProfile(data);
+    },
+
+    async getProfileByPortalUserId(portalUserId) {
+      const { data, error } = await getClient()
+        .from("profiles")
+        .select(profileSelect)
+        .eq("portal_user_id", portalUserId)
+        .maybeSingle();
+
+      if (error && isMissingProfileCompatibilityColumn(error)) {
+        return null;
+      }
+
+      if (error) {
+        throw error;
+      }
+
+      return normalizeProfile(data);
+    },
+
+    async getProfileByEmail(email) {
+      const normalizedEmail = email?.trim().toLowerCase();
+
+      if (!normalizedEmail) {
+        return null;
+      }
+
+      const { data, error } = await getClient()
+        .from("profiles")
+        .select(profileSelect)
+        .ilike("email", normalizedEmail)
+        .maybeSingle();
+
+      if (error && isMissingProfileCompatibilityColumn(error)) {
+        return null;
       }
 
       if (error) {
@@ -567,8 +619,8 @@ function createDatabase(options = {}) {
         .select(profileSelect)
         .single();
 
-      if (error && isMissingColumn(error, "account_status")) {
-        const { account_status, ...legacyProfile } = profile;
+      if (error && isMissingProfileCompatibilityColumn(error)) {
+        const { account_status, portal_user_id, email, ...legacyProfile } = profile;
         const fallback = await getClient()
           .from("profiles")
           .insert(legacyProfile)
@@ -593,8 +645,8 @@ function createDatabase(options = {}) {
         .select(profileSelect)
         .single();
 
-      if (error && isMissingColumn(error, "account_status")) {
-        const { account_status, ...legacyUpdate } = update;
+      if (error && isMissingProfileCompatibilityColumn(error)) {
+        const { account_status, portal_user_id, email, ...legacyUpdate } = update;
         const fallback = await getClient()
           .from("profiles")
           .update(legacyUpdate)
@@ -646,7 +698,7 @@ function createDatabase(options = {}) {
 
       let { data, error, count } = await query;
 
-      if (error && isMissingColumn(error, "account_status")) {
+      if (error && isMissingProfileCompatibilityColumn(error)) {
         let fallbackQuery = getClient()
           .from("profiles")
           .select(legacyProfileWithClubSelect, filters.pagination ? { count: "exact" } : undefined)
@@ -2202,6 +2254,16 @@ function createDatabase(options = {}) {
       }
 
       return data;
+    },
+
+    async createStorageSignedUrl({ bucket, path, expiresIn = 60 * 60 }) {
+      const { data, error } = await getClient().storage.from(bucket).createSignedUrl(path, expiresIn);
+
+      if (error) {
+        throw error;
+      }
+
+      return data?.signedUrl ?? null;
     }
   };
 }

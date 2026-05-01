@@ -1,7 +1,13 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import { SESSION_EXPIRED_EVENT } from "@/lib/api";
-import { getAllowedEmailDomainLabel, isAllowedEmailDomain, isPasswordAuthEnabled } from "@/lib/env";
+import { getMyProfile, getUserFacingErrorMessage, SESSION_EXPIRED_EVENT } from "@/lib/api";
+import {
+  getAllowedEmailDomainLabel,
+  getPortalAuthUrl,
+  isAllowedEmailDomain,
+  isPasswordAuthEnabled,
+  isPortalAuthProvider
+} from "@/lib/env";
 import { queryClient } from "@/lib/queryClient";
 import { supabase, SUPABASE_AUTH_STORAGE_KEY } from "@/lib/supabase";
 
@@ -77,6 +83,48 @@ function clearLastActivityAt() {
   window.localStorage.removeItem(LAST_ACTIVITY_STORAGE_KEY);
 }
 
+function getCurrentUrl() {
+  return typeof window === "undefined" ? undefined : window.location.href;
+}
+
+function redirectToPortal(path: "sign-in" | "sign-up" | "forgot-password" | "sign-out", callbackUrl = getCurrentUrl()) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.location.assign(getPortalAuthUrl(path, callbackUrl || window.location.origin));
+}
+
+function createPortalSession(input: {
+  user: { id: string; email: string | null };
+  profile: AppProfile | null;
+}) {
+  const now = Math.floor(Date.now() / 1000);
+
+  return {
+    access_token: "",
+    refresh_token: "",
+    expires_in: 60 * 60,
+    expires_at: now + 60 * 60,
+    token_type: "bearer",
+    user: {
+      id: input.profile?.id || input.user.id,
+      aud: "authenticated",
+      role: "authenticated",
+      email: input.user.email ?? undefined,
+      app_metadata: {
+        provider: "campus-one",
+        providers: ["campus-one"]
+      },
+      user_metadata: {
+        full_name: input.profile?.full_name ?? null
+      },
+      created_at: input.profile?.created_at ?? new Date().toISOString(),
+      updated_at: input.profile?.updated_at ?? new Date().toISOString()
+    } as User
+  } as Session;
+}
+
 function hasValidPersistedActivity() {
   const lastActivityAt = readLastActivityAt();
 
@@ -122,6 +170,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function expireSessionForInactivity() {
     clearAuthState();
+    if (isPortalAuthProvider()) {
+      redirectToPortal("sign-in");
+      return;
+    }
+
     await supabase.auth.signOut();
   }
 
@@ -198,6 +251,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async function loadSession() {
       setIsLoading(true);
 
+      if (isPortalAuthProvider()) {
+        try {
+          const data = await getMyProfile();
+
+          if (!data.profile) {
+            setSession(createPortalSession(data));
+            setProfile(null);
+            setProfileError("We couldn't finish opening your profile. Please try again.");
+            setRequiresProfileRecovery(true);
+            setIsLoading(false);
+            return;
+          }
+
+          writeLastActivityAt();
+          prepareForSession(createPortalSession({ user: data.user, profile: data.profile as AppProfile }));
+          setProfile(data.profile as AppProfile);
+          setProfileError(null);
+          setRequiresProfileRecovery(false);
+          setIsLoading(false);
+        } catch (error) {
+          clearAuthState();
+
+          if (isMounted) {
+            const message = getUserFacingErrorMessage(error, "Please sign in to continue.");
+            setProfileError(message);
+            redirectToPortal("sign-in");
+          }
+        }
+
+        return;
+      }
+
       const {
         data: { session: currentSession }
       } = await supabase.auth.getSession();
@@ -228,6 +313,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     loadSession();
 
+    if (isPortalAuthProvider()) {
+      return () => {
+        isMounted = false;
+      };
+    }
+
     const {
       data: { subscription }
     } = supabase.auth.onAuthStateChange((event, nextSession) => {
@@ -257,6 +348,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     function handleSessionExpired() {
       clearAuthState();
+      if (isPortalAuthProvider()) {
+        redirectToPortal("sign-in");
+        return;
+      }
+
       void supabase.auth.signOut();
     }
 
@@ -279,6 +375,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const remainingTime = Math.max(INACTIVITY_TIMEOUT_MS - (Date.now() - lastActivityAt), 0);
       timeoutId = window.setTimeout(() => {
         clearLastActivityAt();
+        if (isPortalAuthProvider()) {
+          redirectToPortal("sign-in");
+          return;
+        }
+
         void supabase.auth.signOut();
       }, remainingTime);
     }
@@ -286,6 +387,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     function handleActivity() {
       if (!hasValidPersistedActivity()) {
         clearLastActivityAt();
+        if (isPortalAuthProvider()) {
+          redirectToPortal("sign-in");
+          return;
+        }
+
         void supabase.auth.signOut();
         return;
       }
@@ -349,6 +455,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       profileError,
       requiresProfileRecovery,
       async signIn(email, password) {
+        if (isPortalAuthProvider()) {
+          redirectToPortal("sign-in");
+          return;
+        }
+
         if (!isPasswordAuthEnabled()) {
           throw new Error("Password login is disabled. Please continue with your Nile University Microsoft account.");
         }
@@ -360,6 +471,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       },
       async signInWithMicrosoft(redirectTo) {
+        if (isPortalAuthProvider()) {
+          redirectToPortal("sign-in", redirectTo);
+          return;
+        }
+
         const { error } = await supabase.auth.signInWithOAuth({
           provider: "azure",
           options: {
@@ -381,6 +497,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         fullName,
         requestedRole
       }) {
+        if (isPortalAuthProvider()) {
+          redirectToPortal("sign-up");
+          return {
+            needsEmailConfirmation: false,
+            userId: null
+          };
+        }
+
         if (!isPasswordAuthEnabled()) {
           throw new Error("Password signup is disabled. Please continue with your Nile University Microsoft account.");
         }
@@ -419,12 +543,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
       async signOut() {
         clearAuthState();
+        if (isPortalAuthProvider()) {
+          redirectToPortal("sign-out", window.location.origin);
+          return;
+        }
+
         await supabase.auth.signOut();
       },
       getAccessToken() {
         return session?.access_token ?? "";
       },
       async refreshProfile() {
+        if (isPortalAuthProvider()) {
+          const data = await getMyProfile();
+          const nextProfile = data.profile as AppProfile | null;
+          setProfile(nextProfile);
+          setProfileError(nextProfile ? null : "We couldn't load your profile right now.");
+          setRequiresProfileRecovery(!nextProfile);
+          return nextProfile;
+        }
+
         if (!session?.user) {
           setProfile(null);
           setProfileError(null);

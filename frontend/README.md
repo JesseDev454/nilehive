@@ -7,7 +7,8 @@ This package contains the NileHive web application. It handles routing, auth-awa
 - route-level pages
 - session and role contexts
 - the shared API client
-- Supabase browser auth setup
+- Supabase browser auth setup for local fallback
+- Campus One portal redirects for Buildathon production
 - shared UI components and app shell
 
 ## Stack
@@ -43,10 +44,20 @@ VITE_API_BASE_URL=http://localhost:4000
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 VITE_ALLOWED_EMAIL_DOMAINS=nileuniversity.edu.ng,nilehive.test
+VITE_AUTH_PROVIDER=supabase
 VITE_AUTH_MODE=password
 ```
 
 Do not place the Supabase service role key in the frontend.
+
+For Buildathon production, switch to the shared portal:
+
+```env
+VITE_AUTH_PROVIDER=portal
+VITE_PORTAL_ORIGIN=https://portal.builtbysalih.com
+VITE_PORTAL_API_BASE_URL=https://api.builtbysalih.com
+VITE_APP_ORIGIN=https://clubs.builtbysalih.com
+```
 
 ## Run
 
@@ -90,7 +101,8 @@ Signup does not assign a club. Students join a club later from `Discover Clubs`.
 
 ### Sign-in and session behavior
 
-- Supabase browser auth is used for the session
+- Supabase browser auth is used in local fallback mode
+- Campus One portal owns signup, sign-in, logout, and account recovery in Buildathon production
 - the app loads the linked profile after sign-in
 - inactivity protection signs the user out after the configured timeout, including persisted-session re-entry checks
 

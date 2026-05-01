@@ -1,3 +1,5 @@
+import { createStorageSignedUrl, uploadStorageObject } from "@/lib/api";
+import { isPortalAuthProvider } from "@/lib/env";
 import { supabase } from "@/lib/supabase";
 
 export type StorageBucket = "club-logos" | "event-media" | "dues-receipts" | "reports";
@@ -14,6 +16,19 @@ export interface UploadStorageFileResult {
 }
 
 const PUBLIC_BUCKETS = new Set<StorageBucket>(["club-logos", "event-media"]);
+
+function fileToBase64(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : "";
+      resolve(result.includes(",") ? result.split(",").pop() || "" : result);
+    };
+    reader.onerror = () => reject(new Error("Could not read upload file"));
+    reader.readAsDataURL(file);
+  });
+}
 
 function sanitizeFileName(fileName: string) {
   return fileName
@@ -48,6 +63,21 @@ export async function uploadStorageFile(
   }
 
   const storagePath = toStoragePath(file, options.folder);
+
+  if (isPortalAuthProvider()) {
+    const upload = await uploadStorageObject({
+      bucket,
+      path: storagePath,
+      content_type: file.type || "application/octet-stream",
+      base64: await fileToBase64(file)
+    });
+
+    return {
+      bucket,
+      path: upload.path,
+      url: upload.url || ""
+    };
+  }
 
   const { data, error } = await supabase.storage.from(bucket).upload(storagePath, file, {
     cacheControl: "3600",
@@ -96,6 +126,10 @@ export async function resolveStorageFileUrl(bucket: StorageBucket, value: string
   if (PUBLIC_BUCKETS.has(bucket)) {
     const { data } = supabase.storage.from(bucket).getPublicUrl(value);
     return data.publicUrl;
+  }
+
+  if (isPortalAuthProvider()) {
+    return createStorageSignedUrl({ bucket, path: value });
   }
 
   const { data, error } = await supabase.storage.from(bucket).createSignedUrl(value, 60 * 60);

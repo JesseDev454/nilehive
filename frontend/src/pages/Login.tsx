@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
 import { ArrowRight, Lock, Mail, ShieldCheck } from "lucide-react";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
-import { getMicrosoftPasswordHelpUrl, isPasswordAuthEnabled } from "@/lib/env";
+import { getPortalAuthUrl, getMicrosoftPasswordHelpUrl, isPasswordAuthEnabled, isPortalAuthProvider } from "@/lib/env";
 import { getUserFacingErrorMessage } from "@/lib/api";
 
 function isRoleSensitivePath(pathname: string) {
@@ -33,9 +33,28 @@ export default function Login() {
   const requestedRedirect = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || "/";
   const redirectTo = isRoleSensitivePath(requestedRedirect) ? "/" : requestedRedirect;
   const passwordAuthEnabled = isPasswordAuthEnabled();
+  const portalAuthEnabled = isPortalAuthProvider();
+
+  useEffect(() => {
+    if (portalAuthEnabled && !isLoading && !session) {
+      window.location.assign(getPortalAuthUrl("sign-in", `${window.location.origin}${redirectTo}`));
+    }
+  }, [isLoading, portalAuthEnabled, redirectTo, session]);
 
   if (!isLoading && session) {
     return <Navigate to={redirectTo} replace />;
+  }
+
+  if (portalAuthEnabled) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background p-6">
+        <div className="nh-card max-w-md bg-card p-6 text-center">
+          <BrandLogo size="lg" variant="plain" className="mx-auto mb-4 h-20 w-72 max-w-full" />
+          <h1 className="text-2xl font-black uppercase">Opening sign in</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Please wait while we send you to the shared portal.</p>
+        </div>
+      </main>
+    );
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
