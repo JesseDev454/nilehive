@@ -1,27 +1,27 @@
 # NileHive Backend
 
-[![Service](https://img.shields.io/badge/service-Express%20API-16a34a)](C:/Users/goodl/Documents/NileHive/backend/README.md)
-[![Database](https://img.shields.io/badge/database-Supabase%20Postgres-059669)](C:/Users/goodl/Documents/NileHive/docs/DEVELOPER_GUIDE.md#supabase-setup)
-[![Tests](https://img.shields.io/badge/tests-node%20test%20runner-15803d)](C:/Users/goodl/Documents/NileHive/README.md#verification)
-
-Backend quick reference for NileHive.
-
-Start here first if you need the full project context:
-
-- [README.md](C:/Users/goodl/Documents/NileHive/README.md)
-- [docs/DEVELOPER_GUIDE.md](C:/Users/goodl/Documents/NileHive/docs/DEVELOPER_GUIDE.md)
+This package contains the Express API for NileHive. It owns the server-side business rules, role checks, workflow validation, and Supabase-backed data access used by the frontend.
 
 ## What Lives Here
 
-- Express API routes
-- backend role and scope enforcement
-- Supabase-backed data access through `src/config/db.js`
-- SQL migrations and production bootstrap SQL
+- route registration and app bootstrap
+- auth and authorization middleware
+- feature modules for proposals, members, dues, events, communications, and reports
+- the shared Supabase database adapter
+- SQL migrations and operational Supabase SQL
 - backend tests
 
-## Setup
+## Stack
 
-Install:
+- Node.js
+- Express
+- Supabase JS
+- Postgres on Supabase
+- Node test runner
+
+## Local Setup
+
+Install dependencies:
 
 ```powershell
 npm.cmd install
@@ -33,13 +33,13 @@ Create:
 .env
 ```
 
-Use `../backend/.env.example` as the base.
+Use [backend/.env.example](C:/Users/goodl/Documents/NileHive/backend/.env.example) as the starting point.
 
-Important backend-only variables:
+Most important variables:
 
-- `SUPABASE_SERVICE_ROLE_KEY`
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
 - `ALLOWED_EMAIL_DOMAINS`
 - `FRONTEND_APP_URL`
 
@@ -63,14 +63,47 @@ http://localhost:4000
 npm.cmd test
 ```
 
-## Main Backend Entry Points
+## Backend Structure
 
-- app wiring: [src/app.js](C:/Users/goodl/Documents/NileHive/backend/src/app.js)
-- auth middleware: [src/middleware/auth.js](C:/Users/goodl/Documents/NileHive/backend/src/middleware/auth.js)
-- shared DB adapter: [src/config/db.js](C:/Users/goodl/Documents/NileHive/backend/src/config/db.js)
-- profile module: [src/modules/profile](C:/Users/goodl/Documents/NileHive/backend/src/modules/profile)
-- proposals module: [src/modules/proposals](C:/Users/goodl/Documents/NileHive/backend/src/modules/proposals)
-- membership module: [src/modules/membership-requests](C:/Users/goodl/Documents/NileHive/backend/src/modules/membership-requests)
+Key entry points:
+
+- [src/app.js](C:/Users/goodl/Documents/NileHive/backend/src/app.js)
+- [src/config/db.js](C:/Users/goodl/Documents/NileHive/backend/src/config/db.js)
+- [src/middleware/auth.js](C:/Users/goodl/Documents/NileHive/backend/src/middleware/auth.js)
+- [src/middleware/errorHandler.js](C:/Users/goodl/Documents/NileHive/backend/src/middleware/errorHandler.js)
+
+Feature modules are organized under `src/modules/`. Most follow this pattern:
+
+- `*.routes.js`
+- `*.controller.js`
+- `*.service.js`
+- `*.validation.js`
+
+Common route groups:
+
+- `/api/v1/profile`
+- `/api/v1/clubs`
+- `/api/v1/membership-requests`
+- `/api/v1/members`
+- `/api/v1/dues`
+- `/api/v1/proposals`
+- `/api/v1/events`
+- `/api/v1/reports`
+- `/api/v1/communications`
+- `/api/v1/tasks`
+- `/api/v1/admin/users`
+
+## Business Rule Responsibilities
+
+The backend is the real security boundary. It is responsible for:
+
+- enforcing role access
+- preventing users from acting outside their club scope
+- validating request payloads
+- shaping paginated responses
+- coordinating membership, dues, and proposal workflows
+
+If the frontend hides an action but the backend does not enforce it, it is not secure yet.
 
 ## Supabase Files
 
@@ -85,48 +118,31 @@ supabase/migrations/
 Current migration ceiling:
 
 ```text
-0037_signup_profile_provisioning.sql
+0042_fix_student_dues_receipt_upload_rls.sql
 ```
 
-### Production-Safe SQL
+### Production-safe SQL
 
 - [supabase/bootstrap_admin.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/bootstrap_admin.sql)
 - [supabase/bootstrap_clubs.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/bootstrap_clubs.sql)
 - [supabase/verify_clean_production.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/verify_clean_production.sql)
 
-### Local/Demo Only
+### Local or demo only
 
 - [supabase/demo_seed.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/demo_seed.sql)
 - [supabase/seed.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/seed.sql)
 
-## API Shape
+## Development Rules
 
-Common route groups:
+1. Keep route handlers thin.
+2. Put workflow logic in services.
+3. Keep validation explicit and close to the module.
+4. Add tests when behavior changes.
+5. Update docs when the workflow contract changes.
 
-- `/api/v1/health`
-- `/api/v1/ready`
-- `/api/v1/profile`
-- `/api/v1/clubs`
-- `/api/v1/proposals`
-- `/api/v1/membership-requests`
-- `/api/v1/members`
-- `/api/v1/dues`
-- `/api/v1/events`
-- `/api/v1/reports`
-- `/api/v1/communications`
-- `/api/v1/tasks`
-- `/api/v1/admin/users`
+## More Reading
 
-## Backend Development Rules
-
-1. Keep business rules in services.
-2. Keep validation explicit and close to the module.
-3. Keep route handlers thin.
-4. Add tests for behavior changes.
-5. Treat backend authorization as the real security layer even if the frontend already hides the UI.
-
-## More Detail
-
-For setup, auth flow, production safety, and troubleshooting:
-
+- [README.md](C:/Users/goodl/Documents/NileHive/README.md)
 - [docs/DEVELOPER_GUIDE.md](C:/Users/goodl/Documents/NileHive/docs/DEVELOPER_GUIDE.md)
+- [docs/ARCHITECTURE.md](C:/Users/goodl/Documents/NileHive/docs/ARCHITECTURE.md)
+- [docs/WORKFLOWS.md](C:/Users/goodl/Documents/NileHive/docs/WORKFLOWS.md)

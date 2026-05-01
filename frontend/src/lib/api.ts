@@ -857,11 +857,15 @@ export function getUserFacingErrorMessage(error: unknown, fallback = "Please try
     const fieldMessages = getApiErrorFieldMessages(error);
 
     if (fieldMessages.length > 0) {
-      return `Please fix these items: ${fieldMessages.join("; ")}`;
+      return `Please fix: ${fieldMessages.join("; ")}`;
     }
 
     if (error.code === "NETWORK_ERROR" || error.status === 0) {
-      return "We couldn’t reach NileHive right now. Please check your network and try again shortly.";
+      return "We couldn't connect right now. Please check your internet and try again.";
+    }
+
+    if (error.code === "INVALID_RESPONSE_BODY") {
+      return "Something went wrong. Please try again.";
     }
 
     return error.message || fallback;
@@ -869,7 +873,7 @@ export function getUserFacingErrorMessage(error: unknown, fallback = "Please try
 
   if (error instanceof Error) {
     if (error.message.toLowerCase().includes("failed to fetch")) {
-      return "We couldn’t reach NileHive right now. Please check your network and try again shortly.";
+      return "We couldn't connect right now. Please check your internet and try again.";
     }
 
     return error.message || fallback;
@@ -942,7 +946,7 @@ async function executeRequest<T>(path: string, options: ApiRequestOptions, acces
     });
   } catch (error) {
     throw new ApiClientError(
-      "We couldn't reach NileHive right now. Check your connection and try again shortly.",
+      "We couldn't connect right now. Please check your internet and try again.",
       {
         status: 0,
         code: "NETWORK_ERROR",
@@ -961,9 +965,7 @@ async function executeRequest<T>(path: string, options: ApiRequestOptions, acces
       responseJson = JSON.parse(responseText);
     } catch {
       throw new ApiClientError(
-        response.ok
-          ? "NileHive returned an unreadable response. Please try again."
-          : "NileHive returned an unreadable error response. Please try again.",
+        "Something went wrong. Please try again.",
         {
           status: response.status,
           code: "INVALID_RESPONSE_BODY",

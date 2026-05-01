@@ -10,11 +10,11 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { NeoEmptyState, NeoErrorState, NeoLoadingState } from "@/components/NeoBrutal";
 import {
-  ApiClientError,
   getAdminOperationsDashboard,
   getApprovedEvents,
   getEventEngagement,
   getEventReminders,
+  getUserFacingErrorMessage,
   getMyDuePayments,
   getMyMembershipRequests,
   getNotifications,
@@ -99,11 +99,7 @@ function StatCard({
 }
 
 function getErrorMessage(error: unknown) {
-  if (error instanceof ApiClientError || error instanceof Error) {
-    return error.message;
-  }
-
-  return "Unable to load dashboard data right now.";
+  return getUserFacingErrorMessage(error, "We couldn't load this section. Please try again.");
 }
 
 function getDateLabel(value?: string) {
@@ -734,11 +730,37 @@ function AdvisorDashboard() {
   const { data: pending = [], isLoading, isError, error } = useAdvisorPendingProposals();
 
   return (
-    <div className="space-y-6 animate-slide-up">
-      <div>
-        <h1 className="text-2xl font-bold">Advisor Dashboard</h1>
-        <p className="text-muted-foreground text-sm mt-1">Review and approve proposals</p>
-      </div>
+    <div className="space-y-7 animate-slide-up">
+      <section className="relative overflow-hidden border-2 border-foreground bg-primary p-6 text-primary-foreground shadow-[8px_8px_0_hsl(var(--foreground))] md:p-8">
+        <div className="absolute -right-16 -top-16 h-48 w-48 border-2 border-primary-foreground/20 bg-warning/20" />
+        <div className="absolute bottom-0 right-10 h-24 w-24 border-2 border-primary-foreground/10 bg-secondary/15" />
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white/80">
+              <ShieldCheck className="h-3.5 w-3.5 text-warning" />
+              Advisor Review Desk
+            </div>
+            <h1 className="text-3xl font-black tracking-tight md:text-4xl">Advisor Dashboard</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75 md:text-base">
+              Keep proposals moving with timely feedback, clean approvals, and a clear view of what still needs your review.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3 lg:min-w-[420px]">
+            <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
+              <p className="text-xs text-white/60">Pending reviews</p>
+              <p className="mt-2 text-2xl font-black">{formatNumber(pending.length)}</p>
+            </div>
+            <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
+              <p className="text-xs text-white/60">Queue health</p>
+              <p className="mt-2 text-2xl font-black">{pending.length === 0 ? "Clear" : "Active"}</p>
+            </div>
+            <div className="col-span-2 border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4 sm:col-span-1">
+              <p className="text-xs text-white/60">Next stop</p>
+              <p className="mt-2 text-sm font-black uppercase tracking-[0.12em]">Review queue</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <div className="grid grid-cols-1 sm:grid-cols-1 gap-4 max-w-sm">
         <StatCard title="Pending Reviews" value={pending.length} icon={Clock} variant="warning" />
@@ -1051,10 +1073,8 @@ function PolishedAdminDashboard() {
         <Card>
           <CardContent className="p-12 text-center">
             <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-3" />
-            <p className="font-medium">We could not load the operations dashboard</p>
-            <p className="text-sm text-muted-foreground mt-2">
-              {getErrorMessage(error)} Try refreshing the page, and confirm the backend is running.
-            </p>
+            <p className="font-medium">We couldn't load the operations dashboard</p>
+            <p className="text-sm text-muted-foreground mt-2">{getErrorMessage(error)}</p>
           </CardContent>
         </Card>
       ) : isLoading ? (
@@ -1510,6 +1530,42 @@ function StudentEventCard({
   );
 }
 
+function getStudentMembershipSnapshot({
+  activeMembership,
+  firstDuesRequest,
+  pendingRequests
+}: {
+  activeMembership?: MembershipRequestRecord;
+  firstDuesRequest?: MembershipRequestRecord;
+  pendingRequests: MembershipRequestRecord[];
+}) {
+  if (activeMembership) {
+    return {
+      value: "Membership active",
+      detail: activeMembership.club?.name || "Active club"
+    };
+  }
+
+  if (firstDuesRequest) {
+    return {
+      value: "Dues follow-up",
+      detail: firstDuesRequest.club?.name || "Membership in progress"
+    };
+  }
+
+  if (pendingRequests.length > 0) {
+    return {
+      value: "Under review",
+      detail: pendingRequests[0]?.club?.name || "Waiting for club review"
+    };
+  }
+
+  return {
+    value: "Ready to join",
+    detail: "Open Discover Clubs to get started"
+  };
+}
+
 function StudentDashboard() {
   const { profile } = useAuth();
   const {
@@ -1577,10 +1633,26 @@ function StudentDashboard() {
     () => new Map(duePayments.map((payment) => [payment.id, payment] as const)),
     [duePayments]
   );
+  const requestByDuePaymentId = useMemo(
+    () =>
+      new Map(
+        membershipRequests
+          .filter((request) => request.due_payment_id)
+          .map((request) => [request.due_payment_id as string, request] as const)
+      ),
+    [membershipRequests]
+  );
   const activeMembership = activeMemberships[0];
-  const activeMembershipPayment = activeMembership?.due_payment_id ? duesById.get(activeMembership.due_payment_id) : undefined;
   const firstDuesRequest = duesRequiredRequests[0];
   const firstDuesPayment = firstDuesRequest?.due_payment_id ? duesById.get(firstDuesRequest.due_payment_id) : undefined;
+  const firstUnpaidDue = unpaidDues[0];
+  const firstUnpaidRequest = firstUnpaidDue ? requestByDuePaymentId.get(firstUnpaidDue.id) : undefined;
+  const firstName = profile?.full_name?.trim().split(/\s+/).filter(Boolean)[0] || "student";
+  const accountSnapshot = getStudentMembershipSnapshot({
+    activeMembership,
+    firstDuesRequest,
+    pendingRequests
+  });
 
   return (
     <div className="space-y-7 animate-slide-up">
@@ -1591,16 +1663,19 @@ function StudentDashboard() {
           <div>
             <Badge className="mb-4 bg-white/15 text-white hover:bg-white/15">Student Home</Badge>
             <h1 className="text-3xl font-black tracking-tight md:text-4xl">
-              Welcome back, {profile?.full_name?.split(" ")[0] || "student"}
+              Welcome back, {firstName}
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75 md:text-base">
               Track your club membership, dues, events, RSVP choices, and reminders from one simple home base.
             </p>
           </div>
           <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-white/60">Student profile</p>
-            <p className="mt-2 font-semibold">{profile?.full_name || "Student"}</p>
-            <p className="text-sm text-white/70">{profile?.student_id || "Student ID not set"}</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-white/60">Account snapshot</p>
+            <p className="mt-2 font-semibold">{accountSnapshot.value}</p>
+            <p className="text-sm text-white/70">{accountSnapshot.detail}</p>
+            <p className="mt-3 text-xs text-white/60">
+              Student ID: {profile?.student_id || "Not set yet"} • Active clubs: {formatNumber(activeMemberships.length)}
+            </p>
           </div>
         </div>
         <div className="relative mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -1803,10 +1878,34 @@ function StudentDashboard() {
                   <p className="mt-3 text-sm">
                     {firstDuesPayment?.status === "submitted"
                       ? "Your payment confirmation is in review."
-                      : "Open membership to submit the name on the account used, reference, and proof if available."}
+                      : firstDuesPayment?.status === "rejected"
+                        ? "Your last payment confirmation was not approved. Open membership to upload a clearer receipt and resubmit."
+                        : "Open membership to submit the name on the account used, reference, and receipt."}
                   </p>
                   <Button asChild variant="secondary" size="sm" className="mt-4">
-                    <Link to="/membership">{firstDuesPayment?.status === "submitted" ? "View status" : "I have paid"}</Link>
+                    <Link to="/membership">
+                      {firstDuesPayment?.status === "submitted"
+                        ? "View status"
+                        : firstDuesPayment?.status === "rejected"
+                          ? "Resubmit payment"
+                          : "I have paid"}
+                    </Link>
+                  </Button>
+                </div>
+              ) : firstUnpaidDue ? (
+                <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
+                  <p className="font-semibold">{firstUnpaidRequest?.club?.name || "Membership payment update"}</p>
+                  <p className="mt-1 text-sm text-primary-foreground/70">
+                    {firstUnpaidDue.amount ? formatCurrency(firstUnpaidDue.amount) : "Dues amount pending"}
+                    {" "}for {firstUnpaidDue.academic_session || "this session"}
+                  </p>
+                  <p className="mt-3 text-sm">
+                    {firstUnpaidDue.status === "rejected"
+                      ? "Your payment confirmation needs another try. Open membership to update the reference and upload a new receipt."
+                      : "A dues payment is still waiting from you. Open membership to submit your payment details and receipt."}
+                  </p>
+                  <Button asChild variant="secondary" size="sm" className="mt-4">
+                    <Link to="/membership">{firstUnpaidDue.status === "rejected" ? "Try again" : "Complete payment"}</Link>
                   </Button>
                 </div>
               ) : submittedDues.length > 0 ? (
@@ -1853,21 +1952,50 @@ function PresidentDashboard() {
     retry: false
   });
   const summary = dashboard?.summary;
+  const pendingCount = summary?.pending_proposals ?? 0;
+  const upcomingCount = summary?.upcoming_events ?? 0;
+  const executiveCount = summary?.executive_count ?? 0;
 
   return (
-    <div className="space-y-6 animate-slide-up">
-      <div>
-        <h1 className="text-2xl font-bold">President Dashboard</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          {dashboard?.club?.name ? `${dashboard.club.name} control tower` : "Club oversight and performance view"}
-        </p>
-      </div>
+    <div className="space-y-7 animate-slide-up">
+      <section className="relative overflow-hidden border-2 border-foreground bg-primary p-6 text-primary-foreground shadow-[8px_8px_0_hsl(var(--foreground))] md:p-8">
+        <div className="absolute -right-16 -top-16 h-48 w-48 border-2 border-primary-foreground/20 bg-warning/20" />
+        <div className="absolute bottom-0 right-10 h-24 w-24 border-2 border-primary-foreground/10 bg-secondary/15" />
+        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white/80">
+              <ShieldCheck className="h-3.5 w-3.5 text-warning" />
+              Club Leadership Hub
+            </div>
+            <h1 className="text-3xl font-black tracking-tight md:text-4xl">President Dashboard</h1>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75 md:text-base">
+              {dashboard?.club?.name
+                ? `${dashboard.club.name} at a glance: keep proposals moving, track upcoming events, and stay close to executive activity.`
+                : "Keep proposals moving, track upcoming events, and stay close to executive activity."}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3 lg:min-w-[420px]">
+            <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
+              <p className="text-xs text-white/60">Pending proposals</p>
+              <p className="mt-2 text-2xl font-black">{formatNumber(pendingCount)}</p>
+            </div>
+            <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
+              <p className="text-xs text-white/60">Upcoming events</p>
+              <p className="mt-2 text-2xl font-black">{formatNumber(upcomingCount)}</p>
+            </div>
+            <div className="col-span-2 border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4 sm:col-span-1">
+              <p className="text-xs text-white/60">Executive team</p>
+              <p className="mt-2 text-2xl font-black">{formatNumber(executiveCount)}</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {isError ? (
         <Card>
           <CardContent className="p-12 text-center">
             <FileText className="h-12 w-12 text-destructive mx-auto mb-3" />
-            <p className="font-medium">Unable to load president dashboard</p>
+            <p className="font-medium">We couldn't load the president dashboard</p>
             <p className="text-sm text-muted-foreground mt-2">{getErrorMessage(error)}</p>
           </CardContent>
         </Card>

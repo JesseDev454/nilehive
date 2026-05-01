@@ -1,103 +1,35 @@
 # NileHive Developer Guide
 
-[![Audience](https://img.shields.io/badge/audience-developers-1D4DA1)](#who-this-is-for)
-[![Local Setup](https://img.shields.io/badge/local%20setup-supported-15803d)](#local-setup)
-[![Production Safety](https://img.shields.io/badge/production-safety%20first-b45309)](#environment-safety-rules)
-[![Supabase](https://img.shields.io/badge/supabase-required-059669)](#supabase-setup)
-[![Frontend](https://img.shields.io/badge/frontend-Vite%20React-0ea5e9)](#frontend-architecture)
-[![Backend](https://img.shields.io/badge/backend-Express%20API-16a34a)](#backend-architecture)
+This guide is the main technical walkthrough for developers working on NileHive. It explains how the system is put together, how the main business flows work today, and how to stay safe while changing code that touches auth, roles, dues, proposals, and club operations.
 
 ## Who This Is For
 
-This guide is for developers who need to:
+Use this guide if you need to:
 
-- run NileHive locally
-- understand the current architecture
+- run the app locally
+- understand the frontend and backend architecture
 - work safely with Supabase
-- know which SQL files are safe for production vs demo
-- debug the common environment and auth issues quickly
+- trace the current signup, club join, dues, and proposal workflows
+- debug common data, auth, and environment issues
 
-If you are looking for deployment-only instructions, use:
+If you need a map of all available docs, start at [docs/README.md](C:/Users/goodl/Documents/NileHive/docs/README.md).
 
-- [PRODUCTION_HANDOFF.md](C:/Users/goodl/Documents/NileHive/docs/PRODUCTION_HANDOFF.md)
-- [PRODUCTION_FRESH_START.md](C:/Users/goodl/Documents/NileHive/docs/PRODUCTION_FRESH_START.md)
+## System Overview
 
-## Project Overview
+NileHive is the Club Services platform for Nile University of Nigeria. It supports:
 
-NileHive is the Club Services platform for Nile University. It manages:
+- account creation and sign-in
+- club discovery and join requests
+- dues submission and verification
+- proposal workflows across presidents, advisors, and admins
+- approved events and post-event reporting
+- role-based dashboards, notifications, and operations screens
 
-- signup and profile provisioning
-- club membership requests
-- dues and verification
-- proposal submission and approval
-- approved events
-- reports, tasks, and dashboards
-- targeted announcements and notifications
+At a high level, the system has three layers:
 
-### Current Access Roles
-
-- `student`
-- `executive`
-- `president`
-- `advisor`
-- `admin`
-
-## Architecture At A Glance
-
-### Identity Model
-
-NileHive uses two layers:
-
-1. `auth.users`
-   This is the Supabase Auth account.
-
-2. `public.profiles`
-   This is the app profile and role record.
-
-Rule:
-
-```text
-auth.users.id = public.profiles.id
-```
-
-### Signup Model
-
-The normal signup flow is:
-
-1. user signs up in the frontend
-2. signup metadata is sent to Supabase Auth
-3. [0040_unified_club_dues_and_signup_join_flow.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/migrations/0040_unified_club_dues_and_signup_join_flow.sql) provisions the app profile
-4. students also get an initial membership request and linked dues record based on the selected club and student type
-5. if the student selected a receipt image on signup, the frontend uploads it through the public signup receipt endpoint after account creation and the backend attaches it to the created dues record
-6. if email confirmation is required, the user sees the confirmation page
-7. after confirmation or immediate session creation, the user enters the app directly
-
-### Legacy Recovery Path
-
-[ProfileSetup.tsx](C:/Users/goodl/Documents/NileHive/frontend/src/pages/ProfileSetup.tsx) is no longer the normal signup continuation. It is only a fallback for older accounts that signed in before automatic provisioning existed.
-
-## Repository Layout
-
-```text
-NileHive/
-  backend/
-    src/
-    supabase/
-      migrations/
-      bootstrap_admin.sql
-      bootstrap_clubs.sql
-      demo_seed.sql
-      seed.sql
-      verify_clean_production.sql
-    tests/
-  frontend/
-    src/
-      components/
-      contexts/
-      lib/
-      pages/
-  docs/
-```
+1. `frontend/` for the web UI
+2. `backend/` for the API and business rules
+3. Supabase for auth, storage, and Postgres data
 
 ## Local Setup
 
@@ -106,15 +38,15 @@ NileHive/
 - Node.js 18+
 - npm
 - Git
-- Supabase dashboard access
+- access to a non-production Supabase project
 
 Recommended:
 
 - VS Code
-- Render access for backend deployment support
-- Vercel access for frontend deployment support
+- Render access if you support backend deployment
+- Vercel access if you support frontend deployment
 
-### Install Dependencies
+### Install dependencies
 
 ```powershell
 cd backend
@@ -123,52 +55,19 @@ cd ..\frontend
 npm.cmd install
 ```
 
-### Create Environment Files
+### Create environment files
 
-Backend:
+Create:
 
-```text
-backend/.env
-```
+- `backend/.env`
+- `frontend/.env.local`
 
-Frontend:
-
-```text
-frontend/.env.local
-```
-
-Use the examples in:
+Use these as templates:
 
 - [backend/.env.example](C:/Users/goodl/Documents/NileHive/backend/.env.example)
 - [frontend/.env.example](C:/Users/goodl/Documents/NileHive/frontend/.env.example)
 
-### Minimal Local Example
-
-Backend:
-
-```env
-PORT=4000
-SUPABASE_URL=https://your-dev-project-ref.supabase.co
-SUPABASE_ANON_KEY=your-dev-anon-key
-SUPABASE_SERVICE_ROLE_KEY=your-dev-service-role-key
-ALLOWED_EMAIL_DOMAINS=nileuniversity.edu.ng,nilehive.test
-FRONTEND_APP_URL=http://localhost:8080
-ASYNC_JOBS_ENABLED=false
-EMAIL_DELIVERY_ENABLED=false
-```
-
-Frontend:
-
-```env
-VITE_API_BASE_URL=http://localhost:4000
-VITE_SUPABASE_URL=https://your-dev-project-ref.supabase.co
-VITE_SUPABASE_ANON_KEY=your-dev-anon-key
-VITE_ALLOWED_EMAIL_DOMAINS=nileuniversity.edu.ng,nilehive.test
-VITE_AUTH_MODE=password
-VITE_MICROSOFT_PASSWORD_HELP_URL=https://passwordreset.microsoftonline.com/
-```
-
-### Start The App
+### Start the app
 
 Backend:
 
@@ -189,48 +88,108 @@ Default local URLs:
 - frontend: `http://localhost:8080`
 - backend: `http://localhost:4000`
 
-## Environment Safety Rules
+## Architecture At A Glance
 
-These rules matter a lot:
+### Frontend responsibilities
 
-### Local And Production Must Never Share The Same Supabase Project
+The frontend handles:
 
-Use:
+- routing and protected screens
+- Supabase browser auth session management
+- role-aware dashboards and UI
+- file uploads for dues receipts
+- typed calls into the backend API
 
-- one local/dev Supabase project
-- one production Supabase project
+Most important files:
 
-Never point local `.env` files to production.
+- [frontend/src/App.tsx](C:/Users/goodl/Documents/NileHive/frontend/src/App.tsx)
+- [frontend/src/contexts/AuthContext.tsx](C:/Users/goodl/Documents/NileHive/frontend/src/contexts/AuthContext.tsx)
+- [frontend/src/contexts/RoleContext.tsx](C:/Users/goodl/Documents/NileHive/frontend/src/contexts/RoleContext.tsx)
+- [frontend/src/lib/api.ts](C:/Users/goodl/Documents/NileHive/frontend/src/lib/api.ts)
+- [frontend/src/pages/Dashboard.tsx](C:/Users/goodl/Documents/NileHive/frontend/src/pages/Dashboard.tsx)
 
-### Allowed Email Domains
+### Backend responsibilities
 
-Local/dev:
+The backend handles:
+
+- JWT-backed auth checks
+- role enforcement
+- workflow validation
+- data access through the Supabase adapter
+- pagination, filtering, and response shaping
+
+Most important files:
+
+- [backend/src/app.js](C:/Users/goodl/Documents/NileHive/backend/src/app.js)
+- [backend/src/config/db.js](C:/Users/goodl/Documents/NileHive/backend/src/config/db.js)
+- [backend/src/middleware/auth.js](C:/Users/goodl/Documents/NileHive/backend/src/middleware/auth.js)
+- [backend/src/middleware/errorHandler.js](C:/Users/goodl/Documents/NileHive/backend/src/middleware/errorHandler.js)
+
+Feature modules typically follow:
+
+- `routes`
+- `controller`
+- `service`
+- `validation`
+
+## Data, Roles, And Security
+
+### Identity model
+
+NileHive uses:
+
+1. `auth.users` for Supabase Auth
+2. `public.profiles` for app identity and role access
+
+Rule:
 
 ```text
-nileuniversity.edu.ng,nilehive.test
+auth.users.id = public.profiles.id
 ```
 
-Production:
+### App roles
 
-```text
-nileuniversity.edu.ng
-```
+- `student`
+- `executive`
+- `president`
+- `advisor`
+- `admin`
 
-### Service Role Key Rule
+The frontend hides or shows screens based on role, but the real security boundary is the backend plus Supabase policies.
 
-The Supabase service role key is backend-only.
+### Current signup model
 
-Never place it in:
+The current checked-in signup flow is intentionally slim:
 
-- frontend env files
-- Vite code
-- client-rendered code
+- the user submits full name, email, password, and role
+- the role is limited to `student` or `advisor` at signup time
+- Supabase creates the auth user
+- the provisioning trigger creates a minimal `public.profiles` row
+- no club membership or dues records are created during signup
+
+This behavior comes from:
+
+- [0041_slim_signup_no_club_join.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/migrations/0041_slim_signup_no_club_join.sql)
+
+### Current join model
+
+Students join clubs later from `Discover Clubs`, where they submit:
+
+- student ID if available
+- phone number
+- department
+- student type
+- join reason
+- payment details
+- receipt upload
+
+That flow creates the membership request and dues-linked review state.
 
 ## Supabase Setup
 
-### Apply Migrations
+### Migration policy
 
-Run everything in:
+Run SQL files in:
 
 ```text
 backend/supabase/migrations/
@@ -238,256 +197,138 @@ backend/supabase/migrations/
 
 Apply them in numeric order.
 
-Current migration range:
+Current migration ceiling:
 
 ```text
-0001_week1_schema.sql
-...
-0040_unified_club_dues_and_signup_join_flow.sql
+0042_fix_student_dues_receipt_upload_rls.sql
 ```
 
-### SQL Files And When To Use Them
+### Production-safe SQL files
 
-| File | Use It When | Production Safe |
-|---|---|---|
-| `migrations/*.sql` | schema and behavior changes | `Yes` |
-| `bootstrap_admin.sql` | promoting the first real admin after real auth signup | `Yes` |
-| `bootstrap_clubs.sql` | inserting the real official Nile clubs | `Yes` |
-| `verify_clean_production.sql` | checking a clean production database | `Yes` |
-| `demo_seed.sql` | local/demo seeded walkthrough data | `No` |
-| `seed.sql` | local/dev starter data | `No` |
+- [bootstrap_admin.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/bootstrap_admin.sql)
+- [bootstrap_clubs.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/bootstrap_clubs.sql)
+- [verify_clean_production.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/verify_clean_production.sql)
 
-### First Production Admin
+### Local or demo only
 
-Use [bootstrap_admin.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/bootstrap_admin.sql) only after the real auth user already exists in Supabase Auth.
+- [demo_seed.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/demo_seed.sql)
+- [seed.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/seed.sql)
 
-### Real Production Clubs
+Never run the seed scripts against production.
 
-Use [bootstrap_clubs.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/bootstrap_clubs.sql) to insert the official Nile University clubs into a clean production database.
+## Core Business Flows
 
-## Frontend Architecture
+### 1. Signup and access
 
-Most important files:
+- students and advisors create accounts with Nile email addresses
+- a profile is provisioned automatically
+- the user signs in and lands in the app without a club assignment
 
-- [App.tsx](C:/Users/goodl/Documents/NileHive/frontend/src/App.tsx)
-  Main route wiring and protected-route behavior
+### 2. Discover Clubs and join request
 
-- [AuthContext.tsx](C:/Users/goodl/Documents/NileHive/frontend/src/contexts/AuthContext.tsx)
-  Session state, profile hydration, signup flow, legacy profile recovery behavior
+- the user opens `Discover Clubs`
+- chooses one club
+- fills the club join form
+- uploads a dues receipt
+- submits the request
 
-- [RoleContext.tsx](C:/Users/goodl/Documents/NileHive/frontend/src/contexts/RoleContext.tsx)
-  UI role exposure for role-based page behavior
+### 3. Dues and membership review
 
-- [api.ts](C:/Users/goodl/Documents/NileHive/frontend/src/lib/api.ts)
-  Shared backend request layer and typed API calls
+- presidents and admins review submitted dues
+- payment confirmation drives the membership decision
+- approved requests activate club membership and update the relevant records
 
-- [supabase.ts](C:/Users/goodl/Documents/NileHive/frontend/src/lib/supabase.ts)
-  Browser Supabase client setup and storage key behavior
+### 4. Proposal workflow
 
-### Frontend Rules
+- presidents submit proposals
+- advisors review and can return or approve
+- admins perform final Club Services approval
+- approved proposals surface as events
 
-1. Prefer shared API functions from `src/lib/api.ts`.
-2. Avoid scattered direct `fetch()` calls in page components.
-3. Keep auth/session behavior inside `AuthContext`.
-4. Treat backend validation messages as the source of truth for form errors.
+### 5. Events and reporting
 
-## Backend Architecture
+- only approved events are visible on the student-facing events experience
+- reminders, attendance, feedback, and post-event reporting continue from there
 
-Most important files:
+More detailed role-by-role flow notes live in [WORKFLOWS.md](C:/Users/goodl/Documents/NileHive/docs/WORKFLOWS.md).
 
-- [app.js](C:/Users/goodl/Documents/NileHive/backend/src/app.js)
-  Express app composition and route registration
+## Developer Workflow
 
-- [db.js](C:/Users/goodl/Documents/NileHive/backend/src/config/db.js)
-  Supabase-backed database adapter
+### Changing frontend behavior
 
-- [auth.js](C:/Users/goodl/Documents/NileHive/backend/src/middleware/auth.js)
-  Token lookup and profile enforcement
+1. update the relevant page or component
+2. keep shared fetch logic in `frontend/src/lib/api.ts`
+3. keep auth and role logic inside contexts where possible
+4. run a production build before finalizing
 
-- [errorHandler.js](C:/Users/goodl/Documents/NileHive/backend/src/middleware/errorHandler.js)
-  Standard API error envelope
+### Changing backend behavior
 
-### Backend Module Pattern
+1. update the relevant module under `backend/src/modules`
+2. keep validation explicit
+3. keep business rules in services, not route handlers
+4. add or update tests
 
-Each feature module usually contains:
+### Changing database behavior
 
-- routes
-- controller
-- service
-- validation
-
-Examples:
-
-- `src/modules/proposals/`
-- `src/modules/membership-requests/`
-- `src/modules/profile/`
-- `src/modules/admin-users/`
-
-### Backend Rules
-
-1. Keep role enforcement in backend services and middleware.
-2. Keep validation explicit.
-3. Keep business rules in services, not route handlers.
-4. Add tests when changing behavior.
-
-## Auth, Signup, And Recovery Flows
-
-### Student Signup
-
-- requires Nile email
-- allows student ID if available, but does not require it at signup
-- requires phone number
-- requires department
-- requires club choice
-- requires student type (`fresher` or `returning`)
-- requires payment account name and transaction reference
-- creates Supabase auth user
-- provisions `public.profiles` automatically
-- creates the first membership request and dues record automatically
-- can attach an uploaded receipt image to the created dues record
-
-### Advisor Signup
-
-- requires Nile email
-- does not require student ID
-- requires club choice
-- creates Supabase auth user
-- provisions `public.profiles` automatically
-- does not auto-grant advisor-club authority
-
-### Email Confirmation
-
-If Supabase email confirmation is enabled:
-
-- signup may return no live session
-- user is sent to the signup confirmation page
-- user confirms through email
-- user returns and signs in normally
-
-### Legacy Account Recovery
-
-If a user has an older auth account but no `public.profiles` row:
-
-- the app retries profile loading briefly
-- then exposes the legacy recovery page
-- this should be rare after `0037_signup_profile_provisioning.sql`
-
-## Common Developer Tasks
-
-### Add A New Backend Feature
-
-1. create or update the module in `backend/src/modules`
-2. add database adapter support in `db.js` if needed
-3. add validation
-4. add tests in `backend/tests`
-5. add frontend API functions in `frontend/src/lib/api.ts`
-6. connect the relevant page or component
-
-### Add A New SQL Change
-
-1. create a new numbered migration in `backend/supabase/migrations/`
-2. keep it idempotent where reasonable
-3. update any docs that mention the current migration ceiling
-4. add at least one regression test if the migration affects a critical path
-
-### Update Signup Behavior
-
-Check:
-
-- [AuthContext.tsx](C:/Users/goodl/Documents/NileHive/frontend/src/contexts/AuthContext.tsx)
-- [SignUp.tsx](C:/Users/goodl/Documents/NileHive/frontend/src/pages/SignUp.tsx)
-- [SignupConfirmation.tsx](C:/Users/goodl/Documents/NileHive/frontend/src/pages/SignupConfirmation.tsx)
-- [0037_signup_profile_provisioning.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/migrations/0037_signup_profile_provisioning.sql)
+1. add a new numbered migration
+2. keep it safe to re-run where practical
+3. update docs that mention current migration behavior
+4. verify the frontend and backend still match the new schema
 
 ## Troubleshooting
 
-### `/api/v1/ready` Returns 503 `DATABASE_UNAVAILABLE`
+### The site opens but profile data does not load
 
 Check:
 
-1. `SUPABASE_URL` is correct
-2. `SUPABASE_SERVICE_ROLE_KEY` is correct
-3. Data API is enabled in Supabase
-4. migrations were applied
-5. existing tables were granted to `service_role`, `authenticated`, and `anon` where appropriate
+- the correct Supabase project is configured
+- the latest migrations are applied
+- the signed-in user has a matching `public.profiles` row
+- the user is allowed by the configured email domain rules
 
-### Frontend Signs In But Cannot Load Profile
-
-Check:
-
-1. migration `0040_unified_club_dues_and_signup_join_flow.sql` was applied
-2. user exists in `auth.users`
-3. matching `public.profiles` row exists
-4. Supabase table grants and RLS are correct
-5. the user is not hitting the legacy recovery path because of an older account
-
-### Signup Receipt Upload Fails
+### A club join request cannot be submitted
 
 Check:
 
-1. the backend is running the new `/api/v1/profile/signup-receipt` route
-2. the `dues-receipts` bucket exists in Supabase
-3. the signup user was created successfully before the upload fires
-4. the uploaded file is an image and smaller than 5MB
-5. the signup-created membership request and dues record were created by the provisioning trigger
+- the user is signed in
+- the club join form has required fields filled
+- a receipt was uploaded successfully
+- the `dues-receipts` storage bucket and policies are in place
 
-### Clubs Do Not Show On Signup
-
-Check:
-
-1. production has real clubs inserted
-2. [bootstrap_clubs.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/bootstrap_clubs.sql) has been run
-3. public club visibility is correct
-4. frontend is pointing to the intended backend and Supabase project
-
-### Site Opens Already Logged In
+### Local auth works but app data fails
 
 Check:
 
-- [supabase.ts](C:/Users/goodl/Documents/NileHive/frontend/src/lib/supabase.ts)
+- `SUPABASE_SERVICE_ROLE_KEY` is correct in `backend/.env`
+- the backend is pointed at the same Supabase project as the frontend
+- migrations are current
 
-The frontend now uses a project-specific auth storage key to avoid stale cross-project sessions.
+### A page shows a poor generic error
 
-### Generic `Failed to fetch` Style Errors
+Check whether the screen is bypassing the shared error formatting in:
 
-This should be much rarer now because `src/lib/api.ts` normalizes:
-
-- network failures
-- malformed JSON responses
-- backend validation errors
-
-If a page still shows poor errors, check whether it is bypassing `getUserFacingErrorMessage(...)` or `actionError(...)`.
+- [frontend/src/lib/api.ts](C:/Users/goodl/Documents/NileHive/frontend/src/lib/api.ts)
 
 ## Verification
 
-### Backend
+Backend:
 
 ```powershell
 cd backend
 npm.cmd test
 ```
 
-### Frontend
+Frontend:
 
 ```powershell
 cd frontend
 npm.cmd run build
 ```
 
-Expected current result:
+## Related Docs
 
-- backend tests passing
-- frontend build passing
-- possible non-blocking Browserslist warning
-- possible non-blocking large chunk warning
-
-## Documentation Map
-
-Use these docs together:
-
-- repo overview: [README.md](C:/Users/goodl/Documents/NileHive/README.md)
-- developer workflow: [DEVELOPER_GUIDE.md](C:/Users/goodl/Documents/NileHive/docs/DEVELOPER_GUIDE.md)
-- backend quick reference: [backend/README.md](C:/Users/goodl/Documents/NileHive/backend/README.md)
-- frontend quick reference: [frontend/README.md](C:/Users/goodl/Documents/NileHive/frontend/README.md)
-- production deployment: [PRODUCTION_HANDOFF.md](C:/Users/goodl/Documents/NileHive/docs/PRODUCTION_HANDOFF.md)
-- clean production reset: [PRODUCTION_FRESH_START.md](C:/Users/goodl/Documents/NileHive/docs/PRODUCTION_FRESH_START.md)
+- [README.md](C:/Users/goodl/Documents/NileHive/README.md)
+- [ARCHITECTURE.md](C:/Users/goodl/Documents/NileHive/docs/ARCHITECTURE.md)
+- [ENVIRONMENT_REFERENCE.md](C:/Users/goodl/Documents/NileHive/docs/ENVIRONMENT_REFERENCE.md)
+- [WORKFLOWS.md](C:/Users/goodl/Documents/NileHive/docs/WORKFLOWS.md)
+- [CONTRIBUTING.md](C:/Users/goodl/Documents/NileHive/CONTRIBUTING.md)

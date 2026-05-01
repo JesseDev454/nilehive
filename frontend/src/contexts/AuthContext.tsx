@@ -182,13 +182,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setProfile(null);
       setProfileError(
-        "We couldn't finish loading your Club Services profile automatically. If this is an older account, use the recovery form below once."
+        "We couldn't load your profile yet. If this is an older account, try the recovery form below once."
       );
       setRequiresProfileRecovery(true);
     } catch (error) {
       setProfile(null);
       setRequiresProfileRecovery(false);
-      setProfileError(error instanceof Error ? error.message : "Unable to load your Club Services profile right now.");
+      setProfileError(error instanceof Error ? error.message : "We couldn't load your profile right now.");
     }
   }
 
@@ -434,11 +434,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         const nextProfile = await fetchProfile(session.user.id);
         setProfile(nextProfile);
-        setProfileError(
-          nextProfile
-            ? null
-            : "We couldn't finish loading your Club Services profile automatically. If this is an older account, use the recovery form below once."
-        );
+          setProfileError(
+            nextProfile
+              ? null
+              : "We couldn't load your profile yet. If this is an older account, try the recovery form below once."
+          );
         setRequiresProfileRecovery(!nextProfile);
         return nextProfile;
       }

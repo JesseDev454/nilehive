@@ -45,13 +45,13 @@ export default function Login() {
     try {
       await signIn(email, password);
       toast.success("Welcome back to Club Services");
-    } catch (error) {
-      toast.error("We couldn’t sign you in", {
-        description: getUserFacingErrorMessage(error, "Please check your email, password, and network connection, then try again.")
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+      } catch (error) {
+        toast.error("We couldn’t sign you in", {
+          description: getUserFacingErrorMessage(error, "Please check your details and try again.")
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
   }
 
   return (

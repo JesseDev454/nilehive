@@ -1,27 +1,28 @@
 # NileHive Frontend
 
-[![Frontend](https://img.shields.io/badge/frontend-Vite%20%2B%20React-0ea5e9)](C:/Users/goodl/Documents/NileHive/frontend/README.md)
-[![Auth](https://img.shields.io/badge/auth-Supabase%20browser%20client-0f766e)](C:/Users/goodl/Documents/NileHive/docs/DEVELOPER_GUIDE.md#auth-signup-and-recovery-flows)
-[![Build](https://img.shields.io/badge/build-vite-1D4DA1)](C:/Users/goodl/Documents/NileHive/README.md#verification)
-
-Frontend quick reference for NileHive.
-
-Read these first for the bigger picture:
-
-- [README.md](C:/Users/goodl/Documents/NileHive/README.md)
-- [docs/DEVELOPER_GUIDE.md](C:/Users/goodl/Documents/NileHive/docs/DEVELOPER_GUIDE.md)
+This package contains the NileHive web application. It handles routing, auth-aware UI, role-based dashboards, club discovery, proposals, events, and the frontend side of the membership and dues experience.
 
 ## What Lives Here
 
-- route-level app UI
-- auth and session state
-- role-based pages and layouts
-- shared typed backend API client
-- Supabase browser client setup
+- route-level pages
+- session and role contexts
+- the shared API client
+- Supabase browser auth setup
+- shared UI components and app shell
 
-## Setup
+## Stack
 
-Install:
+- Vite
+- React
+- TypeScript
+- React Router
+- TanStack Query
+- Tailwind CSS
+- Supabase JS
+
+## Local Setup
+
+Install dependencies:
 
 ```powershell
 npm.cmd install
@@ -33,14 +34,14 @@ Create:
 .env.local
 ```
 
-Use `../frontend/.env.example` as the base.
+Use [frontend/.env.example](C:/Users/goodl/Documents/NileHive/frontend/.env.example) as the base.
 
-Minimum local variables:
+Minimum important variables:
 
 ```env
 VITE_API_BASE_URL=http://localhost:4000
-VITE_SUPABASE_URL=https://your-dev-project-ref.supabase.co
-VITE_SUPABASE_ANON_KEY=your-dev-anon-key
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
 VITE_ALLOWED_EMAIL_DOMAINS=nileuniversity.edu.ng,nilehive.test
 VITE_AUTH_MODE=password
 ```
@@ -65,53 +66,54 @@ http://localhost:8080
 npm.cmd run build
 ```
 
-## Important Frontend Files
+## Important Files
 
-- routes: [src/App.tsx](C:/Users/goodl/Documents/NileHive/frontend/src/App.tsx)
-- auth/session: [src/contexts/AuthContext.tsx](C:/Users/goodl/Documents/NileHive/frontend/src/contexts/AuthContext.tsx)
-- role behavior: [src/contexts/RoleContext.tsx](C:/Users/goodl/Documents/NileHive/frontend/src/contexts/RoleContext.tsx)
-- backend API client: [src/lib/api.ts](C:/Users/goodl/Documents/NileHive/frontend/src/lib/api.ts)
+- routes and protected loading: [src/App.tsx](C:/Users/goodl/Documents/NileHive/frontend/src/App.tsx)
+- auth and session state: [src/contexts/AuthContext.tsx](C:/Users/goodl/Documents/NileHive/frontend/src/contexts/AuthContext.tsx)
+- role exposure: [src/contexts/RoleContext.tsx](C:/Users/goodl/Documents/NileHive/frontend/src/contexts/RoleContext.tsx)
+- shared API client: [src/lib/api.ts](C:/Users/goodl/Documents/NileHive/frontend/src/lib/api.ts)
 - Supabase browser client: [src/lib/supabase.ts](C:/Users/goodl/Documents/NileHive/frontend/src/lib/supabase.ts)
+- global app shell: [src/components/AppLayout.tsx](C:/Users/goodl/Documents/NileHive/frontend/src/components/AppLayout.tsx)
 
-## Auth UI Flow
+## Current Auth And UI Flow
 
-Main auth pages:
+### Signup
 
-- [src/pages/Login.tsx](C:/Users/goodl/Documents/NileHive/frontend/src/pages/Login.tsx)
-- [src/pages/SignUp.tsx](C:/Users/goodl/Documents/NileHive/frontend/src/pages/SignUp.tsx)
-- [src/pages/SignupConfirmation.tsx](C:/Users/goodl/Documents/NileHive/frontend/src/pages/SignupConfirmation.tsx)
-- [src/pages/ProfileSetup.tsx](C:/Users/goodl/Documents/NileHive/frontend/src/pages/ProfileSetup.tsx)
+Signup is currently slim:
 
-Important current rule:
+- full name
+- Nile email
+- password
+- role choice: `student` or `advisor`
 
-- `ProfileSetup` is a legacy recovery page
-- it is not the normal post-signup destination anymore
+Signup does not assign a club. Students join a club later from `Discover Clubs`.
 
-Signup currently includes:
+### Sign-in and session behavior
 
-- user role selection (`student` or `advisor`)
-- first club selection during account creation
-- optional student ID for students
-- required phone number and department
-- fresher/returning student type for students
-- shared Club Services dues details
-- receipt image upload that is attached to the signup-created dues record
+- Supabase browser auth is used for the session
+- the app loads the linked profile after sign-in
+- inactivity protection signs the user out after the configured timeout, including persisted-session re-entry checks
+
+### Discover Clubs and join flow
+
+Students browse clubs, open one club’s join page, and submit:
+
+- student profile details
+- student type
+- payment information
+- receipt upload
 
 ## Frontend Development Rules
 
-1. Use `src/lib/api.ts` for backend communication.
-2. Prefer shared error formatting instead of inline raw `error.message`.
-3. Keep auth and role behavior centralized in contexts.
-4. Do not hardcode backend origins in components.
-5. Do not treat hidden UI as real authorization.
+1. Prefer functions from `src/lib/api.ts` over ad hoc `fetch()` calls.
+2. Keep auth and session logic inside the auth context when practical.
+3. Reuse shared loading and error components.
+4. Avoid hardcoded backend URLs inside components.
+5. Do not rely on hidden UI for real authorization.
 
 ## Deployment Note
 
-The repo root contains:
-
-- `vercel.json`
-
-Keep `VITE_API_BASE_URL` as the backend origin only. Do not append `/api/v1`.
+`VITE_API_BASE_URL` should be the backend origin only.
 
 Example:
 
@@ -119,8 +121,11 @@ Example:
 VITE_API_BASE_URL=https://your-backend-domain.onrender.com
 ```
 
-## More Detail
+Do not append `/api/v1`.
 
-For architecture, Supabase setup, production safety, and troubleshooting:
+## More Reading
 
+- [README.md](C:/Users/goodl/Documents/NileHive/README.md)
 - [docs/DEVELOPER_GUIDE.md](C:/Users/goodl/Documents/NileHive/docs/DEVELOPER_GUIDE.md)
+- [docs/WORKFLOWS.md](C:/Users/goodl/Documents/NileHive/docs/WORKFLOWS.md)
+- [docs/ENVIRONMENT_REFERENCE.md](C:/Users/goodl/Documents/NileHive/docs/ENVIRONMENT_REFERENCE.md)

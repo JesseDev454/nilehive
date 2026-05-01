@@ -83,7 +83,20 @@ export function AppSidebar() {
   };
 
   const items = role ? itemsMap[role] : [];
-  const displayName = profile?.full_name?.trim() || "Club Services User";
+  const rawDisplayName = profile?.full_name?.trim() || "";
+  const displayName = (() => {
+    const parts = rawDisplayName.split(/\s+/).filter(Boolean);
+
+    if (parts.length === 0) {
+      return "Club Services User";
+    }
+
+    if (parts.length === 1) {
+      return parts[0];
+    }
+
+    return `${parts[0]} ${parts[parts.length - 1]}`;
+  })();
   const identityLabel = role ? roleLabels[role] : "Loading View";
   const initials = displayName
     .split(/\s+/)
@@ -117,11 +130,11 @@ export function AppSidebar() {
               <div className="flex h-11 w-11 shrink-0 items-center justify-center border-2 border-sidebar-primary bg-sidebar-accent text-sidebar-accent-foreground shadow-[3px_3px_0_hsl(var(--sidebar-primary))]">
                 <span className="text-sm font-black uppercase tracking-[0.08em]">{initials}</span>
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <h2 className="truncate text-sm font-black uppercase tracking-[0.12em] text-sidebar-primary">
                   {displayName}
                 </h2>
-                <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-sidebar-foreground/70">
+                <p className="block truncate text-[11px] font-bold uppercase tracking-[0.12em] text-sidebar-foreground/70">
                   {identityLabel}
                 </p>
               </div>
