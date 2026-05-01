@@ -94,21 +94,76 @@ function formatDate(value: string | null | undefined) {
   }).format(new Date(value));
 }
 
-function getStatusLabel(status: MembershipRequestRecord["status"]) {
+type ResolvedMembershipStatus =
+  | "under_review"
+  | "payment_under_review"
+  | "pending_payment"
+  | "active"
+  | "needs_new_payment_details"
+  | "rejected"
+  | "cancelled";
+
+function resolveMembershipStatus(
+  request?: MembershipRequestRecord,
+  payment?: DuePaymentRecord
+): ResolvedMembershipStatus {
+  if (!request) {
+    return "under_review";
+  }
+
+  if (request.status === "cancelled") {
+    return "cancelled";
+  }
+
+  if (payment?.status === "paid" || request.status === "active") {
+    return "active";
+  }
+
+  if (payment?.status === "submitted") {
+    return "payment_under_review";
+  }
+
+  if (payment?.status === "rejected") {
+    return "needs_new_payment_details";
+  }
+
+  if (payment?.status === "unpaid" || request.status === "approved_pending_dues") {
+    return "pending_payment";
+  }
+
+  if (request.status === "rejected") {
+    return "rejected";
+  }
+
+  return "under_review";
+}
+
+function getStatusLabel(status: ResolvedMembershipStatus) {
   return {
-    pending: "Payment Under Review",
+    under_review: "Under Review",
+    payment_under_review: "Payment Under Review",
+    pending_payment: "Pending Payment",
     active: "Active Member",
-    rejected: "Needs New Payment Details",
-    cancelled: "Cancelled",
-    approved_pending_dues: "Pending Payment"
+    needs_new_payment_details: "Needs New Payment Details",
+    rejected: "Rejected",
+    cancelled: "Cancelled"
   }[status];
 }
 
-function MembershipStatusBadge({ status }: { status: MembershipRequestRecord["status"] }) {
+function MembershipStatusBadge({
+  request,
+  payment
+}: {
+  request: MembershipRequestRecord;
+  payment?: DuePaymentRecord;
+}) {
+  const status = resolveMembershipStatus(request, payment);
   const className = {
-    pending: "bg-warning/15 text-warning hover:bg-warning/15",
-    approved_pending_dues: "bg-primary/15 text-primary hover:bg-primary/15",
+    under_review: "bg-warning/15 text-warning hover:bg-warning/15",
+    payment_under_review: "bg-warning/15 text-warning hover:bg-warning/15",
+    pending_payment: "bg-primary/15 text-primary hover:bg-primary/15",
     active: "bg-success/15 text-success hover:bg-success/15",
+    needs_new_payment_details: "bg-destructive/15 text-destructive hover:bg-destructive/15",
     rejected: "bg-destructive/15 text-destructive hover:bg-destructive/15",
     cancelled: "bg-muted text-muted-foreground hover:bg-muted"
   }[status];
@@ -150,6 +205,7 @@ function DuesConfirmationCard({
   request: MembershipRequestRecord;
   payment?: DuePaymentRecord;
 }) {
+  const resolvedStatus = resolveMembershipStatus(request, payment);
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [accountName, setAccountName] = useState(payment?.payment_account_name || "");
@@ -255,7 +311,7 @@ function DuesConfirmationCard({
     return null;
   }
 
-  if (payment?.status === "submitted") {
+  if (resolvedStatus === "payment_under_review") {
     return (
       <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">
         <p className="font-semibold text-primary">Payment submitted for review</p>
@@ -271,7 +327,7 @@ function DuesConfirmationCard({
     );
   }
 
-  if (payment?.status === "paid") {
+  if (resolvedStatus === "active") {
     return (
       <div className="mt-4 rounded-xl border border-success/20 bg-success/5 p-4 text-sm">
         <p className="font-semibold text-success">Dues verified. You are now an active member.</p>
@@ -279,14 +335,46 @@ function DuesConfirmationCard({
     );
   }
 
+  if (resolvedStatus === "under_review") {
+    return (
+      <div className="mt-4 rounded-xl border border-warning/20 bg-warning/10 p-4 text-sm">
+        <p className="font-semibold text-warning">Your join request is under review.</p>
+        <p className="mt-1 text-muted-foreground">
+          Club Services is checking your request. You will see the next step here once review is complete.
+        </p>
+      </div>
+    );
+  }
+
+  if (resolvedStatus === "rejected") {
+    return (
+      <div className="mt-4 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm">
+        <p className="font-semibold text-destructive">This join request was not approved.</p>
+        <p className="mt-1 text-muted-foreground">
+          Check the discover clubs page if you would like to try another club.
+        </p>
+      </div>
+    );
+  }
+
+  if (resolvedStatus === "cancelled") {
+    return (
+      <div className="mt-4 rounded-xl border border-border bg-muted/40 p-4 text-sm">
+        <p className="font-semibold text-foreground">This request has been cancelled.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="mt-4 space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">
       <div>
-        <p className="font-semibold text-primary">Update your payment details</p>
+        <p className="font-semibold text-primary">
+          {resolvedStatus === "pending_payment" ? "Complete your payment details" : "Update your payment details"}
+        </p>
         <p className="mt-1 text-muted-foreground">
-          {payment?.status === "rejected"
+          {resolvedStatus === "needs_new_payment_details"
             ? "Your earlier payment details were rejected. Correct them below and resend for review."
-            : "If your payment details need to be completed, resend them below."}
+            : "Pay your club dues, then send the payment details below so your membership can move forward."}
         </p>
       </div>
 
@@ -568,7 +656,7 @@ function JoinClubPanel({
             <CardTitle className="text-lg">{club.name}</CardTitle>
             <p className="text-sm text-muted-foreground">{club.code || "Nile University club"}</p>
           </div>
-          {existingRequest ? <MembershipStatusBadge status={existingRequest.status} /> : null}
+          {existingRequest ? <MembershipStatusBadge request={existingRequest} payment={existingRequest.due_payment || undefined} /> : null}
         </div>
       </CardHeader>
       <CardContent className="space-y-4 p-5">
@@ -709,7 +797,7 @@ function JoinClubPanel({
         ) : (
           <div className="space-y-2">
             <p className="text-sm text-muted-foreground">
-              Current request: {getStatusLabel(existingRequest.status)}.
+              Current request: {getStatusLabel(resolveMembershipStatus(existingRequest, existingRequest.due_payment || undefined))}.
             </p>
             <DuesConfirmationCard request={existingRequest} payment={existingRequest.due_payment || undefined} />
           </div>
@@ -737,7 +825,7 @@ function DiscoverClubCard({
             <CardTitle className="text-lg">{club.name}</CardTitle>
             <p className="text-sm text-muted-foreground">{club.code || "Nile University club"}</p>
           </div>
-          {existingRequest ? <MembershipStatusBadge status={existingRequest.status} /> : null}
+          {existingRequest ? <MembershipStatusBadge request={existingRequest} payment={existingRequest.due_payment || undefined} /> : null}
         </div>
       </CardHeader>
       <CardContent className="space-y-4 p-5">
@@ -986,7 +1074,7 @@ function StudentMembershipView() {
                       <p className="mt-2 text-sm text-muted-foreground">{request.join_reason}</p>
                     ) : null}
                   </div>
-                  <MembershipStatusBadge status={request.status} />
+                  <MembershipStatusBadge request={request} payment={request.due_payment || undefined} />
                 </div>
               </div>
             ))}
@@ -1099,7 +1187,7 @@ function ReviewerMembershipView() {
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="font-semibold">{request.profile?.full_name || "Student"}</p>
-                          <MembershipStatusBadge status={request.status} />
+                          <MembershipStatusBadge request={request} payment={request.due_payment || undefined} />
                         </div>
                         <p className="text-sm text-muted-foreground">
                           {request.club?.name || "Selected club"} - {getStudentTypeLabel(request.student_type)} - {formatCurrency(request.dues_amount)}

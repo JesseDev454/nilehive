@@ -1411,49 +1411,110 @@ function PolishedAdminDashboard() {
   );
 }
 
-function getMembershipStatusLabel(status: MembershipRequestRecord["status"]) {
+type StudentMembershipStatus =
+  | "under_review"
+  | "payment_under_review"
+  | "pending_payment"
+  | "active"
+  | "needs_new_payment_details"
+  | "rejected"
+  | "cancelled";
+
+function resolveStudentMembershipStatus(
+  request: MembershipRequestRecord,
+  payment?: DuePaymentRecord
+): StudentMembershipStatus {
+  if (request.status === "cancelled") {
+    return "cancelled";
+  }
+
+  if (request.status === "active" || payment?.status === "paid") {
+    return "active";
+  }
+
+  if (payment?.status === "submitted") {
+    return "payment_under_review";
+  }
+
+  if (payment?.status === "rejected") {
+    return "needs_new_payment_details";
+  }
+
+  if (payment?.status === "unpaid" || request.status === "approved_pending_dues") {
+    return "pending_payment";
+  }
+
+  if (request.status === "rejected") {
+    return "rejected";
+  }
+
+  return "under_review";
+}
+
+function getMembershipStatusLabel(status: StudentMembershipStatus) {
   return {
-    pending: "Under review",
-    approved_pending_dues: "Payment under review",
+    under_review: "Under review",
+    payment_under_review: "Payment under review",
+    pending_payment: "Pending payment",
     active: "Active",
+    needs_new_payment_details: "New payment details needed",
     rejected: "Rejected",
     cancelled: "Cancelled"
   }[status];
 }
 
 function isMembershipActive(request: MembershipRequestRecord, payment?: DuePaymentRecord) {
-  return request.status === "active" || payment?.status === "paid";
+  return resolveStudentMembershipStatus(request, payment) === "active";
 }
 
 function getMembershipStatusSummary(request: MembershipRequestRecord, payment?: DuePaymentRecord) {
-  if (isMembershipActive(request, payment)) {
+  const status = resolveStudentMembershipStatus(request, payment);
+
+  if (status === "active") {
     return "Your dues have been confirmed by Club Services. This membership is now active.";
   }
 
-  if (request.status === "approved_pending_dues") {
-    if (payment?.status === "submitted") {
-      return "Your payment confirmation is in review. Once the president/admin confirms it, this will switch to active.";
-    }
+  if (status === "payment_under_review") {
+    return "Your payment confirmation is in review. Once it is confirmed, this membership will switch to active.";
+  }
 
+  if (status === "pending_payment") {
     return `Pay ${formatCurrency(request.dues_amount ?? 0)} for ${request.academic_session || "this session"} to finish activation.`;
   }
 
-  if (request.status === "pending") {
+  if (status === "needs_new_payment_details") {
+    return "Your payment details need attention. Update them from the membership page to keep this request moving.";
+  }
+
+  if (status === "under_review") {
     return "Your club is still reviewing your request.";
   }
 
-  if (request.status === "rejected") {
+  if (status === "rejected") {
     return "This request was rejected. Check the membership page for the next step.";
+  }
+
+  if (status === "cancelled") {
+    return "This request has been cancelled.";
   }
 
   return "This membership is not active yet.";
 }
 
-function MembershipStatusPill({ status }: { status: MembershipRequestRecord["status"] }) {
+function MembershipStatusPill({
+  request,
+  payment
+}: {
+  request: MembershipRequestRecord;
+  payment?: DuePaymentRecord;
+}) {
+  const status = resolveStudentMembershipStatus(request, payment);
   const className = {
-    pending: "bg-warning/15 text-warning",
-    approved_pending_dues: "bg-primary/15 text-primary",
+    under_review: "bg-warning/15 text-warning",
+    payment_under_review: "bg-warning/15 text-warning",
+    pending_payment: "bg-primary/15 text-primary",
     active: "bg-success/15 text-success",
+    needs_new_payment_details: "bg-destructive/15 text-destructive",
     rejected: "bg-destructive/15 text-destructive",
     cancelled: "bg-muted text-muted-foreground"
   }[status];
@@ -1530,42 +1591,6 @@ function StudentEventCard({
   );
 }
 
-function getStudentMembershipSnapshot({
-  activeMembership,
-  firstDuesRequest,
-  pendingRequests
-}: {
-  activeMembership?: MembershipRequestRecord;
-  firstDuesRequest?: MembershipRequestRecord;
-  pendingRequests: MembershipRequestRecord[];
-}) {
-  if (activeMembership) {
-    return {
-      value: "Membership active",
-      detail: activeMembership.club?.name || "Active club"
-    };
-  }
-
-  if (firstDuesRequest) {
-    return {
-      value: "Dues follow-up",
-      detail: firstDuesRequest.club?.name || "Membership in progress"
-    };
-  }
-
-  if (pendingRequests.length > 0) {
-    return {
-      value: "Under review",
-      detail: pendingRequests[0]?.club?.name || "Waiting for club review"
-    };
-  }
-
-  return {
-    value: "Ready to join",
-    detail: "Open Discover Clubs to get started"
-  };
-}
-
 function StudentDashboard() {
   const { profile } = useAuth();
   const {
@@ -1627,39 +1652,19 @@ function StudentDashboard() {
   const activeMemberships = membershipRequests.filter((request) => request.status === "active");
   const pendingRequests = membershipRequests.filter((request) => request.status === "pending");
   const duesRequiredRequests = membershipRequests.filter((request) => request.status === "approved_pending_dues");
-  const submittedDues = duePayments.filter((payment) => payment.status === "submitted");
   const unpaidDues = duePayments.filter((payment) => payment.status === "unpaid" || payment.status === "rejected");
   const duesById = useMemo(
     () => new Map(duePayments.map((payment) => [payment.id, payment] as const)),
     [duePayments]
   );
-  const requestByDuePaymentId = useMemo(
-    () =>
-      new Map(
-        membershipRequests
-          .filter((request) => request.due_payment_id)
-          .map((request) => [request.due_payment_id as string, request] as const)
-      ),
-    [membershipRequests]
-  );
-  const activeMembership = activeMemberships[0];
-  const firstDuesRequest = duesRequiredRequests[0];
-  const firstDuesPayment = firstDuesRequest?.due_payment_id ? duesById.get(firstDuesRequest.due_payment_id) : undefined;
-  const firstUnpaidDue = unpaidDues[0];
-  const firstUnpaidRequest = firstUnpaidDue ? requestByDuePaymentId.get(firstUnpaidDue.id) : undefined;
   const firstName = profile?.full_name?.trim().split(/\s+/).filter(Boolean)[0] || "student";
-  const accountSnapshot = getStudentMembershipSnapshot({
-    activeMembership,
-    firstDuesRequest,
-    pendingRequests
-  });
 
   return (
     <div className="space-y-7 animate-slide-up">
       <section className="relative overflow-hidden border-2 border-foreground bg-primary p-6 text-primary-foreground shadow-[8px_8px_0_hsl(var(--foreground))] md:p-8">
         <div className="absolute -right-20 -top-20 h-56 w-56 border-2 border-primary-foreground/20 bg-warning/20" />
         <div className="absolute -bottom-16 left-1/2 h-40 w-40 border-2 border-primary-foreground/10 bg-success/10" />
-        <div className="relative grid gap-6 lg:grid-cols-[1.3fr_0.7fr] lg:items-end">
+        <div className="relative">
           <div>
             <Badge className="mb-4 bg-white/15 text-white hover:bg-white/15">Student Home</Badge>
             <h1 className="text-3xl font-black tracking-tight md:text-4xl">
@@ -1667,14 +1672,6 @@ function StudentDashboard() {
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75 md:text-base">
               Track your club membership, dues, events, RSVP choices, and reminders from one simple home base.
-            </p>
-          </div>
-          <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-white/60">Account snapshot</p>
-            <p className="mt-2 font-semibold">{accountSnapshot.value}</p>
-            <p className="text-sm text-white/70">{accountSnapshot.detail}</p>
-            <p className="mt-3 text-xs text-white/60">
-              Student ID: {profile?.student_id || "Not set yet"} • Active clubs: {formatNumber(activeMemberships.length)}
             </p>
           </div>
         </div>
@@ -1742,7 +1739,7 @@ function StudentDashboard() {
               </Button>
             </CardHeader>
             <CardContent>
-              {membershipsLoading ? (
+              {(membershipsLoading || duesLoading) ? (
                 <AdminLoadingSkeleton />
               ) : membershipRequests.length === 0 ? (
                 <AdminEmptyState
@@ -1755,12 +1752,26 @@ function StudentDashboard() {
                 <div className="grid gap-4 lg:grid-cols-2">
                   {membershipRequests.slice(0, 4).map((request) => {
                     const payment = request.due_payment_id ? duesById.get(request.due_payment_id) : undefined;
-                    const membershipActive = isMembershipActive(request, payment);
-                    const reviewStateLabel = membershipActive
-                      ? "Activated"
-                      : request.status === "approved_pending_dues"
-                        ? "Payment review"
-                        : "Under review";
+                    const membershipStatus = resolveStudentMembershipStatus(request, payment);
+                    const membershipActive = membershipStatus === "active";
+                    const reviewStateLabel = {
+                      under_review: "Under review",
+                      payment_under_review: "Payment review",
+                      pending_payment: "Payment needed",
+                      active: "Activated",
+                      needs_new_payment_details: "Fix payment",
+                      rejected: "Closed",
+                      cancelled: "Closed"
+                    }[membershipStatus];
+                    const reviewStateClass = {
+                      under_review: "bg-warning/15 text-warning",
+                      payment_under_review: "bg-success/10 text-success",
+                      pending_payment: "bg-primary/10 text-primary",
+                      active: "bg-success/10 text-success",
+                      needs_new_payment_details: "bg-destructive/10 text-destructive",
+                      rejected: "bg-destructive/10 text-destructive",
+                      cancelled: "bg-muted text-muted-foreground"
+                    }[membershipStatus];
 
                     return (
                       <div
@@ -1772,13 +1783,11 @@ function StudentDashboard() {
                             <p className="font-semibold">{request.club?.name || "Selected club"}</p>
                             <p className="text-sm capitalize text-muted-foreground">Requested as {request.requested_role}</p>
                           </div>
-                          <MembershipStatusPill status={membershipActive ? "active" : request.status} />
+                          <MembershipStatusPill request={request} payment={payment} />
                         </div>
                         <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
                           <div className="border-2 border-foreground bg-success/10 p-2 text-success">Submitted</div>
-                          <div
-                            className={`border-2 border-foreground p-2 ${membershipActive || request.status === "approved_pending_dues" ? "bg-success/10 text-success" : "bg-warning/15 text-warning"}`}
-                          >
+                          <div className={`border-2 border-foreground p-2 ${reviewStateClass}`}>
                             {reviewStateLabel}
                           </div>
                           <div className={`border-2 border-foreground p-2 ${membershipActive ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
@@ -1786,19 +1795,17 @@ function StudentDashboard() {
                           </div>
                         </div>
                         <p className="mt-4 text-sm text-muted-foreground">{getMembershipStatusSummary(request, payment)}</p>
-                        {request.status === "approved_pending_dues" && !membershipActive ? (
+                        {(membershipStatus === "pending_payment" || membershipStatus === "needs_new_payment_details") && !membershipActive ? (
                           <div className="mt-4 border-2 border-foreground bg-primary/5 p-3 text-sm">
-                            <p className="font-medium text-primary">Dues payment is the next step.</p>
+                            <p className="font-medium text-primary">
+                              {membershipStatus === "needs_new_payment_details" ? "Your payment details need an update." : "Dues payment is the next step."}
+                            </p>
                             <p className="mt-1 text-muted-foreground">
                               {request.dues_amount ? formatCurrency(request.dues_amount) : "Dues amount pending"} for {request.academic_session || "this session"}.
                             </p>
-                            {payment?.status === "submitted" ? (
-                              <p className="mt-2 font-medium text-primary">Your payment confirmation is waiting for review.</p>
-                            ) : (
-                              <Button asChild size="sm" className="mt-3">
-                                <Link to="/membership">I have paid</Link>
-                              </Button>
-                            )}
+                            <Button asChild size="sm" className="mt-3">
+                              <Link to="/membership">{membershipStatus === "needs_new_payment_details" ? "Update payment" : "I have paid"}</Link>
+                            </Button>
                           </div>
                         ) : null}
                       </div>
@@ -1844,83 +1851,6 @@ function StudentDashboard() {
         </div>
 
         <div className="space-y-6">
-          <Card className="overflow-hidden bg-primary text-primary-foreground">
-            <CardHeader>
-              <CardTitle className="text-lg text-primary-foreground">Dues and activation</CardTitle>
-              <p className="text-sm text-primary-foreground/70">Paying dues is what turns approval into official membership.</p>
-            </CardHeader>
-            <CardContent>
-              {duesLoading ? (
-                <NeoLoadingState title="Checking dues records" message="We are checking your membership payment status." compact />
-              ) : activeMembership ? (
-                <div className="border-2 border-success/20 bg-success/5 p-4">
-                  <div className="flex items-start gap-3">
-                    <CheckCircle className="mt-0.5 h-5 w-5 text-success" />
-                    <div>
-                      <p className="font-semibold text-success">Membership active</p>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {activeMembership.club?.name || "This club"} confirmed your dues payment. You are now an active member
-                        {activeMembership.academic_session ? ` for ${activeMembership.academic_session}` : ""}.
-                      </p>
-                      <Button asChild variant="outline" size="sm" className="mt-3">
-                        <Link to="/membership">View membership</Link>
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ) : firstDuesRequest ? (
-                <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
-                  <p className="font-semibold">{firstDuesRequest.club?.name || "Selected club"}</p>
-                  <p className="mt-1 text-sm text-primary-foreground/70">
-                    {firstDuesRequest.dues_amount ? formatCurrency(firstDuesRequest.dues_amount) : "Dues amount pending"}
-                    {" "}for {firstDuesRequest.academic_session || "this session"}
-                  </p>
-                  <p className="mt-3 text-sm">
-                    {firstDuesPayment?.status === "submitted"
-                      ? "Your payment confirmation is in review."
-                      : firstDuesPayment?.status === "rejected"
-                        ? "Your last payment confirmation was not approved. Open membership to upload a clearer receipt and resubmit."
-                        : "Open membership to submit the name on the account used, reference, and receipt."}
-                  </p>
-                  <Button asChild variant="secondary" size="sm" className="mt-4">
-                    <Link to="/membership">
-                      {firstDuesPayment?.status === "submitted"
-                        ? "View status"
-                        : firstDuesPayment?.status === "rejected"
-                          ? "Resubmit payment"
-                          : "I have paid"}
-                    </Link>
-                  </Button>
-                </div>
-              ) : firstUnpaidDue ? (
-                <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
-                  <p className="font-semibold">{firstUnpaidRequest?.club?.name || "Membership payment update"}</p>
-                  <p className="mt-1 text-sm text-primary-foreground/70">
-                    {firstUnpaidDue.amount ? formatCurrency(firstUnpaidDue.amount) : "Dues amount pending"}
-                    {" "}for {firstUnpaidDue.academic_session || "this session"}
-                  </p>
-                  <p className="mt-3 text-sm">
-                    {firstUnpaidDue.status === "rejected"
-                      ? "Your payment confirmation needs another try. Open membership to update the reference and upload a new receipt."
-                      : "A dues payment is still waiting from you. Open membership to submit your payment details and receipt."}
-                  </p>
-                  <Button asChild variant="secondary" size="sm" className="mt-4">
-                    <Link to="/membership">{firstUnpaidDue.status === "rejected" ? "Try again" : "Complete payment"}</Link>
-                  </Button>
-                </div>
-              ) : submittedDues.length > 0 ? (
-                <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
-                  <p className="font-semibold">Payment confirmation submitted</p>
-                  <p className="mt-1 text-sm text-primary-foreground/70">Your club president or Club Services admin can now verify it.</p>
-                </div>
-              ) : (
-                <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4 text-sm text-primary-foreground/75">
-                  No dues action is waiting from you right now.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Reminders</CardTitle>
