@@ -6,7 +6,7 @@ This document describes the current product flows that developers are most likel
 
 ### Signup
 
-Current signup is intentionally light:
+Current local fallback signup is intentionally light:
 
 - full name
 - Nile email
@@ -22,10 +22,15 @@ What happens:
 
 ### Sign-in
 
-1. the user signs in with email and password
-2. the auth context restores the session if still valid
+In Buildathon production, Campus One owns sign-in and platform roles.
+
+1. the user signs in through Campus One
+2. the auth context restores the shared Campus One session if still valid
 3. the profile loads from `public.profiles`
-4. the app routes the user into the correct role-aware experience
+4. the app resolves both:
+   - the Campus One platform role: `student`, `staff`, or `admin`
+   - the NileHive app role: `student`, `executive`, `president`, or `advisor`
+5. the app routes the user into the correct role-aware experience
 
 ## 2. Discover Clubs And Join Request
 
@@ -83,10 +88,27 @@ Important behavior:
 
 ## 6. Role Assignment
 
+NileHive now uses two layers of roles:
+
+- platform role from Campus One: `student`, `staff`, `admin`
+- local NileHive app role: `student`, `executive`, `president`, `advisor`
+
+Important rules:
+
+- Campus One admins become NileHive admins automatically
+- NileHive does not assign admin access locally anymore
+- Campus One staff do not automatically become advisors
+- advisor access requires both:
+  - Campus One `staff` or `admin`
+  - a local NileHive advisor assignment
+- presidents and executives remain club-specific NileHive roles
+- unassigned Campus One staff should see an access-pending state instead of the student experience
+
 ### Admin
 
+- comes from the Campus One `admin` role
 - manages global users, club assignments, and final approvals
-- can assign or update leadership roles
+- can assign or update local leadership roles except admin
 
 ### President
 
@@ -98,6 +120,7 @@ Important behavior:
 
 ### Advisor
 
+- requires Campus One `staff` or `admin` plus a local advisor assignment
 - reviews proposals and advisor-relevant club work
 
 ### Student

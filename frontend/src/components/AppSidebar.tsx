@@ -17,9 +17,10 @@ export function AppSidebar() {
   const roleLabels = {
     executive: "Executive",
     advisor: "Advisor",
-    admin: "Club Services Admin",
+    admin: "Campus One Admin",
     president: "Club President",
-    student: "Student"
+    student: "Student",
+    staff: "Staff Access Pending"
   };
 
   const execItems = [
@@ -80,6 +81,7 @@ export function AppSidebar() {
     admin: adminItems,
     president: presidentItems,
     student: studentItems,
+    staff: [],
   };
 
   const items = role ? itemsMap[role] : [];

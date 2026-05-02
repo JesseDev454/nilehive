@@ -52,18 +52,27 @@ export interface ClubRecord {
   created_at: string;
 }
 
+export type LocalAppRole = "executive" | "advisor" | "admin" | "president" | "student";
+export type PortalRole = "student" | "staff" | "admin";
+export type EffectiveRole = "executive" | "advisor" | "admin" | "president" | "student" | "staff";
+
 export interface ProfileRecord {
   id: string;
   email?: string | null;
   full_name: string | null;
-  role: "executive" | "advisor" | "admin" | "president" | "student";
+  role: LocalAppRole;
+  app_role?: LocalAppRole | null;
+  effective_role?: EffectiveRole | null;
+  portal_role?: PortalRole | null;
+  access_pending?: boolean;
+  role_sync_state?: string | null;
   club_id: string | null;
   student_id?: string | null;
   phone_number?: string | null;
   department?: string | null;
   student_type?: "fresher" | "returning" | null;
   join_reason?: string | null;
-  requested_role?: "executive" | "advisor" | "admin" | "president" | "student" | null;
+  requested_role?: "executive" | "advisor" | "president" | "student" | null;
   onboarding_status?: string | null;
   created_at?: string;
   updated_at?: string;
@@ -1049,6 +1058,7 @@ export interface MyProfileResponse {
   user: {
     id: string;
     email: string | null;
+    role: PortalRole;
   };
   profile: ProfileRecord | null;
   requires_profile_setup: boolean;
@@ -1297,7 +1307,7 @@ export async function getAdminUsers(
 export async function updateAdminUserRole(
   profileId: string,
   payload: {
-    role: ProfileRecord["role"];
+    role: Exclude<ProfileRecord["role"], "admin">;
     club_id?: string | null;
     remarks?: string | null;
   },

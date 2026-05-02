@@ -12,11 +12,18 @@ import { queryClient } from "@/lib/queryClient";
 import { supabase, SUPABASE_AUTH_STORAGE_KEY } from "@/lib/supabase";
 
 export type AppRole = "executive" | "advisor" | "admin" | "president" | "student";
+export type PlatformRole = "student" | "staff" | "admin";
+export type EffectiveRole = AppRole | "staff";
 
 export interface AppProfile {
   id: string;
   full_name: string | null;
   role: AppRole;
+  app_role?: AppRole | null;
+  effective_role?: EffectiveRole | null;
+  portal_role?: PlatformRole | null;
+  access_pending?: boolean;
+  role_sync_state?: string | null;
   club_id: string | null;
   student_id?: string | null;
   phone_number?: string | null;
@@ -25,13 +32,18 @@ export interface AppProfile {
   join_reason?: string | null;
   requested_role?: AppRole | null;
   onboarding_status?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   profile: AppProfile | null;
-  role: AppRole | null;
+  role: EffectiveRole | null;
+  appRole: AppRole | null;
+  portalRole: PlatformRole | null;
+  accessPending: boolean;
   isLoading: boolean;
   profileError: string | null;
   requiresProfileRecovery: boolean;
@@ -96,7 +108,7 @@ function redirectToPortal(path: "sign-in" | "sign-up" | "forgot-password" | "sig
 }
 
 function createPortalSession(input: {
-  user: { id: string; email: string | null };
+  user: { id: string; email: string | null; role?: PlatformRole | null };
   profile: AppProfile | null;
 }) {
   const now = Math.floor(Date.now() / 1000);
@@ -117,7 +129,9 @@ function createPortalSession(input: {
         providers: ["campus-one"]
       },
       user_metadata: {
-        full_name: input.profile?.full_name ?? null
+        full_name: input.profile?.full_name ?? null,
+        portal_role: input.user.role ?? input.profile?.portal_role ?? "student",
+        effective_role: input.profile?.effective_role ?? input.profile?.role ?? "student"
       },
       created_at: input.profile?.created_at ?? new Date().toISOString(),
       updated_at: input.profile?.updated_at ?? new Date().toISOString()
@@ -450,7 +464,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user: session?.user ?? null,
       session,
       profile,
-      role: profile?.role ?? null,
+      role: profile?.effective_role ?? profile?.role ?? null,
+      appRole: profile?.app_role ?? profile?.role ?? null,
+      portalRole: profile?.portal_role ?? null,
+      accessPending: Boolean(profile?.access_pending),
       isLoading,
       profileError,
       requiresProfileRecovery,

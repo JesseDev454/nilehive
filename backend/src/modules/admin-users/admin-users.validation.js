@@ -1,7 +1,7 @@
 const ApiError = require("../../shared/ApiError");
 const { assertPlainText } = require("../../shared/plainText");
 
-const APP_ROLES = new Set(["student", "executive", "president", "advisor", "admin"]);
+const APP_ROLES = new Set(["student", "executive", "president", "advisor"]);
 
 function readString(payload, fieldName) {
   return typeof payload[fieldName] === "string"

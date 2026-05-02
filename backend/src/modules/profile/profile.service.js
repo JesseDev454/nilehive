@@ -3,13 +3,18 @@ const { formatAllowedEmailDomains, isAllowedEmail } = require("../../config/emai
 const ApiError = require("../../shared/ApiError");
 const { validateCompleteProfilePayload } = require("./profile.validation");
 
-function formatProfile(profile, authUser = null) {
+function formatProfile(profile, authUser = null, user = null) {
   return {
     id: profile.id,
     email: profile.email ?? authUser?.email ?? null,
     portal_user_id: profile.portal_user_id ?? null,
     full_name: profile.full_name,
     role: profile.role,
+    app_role: user?.appRole ?? profile.role,
+    effective_role: user?.role ?? profile.role,
+    portal_role: user?.portalRole ?? authUser?.metadata?.portal_role ?? "student",
+    access_pending: Boolean(user?.accessPending),
+    role_sync_state: user?.roleSyncState ?? "active",
     club_id: profile.club_id,
     student_id: profile.student_id ?? null,
     requested_role: profile.requested_role ?? null,
@@ -21,7 +26,7 @@ function formatProfile(profile, authUser = null) {
 }
 
 async function getMyProfile(options) {
-  const { authUser, profile, database = db } = options;
+  const { authUser, profile, user, database = db } = options;
 
   if (!authUser) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
@@ -30,9 +35,10 @@ async function getMyProfile(options) {
   return {
     user: {
       id: authUser.id,
-      email: authUser.email
+      email: authUser.email,
+      role: user?.portalRole ?? authUser?.metadata?.portal_role ?? "student"
     },
-    profile: profile ? formatProfile(profile, authUser) : null,
+    profile: profile ? formatProfile(profile, authUser, user) : null,
     requires_profile_setup: !profile
   };
 }

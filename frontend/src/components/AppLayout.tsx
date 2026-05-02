@@ -59,7 +59,7 @@ function AppShellEffects() {
 }
 
 export function AppLayout() {
-  const { profile, signOut } = useAuth();
+  const { profile, role, portalRole, accessPending, signOut } = useAuth();
   const navigate = useNavigate();
 
   async function handleSignOut() {
@@ -86,7 +86,13 @@ export function AppLayout() {
             </div>
             <div className="flex items-center gap-3">
               <span className="hidden border-2 border-warning bg-warning px-2 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-warning-foreground sm:inline">
-                {profile?.role ?? "Loading"} Mode
+                {accessPending && portalRole === "staff"
+                  ? "Staff Access Pending"
+                  : role === "admin"
+                    ? "Admin Access"
+                    : role
+                      ? `${role} Mode`
+                      : profile?.role ?? "Loading"}
               </span>
               <Button variant="outline" size="sm" onClick={handleSignOut}>
                 Logout

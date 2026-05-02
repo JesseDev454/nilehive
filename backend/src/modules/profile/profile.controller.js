@@ -12,6 +12,7 @@ function createProfileController(options = {}) {
       const data = await getMyProfile({
         authUser: req.authUser,
         profile: req.profile,
+        user: req.user,
         database
       });
 

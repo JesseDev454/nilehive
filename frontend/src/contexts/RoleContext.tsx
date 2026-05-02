@@ -1,7 +1,7 @@
 import React, { createContext, useContext } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { type EffectiveRole, useAuth } from "@/contexts/AuthContext";
 
-export type Role = "executive" | "advisor" | "admin" | "president" | "student";
+export type Role = EffectiveRole;
 
 interface RoleContextType {
   role: Role | null;

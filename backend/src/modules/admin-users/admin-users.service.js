@@ -154,7 +154,7 @@ async function updateAdminUserRole(options) {
     });
   }
 
-  if (["student", "advisor", "admin"].includes(update.role) && update.club_id === undefined) {
+  if (["student", "advisor"].includes(update.role) && update.club_id === undefined) {
     update.club_id = null;
   }
 

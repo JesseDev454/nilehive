@@ -3,6 +3,7 @@ const { db } = require("../config/db");
 const { getEnv } = require("../config/env");
 const { isAllowedEmail } = require("../config/emailPolicy");
 const ApiError = require("../shared/ApiError");
+const { resolveEffectiveRole } = require("../shared/portalAccess");
 
 function extractBearerToken(authorizationHeader) {
   if (!authorizationHeader) {
@@ -117,13 +118,20 @@ async function getPortalAuthContext(req, database) {
 
   const profile = await resolvePortalProfile(database, portalUser);
   assertProfileIsAllowed(profile);
+  const roleContext = resolveEffectiveRole({
+    portalRole: portalUser.role,
+    appRole: profile.role
+  });
 
   const authUser = {
     id: profile.id,
     email: profile.email ?? portalUser.email ?? null,
     metadata: {
       portal_user_id: portalUser.id,
-      portal_role: portalUser.role ?? null
+      portal_role: roleContext.portalRole,
+      app_role: roleContext.appRole,
+      effective_role: roleContext.effectiveRole,
+      role_sync_state: roleContext.roleSyncState
     }
   };
 
@@ -131,11 +139,15 @@ async function getPortalAuthContext(req, database) {
     id: profile.id,
     email: authUser.email,
     fullName: profile.full_name ?? null,
-    role: profile.role,
+    role: roleContext.effectiveRole,
+    portalRole: roleContext.portalRole,
+    appRole: roleContext.appRole,
     clubId: profile.club_id,
     studentId: profile.student_id ?? null,
     requestedRole: profile.requested_role ?? null,
-    accountStatus: profile.account_status ?? "active"
+    accountStatus: profile.account_status ?? "active",
+    accessPending: roleContext.accessPending,
+    roleSyncState: roleContext.roleSyncState
   };
 
   return { authUser, profile, user };
@@ -174,16 +186,19 @@ function createAuthMiddleware(options = {}) {
       }
 
       assertProfileIsAllowed(profile);
-
       req.user = {
         id: authUser.id,
         email: authUser.email ?? null,
         fullName: profile.full_name ?? null,
         role: profile.role,
+        portalRole: null,
+        appRole: profile.role,
         clubId: profile.club_id,
         studentId: profile.student_id ?? null,
         requestedRole: profile.requested_role ?? null,
-        accountStatus: profile.account_status ?? "active"
+        accountStatus: profile.account_status ?? "active",
+        accessPending: false,
+        roleSyncState: "local_auth"
       };
 
       next();
@@ -235,17 +250,20 @@ function createAuthUserMiddleware(options = {}) {
         metadata: authUser.user_metadata ?? {}
       };
       req.profile = profile ?? null;
-
       req.user = profile
         ? {
             id: authUser.id,
             email: authUser.email ?? null,
             fullName: profile.full_name ?? null,
             role: profile.role,
+            portalRole: null,
+            appRole: profile.role,
             clubId: profile.club_id,
             studentId: profile.student_id ?? null,
             requestedRole: profile.requested_role ?? null,
-            accountStatus: profile.account_status ?? "active"
+            accountStatus: profile.account_status ?? "active",
+            accessPending: false,
+            roleSyncState: "local_auth"
           }
         : null;
 

@@ -23,7 +23,9 @@ import {
 import { actionError, actionSuccess } from "@/lib/notify";
 import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 
-const ROLE_OPTIONS: ProfileRecord["role"][] = ["student", "executive", "president", "advisor", "admin"];
+type EditableRole = Exclude<ProfileRecord["role"], "admin">;
+
+const ROLE_OPTIONS: EditableRole[] = ["student", "executive", "president", "advisor"];
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -57,7 +59,7 @@ function RoleBadge({ role }: { role: ProfileRecord["role"] }) {
 
 function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onClose: () => void }) {
   const queryClient = useQueryClient();
-  const [role, setRole] = useState<ProfileRecord["role"]>(user.role);
+  const [role, setRole] = useState<EditableRole>(user.role === "admin" ? "student" : user.role);
   const [clubId, setClubId] = useState(user.club_id || "none");
   const [remarks, setRemarks] = useState("");
   const { data: clubs = [] } = useQuery({
@@ -120,7 +122,7 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
           <div>
             <CardTitle className="text-lg">Manage User Access</CardTitle>
             <p className="mt-1 text-sm text-muted-foreground">
-              Update access for someone who has already signed up with a Nile University email.
+              Update club-specific access for someone who has already signed up with a Nile University email.
             </p>
           </div>
           <Button type="button" variant="outline" onClick={onClose}>
@@ -141,11 +143,16 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
             <p className="mt-2 text-xs text-muted-foreground">
               This updates an existing signed-up user. It does not create a new login account.
             </p>
+            {user.role === "admin" ? (
+              <p className="mt-2 text-xs text-warning">
+                Campus One now manages admin access. NileHive can still update local club roles, but it cannot assign admin access.
+              </p>
+            ) : null}
           </div>
 
           <div className="space-y-2">
             <Label>New role</Label>
-            <Select value={role} onValueChange={(value) => setRole(value as ProfileRecord["role"])}>
+            <Select value={role} onValueChange={(value) => setRole(value as EditableRole)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -272,7 +279,7 @@ export default function UserManagement() {
         <NeoStateCard
           icon={ShieldCheck}
           title="Admin area"
-          message="User Management is only available to Club Services admins."
+          message="User Management is only available to Campus One admins."
         />
       </div>
     );
@@ -283,7 +290,7 @@ export default function UserManagement() {
       <NeoPageHeader
         eyebrow="Admin Controls"
         title="User Management"
-        description="Review signed-up users, adjust their role, and assign club access from one place."
+        description="Review signed-up users, adjust local club roles, and assign club access from one place."
       />
 
       <div className="nh-metric-grid">
@@ -301,13 +308,13 @@ export default function UserManagement() {
           <div className="nh-card-soft p-4">
             <p className="font-semibold">1. User signs up first</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              The user signs up with a Nile University email first. Students can submit their first club join during signup.
+              The user signs in through Campus One first. Club Services access is linked after the account already exists.
             </p>
           </div>
           <div className="nh-card-soft p-4">
             <p className="font-semibold">2. Club Services updates access</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Use this page to assign president access, adjust club context, or attach advisor access after signup.
+              Use this page to assign president access, adjust club context, or attach advisor access. Admin access is managed in Campus One.
             </p>
           </div>
           <div className="nh-card-soft p-4">
