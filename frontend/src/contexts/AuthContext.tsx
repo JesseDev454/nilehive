@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
+import { toast } from "sonner";
 import { getMyProfile, getUserFacingErrorMessage, SESSION_EXPIRED_EVENT } from "@/lib/api";
 import {
   getAllowedEmailDomainLabel,
@@ -104,7 +105,14 @@ function redirectToPortal(path: "sign-in" | "sign-up" | "forgot-password" | "sig
     return;
   }
 
-  window.location.assign(getPortalAuthUrl(path, callbackUrl || window.location.origin));
+  const targetUrl = getPortalAuthUrl(path, callbackUrl || window.location.origin);
+
+  console.info("[Auth] Redirecting to Portal", {
+    path,
+    targetUrl
+  });
+
+  window.location.assign(targetUrl);
 }
 
 function createPortalSession(input: {
@@ -559,12 +567,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       },
       async signOut() {
-        clearAuthState();
         if (isPortalAuthProvider()) {
+          toast.info("Opening Campus One sign out...");
           redirectToPortal("sign-out", `${window.location.origin}/login`);
           return;
         }
 
+        clearAuthState();
         await supabase.auth.signOut();
       },
       getAccessToken() {
