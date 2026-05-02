@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import { toast } from "sonner";
 import { getMyProfile, getUserFacingErrorMessage, SESSION_EXPIRED_EVENT } from "@/lib/api";
 import {
   getAllowedEmailDomainLabel,
@@ -106,11 +105,6 @@ function redirectToPortal(path: "sign-in" | "sign-up" | "forgot-password" | "sig
   }
 
   const targetUrl = getPortalAuthUrl(path, callbackUrl || window.location.origin);
-
-  console.info("[Auth] Redirecting to Portal", {
-    path,
-    targetUrl
-  });
 
   window.location.assign(targetUrl);
 }
@@ -568,8 +562,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
       async signOut() {
         if (isPortalAuthProvider()) {
-          toast.info("Opening Campus One sign out...");
-          redirectToPortal("sign-out", `${window.location.origin}/login`);
+          redirectToPortal("sign-out", null);
           return;
         }
 
