@@ -5,7 +5,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { useSidebar } from "@/components/ui/sidebar";
 
 function AppShellEffects() {
@@ -60,11 +60,9 @@ function AppShellEffects() {
 
 export function AppLayout() {
   const { profile, role, portalRole, accessPending, signOut } = useAuth();
-  const navigate = useNavigate();
 
   async function handleSignOut() {
     await signOut();
-    navigate("/login", { replace: true });
   }
 
   return (

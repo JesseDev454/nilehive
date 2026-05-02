@@ -81,13 +81,9 @@ export function getAppOrigin() {
   return "https://clubs.builtbysalih.com";
 }
 
-export function getPortalAuthUrl(path: "sign-in" | "sign-up" | "forgot-password" | "sign-out", callbackUrl = getAppOrigin()) {
+export function getPortalAuthUrl(path: "sign-in" | "sign-up" | "forgot-password", callbackUrl = getAppOrigin()) {
   const portalOrigin = getPortalOrigin();
   const callback = encodeURIComponent(callbackUrl);
-
-  if (path === "sign-out") {
-    return `${portalOrigin}/sign-out?callbackURL=${callback}`;
-  }
 
   return `${portalOrigin}/${path}?callbackURL=${callback}`;
 }

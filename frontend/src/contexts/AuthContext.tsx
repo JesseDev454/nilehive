@@ -3,6 +3,7 @@ import type { Session, User } from "@supabase/supabase-js";
 import { getMyProfile, getUserFacingErrorMessage, SESSION_EXPIRED_EVENT } from "@/lib/api";
 import {
   getAllowedEmailDomainLabel,
+  getPortalApiBaseUrl,
   getPortalAuthUrl,
   isAllowedEmailDomain,
   isPasswordAuthEnabled,
@@ -99,12 +100,29 @@ function getCurrentUrl() {
   return typeof window === "undefined" ? undefined : window.location.href;
 }
 
-function redirectToPortal(path: "sign-in" | "sign-up" | "forgot-password" | "sign-out", callbackUrl = getCurrentUrl()) {
+function redirectToPortal(path: "sign-in" | "sign-up" | "forgot-password", callbackUrl = getCurrentUrl()) {
   if (typeof window === "undefined") {
     return;
   }
 
   window.location.assign(getPortalAuthUrl(path, callbackUrl || window.location.origin));
+}
+
+async function signOutFromPortal(callbackUrl = getCurrentUrl()) {
+  const response = await fetch(`${getPortalApiBaseUrl()}/api/auth/sign-out`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json"
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error("We couldn't sign you out right now. Please try again.");
+  }
+
+  redirectToPortal("sign-in", callbackUrl || getCurrentUrl() || window.location.origin);
 }
 
 function createPortalSession(input: {
@@ -561,7 +579,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       async signOut() {
         clearAuthState();
         if (isPortalAuthProvider()) {
-          redirectToPortal("sign-out", window.location.origin);
+          await signOutFromPortal(window.location.origin);
           return;
         }
 
