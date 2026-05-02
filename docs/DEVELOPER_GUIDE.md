@@ -31,6 +31,49 @@ At a high level, the system has three layers:
 2. `backend/` for the API and business rules
 3. Supabase for storage and Postgres data, plus auth in local fallback mode
 
+## Role Model
+
+NileHive now uses two separate role layers in Buildathon production:
+
+### 1. Campus One platform role
+
+This comes from the live Campus One session and is controlled by the super app:
+
+- `student`
+- `staff`
+- `admin`
+
+Campus One guidance matters here:
+
+- public self-signup is student-oriented
+- `staff` and `admin` are expected to come from Campus One admin invitation / role assignment
+- users do not self-promote into these roles
+
+### 2. NileHive local app role
+
+This lives in `public.profiles.role` and controls club-services-specific responsibilities:
+
+- `student`
+- `executive`
+- `president`
+- `advisor`
+
+These are not the same thing as Campus One platform roles.
+
+Examples:
+
+- a Campus One `student` can still be a NileHive `president`
+- a Campus One `student` can still be a NileHive `executive`
+- a Campus One `staff` user is not automatically a NileHive advisor
+
+### Effective access rules
+
+- Campus One `admin` always gets NileHive admin access
+- Campus One `staff` needs a local NileHive `advisor` assignment to use advisor features
+- unassigned Campus One `staff` should see an access-pending state
+- local `president` and `executive` still work for Campus One `student` users
+- local `admin` is no longer the source of truth for admin privileges
+
 ## Local Setup
 
 ### Prerequisites
@@ -98,6 +141,7 @@ The frontend handles:
 - Supabase browser auth session management in local mode
 - Campus One portal session handoff in Buildathon production mode
 - role-aware dashboards and UI
+- effective-role routing across Campus One and local app roles
 - file uploads for dues receipts and reports
 - typed calls into the backend API
 
@@ -115,6 +159,7 @@ The backend handles:
 
 - Supabase or Campus One portal-backed auth checks
 - role enforcement
+- platform-role and app-role resolution
 - workflow validation
 - data access through the Supabase adapter
 - pagination, filtering, and response shaping
@@ -124,7 +169,36 @@ Most important files:
 - [backend/src/app.js](C:/Users/goodl/Documents/NileHive/backend/src/app.js)
 - [backend/src/config/db.js](C:/Users/goodl/Documents/NileHive/backend/src/config/db.js)
 - [backend/src/middleware/auth.js](C:/Users/goodl/Documents/NileHive/backend/src/middleware/auth.js)
+- [backend/src/shared/portalAccess.js](C:/Users/goodl/Documents/NileHive/backend/src/shared/portalAccess.js)
 - [backend/src/middleware/errorHandler.js](C:/Users/goodl/Documents/NileHive/backend/src/middleware/errorHandler.js)
+
+## How Role Assignment Works Today
+
+### Campus One admin
+
+Managed in Campus One, not NileHive.
+
+- use Campus One admin tools to assign `admin`
+- use Campus One admin tools to assign `staff`
+
+### NileHive president / executive / advisor
+
+Managed in NileHive local data.
+
+- `president` and `advisor` come from NileHive assignment flows
+- `executive` remains a local club-services role
+- normal day-to-day assignment should happen through NileHive UI, not direct SQL
+
+### When SQL is still appropriate
+
+Use Supabase SQL only for:
+
+- repair work
+- bootstrapping when no UI path is available
+- debugging broken data
+- emergency recovery
+
+It should not be the normal role-management path.
 
 Feature modules typically follow:
 

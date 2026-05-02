@@ -13,7 +13,7 @@ NileHive is the Club Services platform for Nile University of Nigeria. It replac
 NileHive currently supports:
 
 - Supabase auth locally and Campus One portal auth for Buildathon production
-- slim account creation for students and advisors
+- slim local fallback account creation for students and advisors
 - Discover Clubs join flow with dues proof upload
 - membership request and dues verification workflows
 - proposal submission, advisor review, president oversight, and admin final approval
@@ -116,7 +116,7 @@ NileHive supports two auth providers:
 - `supabase` for local development and standalone demos
 - `portal` for the Buildathon shared Campus One login flow
 
-In both modes, `public.profiles` remains the Club Services role table. In portal mode, profiles are linked by `portal_user_id` and email, while the app keeps local roles such as `student`, `president`, `advisor`, and `admin`.
+In both modes, `public.profiles` remains the Club Services profile table. In portal mode, profiles are linked by `portal_user_id` and email, while Campus One provides the live platform role from the shared session.
 
 Buildathon production defaults:
 
@@ -128,7 +128,9 @@ Auth API: https://api.builtbysalih.com
 
 The app backend must also be hosted under a `*.builtbysalih.com` domain for cookie-based Portal session forwarding to work reliably.
 
-Current signup behavior:
+Current auth behavior:
+
+Local fallback mode:
 
 1. the user creates an account with full name, Nile email, password, and role
 2. Supabase creates the auth user
@@ -137,13 +139,31 @@ Current signup behavior:
 5. students join clubs later from `Discover Clubs`
 6. club assignment becomes meaningful after a membership request is reviewed and approved
 
-Current app roles:
+Buildathon production mode:
 
-- `student`
-- `executive`
-- `president`
-- `advisor`
-- `admin`
+1. the user signs in through Campus One
+2. Campus One returns a platform role of `student`, `staff`, or `admin`
+3. NileHive loads the linked local profile from `public.profiles`
+4. NileHive combines the Campus One platform role with the local app role to decide the experience
+
+Current role model:
+
+- platform role from Campus One:
+  - `student`
+  - `staff`
+  - `admin`
+- local NileHive app role:
+  - `student`
+  - `executive`
+  - `president`
+  - `advisor`
+
+Effective access rules:
+
+- Campus One `admin` always gets NileHive admin access
+- Campus One `staff` needs a local NileHive `advisor` assignment to use advisor features
+- Campus One `student` may still be a local `executive` or `president`
+- NileHive no longer treats local `admin` assignment as the source of truth for admin access
 
 ## Environment Rules
 

@@ -90,7 +90,7 @@ npm.cmd run build
 
 ### Signup
 
-Signup is currently slim:
+Local fallback signup is currently slim:
 
 - full name
 - Nile email
@@ -104,7 +104,26 @@ Signup does not assign a club. Students join a club later from `Discover Clubs`.
 - Supabase browser auth is used in local fallback mode
 - Campus One portal owns signup, sign-in, logout, and account recovery in Buildathon production
 - the app loads the linked profile after sign-in
+- in portal mode the app reads two role layers:
+  - Campus One platform role: `student`, `staff`, or `admin`
+  - NileHive local app role: `student`, `executive`, `president`, or `advisor`
+- the frontend resolves an effective experience from those two layers
 - inactivity protection signs the user out after the configured timeout, including persisted-session re-entry checks
+
+### Role routing in portal mode
+
+- Campus One `admin` -> NileHive admin experience
+- Campus One `staff` + local `advisor` -> advisor experience
+- Campus One `staff` without local advisor assignment -> access-pending state
+- local `president` -> president experience
+- local `executive` -> executive experience
+- otherwise -> student experience
+
+Important:
+
+- Presidents and executives are still usually Campus One `student` accounts
+- Advisors should usually be Campus One `staff` accounts plus a local advisor assignment
+- Admin access comes from Campus One, not local NileHive promotion
 
 ### Discover Clubs and join flow
 
@@ -130,10 +149,12 @@ Students browse clubs, open one club’s join page, and submit:
 Example:
 
 ```env
-VITE_API_BASE_URL=https://your-backend-domain.onrender.com
+VITE_API_BASE_URL=https://clubs-api.builtbysalih.com
 ```
 
 Do not append `/api/v1`.
+
+For Buildathon production, prefer a backend under `*.builtbysalih.com` so the Campus One cookie can reach it. A plain `onrender.com` backend can cause portal sign-in loops because the shared cookie is scoped to `.builtbysalih.com`.
 
 ## More Reading
 

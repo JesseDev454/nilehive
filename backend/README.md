@@ -104,6 +104,7 @@ Common route groups:
 The backend is the real security boundary. It is responsible for:
 
 - enforcing role access
+- resolving Campus One platform role plus NileHive local app role into safe effective access
 - preventing users from acting outside their club scope
 - validating request payloads
 - shaping paginated responses
@@ -124,8 +125,31 @@ supabase/migrations/
 Current migration ceiling:
 
 ```text
-0042_fix_student_dues_receipt_upload_rls.sql
+0043_portal_auth_profile_bridge.sql
 ```
+
+## Role Model In Portal Mode
+
+In `AUTH_PROVIDER=portal`, the backend should treat roles as two separate layers:
+
+- Campus One platform role from `/api/session`
+  - `student`
+  - `staff`
+  - `admin`
+- local NileHive app role from `public.profiles.role`
+  - `student`
+  - `executive`
+  - `president`
+  - `advisor`
+
+Effective access rules:
+
+- Campus One `admin` is the only source of NileHive admin access
+- Campus One `staff` needs a local `advisor` assignment to use advisor features
+- local `president` and `executive` remain valid for Campus One `student` users
+- unassigned Campus One `staff` should be treated as access-pending, not as ordinary students
+
+This means NileHive no longer treats local `admin` assignment as the source of truth for admin permissions.
 
 ### Production-safe SQL
 
