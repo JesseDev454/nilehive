@@ -179,7 +179,7 @@
   }
 
   .nh-status {
-    @apply inline-flex items-center border-2 border-current px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em];
+    @apply inline-flex items-center rounded-full border-2 border-current px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em];
   }
 
   .nh-table-wrap {
