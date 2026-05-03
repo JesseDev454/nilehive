@@ -1,6 +1,7 @@
 const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
 const { getQueueHealth } = require("../../jobs/queue");
+const { getEventLifecycle } = require("../events/event-lifecycle");
 
 function isPendingStatus(status) {
   return status === "pending_advisor_review" || status === "pending_admin_review";
@@ -91,11 +92,11 @@ function getLatestTimestamp(records, readTimestamp) {
 }
 
 function isPastEvent(proposal, now = new Date()) {
-  if (!proposal.event_date) {
-    return false;
-  }
+  return getEventLifecycle(proposal?.event_date, now) === "past";
+}
 
-  return new Date(proposal.event_date) < now;
+function isSupportableEvent(proposal, now = new Date()) {
+  return getEventLifecycle(proposal?.event_date, now) !== "past";
 }
 
 function formatPendingAction(type, label, count) {
@@ -243,6 +244,7 @@ function buildClubPerformance({
     const clubTasks = tasks.filter((task) => task.club_id === club.id);
     const paidDues = clubDues.filter((payment) => payment.status === "paid");
     const approvedEvents = clubProposals.filter((proposal) => proposal.status === "approved");
+    const supportableApprovedEvents = approvedEvents.filter((proposal) => isSupportableEvent(proposal));
 
     return {
       club_id: club.id,
@@ -252,7 +254,7 @@ function buildClubPerformance({
       active_members: clubMembers.filter((member) => member.membership_status === "active").length,
       proposal_count: clubProposals.length,
       pending_proposals: clubProposals.filter((proposal) => isPendingStatus(proposal.status)).length,
-      approved_events: approvedEvents.length,
+      approved_events: supportableApprovedEvents.length,
       rejected_proposals: clubProposals.filter((proposal) => isRejectedStatus(proposal.status)).length,
       pending_membership_requests: clubRequests.filter((request) => request.status === "pending").length,
       dues_collection_rate: clubDues.length > 0 ? Math.round((paidDues.length / clubDues.length) * 100) : 0,
@@ -413,6 +415,7 @@ async function getExecutiveDashboard(options) {
     ? await database.listTasks({ assignedTo: actor.id })
     : [];
   const approvedEvents = await database.listApprovedProposals({ clubIds: [actor.clubId] });
+  const supportableApprovedEvents = approvedEvents.filter((proposal) => isSupportableEvent(proposal));
   const reminders = database.listEventRemindersByUserId
     ? await database.listEventRemindersByUserId(actor.id)
     : [];
@@ -423,10 +426,10 @@ async function getExecutiveDashboard(options) {
   return {
     role: "executive",
     club_id: actor.clubId,
-    summary: buildTaskSummary(tasks, approvedEvents, reminders),
+    summary: buildTaskSummary(tasks, supportableApprovedEvents, reminders),
     action_items: buildExecutiveTaskActionItems(tasks, reminders),
     assigned_tasks: tasks.slice(0, 5).map(formatTaskSummary),
-    upcoming_events: approvedEvents.slice(0, 5).map(formatEventSummary),
+    upcoming_events: supportableApprovedEvents.slice(0, 5).map(formatEventSummary),
     reminders: reminders.slice(0, 5),
     notifications: notifications.slice(0, 5)
   };
@@ -446,6 +449,7 @@ async function getPresidentDashboard(options) {
   const club = await getDashboardClub(actor, database);
   const proposals = await database.listProposalsByClubId(actor.clubId);
   const approvedEvents = await database.listApprovedProposals({ clubIds: [actor.clubId] });
+  const supportableApprovedEvents = approvedEvents.filter((proposal) => isSupportableEvent(proposal));
   const executiveTeam = database.listProfilesByClubId
     ? await database.listProfilesByClubId(actor.clubId, { role: "executive" })
     : [];
@@ -459,12 +463,12 @@ async function getPresidentDashboard(options) {
     club_id: actor.clubId,
     summary: {
       ...summarizeProposals(proposals),
-      upcoming_events: approvedEvents.length,
+      upcoming_events: supportableApprovedEvents.length,
       executive_count: executiveTeam.length
     },
     recent_activity: proposals.slice(0, 6).map(formatActivity),
     pending_proposals: proposals.filter((proposal) => isPendingStatus(proposal.status)).slice(0, 5).map(formatProposalSummary),
-    upcoming_events: approvedEvents.slice(0, 5).map(formatEventSummary),
+    upcoming_events: supportableApprovedEvents.slice(0, 5).map(formatEventSummary),
     executive_team: executiveTeam.map((profile) => ({
       id: profile.id,
       full_name: profile.full_name,
@@ -515,6 +519,7 @@ async function getAdminOperationsDashboard(options) {
     getQueueHealth()
   ]);
   const approvedEventIdsWithReports = new Set(reports.map((report) => report.proposal_id));
+  const supportableApprovedEvents = approvedEvents.filter((event) => isSupportableEvent(event));
   const allMissingReports = approvedEvents
     .filter((event) => isPastEvent(event))
     .filter((event) => !approvedEventIdsWithReports.has(event.id));
@@ -550,7 +555,7 @@ async function getAdminOperationsDashboard(options) {
       pending_admin_proposals: pendingAdminProposals.length,
       pending_membership_requests: pendingMembershipRequests.length,
       submitted_dues_payments: submittedDues.length,
-      approved_events: approvedEvents.length,
+      approved_events: supportableApprovedEvents.length,
       reports_submitted: reports.length,
       missing_reports: allMissingReports.length,
       dues_collected_amount: paidDues.reduce((sum, payment) => sum + Number(payment.amount || 0), 0),
@@ -645,6 +650,7 @@ async function getAdminClubDashboard(options) {
     database.listEventAttendance ? database.listEventAttendance({ clubId }) : []
   ]);
   const approvedEventIdsWithReports = new Set(reports.map((report) => report.proposal_id));
+  const supportableApprovedEvents = approvedEvents.filter((event) => isSupportableEvent(event));
   const missingReports = approvedEvents
     .filter((event) => isPastEvent(event))
     .filter((event) => !approvedEventIdsWithReports.has(event.id));
@@ -675,7 +681,7 @@ async function getAdminClubDashboard(options) {
       pending_membership_requests: membershipRequests.filter((request) => request.status === "pending").length,
       dues_collected_amount: paidDues.reduce((sum, payment) => sum + Number(payment.amount || 0), 0),
       dues_collection_rate: duePayments.length > 0 ? Math.round((paidDues.length / duePayments.length) * 100) : 0,
-      approved_events: approvedEvents.length,
+      approved_events: supportableApprovedEvents.length,
       reports_submitted: reports.length,
       missing_reports: missingReports.length,
       event_attendance_count: attendedCount,
@@ -688,7 +694,7 @@ async function getAdminClubDashboard(options) {
     recent_proposals: proposals.slice(0, 8).map(formatProposalSummary),
     recent_members: members.slice(0, 8),
     recent_reports: reports.slice(0, 8),
-    approved_events: approvedEvents.slice(0, 8).map(formatEventSummary),
+    approved_events: supportableApprovedEvents.slice(0, 8).map(formatEventSummary),
     missing_reports: missingReports.slice(0, 8).map((event) => ({
       proposal_id: event.id,
       club_id: event.club_id,

@@ -54,8 +54,17 @@ function createFakeDatabase() {
       id: "proposal-2",
       title: "Approved Event",
       status: "approved",
+      event_date: "2026-05-20",
       admin_decided_at: "2026-04-04T10:00:00.000Z",
       updated_at: "2026-04-04T10:00:00.000Z"
+    }),
+    createProposal({
+      id: "proposal-4",
+      title: "Past Approved Event",
+      status: "approved",
+      event_date: "2026-04-20",
+      admin_decided_at: "2026-04-21T10:00:00.000Z",
+      updated_at: "2026-04-21T10:00:00.000Z"
     }),
     createProposal({
       id: "proposal-3",
@@ -125,7 +134,7 @@ function createFakeDatabase() {
       return [
         ...proposals,
         createProposal({
-          id: "proposal-4",
+          id: "proposal-5",
           club_id: "club-2",
           title: "Draft Proposal",
           status: "draft"
@@ -357,9 +366,11 @@ test("executive can fetch task-focused dashboard data", async (t) => {
   assert.equal(payload.data.role, "executive");
   assert.equal(payload.data.summary.total_tasks, 1);
   assert.equal(payload.data.summary.pending_tasks, 1);
+  assert.equal(payload.data.summary.upcoming_events, 1);
   assert.equal(payload.data.assigned_tasks.length, 1);
   assert.equal(payload.data.assigned_tasks[0].assigned_to, "executive-1");
   assert.equal(payload.data.upcoming_events.length, 1);
+  assert.equal(payload.data.upcoming_events[0].proposal_id, "proposal-2");
   assert.equal(payload.data.recent_proposals, undefined);
   assert.ok(payload.data.action_items.some((action) => action.type === "task_start"));
 });
@@ -378,8 +389,11 @@ test("president can fetch live club dashboard data", async (t) => {
   assert.equal(payload.data.role, "president");
   assert.equal(payload.data.club.name, "Nile Innovators Club");
   assert.equal(payload.data.summary.executive_count, 1);
-  assert.equal(payload.data.recent_activity.length, 3);
+  assert.equal(payload.data.summary.upcoming_events, 1);
+  assert.equal(payload.data.recent_activity.length, 4);
   assert.equal(payload.data.pending_proposals.length, 1);
+  assert.equal(payload.data.upcoming_events.length, 1);
+  assert.equal(payload.data.upcoming_events[0].proposal_id, "proposal-2");
 });
 
 test("wrong-role dashboard access is blocked", async (t) => {
@@ -413,13 +427,19 @@ test("admin can fetch operations dashboard data", async (t) => {
   assert.equal(payload.data.summary.pending_admin_proposals, 0);
   assert.equal(payload.data.summary.pending_membership_requests, 1);
   assert.equal(payload.data.summary.submitted_dues_payments, 1);
+  assert.equal(payload.data.summary.approved_events, 1);
   assert.equal(payload.data.summary.attendance_rate, 100);
   assert.equal(payload.data.club_performance.length, 2);
   assert.equal(payload.data.club_performance[0].club_name, "Nile Innovators Club");
+  assert.equal(payload.data.club_performance[0].approved_events, 1);
+  assert.equal(payload.data.summary.missing_reports, 1);
+  assert.equal(payload.data.missing_reports.length, 1);
+  assert.equal(payload.data.missing_reports[0].proposal_id, "proposal-4");
   assert.equal(payload.data.queue.status, "not_required");
   assert.equal(payload.data.ops_status.queue.worker_status, "not_required");
   assert.ok(payload.data.proposal_bottlenecks.length > 0);
   assert.ok(payload.data.pending_actions.some((action) => action.type === "membership_requests"));
+  assert.ok(payload.data.pending_actions.some((action) => action.type === "missing_reports"));
   assert.ok(payload.data.recent_activity.length > 0);
 });
 
@@ -438,8 +458,14 @@ test("admin can fetch one club operations dashboard", async (t) => {
   assert.equal(payload.data.club.id, "club-1");
   assert.equal(payload.data.summary.total_members, 2);
   assert.equal(payload.data.summary.open_tasks, 1);
+  assert.equal(payload.data.summary.approved_events, 1);
+  assert.equal(payload.data.summary.missing_reports, 1);
   assert.equal(payload.data.tasks.length, 1);
-  assert.equal(payload.data.recent_proposals.length, 3);
+  assert.equal(payload.data.recent_proposals.length, 4);
+  assert.equal(payload.data.approved_events.length, 1);
+  assert.equal(payload.data.approved_events[0].proposal_id, "proposal-2");
+  assert.equal(payload.data.missing_reports.length, 1);
+  assert.equal(payload.data.missing_reports[0].proposal_id, "proposal-4");
   assert.equal(payload.data.recent_activity.length > 0, true);
 });
 

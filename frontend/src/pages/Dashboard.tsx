@@ -496,8 +496,12 @@ function CompletedTasksProgressCard({ total, completed }: { total: number; compl
 }
 
 function UpcomingEventsCard({ events }: { events: ApprovedEventRecord[] }) {
-  const nextEvent = events.length > 0
-    ? [...events].sort((first, second) => new Date(first.event_date).getTime() - new Date(second.event_date).getTime())[0]
+  const upcomingEvents = useMemo(
+    () => events.filter((event) => isAttendableEvent(event)),
+    [events]
+  );
+  const nextEvent = upcomingEvents.length > 0
+    ? [...upcomingEvents].sort((first, second) => new Date(first.event_date).getTime() - new Date(second.event_date).getTime())[0]
     : null;
 
   const daysUntilNext = nextEvent
@@ -514,7 +518,7 @@ function UpcomingEventsCard({ events }: { events: ApprovedEventRecord[] }) {
         </div>
         <p className="text-sm font-medium text-muted-foreground">Upcoming Events</p>
         <h3 className="mt-1 text-2xl font-bold text-primary">
-          {daysUntilNext === null ? events.length : daysUntilNext}
+          {daysUntilNext === null ? upcomingEvents.length : daysUntilNext}
           <span className="text-sm font-normal text-muted-foreground">
             {daysUntilNext === null ? " events" : ` ${daysUntilNext === 1 ? "day" : "days"}`}
           </span>
@@ -565,6 +569,10 @@ function ExecutiveDashboard() {
     retry: false
   });
   const approvedEvents = approvedEventsPage.items;
+  const supportableApprovedEvents = useMemo(
+    () => approvedEvents.filter((event) => isAttendableEvent(event)),
+    [approvedEvents]
+  );
 
   const isLoading = isTasksLoading || isNotificationsLoading || isEventsLoading;
   const isError = isTasksError || isNotificationsError || isEventsError;
@@ -580,9 +588,9 @@ function ExecutiveDashboard() {
       pending,
       inProgress,
       completed,
-      upcomingEvents: approvedEvents.length
+      upcomingEvents: supportableApprovedEvents.length
     };
-  }, [approvedEvents.length, tasks]);
+  }, [supportableApprovedEvents.length, tasks]);
 
   const prioritizedTasks = useMemo(
     () =>
@@ -638,7 +646,7 @@ function ExecutiveDashboard() {
         <PendingTasksCard value={summary.pending} />
         <InProgressTasksCard total={summary.totalTasks} inProgress={summary.inProgress} />
         <CompletedTasksProgressCard total={summary.totalTasks} completed={summary.completed} />
-        <UpcomingEventsCard events={approvedEvents} />
+        <UpcomingEventsCard events={supportableApprovedEvents} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -689,7 +697,7 @@ function ExecutiveDashboard() {
             </Button>
           </CardHeader>
           <CardContent>
-            {isLoading || isError || !approvedEvents.length ? (
+            {isLoading || isError || !supportableApprovedEvents.length ? (
               <ProposalListState
                 isLoading={isLoading}
                 isError={isError}
@@ -697,7 +705,7 @@ function ExecutiveDashboard() {
                 emptyMessage="No events yet."
               />
             ) : (
-              <UpcomingEventsList events={approvedEvents} canOpenProposal={canViewProposalDetails("executive")} />
+              <UpcomingEventsList events={supportableApprovedEvents} canOpenProposal={canViewProposalDetails("executive")} />
             )}
           </CardContent>
         </Card>

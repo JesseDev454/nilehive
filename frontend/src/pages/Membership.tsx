@@ -18,6 +18,7 @@ import { useRole } from "@/contexts/RoleContext";
 import {
   ApiClientError,
   createMembershipRequest,
+  getClubs,
   getClubPaymentSettings,
   getMembershipRequests,
   getMyDuePayments,
@@ -1114,7 +1115,19 @@ function StudentMembershipView() {
 function ReviewerMembershipView() {
   const { role } = useRole();
   const [statusFilter, setStatusFilter] = useState<(typeof REQUEST_STATUSES)[number]>("all");
+  const [clubFilter, setClubFilter] = useState("all");
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    setPage(1);
+  }, [clubFilter, statusFilter]);
+
+  const { data: clubs = [] } = useQuery({
+    queryKey: ["membership-review-clubs"],
+    queryFn: () => getClubs(),
+    enabled: role === "admin",
+    retry: false
+  });
 
   const {
     data: requestsPage = emptyPaginatedResponse<MembershipRequestRecord>(),
@@ -1122,10 +1135,11 @@ function ReviewerMembershipView() {
     isError,
     error
   } = useQuery({
-    queryKey: ["membership-requests", statusFilter, page],
+    queryKey: ["membership-requests", role, statusFilter, clubFilter, page],
     queryFn: () =>
       getMembershipRequests({
         status: statusFilter === "all" ? undefined : statusFilter,
+        club_id: role === "admin" && clubFilter !== "all" ? clubFilter : undefined,
         page,
         page_size: DEFAULT_PAGE_SIZE
       }),
@@ -1145,20 +1159,40 @@ function ReviewerMembershipView() {
         <CardHeader>
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <CardTitle className="text-lg">Join Requests</CardTitle>
-            <div className="space-y-2 sm:w-72">
-              <Label htmlFor="membership_status_filter">Status</Label>
-              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as (typeof REQUEST_STATUSES)[number])}>
-                <SelectTrigger id="membership_status_filter">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All requests</SelectItem>
-                  <SelectItem value="pending">Pending review</SelectItem>
-                  <SelectItem value="active">Active members</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                  <SelectItem value="cancelled">Cancelled</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid gap-4 sm:grid-cols-2 lg:w-auto">
+              {role === "admin" ? (
+                <div className="space-y-2 sm:w-72">
+                  <Label htmlFor="membership_club_filter">Club</Label>
+                  <Select value={clubFilter} onValueChange={setClubFilter}>
+                    <SelectTrigger id="membership_club_filter">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All clubs</SelectItem>
+                      {clubs.map((club) => (
+                        <SelectItem key={club.id} value={club.id}>
+                          {club.name}{club.code ? ` (${club.code})` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : null}
+              <div className="space-y-2 sm:w-72">
+                <Label htmlFor="membership_status_filter">Status</Label>
+                <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as (typeof REQUEST_STATUSES)[number])}>
+                  <SelectTrigger id="membership_status_filter">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All requests</SelectItem>
+                    <SelectItem value="pending">Pending review</SelectItem>
+                    <SelectItem value="active">Active members</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </CardHeader>
