@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, ShieldCheck, UserCog, Users } from "lucide-react";
 import { DataPagination } from "@/components/DataPagination";
@@ -86,6 +86,7 @@ function RoleBadge({ role }: { role: ProfileRecord["role"] }) {
 
 function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onClose: () => void }) {
   const queryClient = useQueryClient();
+  const roleTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [role, setRole] = useState<EditableRole>(user.role === "admin" ? "student" : user.role);
   const [clubId, setClubId] = useState(user.club_id || "none");
   const [remarks, setRemarks] = useState("");
@@ -144,6 +145,16 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
     setPresidentConflict(null);
   }, [role, clubId]);
 
+  useEffect(() => {
+    const focusTimer = window.setTimeout(() => {
+      roleTriggerRef.current?.focus();
+    }, 180);
+
+    return () => {
+      window.clearTimeout(focusTimer);
+    };
+  }, [user.id]);
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -197,7 +208,7 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
             <div className="space-y-2">
               <Label>New role</Label>
               <Select value={role} onValueChange={(value) => setRole(value as EditableRole)}>
-                <SelectTrigger>
+                <SelectTrigger ref={roleTriggerRef}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -319,6 +330,7 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
 
 export default function UserManagement() {
   const { role } = useRole();
+  const actionPanelRef = useRef<HTMLDivElement | null>(null);
   const [roleFilter, setRoleFilter] = useState("all");
   const [clubFilter, setClubFilter] = useState("all");
   const [requestedRoleFilter, setRequestedRoleFilter] = useState("all");
@@ -365,6 +377,30 @@ export default function UserManagement() {
     }),
     [users, usersPage.total]
   );
+
+  useEffect(() => {
+    if (!selectedUser || typeof window === "undefined") {
+      return;
+    }
+
+    const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
+    const panel = actionPanelRef.current;
+
+    if (!isDesktop || !panel) {
+      return;
+    }
+
+    const scrollTimer = window.setTimeout(() => {
+      panel.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+    }, 80);
+
+    return () => {
+      window.clearTimeout(scrollTimer);
+    };
+  }, [selectedUser]);
 
   if (role !== "admin") {
     return (
@@ -419,7 +455,11 @@ export default function UserManagement() {
         </CardContent>
       </Card>
 
-      {selectedUser ? <UserActionPanel user={selectedUser} onClose={() => setSelectedUser(null)} /> : null}
+      {selectedUser ? (
+        <div ref={actionPanelRef}>
+          <UserActionPanel user={selectedUser} onClose={() => setSelectedUser(null)} />
+        </div>
+      ) : null}
 
       <Card>
         <CardHeader>
