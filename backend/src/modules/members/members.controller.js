@@ -33,7 +33,8 @@ function createMembersController(options = {}) {
       const member = await createMember({
         actor: req.user,
         payload: req.body,
-        database
+        database,
+        logger: req.log
       });
 
       res.status(201).json({ data: member });
@@ -44,7 +45,8 @@ function createMembersController(options = {}) {
         actor: req.user,
         memberId: req.params.memberId,
         payload: req.body,
-        database
+        database,
+        logger: req.log
       });
 
       res.status(200).json({ data: member });

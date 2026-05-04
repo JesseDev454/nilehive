@@ -454,6 +454,10 @@ export interface CreateClubMemberPayload {
   membership_status?: ClubMemberRecord["membership_status"];
 }
 
+export interface UpdateClubMemberPayload extends Partial<CreateClubMemberPayload> {
+  replace_existing_president?: boolean;
+}
+
 export interface MembershipRequestRecord {
   id: string;
   profile_id: string;
@@ -1526,7 +1530,7 @@ export async function createClubMember(payload: CreateClubMemberPayload, token?:
 
 export async function updateClubMember(
   memberId: string,
-  payload: Partial<CreateClubMemberPayload>,
+  payload: UpdateClubMemberPayload,
   token?: string
 ) {
   const response = await request<ApiEnvelope<ClubMemberRecord>>(`/api/v1/members/${memberId}`, {

@@ -29,6 +29,17 @@ function createMemberRecord(overrides = {}) {
   };
 }
 
+function createProfileRecord(overrides = {}) {
+  return {
+    id: "profile-1",
+    full_name: "Amina Member",
+    student_id: "020232255",
+    role: "student",
+    club_id: "club-1",
+    ...overrides
+  };
+}
+
 test("president can add a member to their club", async () => {
   let createdMember;
   const fakeDatabase = {
@@ -241,6 +252,238 @@ test("president can update member role and status", async () => {
   });
 
   assert.equal(member.club_role, "executive");
+});
+
+test("admin gets a structured conflict before replacing an existing president", async () => {
+  let updateCalled = false;
+  const fakeDatabase = {
+    async getClubMemberById() {
+      return createMemberRecord({
+        profile_id: "profile-2",
+        membership_status: "active"
+      });
+    },
+    async listProfiles(filters) {
+      assert.deepEqual(filters, {
+        role: "president",
+        clubId: "club-1"
+      });
+
+      return [
+        createProfileRecord({
+          id: "profile-president",
+          full_name: "Current President",
+          student_id: "020200001",
+          role: "president"
+        })
+      ];
+    },
+    async updateClubMember() {
+      updateCalled = true;
+      return createMemberRecord();
+    }
+  };
+
+  await assert.rejects(
+    () =>
+      updateMember({
+        actor: {
+          id: "admin-1",
+          role: "admin",
+          clubId: null
+        },
+        memberId: "member-1",
+        payload: {
+          club_role: "president"
+        },
+        database: fakeDatabase
+      }),
+    (error) =>
+      error.statusCode === 409 &&
+      error.code === "PRESIDENT_ALREADY_EXISTS" &&
+      error.details?.current_president?.id === "profile-president"
+  );
+
+  assert.equal(updateCalled, false);
+});
+
+test("admin can confirm president replacement from members flow", async () => {
+  const memberUpdates = [];
+  const profileUpdates = [];
+  const roleHistoryEntries = [];
+
+  const fakeDatabase = {
+    async getClubMemberById(memberId) {
+      assert.equal(memberId, "member-2");
+      return createMemberRecord({
+        id: "member-2",
+        profile_id: "profile-new-president",
+        full_name: "New President",
+        club_role: "member",
+        membership_status: "active"
+      });
+    },
+    async listProfiles(filters) {
+      assert.deepEqual(filters, {
+        role: "president",
+        clubId: "club-1"
+      });
+
+      return [
+        createProfileRecord({
+          id: "profile-old-president",
+          full_name: "Current President",
+          student_id: "020200001",
+          role: "president"
+        })
+      ];
+    },
+    async updateClubMember(memberId, update) {
+      memberUpdates.push({ memberId, update });
+
+      if (memberId === "member-2") {
+        return createMemberRecord({
+          id: "member-2",
+          profile_id: "profile-new-president",
+          full_name: "New President",
+          club_role: update.club_role ?? "member",
+          membership_status: update.membership_status ?? "active"
+        });
+      }
+
+      if (memberId === "member-old-president") {
+        return createMemberRecord({
+          id: "member-old-president",
+          profile_id: "profile-old-president",
+          full_name: "Current President",
+          club_role: update.club_role ?? "president",
+          membership_status: "active"
+        });
+      }
+
+      throw new Error(`Unexpected member update: ${memberId}`);
+    },
+    async getProfileById(profileId) {
+      if (profileId === "profile-new-president") {
+        return createProfileRecord({
+          id: "profile-new-president",
+          full_name: "New President",
+          student_id: "020200099",
+          role: "student"
+        });
+      }
+
+      return null;
+    },
+    async updateProfile(profileId, update) {
+      profileUpdates.push({ profileId, update });
+
+      return createProfileRecord({
+        id: profileId,
+        full_name: profileId === "profile-old-president" ? "Current President" : "New President",
+        student_id: profileId === "profile-old-president" ? "020200001" : "020200099",
+        role: update.role,
+        club_id: update.club_id
+      });
+    },
+    async getClubMemberByProfileAndClub(profileId, clubId) {
+      assert.equal(clubId, "club-1");
+
+      if (profileId === "profile-old-president") {
+        return createMemberRecord({
+          id: "member-old-president",
+          profile_id: "profile-old-president",
+          full_name: "Current President",
+          club_role: "president",
+          membership_status: "active"
+        });
+      }
+
+      return null;
+    },
+    async createProfileRoleHistory(entry) {
+      roleHistoryEntries.push(entry);
+      return entry;
+    }
+  };
+
+  const member = await updateMember({
+    actor: {
+      id: "admin-1",
+      role: "admin",
+      clubId: null
+    },
+    memberId: "member-2",
+    payload: {
+      club_role: "president",
+      replace_existing_president: true
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(member.club_role, "president");
+  assert.deepEqual(memberUpdates, [
+    {
+      memberId: "member-2",
+      update: {
+        club_role: "president"
+      }
+    },
+    {
+      memberId: "member-old-president",
+      update: {
+        club_role: "member"
+      }
+    }
+  ]);
+  assert.deepEqual(profileUpdates, [
+    {
+      profileId: "profile-old-president",
+      update: {
+        role: "student",
+        club_id: "club-1"
+      }
+    },
+    {
+      profileId: "profile-new-president",
+      update: {
+        role: "president",
+        club_id: "club-1"
+      }
+    }
+  ]);
+  assert.equal(roleHistoryEntries.length, 2);
+  assert.equal(roleHistoryEntries[0].profile_id, "profile-old-president");
+  assert.equal(roleHistoryEntries[0].new_role, "student");
+  assert.equal(roleHistoryEntries[1].profile_id, "profile-new-president");
+  assert.equal(roleHistoryEntries[1].new_role, "president");
+});
+
+test("president still cannot assign another president from members flow", async () => {
+  const fakeDatabase = {
+    async getClubMemberById() {
+      return createMemberRecord({
+        membership_status: "active"
+      });
+    }
+  };
+
+  await assert.rejects(
+    () =>
+      updateMember({
+        actor: {
+          id: "president-1",
+          role: "president",
+          clubId: "club-1"
+        },
+        memberId: "member-1",
+        payload: {
+          club_role: "president"
+        },
+        database: fakeDatabase
+      }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
 });
 
 test("president cannot mark a member active without current-session paid dues", async () => {

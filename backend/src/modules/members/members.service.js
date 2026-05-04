@@ -1,4 +1,5 @@
 const { db } = require("../../config/db");
+const { logger: baseLogger } = require("../../config/logger");
 const ApiError = require("../../shared/ApiError");
 const { ensurePaginatedResult, mapPaginatedResult } = require("../../shared/pagination");
 const {
@@ -51,12 +52,94 @@ function ensureAllowedClubRoleChange(actor, requestedClubRole) {
   }
 }
 
+function isActivePresidentConstraintError(error) {
+  const message = typeof error?.message === "string" ? error.message : "";
+  const details = typeof error?.details === "string" ? error.details : "";
+  const combined = `${message} ${details}`.toLowerCase();
+
+  return (
+    error?.code === "23505" &&
+    (combined.includes("profiles_active_president_per_club_idx") ||
+      combined.includes("active_president_per_club") ||
+      combined.includes("role") && combined.includes("president") && combined.includes("club"))
+  );
+}
+
+function formatPresidentConflictProfile(profile) {
+  if (!profile) {
+    return null;
+  }
+
+  return {
+    id: profile.id,
+    full_name: profile.full_name ?? null,
+    student_id: profile.student_id ?? null,
+    club_id: profile.club_id ?? null
+  };
+}
+
+async function findExistingPresidentConflict({ database, member, targetProfileId = null }) {
+  const existingPresidents = await database.listProfiles({
+    role: "president",
+    clubId: member.club_id
+  });
+
+  const currentPresident = existingPresidents.find((profile) => profile.id !== targetProfileId) ?? null;
+
+  return currentPresident;
+}
+
+async function demoteExistingPresident({
+  database,
+  actor,
+  currentPresident,
+  clubId,
+  log
+}) {
+  const updatedProfile = await database.updateProfile(currentPresident.id, {
+    role: "student",
+    club_id: currentPresident.club_id
+  });
+
+  const presidentMember = await database.getClubMemberByProfileAndClub(currentPresident.id, clubId);
+
+  if (presidentMember) {
+    await database.updateClubMember(presidentMember.id, {
+      club_role: "member"
+    });
+  }
+
+  if (database.createProfileRoleHistory) {
+    await database.createProfileRoleHistory({
+      profile_id: currentPresident.id,
+      previous_role: currentPresident.role,
+      new_role: "student",
+      previous_club_id: currentPresident.club_id ?? null,
+      new_club_id: currentPresident.club_id ?? null,
+      changed_by: actor.id,
+      remarks: "Demoted during president replacement from member management."
+    });
+  }
+
+  log.info("members.president_replacement.demoted_existing_president", {
+    demoted_profile_id: currentPresident.id,
+    demoted_member_id: presidentMember?.id ?? null
+  });
+
+  return {
+    profile: updatedProfile,
+    member: presidentMember
+  };
+}
+
 async function syncLinkedProfileRole({
   database,
   actor,
   member,
   previousClubRole = null,
-  nextClubRole
+  nextClubRole,
+  replaceExistingPresident = false,
+  logger = baseLogger
 }) {
   if (!member?.profile_id || !nextClubRole || previousClubRole === nextClubRole) {
     return null;
@@ -69,10 +152,62 @@ async function syncLinkedProfileRole({
   }
 
   if (nextClubRole === "president") {
-    const updatedProfile = await database.updateProfile(profile.id, {
-      role: "president",
-      club_id: member.club_id
+    const currentPresident = await findExistingPresidentConflict({
+      database,
+      member,
+      targetProfileId: profile.id
     });
+
+    if (currentPresident && !replaceExistingPresident) {
+      logger.warn("members.president_replacement.conflict", {
+        requested_member_id: member.id,
+        requested_profile_id: profile.id,
+        club_id: member.club_id,
+        replacement_confirmed: false,
+        current_president_id: currentPresident.id
+      });
+
+      throw new ApiError(
+        409,
+        "This club already has a president. Confirm replacement before continuing.",
+        "PRESIDENT_ALREADY_EXISTS",
+        {
+          current_president: formatPresidentConflictProfile(currentPresident)
+        }
+      );
+    }
+
+    if (currentPresident) {
+      await demoteExistingPresident({
+        database,
+        actor,
+        currentPresident,
+        clubId: member.club_id,
+        log: logger
+      });
+    }
+
+    let updatedProfile;
+
+    try {
+      updatedProfile = await database.updateProfile(profile.id, {
+        role: "president",
+        club_id: member.club_id
+      });
+    } catch (error) {
+      if (isActivePresidentConstraintError(error)) {
+        throw new ApiError(
+          409,
+          "This club already has a president. Confirm replacement before continuing.",
+          "PRESIDENT_ALREADY_EXISTS",
+          {
+            current_president: formatPresidentConflictProfile(currentPresident)
+          }
+        );
+      }
+
+      throw error;
+    }
 
     if (database.createProfileRoleHistory) {
       await database.createProfileRoleHistory({
@@ -251,7 +386,7 @@ async function createMember(options) {
 }
 
 async function updateMember(options) {
-  const { actor, memberId, payload, database = db } = options;
+  const { actor, memberId, payload, database = db, logger = baseLogger } = options;
   requireActor(actor);
   requireSupportedMemberRole(actor);
   requirePresidentOrAdmin(actor);
@@ -264,12 +399,33 @@ async function updateMember(options) {
 
   getScopedClubId(actor, member.club_id);
 
-  const update = validateUpdateMemberPayload(payload);
+  const validatedUpdate = validateUpdateMemberPayload(payload);
+  const {
+    replace_existing_president: replaceExistingPresident = false,
+    ...update
+  } = validatedUpdate;
   const requestedStatus = update.membership_status;
   const requestedClubRole = update.club_role;
+  const requestLogger = logger.child
+    ? logger.child({
+        module: "members",
+        member_id: memberId,
+        club_id: member.club_id,
+        requested_club_role: requestedClubRole ?? null,
+        replacement_confirmed: replaceExistingPresident
+      })
+    : logger;
 
   if (requestedClubRole) {
     ensureAllowedClubRoleChange(actor, requestedClubRole);
+  }
+
+  if (requestedClubRole === "president") {
+    requestLogger.info("members.president_replacement.requested", {
+      actor_id: actor.id,
+      actor_role: actor.role,
+      target_profile_id: member.profile_id ?? null
+    });
   }
 
   if (requestedStatus === "alumni" && actor.role !== "admin") {
@@ -300,15 +456,43 @@ async function updateMember(options) {
     }
   }
 
+  if (requestedClubRole === "president" && member.profile_id && member.club_role !== "president") {
+    const currentPresident = await findExistingPresidentConflict({
+      database,
+      member,
+      targetProfileId: member.profile_id
+    });
+
+    if (currentPresident && !replaceExistingPresident) {
+      requestLogger.warn("members.president_replacement.precheck_conflict", {
+        actor_id: actor.id,
+        actor_role: actor.role,
+        current_president_id: currentPresident.id,
+        target_profile_id: member.profile_id
+      });
+
+      throw new ApiError(
+        409,
+        "This club already has a president. Confirm replacement before continuing.",
+        "PRESIDENT_ALREADY_EXISTS",
+        {
+          current_president: formatPresidentConflictProfile(currentPresident)
+        }
+      );
+    }
+  }
+
   const updatedMember = await database.updateClubMember(memberId, update);
 
   if (requestedClubRole) {
     await syncLinkedProfileRole({
       database,
+      logger: requestLogger,
       actor,
       member: updatedMember,
       previousClubRole: member.club_role,
-      nextClubRole: requestedClubRole
+      nextClubRole: requestedClubRole,
+      replaceExistingPresident
     });
   }
 

@@ -214,6 +214,7 @@ function DuesConfirmationCard({
   const [paidAt, setPaidAt] = useState(payment?.payment_paid_at?.slice(0, 10) || "");
   const [proofUrl, setProofUrl] = useState(payment?.proof_url || "");
   const [proofFileName, setProofFileName] = useState("");
+  const proofInputRef = useRef<HTMLInputElement | null>(null);
   const [isUploadingProof, setIsUploadingProof] = useState(false);
   const [paymentProofLink, setPaymentProofLink] = useState<string | null>(null);
   const [note, setNote] = useState(payment?.payer_note || "");
@@ -264,6 +265,16 @@ function DuesConfirmationCard({
       cancelled = true;
     };
   }, [payment?.proof_url]);
+
+  function clearReceiptSelection() {
+    setProofUrl("");
+    setProofFileName("");
+    setPaymentProofLink(null);
+
+    if (proofInputRef.current) {
+      proofInputRef.current.value = "";
+    }
+  }
 
   async function handleReceiptUpload(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -443,6 +454,7 @@ function DuesConfirmationCard({
         <div className="space-y-2">
           <Label htmlFor={`membership_proof_upload_${request.id}`}>Upload receipt</Label>
           <Input
+            ref={proofInputRef}
             id={`membership_proof_upload_${request.id}`}
             type="file"
             accept="image/*,.pdf"
@@ -450,7 +462,14 @@ function DuesConfirmationCard({
             disabled={isUploadingProof}
           />
           {proofFileName ? <p className="text-xs text-muted-foreground">Uploaded: {proofFileName}</p> : null}
-          {proofUrl ? <p className="text-xs text-muted-foreground break-all">Stored path: {proofUrl}</p> : null}
+          {proofUrl ? (
+            <div className="space-y-2">
+              <p className="text-xs text-muted-foreground break-all">Stored path: {proofUrl}</p>
+              <Button type="button" variant="outline" size="sm" onClick={clearReceiptSelection}>
+                Remove receipt
+              </Button>
+            </div>
+          ) : null}
         </div>
         <div className="space-y-2 sm:col-span-2">
           <Label>Note</Label>
@@ -510,6 +529,7 @@ function JoinClubPanel({
   const [paidAt, setPaidAt] = useState(savedDraft?.paidAt ?? "");
   const [proofUrl, setProofUrl] = useState("");
   const [proofFileName, setProofFileName] = useState("");
+  const proofInputRef = useRef<HTMLInputElement | null>(null);
   const [note, setNote] = useState(savedDraft?.note ?? "");
   const [isUploadingProof, setIsUploadingProof] = useState(false);
 
@@ -649,6 +669,15 @@ function JoinClubPanel({
     }
   }
 
+  function clearReceiptSelection() {
+    setProofUrl("");
+    setProofFileName("");
+
+    if (proofInputRef.current) {
+      proofInputRef.current.value = "";
+    }
+  }
+
   return (
     <Card className="overflow-hidden">
       <CardHeader className="border-b-2 border-foreground bg-primary/10">
@@ -771,6 +800,7 @@ function JoinClubPanel({
             <div className="space-y-2">
               <Label htmlFor={`join-proof-${club.id}`}>Upload proof</Label>
               <Input
+                ref={proofInputRef}
                 id={`join-proof-${club.id}`}
                 type="file"
                 accept="image/*,.pdf"
@@ -778,7 +808,14 @@ function JoinClubPanel({
                 disabled={isUploadingProof}
               />
               {proofFileName ? <p className="text-xs text-muted-foreground">Uploaded: {proofFileName}</p> : null}
-              {proofUrl ? <p className="text-xs text-muted-foreground break-all">Stored path: {proofUrl}</p> : null}
+              {proofUrl ? (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground break-all">Stored path: {proofUrl}</p>
+                  <Button type="button" variant="outline" size="sm" onClick={clearReceiptSelection}>
+                    Remove receipt
+                  </Button>
+                </div>
+              ) : null}
             </div>
             <div className="space-y-2">
               <Label>Note (Optional)</Label>

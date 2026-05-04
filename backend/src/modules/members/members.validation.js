@@ -73,6 +73,16 @@ function validateUpdateMemberPayload(payload = {}) {
     update.membership_status = readEnum(payload, "membership_status", MEMBERSHIP_STATUSES, "active");
   }
 
+  if (Object.prototype.hasOwnProperty.call(payload, "replace_existing_president")) {
+    if (typeof payload.replace_existing_president !== "boolean") {
+      throw new ApiError(400, "replace_existing_president must be a boolean", "VALIDATION_ERROR", {
+        field: "replace_existing_president"
+      });
+    }
+
+    update.replace_existing_president = payload.replace_existing_president;
+  }
+
   if (!Object.keys(update).length) {
     throw new ApiError(400, "At least one member field must be provided", "VALIDATION_ERROR");
   }
