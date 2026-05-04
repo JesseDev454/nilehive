@@ -212,6 +212,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  async function loadPortalProfile() {
+    const data = await getMyProfile();
+    const nextProfile = data.profile as AppProfile | null;
+
+    prepareForSession(createPortalSession({ user: data.user, profile: nextProfile }));
+    setProfile(nextProfile);
+    setProfileError(nextProfile ? null : "We couldn't finish opening your profile. Please try again.");
+    setRequiresProfileRecovery(!nextProfile);
+
+    return nextProfile;
+  }
+
   async function loadProfileForSession(nextSession: Session | null) {
     if (!nextSession?.user) {
       setProfile(null);
@@ -269,22 +281,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (isPortalAuthProvider()) {
         try {
-          const data = await getMyProfile();
-
-          if (!data.profile) {
-            setSession(createPortalSession(data));
-            setProfile(null);
-            setProfileError("We couldn't finish opening your profile. Please try again.");
-            setRequiresProfileRecovery(true);
-            setIsLoading(false);
-            return;
-          }
-
+          await loadPortalProfile();
           writeLastActivityAt();
-          prepareForSession(createPortalSession({ user: data.user, profile: data.profile as AppProfile }));
-          setProfile(data.profile as AppProfile);
-          setProfileError(null);
-          setRequiresProfileRecovery(false);
           setIsLoading(false);
         } catch (error) {
           clearAuthState();
@@ -360,6 +358,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
     };
   }, []);
+
+  useEffect(() => {
+    if (!isPortalAuthProvider() || !session) {
+      return;
+    }
+
+    let isRefreshing = false;
+
+    async function syncPortalRoleState() {
+      if (isRefreshing || document.visibilityState === "hidden") {
+        return;
+      }
+
+      isRefreshing = true;
+
+      try {
+        await loadPortalProfile();
+      } catch (error) {
+        clearAuthState();
+        const message = getUserFacingErrorMessage(error, "Please sign in to continue.");
+        setProfileError(message);
+        redirectToPortal("sign-in");
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
+    function handleFocus() {
+      void syncPortalRoleState();
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        void syncPortalRoleState();
+      }
+    }
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [session]);
 
   useEffect(() => {
     function handleSessionExpired() {
@@ -574,12 +617,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       },
       async refreshProfile() {
         if (isPortalAuthProvider()) {
-          const data = await getMyProfile();
-          const nextProfile = data.profile as AppProfile | null;
-          setProfile(nextProfile);
-          setProfileError(nextProfile ? null : "We couldn't load your profile right now.");
-          setRequiresProfileRecovery(!nextProfile);
-          return nextProfile;
+          return loadPortalProfile();
         }
 
         if (!session?.user) {

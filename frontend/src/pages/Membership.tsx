@@ -498,14 +498,12 @@ function JoinClubPanel({
   club,
   existingRequest,
   defaultStudentType,
-  defaultStudentId,
   defaultPhoneNumber,
   defaultDepartment
 }: {
   club: ClubRecord;
   existingRequest?: MembershipRequestRecord;
   defaultStudentType?: "fresher" | "returning" | null;
-  defaultStudentId?: string | null;
   defaultPhoneNumber?: string | null;
   defaultDepartment?: string | null;
 }) {
@@ -522,7 +520,7 @@ function JoinClubPanel({
   const [studentType, setStudentType] = useState<"fresher" | "returning">(
     savedDraft?.studentType ?? defaultStudentType ?? "returning"
   );
-  const [studentId, setStudentId] = useState(savedDraft?.studentId ?? defaultStudentId ?? "");
+  const [studentId, setStudentId] = useState(savedDraft?.studentId ?? "");
   const [phoneNumber, setPhoneNumber] = useState(savedDraft?.phoneNumber ?? defaultPhoneNumber ?? "");
   const [department, setDepartment] = useState(savedDraft?.department ?? defaultDepartment ?? "");
   const [joinReason, setJoinReason] = useState(savedDraft?.joinReason ?? "");
@@ -544,11 +542,10 @@ function JoinClubPanel({
     }
 
     if (defaultStudentType) setStudentType(defaultStudentType);
-    if (defaultStudentId) setStudentId(defaultStudentId);
     if (defaultPhoneNumber) setPhoneNumber(defaultPhoneNumber);
     if (defaultDepartment) setDepartment(defaultDepartment);
     profileDefaultsApplied.current = true;
-  }, [defaultStudentType, defaultStudentId, defaultPhoneNumber, defaultDepartment, savedDraft]);
+  }, [defaultStudentType, defaultPhoneNumber, defaultDepartment, savedDraft]);
 
   // Persist draft on every field change (debounced via useCallback identity).
   const persistDraft = useCallback(() => {
@@ -582,8 +579,6 @@ function JoinClubPanel({
 
   const joinAmount = resolveJoinAmount(studentType, settings);
   const normalizedStudentId = normalizeStudentId(studentId);
-  const normalizedDefaultStudentId = normalizeStudentId(defaultStudentId ?? "");
-  const hasSavedValidStudentId = isValidStudentId(normalizedDefaultStudentId);
 
   const createRequestMutation = useMutation({
     mutationFn: () =>
@@ -751,7 +746,7 @@ function JoinClubPanel({
                 });
                 return;
               }
-              if (!normalizedStudentId && !hasSavedValidStudentId) {
+              if (!normalizedStudentId) {
                 toast.error("University ID required", {
                   description: "Please enter your 9-digit University ID before sending this join request."
                 });
@@ -775,13 +770,8 @@ function JoinClubPanel({
                 id={`join-student-id-${club.id}`}
                 value={studentId}
                 onChange={setStudentId}
-                required={!hasSavedValidStudentId}
+                required
               />
-              {hasSavedValidStudentId ? (
-                <p className="text-xs text-muted-foreground">
-                  Your saved University ID can be reused here, but you can still update it if needed.
-                </p>
-              ) : null}
             </div>
             <div className="space-y-2">
               <Label htmlFor={`join-phone-${club.id}`}>Phone Number (WhatsApp)</Label>
@@ -910,7 +900,6 @@ function StudentClubJoinPage({
   requestsFailed,
   requestsError,
   defaultStudentType,
-  defaultStudentId,
   defaultPhoneNumber,
   defaultDepartment
 }: {
@@ -923,7 +912,6 @@ function StudentClubJoinPage({
   requestsFailed: boolean;
   requestsError: unknown;
   defaultStudentType?: "fresher" | "returning" | null;
-  defaultStudentId?: string | null;
   defaultPhoneNumber?: string | null;
   defaultDepartment?: string | null;
 }) {
@@ -975,7 +963,6 @@ function StudentClubJoinPage({
             club={club}
             existingRequest={existingRequest}
             defaultStudentType={defaultStudentType}
-            defaultStudentId={defaultStudentId}
             defaultPhoneNumber={defaultPhoneNumber}
             defaultDepartment={defaultDepartment}
           />
@@ -1039,7 +1026,6 @@ function StudentMembershipView() {
         requestsFailed={requestsFailed}
         requestsError={requestsError}
         defaultStudentType={profile?.student_type || undefined}
-        defaultStudentId={profile?.student_id ?? null}
         defaultPhoneNumber={profile?.phone_number ?? null}
         defaultDepartment={profile?.department ?? null}
       />

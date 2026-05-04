@@ -401,19 +401,19 @@ export default function UserManagement() {
           <div className="nh-card-soft p-4">
             <p className="font-semibold">1. User signs up first</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              The user signs in through Campus One first. Club Services access is linked after the account already exists.
+              Campus One creates the shared identity first. Club Services then links the existing user account to local club access.
             </p>
           </div>
           <div className="nh-card-soft p-4">
             <p className="font-semibold">2. Club Services updates access</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Use this page to assign president access, adjust club context, or attach advisor access. Admin access is managed in Campus One.
+              Campus One manages platform roles like student, staff, and admin. Use this page only for local club roles like president, executive, and advisor.
             </p>
           </div>
           <div className="nh-card-soft p-4">
             <p className="font-semibold">3. They log in with the new role</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Presidents can then choose executives from active club members. Users see the new role on their next refresh or sign-in.
+              Presidents can then choose executives from active club members. Campus One role changes appear after the next refresh, focus, or sign-in.
             </p>
           </div>
         </CardContent>

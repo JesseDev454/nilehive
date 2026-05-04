@@ -1,9 +1,5 @@
 const ApiError = require("../../shared/ApiError");
-const {
-  isValidStudentId,
-  normalizeStudentId,
-  STUDENT_ID_ERROR_MESSAGE
-} = require("../../shared/studentId");
+const { readStudentId } = require("../../shared/studentId");
 
 const REQUESTED_MEMBER_ROLES = new Set(["member"]);
 const REQUEST_STATUSES = new Set(["pending", "approved_pending_dues", "active", "rejected", "cancelled"]);
@@ -14,22 +10,6 @@ function readString(payload, fieldName) {
 
 function readOptionalString(payload, fieldName) {
   return readString(payload, fieldName) || null;
-}
-
-function readOptionalStudentId(payload, fieldName = "student_id") {
-  const value = normalizeStudentId(payload?.[fieldName]);
-
-  if (!value) {
-    return null;
-  }
-
-  if (!isValidStudentId(value)) {
-    throw new ApiError(400, STUDENT_ID_ERROR_MESSAGE, "VALIDATION_ERROR", {
-      field: fieldName
-    });
-  }
-
-  return value;
 }
 
 function readRequiredString(payload, fieldName, label) {
@@ -107,7 +87,7 @@ function validateCreateMembershipRequestPayload(payload = {}) {
     club_id: readRequiredString(payload, "club_id", "Club"),
     requested_role: requestedRole,
     remarks: readOptionalString(payload, "remarks"),
-    student_id: readOptionalStudentId(payload, "student_id"),
+    student_id: readStudentId(payload, "student_id", "Student ID"),
     phone_number: readOptionalString(payload, "phone_number"),
     department: readOptionalString(payload, "department"),
     student_type: readStudentType(payload, false),

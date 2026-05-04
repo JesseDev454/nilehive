@@ -140,6 +140,7 @@ test("student can create a paid membership request", async () => {
     payload: {
       club_id: "club-1",
       requested_role: "member",
+      student_id: "020232255",
       remarks: "I want to help run events.",
       payment_account_name: "Ada Student",
       payment_reference: "JOIN-001",
@@ -211,7 +212,7 @@ test("join form fields are saved back to the user profile", async () => {
   assert.equal(savedProfileUpdates.updates.department, "Computer Science");
 });
 
-test("membership request creation rejects a missing effective student id", async () => {
+test("membership request creation rejects a missing submitted student id even when profile has one", async () => {
   const fakeDatabase = {
     async getClubById() {
       return { id: "club-1", name: "Nile Innovators Club", dues_amount: 5000 };
@@ -223,7 +224,7 @@ test("membership request creation rejects a missing effective student id", async
       return null;
     },
     async getProfileById() {
-      return createProfile({ student_id: null });
+      return createProfile({ student_id: "020232255" });
     }
   };
 

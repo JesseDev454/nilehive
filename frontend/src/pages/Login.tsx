@@ -94,7 +94,7 @@ export default function Login() {
           <div className="relative z-10 border-2 border-primary-foreground/40 bg-primary/70 p-5">
             <p className="text-sm font-black uppercase tracking-[0.14em]">Notice to Students</p>
             <p className="mt-2 text-sm text-primary-foreground/75">
-              Use your Nile University email address. Advisor access is linked by Club Services, while admin access is managed in Campus One.
+              Use your Nile University email address. Campus One manages student, staff, and admin identity, while Club Services links advisor and leadership access.
             </p>
           </div>
         </aside>
@@ -187,7 +187,7 @@ export default function Login() {
 
                 <div className="flex items-start gap-3 text-xs text-muted-foreground">
                   <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
-                  <p>Real users should use a Nile University email address. Students and advisors sign in with email and password only.</p>
+                  <p>Real users should use a Nile University email address. Campus One handles the shared sign-in, while Club Services applies club-specific access after login.</p>
                 </div>
               </div>
             </form>
