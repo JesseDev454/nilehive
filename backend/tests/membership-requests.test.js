@@ -211,6 +211,77 @@ test("join form fields are saved back to the user profile", async () => {
   assert.equal(savedProfileUpdates.updates.department, "Computer Science");
 });
 
+test("membership request creation rejects a missing effective student id", async () => {
+  const fakeDatabase = {
+    async getClubById() {
+      return { id: "club-1", name: "Nile Innovators Club", dues_amount: 5000 };
+    },
+    async getClubMemberByProfileAndClub() {
+      return null;
+    },
+    async getOpenMembershipRequest() {
+      return null;
+    },
+    async getProfileById() {
+      return createProfile({ student_id: null });
+    }
+  };
+
+  await assert.rejects(
+    () =>
+      createMembershipRequest({
+        actor: { id: "student-1", role: "student", clubId: "club-1" },
+        payload: {
+          club_id: "club-1",
+          payment_account_name: "Ada Student",
+          payment_reference: "JOIN-003",
+          proof_url: "receipts/club-1/proof.png"
+        },
+        database: fakeDatabase
+      }),
+    (error) =>
+      error.statusCode === 400 &&
+      error.code === "VALIDATION_ERROR" &&
+      error.details?.field === "student_id"
+  );
+});
+
+test("membership request creation rejects an invalid submitted student id", async () => {
+  const fakeDatabase = {
+    async getClubById() {
+      return { id: "club-1", name: "Nile Innovators Club", dues_amount: 5000 };
+    },
+    async getClubMemberByProfileAndClub() {
+      return null;
+    },
+    async getOpenMembershipRequest() {
+      return null;
+    },
+    async getProfileById() {
+      return createProfile({ student_id: "020232255" });
+    }
+  };
+
+  await assert.rejects(
+    () =>
+      createMembershipRequest({
+        actor: { id: "student-1", role: "student", clubId: "club-1" },
+        payload: {
+          club_id: "club-1",
+          student_id: "12345",
+          payment_account_name: "Ada Student",
+          payment_reference: "JOIN-004",
+          proof_url: "receipts/club-1/proof.png"
+        },
+        database: fakeDatabase
+      }),
+    (error) =>
+      error.statusCode === 400 &&
+      error.code === "VALIDATION_ERROR" &&
+      error.details?.field === "student_id"
+  );
+});
+
 test("membership request creation rejects leadership roles", async () => {
   const fakeDatabase = {
     async getClubById() {

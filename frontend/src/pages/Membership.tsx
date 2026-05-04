@@ -5,6 +5,7 @@ import { ArrowLeft, Loader2, Search, ShieldCheck, Users } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { DataPagination } from "@/components/DataPagination";
+import { NhStudentId } from "@/components/NhStudentId";
 import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ import {
 import { clearJoinFormDraft, readJoinFormDraft, writeJoinFormDraft } from "@/lib/joinFormDraftStorage";
 import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 import { publicClubsQueryOptions } from "@/lib/publicClubsQuery";
+import { isValidStudentId, normalizeStudentId, STUDENT_ID_ERROR_MESSAGE } from "@/lib/studentId";
 import { resolveStorageFileUrl, uploadStorageFile } from "@/lib/storage";
 
 const REQUEST_STATUSES = ["all", "pending", "active", "rejected", "cancelled"] as const;
@@ -579,13 +581,16 @@ function JoinClubPanel({
   });
 
   const joinAmount = resolveJoinAmount(studentType, settings);
+  const normalizedStudentId = normalizeStudentId(studentId);
+  const normalizedDefaultStudentId = normalizeStudentId(defaultStudentId ?? "");
+  const hasSavedValidStudentId = isValidStudentId(normalizedDefaultStudentId);
 
   const createRequestMutation = useMutation({
     mutationFn: () =>
       createMembershipRequest({
         club_id: club.id,
         requested_role: "member",
-        student_id: studentId || null,
+        student_id: normalizedStudentId || null,
         phone_number: phoneNumber || null,
         department: department || null,
         student_type: studentType,
@@ -740,6 +745,18 @@ function JoinClubPanel({
             className="space-y-3"
             onSubmit={(event: FormEvent<HTMLFormElement>) => {
               event.preventDefault();
+              if (normalizedStudentId && !isValidStudentId(normalizedStudentId)) {
+                toast.error("Check your University ID", {
+                  description: STUDENT_ID_ERROR_MESSAGE
+                });
+                return;
+              }
+              if (!normalizedStudentId && !hasSavedValidStudentId) {
+                toast.error("University ID required", {
+                  description: "Please enter your 9-digit University ID before sending this join request."
+                });
+                return;
+              }
               if (!proofUrl) {
                 toast.error("Receipt required", {
                   description: "Please upload your receipt before sending this join request."
@@ -753,13 +770,18 @@ function JoinClubPanel({
               These details will be saved to your profile so you don't have to retype them for future club joins.
             </p>
             <div className="space-y-2">
-              <Label htmlFor={`join-student-id-${club.id}`}>Student ID (Optional)</Label>
-              <Input
+              <Label htmlFor={`join-student-id-${club.id}`}>Student ID</Label>
+              <NhStudentId
                 id={`join-student-id-${club.id}`}
-                placeholder="e.g. 020232255"
                 value={studentId}
-                onChange={(event) => setStudentId(event.target.value)}
+                onChange={setStudentId}
+                required={!hasSavedValidStudentId}
               />
+              {hasSavedValidStudentId ? (
+                <p className="text-xs text-muted-foreground">
+                  Your saved University ID can be reused here, but you can still update it if needed.
+                </p>
+              ) : null}
             </div>
             <div className="space-y-2">
               <Label htmlFor={`join-phone-${club.id}`}>Phone Number (WhatsApp)</Label>

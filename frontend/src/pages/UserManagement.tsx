@@ -6,6 +6,14 @@ import { NeoLoadingState, NeoMetricCard, NeoPageHeader, NeoStateCard } from "@/c
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,7 +26,8 @@ import {
   getAdminUsers,
   updateAdminUserRole,
   type AdminUserProfileRecord,
-  type ProfileRecord
+  type ProfileRecord,
+  type UpdateAdminUserRolePayload
 } from "@/lib/api";
 import { actionError, actionSuccess } from "@/lib/notify";
 import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
@@ -27,12 +36,30 @@ type EditableRole = Exclude<ProfileRecord["role"], "admin">;
 
 const ROLE_OPTIONS: EditableRole[] = ["student", "executive", "president", "advisor"];
 
+interface PresidentConflictDetails {
+  current_president?: {
+    id: string;
+    full_name: string | null;
+    student_id: string | null;
+    club_id: string | null;
+  } | null;
+}
+
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
     return error.message;
   }
 
   return "Unable to complete this user management action right now.";
+}
+
+function getPresidentConflictDetails(error: unknown): PresidentConflictDetails["current_president"] {
+  if (!(error instanceof ApiClientError) || error.code !== "PRESIDENT_ALREADY_EXISTS") {
+    return null;
+  }
+
+  const details = error.details as PresidentConflictDetails | undefined;
+  return details?.current_president ?? null;
 }
 
 function formatDate(value?: string) {
@@ -62,24 +89,33 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
   const [role, setRole] = useState<EditableRole>(user.role === "admin" ? "student" : user.role);
   const [clubId, setClubId] = useState(user.club_id || "none");
   const [remarks, setRemarks] = useState("");
+  const [presidentConflict, setPresidentConflict] = useState<PresidentConflictDetails["current_president"]>(null);
   const { data: clubs = [] } = useQuery({
     queryKey: ["admin-user-management-clubs"],
     queryFn: () => getClubs(),
     retry: false
   });
+  const buildRolePayload = (replaceExistingPresident = false): UpdateAdminUserRolePayload => ({
+    role,
+    club_id: clubId === "none" ? null : clubId,
+    remarks: remarks || null,
+    replace_existing_president: replaceExistingPresident
+  });
   const roleMutation = useMutation({
-    mutationFn: () =>
-      updateAdminUserRole(user.id, {
-        role,
-        club_id: clubId === "none" ? null : clubId,
-        remarks: remarks || null
-      }),
+    mutationFn: (replaceExistingPresident = false) =>
+      updateAdminUserRole(user.id, buildRolePayload(replaceExistingPresident)),
     onSuccess: async () => {
+      setPresidentConflict(null);
       actionSuccess("User role updated", `${user.full_name || "User"} is now ${role}.`);
       await queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       onClose();
     },
     onError: (error) => {
+      if (error instanceof ApiClientError && error.code === "PRESIDENT_ALREADY_EXISTS") {
+        setPresidentConflict(getPresidentConflictDetails(error));
+        return;
+      }
+
       actionError("Could not update role", error, getErrorMessage(error));
     }
   });
@@ -104,6 +140,10 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
   const requiresClub = role === "executive" || role === "president" || role === "advisor";
   const isSaving = roleMutation.isPending || advisorMutation.isPending;
 
+  useEffect(() => {
+    setPresidentConflict(null);
+  }, [role, clubId]);
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -112,115 +152,168 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
       return;
     }
 
-    roleMutation.mutate();
+    roleMutation.mutate(false);
   }
 
+  const currentPresidentLabel = presidentConflict?.full_name || presidentConflict?.student_id || "the current president";
+  const replacementUserLabel = user.full_name || "this user";
+
   return (
-    <Card className="border-primary/30">
-      <CardHeader>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <CardTitle className="text-lg">Manage User Access</CardTitle>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Update club-specific access for someone who has already signed up with a Nile University email.
-            </p>
-          </div>
-          <Button type="button" variant="outline" onClick={onClose}>
-            Close
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <form className="nh-form-grid" onSubmit={handleSubmit}>
-          <div className="nh-card-soft p-4 lg:col-span-2">
-            <p className="font-semibold">{user.full_name || "Unnamed user"}</p>
-            <p className="text-sm text-muted-foreground">
-              {user.student_id || "University ID not set"} - Current role: <span className="capitalize">{user.role}</span>
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Requested role: <span className="capitalize">{user.requested_role || "student"}</span>
-            </p>
-            <p className="mt-2 text-xs text-muted-foreground">
-              This updates an existing signed-up user. It does not create a new login account.
-            </p>
-            {user.role === "admin" ? (
-              <p className="mt-2 text-xs text-warning">
-                Campus One now manages admin access. NileHive can still update local club roles, but it cannot assign admin access.
-              </p>
-            ) : null}
-          </div>
-
-          <div className="space-y-2">
-            <Label>New role</Label>
-            <Select value={role} onValueChange={(value) => setRole(value as EditableRole)}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {ROLE_OPTIONS.map((nextRole) => (
-                  <SelectItem key={nextRole} value={nextRole}>
-                    <span className="capitalize">{nextRole}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>{requiresClub ? "Club" : "Club context"}</Label>
-            <Select value={clubId} onValueChange={setClubId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select club" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">{requiresClub ? "Select a club" : "No club"}</SelectItem>
-                {clubs.map((club) => (
-                  <SelectItem key={club.id} value={club.id}>
-                    {club.name}{club.code ? ` (${club.code})` : ""}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {role === "advisor" && user.advisor_assignments?.length ? (
-            <div className="nh-card-soft p-4 text-sm lg:col-span-2">
-              <p className="font-semibold">Current advisor clubs</p>
-              <p className="mt-2 text-muted-foreground">
-                {user.advisor_assignments
-                  .map((assignment) => assignment.club?.name || "Unknown club")
-                  .join(", ")}
+    <>
+      <Card className="border-primary/30">
+        <CardHeader>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <CardTitle className="text-lg">Manage User Access</CardTitle>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Update club-specific access for someone who has already signed up with a Nile University email.
               </p>
             </div>
-          ) : null}
-
-          <div className="space-y-2 lg:col-span-2">
-            <Label>Remarks</Label>
-            <Textarea
-              value={remarks}
-              onChange={(event) => setRemarks(event.target.value)}
-              placeholder="Example: Approved by Club Services after verification."
-              rows={3}
-            />
-          </div>
-
-          <div className="flex justify-end lg:col-span-2">
-            <Button type="submit" disabled={isSaving || (requiresClub && clubId === "none")}>
-              {isSaving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : role === "advisor" ? (
-                "Assign Advisor"
-              ) : (
-                "Update Role"
-              )}
+            <Button type="button" variant="outline" onClick={onClose}>
+              Close
             </Button>
           </div>
-        </form>
-      </CardContent>
-    </Card>
+        </CardHeader>
+        <CardContent>
+          <form className="nh-form-grid" onSubmit={handleSubmit}>
+            <div className="nh-card-soft p-4 lg:col-span-2">
+              <p className="font-semibold">{user.full_name || "Unnamed user"}</p>
+              <p className="text-sm text-muted-foreground">
+                {user.student_id || "University ID not set"} - Current role: <span className="capitalize">{user.role}</span>
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Requested role: <span className="capitalize">{user.requested_role || "student"}</span>
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                This updates an existing signed-up user. It does not create a new login account.
+              </p>
+              {user.role === "admin" ? (
+                <p className="mt-2 text-xs text-warning">
+                  Campus One now manages admin access. NileHive can still update local club roles, but it cannot assign admin access.
+                </p>
+              ) : null}
+            </div>
+
+            <div className="space-y-2">
+              <Label>New role</Label>
+              <Select value={role} onValueChange={(value) => setRole(value as EditableRole)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ROLE_OPTIONS.map((nextRole) => (
+                    <SelectItem key={nextRole} value={nextRole}>
+                      <span className="capitalize">{nextRole}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>{requiresClub ? "Club" : "Club context"}</Label>
+              <Select value={clubId} onValueChange={setClubId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select club" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{requiresClub ? "Select a club" : "No club"}</SelectItem>
+                  {clubs.map((club) => (
+                    <SelectItem key={club.id} value={club.id}>
+                      {club.name}{club.code ? ` (${club.code})` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {role === "advisor" && user.advisor_assignments?.length ? (
+              <div className="nh-card-soft p-4 text-sm lg:col-span-2">
+                <p className="font-semibold">Current advisor clubs</p>
+                <p className="mt-2 text-muted-foreground">
+                  {user.advisor_assignments
+                    .map((assignment) => assignment.club?.name || "Unknown club")
+                    .join(", ")}
+                </p>
+              </div>
+            ) : null}
+
+            <div className="space-y-2 lg:col-span-2">
+              <Label>Remarks</Label>
+              <Textarea
+                value={remarks}
+                onChange={(event) => setRemarks(event.target.value)}
+                placeholder="Example: Approved by Club Services after verification."
+                rows={3}
+              />
+            </div>
+
+            <div className="flex justify-end lg:col-span-2">
+              <Button type="submit" disabled={isSaving || (requiresClub && clubId === "none")}>
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : role === "advisor" ? (
+                  "Assign Advisor"
+                ) : (
+                  "Update Role"
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Dialog
+        open={Boolean(presidentConflict)}
+        onOpenChange={(open) => {
+          if (!open && !roleMutation.isPending) {
+            setPresidentConflict(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Replace Club President?</DialogTitle>
+            <DialogDescription>
+              This club already has a president. Confirming this change will replace the current president and keep the one-president-per-club rule intact.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 rounded-xl border-2 border-foreground bg-muted/40 p-4 text-sm">
+            <p>
+              <span className="font-black uppercase tracking-[0.08em]">Current president:</span>{" "}
+              {currentPresidentLabel}
+            </p>
+            <p>
+              <span className="font-black uppercase tracking-[0.08em]">New president:</span>{" "}
+              {replacementUserLabel}
+            </p>
+            <p className="text-muted-foreground">
+              {currentPresidentLabel} will be demoted to a regular member record and lose local president access in NileHive.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setPresidentConflict(null)}
+              disabled={roleMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => roleMutation.mutate(true)}
+              disabled={roleMutation.isPending}
+            >
+              {roleMutation.isPending ? "Replacing..." : "Confirm Replacement"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

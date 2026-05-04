@@ -46,7 +46,8 @@ function createAdminUsersController(options = {}) {
         actor: req.user,
         profileId: req.params.profileId,
         payload: req.body,
-        database
+        database,
+        logger: req.log
       });
 
       res.status(200).json({ data: result });

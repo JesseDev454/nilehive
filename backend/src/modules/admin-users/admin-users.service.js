@@ -1,4 +1,5 @@
 const { db } = require("../../config/db");
+const { logger: baseLogger } = require("../../config/logger");
 const ApiError = require("../../shared/ApiError");
 const { writeAuditLog } = require("../../shared/auditLog");
 const { ensurePaginatedResult, mapPaginatedResult } = require("../../shared/pagination");
@@ -90,6 +91,70 @@ async function writeRoleHistory(database, actor, profile, update, remarks) {
   });
 }
 
+function formatPresidentConflictProfile(profile) {
+  if (!profile) {
+    return null;
+  }
+
+  return {
+    id: profile.id,
+    full_name: profile.full_name ?? null,
+    student_id: profile.student_id ?? null,
+    club_id: profile.club_id ?? null
+  };
+}
+
+async function findExistingPresidentConflict({ database, clubId, targetProfileId }) {
+  const existingPresidents = await database.listProfiles({
+    role: "president",
+    clubId
+  });
+
+  return existingPresidents.find((currentProfile) => currentProfile.id !== targetProfileId) ?? null;
+}
+
+async function demoteExistingPresident({
+  database,
+  actor,
+  currentPresident,
+  clubId,
+  logger
+}) {
+  const updatedProfile = await database.updateProfile(currentPresident.id, {
+    role: "student",
+    club_id: currentPresident.club_id
+  });
+
+  const presidentMember = await database.getClubMemberByProfileAndClub
+    ? await database.getClubMemberByProfileAndClub(currentPresident.id, clubId)
+    : null;
+
+  if (presidentMember) {
+    await database.updateClubMember(presidentMember.id, {
+      club_role: "member"
+    });
+  }
+
+  if (database.createProfileRoleHistory) {
+    await database.createProfileRoleHistory({
+      profile_id: currentPresident.id,
+      previous_role: currentPresident.role,
+      new_role: "student",
+      previous_club_id: currentPresident.club_id ?? null,
+      new_club_id: currentPresident.club_id ?? null,
+      changed_by: actor.id,
+      remarks: "Demoted during president replacement from admin user management."
+    });
+  }
+
+  logger.info("admin_users.president_replacement.demoted_existing_president", {
+    demoted_profile_id: currentPresident.id,
+    demoted_member_id: presidentMember?.id ?? null
+  });
+
+  return updatedProfile;
+}
+
 async function listAdminUsers(options) {
   const { actor, filters = {}, pagination, database = db } = options;
   requireAdmin(actor);
@@ -133,7 +198,7 @@ async function getAdminUser(options) {
 }
 
 async function updateAdminUserRole(options) {
-  const { actor, profileId, payload, database = db } = options;
+  const { actor, profileId, payload, database = db, logger = baseLogger } = options;
   requireAdmin(actor);
 
   const profile = await database.getProfileById(profileId);
@@ -147,6 +212,15 @@ async function updateAdminUserRole(options) {
     role: validatedPayload.role,
     club_id: validatedPayload.club_id
   };
+  const requestLogger = logger.child
+    ? logger.child({
+        module: "admin_users",
+        target_profile_id: profileId,
+        requested_role: update.role,
+        requested_club_id: update.club_id ?? null,
+        replacement_confirmed: validatedPayload.replace_existing_president
+      })
+    : logger;
 
   if (["executive", "president"].includes(update.role) && !update.club_id) {
     throw new ApiError(400, "A club is required for president and executive roles", "VALIDATION_ERROR", {
@@ -164,6 +238,45 @@ async function updateAdminUserRole(options) {
     if (!club) {
       throw new ApiError(400, "Selected club does not exist", "INVALID_CLUB", {
         field: "club_id"
+      });
+    }
+  }
+
+  if (update.role === "president") {
+    requestLogger.info("admin_users.president_replacement.requested", {
+      actor_id: actor.id,
+      current_role: profile.role
+    });
+
+    const currentPresident = await findExistingPresidentConflict({
+      database,
+      clubId: update.club_id,
+      targetProfileId: profile.id
+    });
+
+    if (currentPresident && !validatedPayload.replace_existing_president) {
+      requestLogger.warn("admin_users.president_replacement.conflict", {
+        actor_id: actor.id,
+        current_president_id: currentPresident.id
+      });
+
+      throw new ApiError(
+        409,
+        "This club already has a president. Confirm replacement before continuing.",
+        "PRESIDENT_ALREADY_EXISTS",
+        {
+          current_president: formatPresidentConflictProfile(currentPresident)
+        }
+      );
+    }
+
+    if (currentPresident) {
+      await demoteExistingPresident({
+        database,
+        actor,
+        currentPresident,
+        clubId: update.club_id,
+        logger: requestLogger
       });
     }
   }

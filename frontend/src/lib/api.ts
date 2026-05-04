@@ -134,6 +134,13 @@ export interface AdminAdvisorAssignmentResult extends AdminRoleChangeResult {
   club: ClubRecord;
 }
 
+export interface UpdateAdminUserRolePayload {
+  role: Exclude<ProfileRecord["role"], "admin">;
+  club_id?: string | null;
+  remarks?: string | null;
+  replace_existing_president?: boolean;
+}
+
 export interface ProfileOnboardingPayload {
   full_name: string;
   student_id?: string | null;
@@ -1310,11 +1317,7 @@ export async function getAdminUsers(
 
 export async function updateAdminUserRole(
   profileId: string,
-  payload: {
-    role: Exclude<ProfileRecord["role"], "admin">;
-    club_id?: string | null;
-    remarks?: string | null;
-  },
+  payload: UpdateAdminUserRolePayload,
   token?: string
 ) {
   const response = await request<ApiEnvelope<AdminRoleChangeResult>>(

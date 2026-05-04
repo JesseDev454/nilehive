@@ -32,6 +32,23 @@ function createClub(overrides = {}) {
   };
 }
 
+function createMemberRecord(overrides = {}) {
+  return {
+    id: "member-1",
+    club_id: "club-1",
+    profile_id: "student-1",
+    full_name: "Ada Student",
+    student_id: "020232255",
+    email: "ada@nileuniversity.edu.ng",
+    phone_number: "08000000000",
+    club_role: "member",
+    membership_status: "active",
+    created_at: "2026-04-15T10:00:00.000Z",
+    updated_at: "2026-04-15T10:00:00.000Z",
+    ...overrides
+  };
+}
+
 test("admin can promote a user and role history is recorded", async () => {
   let profileUpdate;
   let historyEntry;
@@ -43,6 +60,14 @@ test("admin can promote a user and role history is recorded", async () => {
     async getClubById(clubId) {
       assert.equal(clubId, "club-1");
       return createClub();
+    },
+    async listProfiles(filters) {
+      assert.deepEqual(filters, {
+        role: "president",
+        clubId: "club-1"
+      });
+
+      return [];
     },
     async updateProfile(profileId, update) {
       profileUpdate = update;
@@ -71,6 +96,175 @@ test("admin can promote a user and role history is recorded", async () => {
   assert.equal(historyEntry.new_role, "president");
   assert.equal(historyEntry.changed_by, "admin-1");
   assert.equal(result.profile.role, "president");
+});
+
+test("admin role update returns a structured conflict before replacing an existing president", async () => {
+  let updateCalled = false;
+  const fakeDatabase = {
+    async getProfileById(profileId) {
+      assert.equal(profileId, "student-1");
+      return createProfile();
+    },
+    async getClubById(clubId) {
+      assert.equal(clubId, "club-1");
+      return createClub();
+    },
+    async listProfiles(filters) {
+      assert.deepEqual(filters, {
+        role: "president",
+        clubId: "club-1"
+      });
+
+      return [
+        createProfile({
+          id: "current-president",
+          full_name: "Current President",
+          role: "president",
+          student_id: "020200001"
+        })
+      ];
+    },
+    async updateProfile() {
+      updateCalled = true;
+      return createProfile({ role: "president" });
+    }
+  };
+
+  await assert.rejects(
+    () =>
+      updateAdminUserRole({
+        actor: { id: "admin-1", role: "admin" },
+        profileId: "student-1",
+        payload: {
+          role: "president",
+          club_id: "club-1"
+        },
+        database: fakeDatabase
+      }),
+    (error) =>
+      error.statusCode === 409 &&
+      error.code === "PRESIDENT_ALREADY_EXISTS" &&
+      error.details?.current_president?.id === "current-president"
+  );
+
+  assert.equal(updateCalled, false);
+});
+
+test("admin can confirm president replacement from user management", async () => {
+  const profileUpdates = [];
+  const memberUpdates = [];
+  const roleHistoryEntries = [];
+
+  const fakeDatabase = {
+    async getProfileById(profileId) {
+      if (profileId === "student-1") {
+        return createProfile();
+      }
+
+      return null;
+    },
+    async getClubById(clubId) {
+      assert.equal(clubId, "club-1");
+      return createClub();
+    },
+    async listProfiles(filters) {
+      assert.deepEqual(filters, {
+        role: "president",
+        clubId: "club-1"
+      });
+
+      return [
+        createProfile({
+          id: "current-president",
+          full_name: "Current President",
+          role: "president",
+          student_id: "020200001"
+        })
+      ];
+    },
+    async updateProfile(profileId, update) {
+      profileUpdates.push({ profileId, update });
+      return createProfile({
+        id: profileId,
+        full_name: profileId === "current-president" ? "Current President" : "Ada Student",
+        student_id: profileId === "current-president" ? "020200001" : "020232255",
+        role: update.role,
+        club_id: update.club_id
+      });
+    },
+    async getClubMemberByProfileAndClub(profileId, clubId) {
+      assert.equal(clubId, "club-1");
+
+      if (profileId === "current-president") {
+        return createMemberRecord({
+          id: "member-current-president",
+          profile_id: "current-president",
+          full_name: "Current President",
+          student_id: "020200001",
+          club_role: "president"
+        });
+      }
+
+      return null;
+    },
+    async updateClubMember(memberId, update) {
+      memberUpdates.push({ memberId, update });
+      return createMemberRecord({
+        id: memberId,
+        profile_id: "current-president",
+        full_name: "Current President",
+        student_id: "020200001",
+        club_role: update.club_role ?? "member"
+      });
+    },
+    async createProfileRoleHistory(entry) {
+      roleHistoryEntries.push(entry);
+      return entry;
+    }
+  };
+
+  const result = await updateAdminUserRole({
+    actor: { id: "admin-1", role: "admin" },
+    profileId: "student-1",
+    payload: {
+      role: "president",
+      club_id: "club-1",
+      remarks: "Replacing outgoing president.",
+      replace_existing_president: true
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(result.profile.role, "president");
+  assert.deepEqual(profileUpdates, [
+    {
+      profileId: "current-president",
+      update: {
+        role: "student",
+        club_id: "club-1"
+      }
+    },
+    {
+      profileId: "student-1",
+      update: {
+        role: "president",
+        club_id: "club-1"
+      }
+    }
+  ]);
+  assert.deepEqual(memberUpdates, [
+    {
+      memberId: "member-current-president",
+      update: {
+        club_role: "member"
+      }
+    }
+  ]);
+  assert.equal(roleHistoryEntries.length, 2);
+  assert.equal(roleHistoryEntries[0].profile_id, "current-president");
+  assert.equal(roleHistoryEntries[0].new_role, "student");
+  assert.equal(roleHistoryEntries[1].profile_id, "student-1");
+  assert.equal(roleHistoryEntries[1].new_role, "president");
 });
 
 test("non-admin cannot promote users", async () => {

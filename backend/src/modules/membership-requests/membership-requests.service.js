@@ -1,6 +1,7 @@
 const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
 const { ensurePaginatedResult, mapPaginatedResult } = require("../../shared/pagination");
+const { isValidStudentId, STUDENT_ID_ERROR_MESSAGE } = require("../../shared/studentId");
 const {
   validateCreateMembershipRequestPayload,
   validateMembershipRequestDecisionPayload
@@ -141,6 +142,14 @@ async function createMembershipRequest(options) {
     throw new ApiError(404, "Profile not found", "PROFILE_NOT_FOUND");
   }
 
+  const effectiveStudentId = validatedPayload.student_id || profile.student_id;
+
+  if (!effectiveStudentId || !isValidStudentId(effectiveStudentId)) {
+    throw new ApiError(400, STUDENT_ID_ERROR_MESSAGE, "VALIDATION_ERROR", {
+      field: "student_id"
+    });
+  }
+
   const studentType = normalizeStudentType(validatedPayload.student_type || profile.student_type);
   const paymentSettings = database.getClubPaymentSettings
     ? await database.getClubPaymentSettings(validatedPayload.club_id)
@@ -177,20 +186,20 @@ async function createMembershipRequest(options) {
   const member = existingMember
     ? await database.updateClubMember(existingMember.id, {
         full_name: profile.full_name,
-        student_id: validatedPayload.student_id || profile.student_id,
+        student_id: effectiveStudentId,
         email: existingMember.email,
         phone_number: validatedPayload.phone_number || profile.phone_number || existingMember.phone_number,
         club_role: validatedPayload.requested_role,
         membership_status: "inactive"
       })
     : await database.createClubMember({
-        club_id: validatedPayload.club_id,
-        profile_id: actor.id,
-        full_name: profile.full_name,
-        student_id: validatedPayload.student_id || profile.student_id,
-        email: null,
-        phone_number: validatedPayload.phone_number || profile.phone_number || null,
-        club_role: validatedPayload.requested_role,
+      club_id: validatedPayload.club_id,
+      profile_id: actor.id,
+      full_name: profile.full_name,
+      student_id: effectiveStudentId,
+      email: null,
+      phone_number: validatedPayload.phone_number || profile.phone_number || null,
+      club_role: validatedPayload.requested_role,
         membership_status: "inactive"
       });
 

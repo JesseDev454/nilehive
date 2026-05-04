@@ -22,12 +22,24 @@ function validateRoleUpdatePayload(payload = {}) {
     });
   }
 
+  if (
+    Object.prototype.hasOwnProperty.call(payload, "replace_existing_president") &&
+    typeof payload.replace_existing_president !== "boolean"
+  ) {
+    throw new ApiError(400, "replace_existing_president must be a boolean", "VALIDATION_ERROR", {
+      field: "replace_existing_president"
+    });
+  }
+
   return {
     role,
     club_id: Object.prototype.hasOwnProperty.call(payload, "club_id")
       ? readOptionalString(payload, "club_id")
       : undefined,
-    remarks: readOptionalString(payload, "remarks")
+    remarks: readOptionalString(payload, "remarks"),
+    replace_existing_president: Object.prototype.hasOwnProperty.call(payload, "replace_existing_president")
+      ? payload.replace_existing_president
+      : false
   };
 }
 
