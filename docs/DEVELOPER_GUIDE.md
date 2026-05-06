@@ -64,14 +64,14 @@ Examples:
 
 - a Campus One `student` can still be a NileHive `president`
 - a Campus One `student` can still be a NileHive `executive`
-- a Campus One `staff` user is not automatically a NileHive advisor
+- a Campus One `student` can still be a NileHive `advisor`
 
 ### Effective access rules
 
 - Campus One `admin` always gets NileHive admin access
-- Campus One `staff` needs a local NileHive `advisor` assignment to use advisor features
-- unassigned Campus One `staff` should see an access-pending state
+- Campus One only controls the admin override
 - local `president` and `executive` still work for Campus One `student` users
+- local `advisor` is fully controlled by NileHive
 - local `admin` is no longer the source of truth for admin privileges
 
 ## Local Setup
@@ -179,7 +179,6 @@ Most important files:
 Managed in Campus One, not NileHive.
 
 - use Campus One admin tools to assign `admin`
-- use Campus One admin tools to assign `staff`
 
 ### NileHive president / executive / advisor
 
@@ -257,7 +256,7 @@ In Buildathon portal mode:
 - the frontend calls the NileHive backend with cookies included
 - the backend forwards the cookie to `https://api.builtbysalih.com/api/session`
 - first-time Portal users get a local `public.profiles` row with role `student` and no club assignment
-- Club Services roles are still managed inside NileHive
+- Club Services roles are still managed inside NileHive, with Campus One only overriding admin access
 
 This behavior comes from:
 

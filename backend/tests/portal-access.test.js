@@ -21,33 +21,34 @@ test("Campus One admin always resolves to Club Services admin", () => {
   assert.equal(isPortalAdmin({ portalRole: "admin" }), true);
 });
 
-test("Campus One staff without local advisor stays pending", () => {
+test("Campus One staff keeps normal local Club Services access", () => {
   const result = resolveEffectiveRole({
     portalRole: "staff",
     appRole: "student"
   });
 
-  assert.equal(result.effectiveRole, "staff");
-  assert.equal(result.accessPending, true);
-  assert.equal(result.roleSyncState, "pending_assignment");
+  assert.equal(result.effectiveRole, "student");
+  assert.equal(result.accessPending, false);
+  assert.equal(result.roleSyncState, "active");
   assert.equal(isPortalStaffOrAdmin({ portalRole: "staff" }), true);
   assert.equal(canUseAdvisorFeatures({ portalRole: "staff", appRole: "student" }), false);
 });
 
-test("local advisor requires Campus One staff or admin to activate", () => {
-  const pendingAdvisor = resolveEffectiveRole({
+test("local advisor remains advisor regardless of non-admin Campus One role", () => {
+  const studentAdvisor = resolveEffectiveRole({
     portalRole: "student",
     appRole: "advisor"
   });
-  const activeAdvisor = resolveEffectiveRole({
+  const staffAdvisor = resolveEffectiveRole({
     portalRole: "staff",
     appRole: "advisor"
   });
 
-  assert.equal(pendingAdvisor.effectiveRole, "student");
-  assert.equal(pendingAdvisor.roleSyncState, "advisor_requires_staff_role");
-  assert.equal(activeAdvisor.effectiveRole, "advisor");
-  assert.equal(activeAdvisor.accessPending, false);
+  assert.equal(studentAdvisor.effectiveRole, "advisor");
+  assert.equal(studentAdvisor.roleSyncState, "active");
+  assert.equal(staffAdvisor.effectiveRole, "advisor");
+  assert.equal(staffAdvisor.accessPending, false);
+  assert.equal(canUseAdvisorFeatures({ portalRole: "student", appRole: "advisor" }), true);
   assert.equal(canUseAdvisorFeatures({ portalRole: "staff", appRole: "advisor" }), true);
 });
 

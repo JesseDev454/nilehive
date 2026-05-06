@@ -97,14 +97,11 @@ Important rules:
 
 - Campus One admins become NileHive admins automatically
 - NileHive does not assign admin access locally anymore
-- Campus One staff do not automatically become advisors
-- Campus One remains the live source of truth for `student`, `staff`, and `admin`
-- advisor access requires both:
-  - Campus One `staff` or `admin`
-  - a local NileHive advisor assignment
+- Campus One only controls shared sign-in and the admin override
+- Campus One `staff` is informational only inside NileHive
+- advisor access comes from a local NileHive advisor assignment
 - presidents and executives remain club-specific NileHive roles
-- unassigned Campus One staff should see an access-pending state instead of the student experience
-- Campus One role changes should appear in NileHive on the next refresh, window focus, or fresh sign-in
+- Campus One admin changes should appear in NileHive on the next refresh, window focus, or fresh sign-in
 
 ### Admin
 
@@ -122,7 +119,7 @@ Important rules:
 
 ### Advisor
 
-- requires Campus One `staff` or `admin` plus a local advisor assignment
+- is managed locally inside NileHive
 - reviews proposals and advisor-relevant club work
 
 ### Student

@@ -54,7 +54,7 @@ export interface ClubRecord {
 
 export type LocalAppRole = "executive" | "advisor" | "admin" | "president" | "student";
 export type PortalRole = "student" | "staff" | "admin";
-export type EffectiveRole = "executive" | "advisor" | "admin" | "president" | "student" | "staff";
+export type EffectiveRole = "executive" | "advisor" | "admin" | "president" | "student";
 
 export interface ProfileRecord {
   id: string;

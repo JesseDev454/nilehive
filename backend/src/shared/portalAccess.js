@@ -21,7 +21,7 @@ function isPortalStaffOrAdmin(userOrRole) {
 }
 
 function canUseAdvisorFeatures(user) {
-  return isPortalStaffOrAdmin(user) && normalizeAppRole(user?.appRole) === "advisor";
+  return normalizeAppRole(user?.appRole) === "advisor";
 }
 
 function resolveEffectiveRole({ portalRole, appRole }) {
@@ -38,50 +38,10 @@ function resolveEffectiveRole({ portalRole, appRole }) {
     };
   }
 
-  if (normalizedPortalRole === "staff") {
-    if (normalizedAppRole === "advisor") {
-      return {
-        portalRole: normalizedPortalRole,
-        appRole: normalizedAppRole,
-        effectiveRole: "advisor",
-        accessPending: false,
-        roleSyncState: "active"
-      };
-    }
-
-    return {
-      portalRole: normalizedPortalRole,
-      appRole: normalizedAppRole,
-      effectiveRole: "staff",
-      accessPending: true,
-      roleSyncState: "pending_assignment"
-    };
-  }
-
-  if (normalizedAppRole === "advisor") {
-    return {
-      portalRole: normalizedPortalRole,
-      appRole: normalizedAppRole,
-      effectiveRole: "student",
-      accessPending: false,
-      roleSyncState: "advisor_requires_staff_role"
-    };
-  }
-
-  if (normalizedAppRole === "president" || normalizedAppRole === "executive") {
-    return {
-      portalRole: normalizedPortalRole,
-      appRole: normalizedAppRole,
-      effectiveRole: normalizedAppRole,
-      accessPending: false,
-      roleSyncState: "active"
-    };
-  }
-
   return {
     portalRole: normalizedPortalRole,
     appRole: normalizedAppRole,
-    effectiveRole: "student",
+    effectiveRole: normalizedAppRole,
     accessPending: false,
     roleSyncState: "active"
   };

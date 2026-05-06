@@ -2042,17 +2042,6 @@ export default function Dashboard() {
   if (role === "executive") return <ExecutiveDashboard />;
   if (role === "president") return <PresidentDashboard />;
   if (role === "student") return <StudentDashboard />;
-  if (role === "staff") {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <NeoStateCard
-          title="Your Club Services access is being prepared"
-          message="Your Campus One staff account is active, but Club Services has not linked it to an advisor role yet."
-          tone="warning"
-        />
-      </div>
-    );
-  }
   return (
     <div className="flex min-h-[50vh] items-center justify-center">
       <NeoLoadingState title="Opening your Club Services workspace" message="We are loading your profile and dashboard access." />

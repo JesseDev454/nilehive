@@ -13,7 +13,7 @@ import { supabase, SUPABASE_AUTH_STORAGE_KEY } from "@/lib/supabase";
 
 export type AppRole = "executive" | "advisor" | "admin" | "president" | "student";
 export type PlatformRole = "student" | "staff" | "admin";
-export type EffectiveRole = AppRole | "staff";
+export type EffectiveRole = AppRole;
 
 export interface AppProfile {
   id: string;

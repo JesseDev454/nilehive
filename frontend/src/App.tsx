@@ -34,7 +34,7 @@ import NotFound from "@/pages/NotFound";
 import { queryClient } from "@/lib/queryClient";
 
 function ProtectedRoutes() {
-  const { profile, session, isLoading, profileError, requiresProfileRecovery, signOut, accessPending, portalRole } = useAuth();
+  const { profile, session, isLoading, profileError, requiresProfileRecovery, signOut } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -79,24 +79,6 @@ function ProtectedRoutes() {
     }
 
     return <ProfileSetup />;
-  }
-
-  if (accessPending && portalRole === "staff") {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-6">
-        <div className="w-full max-w-xl">
-          <NeoStateCard
-            title="Your Club Services access is being prepared"
-            message="Your Campus One staff account is active, but it has not been linked to a club advisor role in Club Services yet."
-            tone="warning"
-          >
-            <Button onClick={() => void signOut()} variant="outline">
-              Sign out
-            </Button>
-          </NeoStateCard>
-        </div>
-      </div>
-    );
   }
 
   return <Outlet />;

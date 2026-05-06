@@ -200,7 +200,7 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
               </p>
               {user.role === "admin" ? (
                 <p className="mt-2 text-xs text-warning">
-                  Campus One now manages admin access. NileHive can still update local club roles, but it cannot assign admin access.
+                  Campus One manages admin access. NileHive can still update local club roles, but it cannot grant or remove admin access here.
                 </p>
               ) : null}
             </div>
@@ -440,18 +440,18 @@ export default function UserManagement() {
               Campus One creates the shared identity first. Club Services then links the existing user account to local club access.
             </p>
           </div>
-          <div className="nh-card-soft p-4">
-            <p className="font-semibold">2. Club Services updates access</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Campus One manages platform roles like student, staff, and admin. Use this page only for local club roles like president, executive, and advisor.
-            </p>
-          </div>
-          <div className="nh-card-soft p-4">
-            <p className="font-semibold">3. They log in with the new role</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Presidents can then choose executives from active club members. Campus One role changes appear after the next refresh, focus, or sign-in.
-            </p>
-          </div>
+            <div className="nh-card-soft p-4">
+              <p className="font-semibold">2. Club Services updates access</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Campus One only controls admin access. Use this page to manage local Club Services roles like student, president, executive, and advisor.
+              </p>
+            </div>
+            <div className="nh-card-soft p-4">
+              <p className="font-semibold">3. They log in with the new role</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Presidents can then choose executives from active club members. Local role changes appear after the next refresh, focus, or sign-in.
+              </p>
+            </div>
         </CardContent>
       </Card>
 

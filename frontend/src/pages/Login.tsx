@@ -94,7 +94,7 @@ export default function Login() {
           <div className="relative z-10 border-2 border-primary-foreground/40 bg-primary/70 p-5">
             <p className="text-sm font-black uppercase tracking-[0.14em]">Notice to Students</p>
             <p className="mt-2 text-sm text-primary-foreground/75">
-              Use your Nile University email address. Campus One manages student, staff, and admin identity, while Club Services links advisor and leadership access.
+              Use your Nile University email address. Campus One manages shared sign-in and admin access, while Club Services manages student, advisor, and leadership roles locally.
             </p>
           </div>
         </aside>
