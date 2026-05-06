@@ -198,6 +198,8 @@ async function getVisibleAnnouncements(actor, filters, database) {
 }
 
 function formatFeedback(feedback) {
+  const proposal = feedback.proposal ?? feedback.proposals ?? null;
+
   return {
     id: feedback.id,
     club_id: feedback.club_id,
@@ -207,6 +209,14 @@ function formatFeedback(feedback) {
     rating: feedback.rating,
     comment: feedback.comment,
     status: feedback.status,
+    proposal: proposal
+      ? {
+          id: proposal.id,
+          title: proposal.title,
+          proposed_activity: proposal.proposed_activity ?? null,
+          event_date: proposal.event_date ?? null
+        }
+      : null,
     created_at: feedback.created_at,
     updated_at: feedback.updated_at
   };

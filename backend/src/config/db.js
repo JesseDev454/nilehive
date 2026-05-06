@@ -27,11 +27,11 @@ const duePaymentSelect =
 const clubPaymentSettingsSelect =
   "id, club_id, bank_name, account_number, account_name, payment_instructions, fresher_dues_amount, returning_student_dues_amount, created_at, updated_at";
 const eventReportSelect =
-  "id, proposal_id, club_id, submitted_by, attendance_count, summary, challenges, outcomes, budget_used, media_urls, status, submitted_at, created_at, updated_at, proposals(id, title, proposed_activity, event_date, event_time, location, status)";
+  "id, proposal_id, club_id, submitted_by, attendance_count, summary, challenges, outcomes, budget_used, media_urls, status, submitted_at, created_at, updated_at, proposals(id, title, proposed_activity, event_date, event_time, location, status), club:clubs!event_reports_club_id_fkey(id, name, code)";
 const announcementSelect =
   "id, club_id, created_by, title, message, audience, priority, target_role, created_at, updated_at";
 const feedbackSelect =
-  "id, club_id, proposal_id, submitted_by, category, rating, comment, status, created_at, updated_at";
+  "id, club_id, proposal_id, submitted_by, category, rating, comment, status, created_at, updated_at, proposal:proposals!event_feedback_proposal_id_fkey(id, title, proposed_activity, event_date)";
 const eventRsvpSelect =
   "id, proposal_id, club_id, user_id, status, created_at, updated_at, profile:profiles!event_rsvps_user_id_fkey(id, full_name, student_id, role)";
 const eventAttendanceSelect =
@@ -1471,6 +1471,10 @@ function createDatabase(options = {}) {
 
       if (filters.clubId) {
         query = query.eq("club_id", filters.clubId);
+      }
+
+      if (filters.profileId) {
+        query = query.eq("profile_id", filters.profileId);
       }
 
       if (filters.clubRoles?.length) {

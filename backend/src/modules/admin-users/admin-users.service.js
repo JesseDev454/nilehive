@@ -104,6 +104,112 @@ function formatPresidentConflictProfile(profile) {
   };
 }
 
+function getDesiredClubMemberRole(role) {
+  if (role === "president") {
+    return "president";
+  }
+
+  if (role === "executive") {
+    return "executive";
+  }
+
+  if (role === "student") {
+    return "member";
+  }
+
+  return null;
+}
+
+async function archiveHistoricalMemberships({
+  database,
+  actor,
+  profile,
+  targetClubId
+}) {
+  if (!database.listClubMembers || !database.updateClubMember) {
+    return [];
+  }
+
+  const memberRecords = await database.listClubMembers({
+    profileId: profile.id,
+    excludeMembershipStatuses: ["alumni"]
+  });
+  const historicalMembers = memberRecords.filter((member) => member.club_id !== targetClubId);
+
+  for (const member of historicalMembers) {
+    await database.updateClubMember(member.id, {
+      membership_status: "alumni"
+    });
+
+    if (database.createClubMemberStatusHistory) {
+      await database.createClubMemberStatusHistory({
+        member_id: member.id,
+        club_id: member.club_id,
+        profile_id: member.profile_id,
+        previous_status: member.membership_status,
+        new_status: "alumni",
+        changed_by: actor.id,
+        reason: "Moved to a different active club through admin user management."
+      });
+    }
+  }
+
+  return historicalMembers;
+}
+
+async function upsertActiveClubMember({
+  database,
+  actor,
+  profile,
+  role,
+  clubId
+}) {
+  const desiredClubRole = getDesiredClubMemberRole(role);
+
+  if (!desiredClubRole || !clubId) {
+    return null;
+  }
+
+  const existingMember = database.getClubMemberByProfileAndClub
+    ? await database.getClubMemberByProfileAndClub(profile.id, clubId)
+    : null;
+  const nextMemberPayload = {
+    full_name: profile.full_name,
+    student_id: profile.student_id,
+    email: existingMember?.email ?? profile.email ?? null,
+    phone_number: profile.phone_number ?? existingMember?.phone_number ?? null,
+    club_role: desiredClubRole,
+    membership_status: "active"
+  };
+
+  if (existingMember) {
+    const updatedMember = await database.updateClubMember(existingMember.id, nextMemberPayload);
+
+    if (
+      database.createClubMemberStatusHistory &&
+      existingMember.membership_status !== "active"
+    ) {
+      await database.createClubMemberStatusHistory({
+        member_id: existingMember.id,
+        club_id: existingMember.club_id,
+        profile_id: existingMember.profile_id,
+        previous_status: existingMember.membership_status,
+        new_status: "active",
+        changed_by: actor.id,
+        reason: "Reactivated through admin user management."
+      });
+    }
+
+    return updatedMember;
+  }
+
+  return database.createClubMember({
+    club_id: clubId,
+    profile_id: profile.id,
+    ...nextMemberPayload
+  });
+}
+
 async function findExistingPresidentConflict({ database, clubId, targetProfileId }) {
   const existingPresidents = await database.listProfiles({
     role: "president",
@@ -285,6 +391,21 @@ async function updateAdminUserRole(options) {
     await database.clearClubAdvisorAssignments(profile.id);
   }
 
+  await archiveHistoricalMemberships({
+    database,
+    actor,
+    profile,
+    targetClubId: update.club_id ?? null
+  });
+
+  const activeMember = await upsertActiveClubMember({
+    database,
+    actor,
+    profile,
+    role: update.role,
+    clubId: update.club_id ?? null
+  });
+
   const updatedProfile = await database.updateProfile(profile.id, update);
   const history = await writeRoleHistory(database, actor, profile, update, validatedPayload.remarks);
   await writeAuditLog(database, {
@@ -294,13 +415,14 @@ async function updateAdminUserRole(options) {
     target_profile_id: profile.id,
     club_id: update.club_id ?? profile.club_id ?? null,
     remarks: validatedPayload.remarks,
-    metadata: {
-      previous_role: profile.role,
-      new_role: update.role,
-      previous_club_id: profile.club_id ?? null,
-      new_club_id: update.club_id ?? null
-    }
-  });
+      metadata: {
+        previous_role: profile.role,
+        new_role: update.role,
+        previous_club_id: profile.club_id ?? null,
+        new_club_id: update.club_id ?? null,
+        active_member_id: activeMember?.id ?? null
+      }
+    });
 
   const [enrichedProfile] = await enrichProfilesWithAdvisorAssignments(database, [updatedProfile]);
   return { profile: formatProfile(enrichedProfile), history };
@@ -333,9 +455,16 @@ async function assignAdvisorToClub(options) {
     throw new ApiError(409, "This advisor is already assigned to the selected club", "ADVISOR_ALREADY_ASSIGNED");
   }
 
+  await archiveHistoricalMemberships({
+    database,
+    actor,
+    profile,
+    targetClubId: club.id
+  });
+
   const updatedProfile = await database.updateProfile(profile.id, {
     role: "advisor",
-    club_id: profile.club_id ?? club.id
+    club_id: club.id
   });
   const assignment = database.createClubAdvisorAssignment
     ? await database.createClubAdvisorAssignment({
@@ -349,7 +478,7 @@ async function assignAdvisorToClub(options) {
     database,
     actor,
     profile,
-    { role: "advisor", club_id: profile.club_id ?? club.id },
+    { role: "advisor", club_id: club.id },
     validatedPayload.remarks
   );
   await writeAuditLog(database, {

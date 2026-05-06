@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Banknote, CalendarDays, ClipboardList, FileText, MessageSquare, Users } from "lucide-react";
@@ -7,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRole } from "@/contexts/RoleContext";
 import { ApiClientError, getAdminClubDashboard, type TaskRecord } from "@/lib/api";
+import { downloadAdminClubPerformancePdf } from "@/lib/exports";
+import { actionError, actionSuccess } from "@/lib/notify";
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -83,6 +86,7 @@ function TaskList({ tasks }: { tasks: TaskRecord[] }) {
 export default function AdminClubDashboard() {
   const { role } = useRole();
   const { clubId = "" } = useParams();
+  const [isDownloadingPerformance, setIsDownloadingPerformance] = useState(false);
   const {
     data: dashboard,
     isLoading,
@@ -124,6 +128,19 @@ export default function AdminClubDashboard() {
   const { club, summary } = dashboard;
   const visibleRecentMembers = dashboard.recent_members.filter((member) => member.membership_status !== "alumni");
 
+  async function handleDownloadPerformance() {
+    setIsDownloadingPerformance(true);
+
+    try {
+      await downloadAdminClubPerformancePdf(dashboard);
+      actionSuccess("Club performance download ready", "The club performance PDF has been prepared for your device.");
+    } catch (downloadError) {
+      actionError("Could not download club performance", downloadError, getErrorMessage(downloadError));
+    } finally {
+      setIsDownloadingPerformance(false);
+    }
+  }
+
   return (
     <div className="nh-page">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -144,6 +161,9 @@ export default function AdminClubDashboard() {
           </Button>
           <Button asChild variant="outline" size="sm">
             <Link to={`/members?club_id=${club.id}`}>View members</Link>
+          </Button>
+          <Button type="button" variant="outline" size="sm" onClick={handleDownloadPerformance} disabled={isDownloadingPerformance}>
+            {isDownloadingPerformance ? "Preparing PDF..." : "Download Performance"}
           </Button>
         </div>
       </div>

@@ -656,7 +656,7 @@ export default function NewProposal() {
         title={isEditMode ? "Edit Proposal" : "Create Proposal"}
         description={
           isEditMode
-            ? "Update a draft or returned proposal before sending it back for review."
+            ? "Update a draft or rejected proposal before sending it back for review."
             : "Share your event plan, budget estimate, and team members for review."
         }
         actions={

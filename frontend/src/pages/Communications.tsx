@@ -48,6 +48,28 @@ function getDateLabel(value?: string | null) {
   return value ? new Date(value).toLocaleString() : "-";
 }
 
+function getFeedbackEventLabel(feedback: {
+  proposal?: {
+    title: string;
+    proposed_activity: string | null;
+    event_date?: string | null;
+  } | null;
+}) {
+  const eventTitle = feedback.proposal?.proposed_activity || feedback.proposal?.title;
+
+  if (!eventTitle) {
+    return null;
+  }
+
+  const eventDate = feedback.proposal?.event_date ? formatDateOnly(feedback.proposal.event_date) : null;
+
+  return eventDate ? `${eventTitle} - ${eventDate}` : eventTitle;
+}
+
+function formatDateOnly(value?: string | null) {
+  return value ? new Date(value).toLocaleDateString() : "-";
+}
+
 function getAudienceLabel(announcement: AnnouncementRecord, clubName?: string) {
   if (announcement.audience === "all_users") {
     return "All users";
@@ -662,15 +684,10 @@ export default function Communications() {
               ) : (
                 feedback.map((entry) => (
                   <div key={entry.id} className="nh-list-card">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="outline" className="capitalize">
-                        {entry.category}
-                      </Badge>
-                      <Badge variant="secondary" className="capitalize">
-                        {entry.status}
-                      </Badge>
-                      {entry.rating && <span className="text-xs text-muted-foreground">{entry.rating}/5</span>}
-                    </div>
+                    {getFeedbackEventLabel(entry) ? (
+                      <p className="text-sm font-semibold">{getFeedbackEventLabel(entry)}</p>
+                    ) : null}
+                    {entry.rating && <p className="mt-1 text-xs text-muted-foreground">Rating: {entry.rating}/5</p>}
                     <p className="mt-2 text-sm text-muted-foreground">{entry.comment}</p>
                     <p className="mt-3 text-xs text-muted-foreground">
                       {getDateLabel(entry.created_at)}

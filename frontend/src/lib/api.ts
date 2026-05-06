@@ -320,6 +320,10 @@ export interface PresidentDashboardRecord {
 export interface AdminOperationsDashboardRecord {
   role: "admin";
   generated_at: string;
+  dues_comparison_context: {
+    current_academic_session: string;
+    previous_academic_session: string | null;
+  };
   summary: {
     total_clubs: number;
     total_members: number;
@@ -332,6 +336,9 @@ export interface AdminOperationsDashboardRecord {
     reports_submitted: number;
     missing_reports: number;
     dues_collected_amount: number;
+    current_session_dues_collected: number;
+    previous_session_dues_collected: number;
+    dues_change_amount: number;
     event_attendance_count: number;
     event_rsvp_count: number;
     attendance_rate: number;
@@ -361,6 +368,9 @@ export interface AdminOperationsDashboardRecord {
     pending_membership_requests: number;
     dues_collection_rate: number;
     dues_collected_amount: number;
+    current_session_dues_collected: number;
+    previous_session_dues_collected: number;
+    dues_change_amount: number;
     rsvp_count: number;
     attendance_count: number;
     reports_submitted: number;
@@ -644,6 +654,11 @@ export interface EventReportRecord {
   submitted_at: string;
   created_at: string;
   updated_at: string;
+  club: {
+    id: string;
+    name: string;
+    code: string | null;
+  } | null;
   proposal: {
     id: string;
     title: string;
@@ -659,6 +674,13 @@ export interface AdminClubDashboardRecord {
   role: "admin";
   club: ClubRecord;
   performance: AdminOperationsDashboardRecord["club_performance"][number];
+  dues_comparison: {
+    current_academic_session: string;
+    previous_academic_session: string | null;
+    current_session_dues_collected: number;
+    previous_session_dues_collected: number;
+    dues_change_amount: number;
+  };
   summary: {
     total_proposals: number;
     pending_proposals: number;
@@ -670,6 +692,9 @@ export interface AdminClubDashboardRecord {
     pending_membership_requests: number;
     dues_collected_amount: number;
     dues_collection_rate: number;
+    current_session_dues_collected: number;
+    previous_session_dues_collected: number;
+    dues_change_amount: number;
     approved_events: number;
     reports_submitted: number;
     missing_reports: number;
@@ -774,6 +799,12 @@ export interface FeedbackRecord {
   rating: number | null;
   comment: string;
   status: "open" | "reviewed" | "archived";
+  proposal?: {
+    id: string;
+    title: string;
+    proposed_activity: string | null;
+    event_date?: string | null;
+  } | null;
   created_at: string;
   updated_at: string;
 }
@@ -1979,6 +2010,15 @@ export async function getEventReports(
       token
     }
   );
+
+  return response.data;
+}
+
+export async function getEventReportDetail(reportId: string, token?: string) {
+  const response = await request<ApiEnvelope<EventReportRecord>>(`/api/v1/reports/${reportId}`, {
+    method: "GET",
+    token
+  });
 
   return response.data;
 }

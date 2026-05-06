@@ -41,6 +41,18 @@ function formatLinkedProposal(proposal) {
   };
 }
 
+function formatClubReference(club) {
+  if (!club) {
+    return null;
+  }
+
+  return {
+    id: club.id,
+    name: club.name,
+    code: club.code ?? null
+  };
+}
+
 function formatEventReport(report) {
   return {
     id: report.id,
@@ -57,6 +69,7 @@ function formatEventReport(report) {
     submitted_at: report.submitted_at,
     created_at: report.created_at,
     updated_at: report.updated_at,
+    club: formatClubReference(report.club ?? null),
     proposal: formatLinkedProposal(report.proposals ?? report.proposal ?? null)
   };
 }

@@ -206,15 +206,27 @@ function createFakeDatabase() {
           club_id: "club-1",
           member_id: "member-1",
           amount: 5000,
+          academic_session: "2025/2026",
           status: "paid",
           created_at: "2026-04-07T10:00:00.000Z",
           updated_at: "2026-04-07T10:00:00.000Z"
+        },
+        {
+          id: "dues-previous-1",
+          club_id: "club-1",
+          member_id: "member-1",
+          amount: 3000,
+          academic_session: "2024/2025",
+          status: "paid",
+          created_at: "2025-04-07T10:00:00.000Z",
+          updated_at: "2025-04-07T10:00:00.000Z"
         },
         {
           id: "dues-2",
           club_id: "club-1",
           member_id: "member-2",
           amount: 5000,
+          academic_session: "2025/2026",
           status: "submitted",
           created_at: "2026-04-08T10:00:00.000Z",
           updated_at: "2026-04-08T10:00:00.000Z"
@@ -428,10 +440,18 @@ test("admin can fetch operations dashboard data", async (t) => {
   assert.equal(payload.data.summary.pending_membership_requests, 1);
   assert.equal(payload.data.summary.submitted_dues_payments, 1);
   assert.equal(payload.data.summary.approved_events, 1);
+  assert.equal(payload.data.dues_comparison_context.current_academic_session, "2025/2026");
+  assert.equal(payload.data.dues_comparison_context.previous_academic_session, "2024/2025");
+  assert.equal(payload.data.summary.current_session_dues_collected, 5000);
+  assert.equal(payload.data.summary.previous_session_dues_collected, 3000);
+  assert.equal(payload.data.summary.dues_change_amount, 2000);
   assert.equal(payload.data.summary.attendance_rate, 100);
   assert.equal(payload.data.club_performance.length, 2);
   assert.equal(payload.data.club_performance[0].club_name, "Nile Innovators Club");
   assert.equal(payload.data.club_performance[0].approved_events, 1);
+  assert.equal(payload.data.club_performance[0].current_session_dues_collected, 5000);
+  assert.equal(payload.data.club_performance[0].previous_session_dues_collected, 3000);
+  assert.equal(payload.data.club_performance[0].dues_change_amount, 2000);
   assert.equal(payload.data.summary.missing_reports, 1);
   assert.equal(payload.data.missing_reports.length, 1);
   assert.equal(payload.data.missing_reports[0].proposal_id, "proposal-4");
@@ -459,6 +479,11 @@ test("admin can fetch one club operations dashboard", async (t) => {
   assert.equal(payload.data.summary.total_members, 2);
   assert.equal(payload.data.summary.open_tasks, 1);
   assert.equal(payload.data.summary.approved_events, 1);
+  assert.equal(payload.data.summary.current_session_dues_collected, 5000);
+  assert.equal(payload.data.summary.previous_session_dues_collected, 3000);
+  assert.equal(payload.data.summary.dues_change_amount, 2000);
+  assert.equal(payload.data.dues_comparison.current_academic_session, "2025/2026");
+  assert.equal(payload.data.dues_comparison.previous_academic_session, "2024/2025");
   assert.equal(payload.data.summary.missing_reports, 1);
   assert.equal(payload.data.tasks.length, 1);
   assert.equal(payload.data.recent_proposals.length, 4);

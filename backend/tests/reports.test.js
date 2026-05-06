@@ -37,6 +37,11 @@ function createReport(overrides = {}) {
     submitted_at: "2026-05-21T10:00:00.000Z",
     created_at: "2026-05-21T10:00:00.000Z",
     updated_at: "2026-05-21T10:00:00.000Z",
+    club: {
+      id: "club-1",
+      name: "Nile Innovators Club",
+      code: "NIC"
+    },
     proposal: createApprovedProposal(),
     ...overrides
   };
@@ -81,6 +86,7 @@ test("president can submit a post-event report for an approved club proposal", a
   assert.equal(createdReport.status, "submitted");
   assert.equal(report.attendance_count, 75);
   assert.equal(report.proposal.title, "Leadership Summit");
+  assert.equal(report.club?.name, "Nile Innovators Club");
 });
 
 test("post-event report requires an approved proposal", async () => {
@@ -283,6 +289,10 @@ function createRouteDatabase() {
     },
     async listEventReports() {
       return [createReport()];
+    },
+    async getEventReportById(reportId) {
+      assert.equal(reportId, "report-1");
+      return createReport();
     }
   };
 }
@@ -321,5 +331,22 @@ test("missing-token access is blocked for event reports", async (t) => {
 
   assert.equal(response.status, 401);
   assert.equal(payload.error.code, "AUTH_REQUIRED");
+});
+
+test("president can fetch one event report detail", async (t) => {
+  const server = await createTestServer(createRouteDatabase());
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/reports/report-1`, {
+    headers: {
+      Authorization: "Bearer president-token"
+    }
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.id, "report-1");
+  assert.equal(payload.data.club.name, "Nile Innovators Club");
+  assert.equal(payload.data.proposal.proposed_activity, "Leadership Summit 2026");
 });
 

@@ -2,6 +2,7 @@ const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
 const { getQueueHealth } = require("../../jobs/queue");
 const { getEventLifecycle } = require("../events/event-lifecycle");
+const { getEnv } = require("../../config/env");
 
 function isPendingStatus(status) {
   return status === "pending_advisor_review" || status === "pending_admin_review";
@@ -97,6 +98,26 @@ function isPastEvent(proposal, now = new Date()) {
 
 function isSupportableEvent(proposal, now = new Date()) {
   return getEventLifecycle(proposal?.event_date, now) !== "past";
+}
+
+function getPreviousAcademicSession(currentSession) {
+  const match = /^(\d{4})\/(\d{4})$/.exec(String(currentSession || "").trim());
+
+  if (!match) {
+    return null;
+  }
+
+  return `${Number(match[1]) - 1}/${Number(match[2]) - 1}`;
+}
+
+function sumPaidDuesForSession(payments, academicSession) {
+  if (!academicSession) {
+    return 0;
+  }
+
+  return payments
+    .filter((payment) => payment.status === "paid" && payment.academic_session === academicSession)
+    .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
 }
 
 function formatPendingAction(type, label, count) {
@@ -230,7 +251,9 @@ function buildClubPerformance({
   attendance,
   membershipRequests,
   feedback,
-  tasks
+  tasks,
+  currentAcademicSession,
+  previousAcademicSession
 }) {
   return clubs.map((club) => {
     const clubProposals = proposals.filter((proposal) => proposal.club_id === club.id);
@@ -245,6 +268,8 @@ function buildClubPerformance({
     const paidDues = clubDues.filter((payment) => payment.status === "paid");
     const approvedEvents = clubProposals.filter((proposal) => proposal.status === "approved");
     const supportableApprovedEvents = approvedEvents.filter((proposal) => isSupportableEvent(proposal));
+    const currentSessionDuesCollected = sumPaidDuesForSession(clubDues, currentAcademicSession);
+    const previousSessionDuesCollected = sumPaidDuesForSession(clubDues, previousAcademicSession);
 
     return {
       club_id: club.id,
@@ -259,6 +284,9 @@ function buildClubPerformance({
       pending_membership_requests: clubRequests.filter((request) => request.status === "pending").length,
       dues_collection_rate: clubDues.length > 0 ? Math.round((paidDues.length / clubDues.length) * 100) : 0,
       dues_collected_amount: paidDues.reduce((sum, payment) => sum + Number(payment.amount || 0), 0),
+      current_session_dues_collected: currentSessionDuesCollected,
+      previous_session_dues_collected: previousSessionDuesCollected,
+      dues_change_amount: currentSessionDuesCollected - previousSessionDuesCollected,
       rsvp_count: clubRsvps.length,
       attendance_count: clubAttendance.length,
       reports_submitted: clubReports.length,
@@ -520,6 +548,8 @@ async function getAdminOperationsDashboard(options) {
   ]);
   const approvedEventIdsWithReports = new Set(reports.map((report) => report.proposal_id));
   const supportableApprovedEvents = approvedEvents.filter((event) => isSupportableEvent(event));
+  const currentAcademicSession = getEnv().CURRENT_ACADEMIC_SESSION;
+  const previousAcademicSession = getPreviousAcademicSession(currentAcademicSession);
   const allMissingReports = approvedEvents
     .filter((event) => isPastEvent(event))
     .filter((event) => !approvedEventIdsWithReports.has(event.id));
@@ -543,10 +573,16 @@ async function getAdminOperationsDashboard(options) {
   const attendedCount = attendance.filter((record) => record.attended).length;
   const goingCount = rsvps.filter((rsvp) => rsvp.status === "going").length;
   const paidDues = duePayments.filter((payment) => payment.status === "paid");
+  const currentSessionDuesCollected = sumPaidDuesForSession(duePayments, currentAcademicSession);
+  const previousSessionDuesCollected = sumPaidDuesForSession(duePayments, previousAcademicSession);
 
   return {
     role: "admin",
     generated_at: new Date().toISOString(),
+    dues_comparison_context: {
+      current_academic_session: currentAcademicSession,
+      previous_academic_session: previousAcademicSession
+    },
     summary: {
       total_clubs: clubs.length,
       total_members: members.length,
@@ -559,6 +595,9 @@ async function getAdminOperationsDashboard(options) {
       reports_submitted: reports.length,
       missing_reports: allMissingReports.length,
       dues_collected_amount: paidDues.reduce((sum, payment) => sum + Number(payment.amount || 0), 0),
+      current_session_dues_collected: currentSessionDuesCollected,
+      previous_session_dues_collected: previousSessionDuesCollected,
+      dues_change_amount: currentSessionDuesCollected - previousSessionDuesCollected,
       event_attendance_count: attendedCount,
       event_rsvp_count: rsvps.length,
       attendance_rate: calculateAttendanceRate(attendedCount, goingCount),
@@ -584,7 +623,9 @@ async function getAdminOperationsDashboard(options) {
       attendance,
       membershipRequests,
       feedback,
-      tasks
+      tasks,
+      currentAcademicSession,
+      previousAcademicSession
     }),
     queue,
     missing_reports: missingReports,
@@ -651,12 +692,16 @@ async function getAdminClubDashboard(options) {
   ]);
   const approvedEventIdsWithReports = new Set(reports.map((report) => report.proposal_id));
   const supportableApprovedEvents = approvedEvents.filter((event) => isSupportableEvent(event));
+  const currentAcademicSession = getEnv().CURRENT_ACADEMIC_SESSION;
+  const previousAcademicSession = getPreviousAcademicSession(currentAcademicSession);
   const missingReports = approvedEvents
     .filter((event) => isPastEvent(event))
     .filter((event) => !approvedEventIdsWithReports.has(event.id));
   const attendedCount = attendance.filter((record) => record.attended).length;
   const goingCount = rsvps.filter((rsvp) => rsvp.status === "going").length;
   const paidDues = duePayments.filter((payment) => payment.status === "paid");
+  const currentSessionDuesCollected = sumPaidDuesForSession(duePayments, currentAcademicSession);
+  const previousSessionDuesCollected = sumPaidDuesForSession(duePayments, previousAcademicSession);
   const performance = buildClubPerformance({
     clubs: [club],
     proposals,
@@ -667,13 +712,22 @@ async function getAdminClubDashboard(options) {
     attendance,
     membershipRequests,
     feedback,
-    tasks
+    tasks,
+    currentAcademicSession,
+    previousAcademicSession
   })[0];
 
   return {
     role: "admin",
     club,
     performance,
+    dues_comparison: {
+      current_academic_session: currentAcademicSession,
+      previous_academic_session: previousAcademicSession,
+      current_session_dues_collected: currentSessionDuesCollected,
+      previous_session_dues_collected: previousSessionDuesCollected,
+      dues_change_amount: currentSessionDuesCollected - previousSessionDuesCollected
+    },
     summary: {
       ...summarizeProposals(proposals),
       total_members: members.length,
@@ -681,6 +735,9 @@ async function getAdminClubDashboard(options) {
       pending_membership_requests: membershipRequests.filter((request) => request.status === "pending").length,
       dues_collected_amount: paidDues.reduce((sum, payment) => sum + Number(payment.amount || 0), 0),
       dues_collection_rate: duePayments.length > 0 ? Math.round((paidDues.length / duePayments.length) * 100) : 0,
+      current_session_dues_collected: currentSessionDuesCollected,
+      previous_session_dues_collected: previousSessionDuesCollected,
+      dues_change_amount: currentSessionDuesCollected - previousSessionDuesCollected,
       approved_events: supportableApprovedEvents.length,
       reports_submitted: reports.length,
       missing_reports: missingReports.length,

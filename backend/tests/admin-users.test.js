@@ -69,6 +69,22 @@ test("admin can promote a user and role history is recorded", async () => {
 
       return [];
     },
+    async listClubMembers(filters) {
+      assert.deepEqual(filters, {
+        profileId: "student-1",
+        excludeMembershipStatuses: ["alumni"]
+      });
+      return [];
+    },
+    async createClubMember(member) {
+      return createMemberRecord({
+        id: "member-new",
+        club_id: member.club_id,
+        profile_id: member.profile_id,
+        club_role: member.club_role,
+        membership_status: member.membership_status
+      });
+    },
     async updateProfile(profileId, update) {
       profileUpdate = update;
       return createProfile({ id: profileId, ...update });
@@ -96,6 +112,123 @@ test("admin can promote a user and role history is recorded", async () => {
   assert.equal(historyEntry.new_role, "president");
   assert.equal(historyEntry.changed_by, "admin-1");
   assert.equal(result.profile.role, "president");
+});
+
+test("admin role reassignment keeps old club history and creates a new active club member record", async () => {
+  const memberUpdates = [];
+  let createdMember = null;
+  let profileUpdate = null;
+
+  const fakeDatabase = {
+    async getProfileById(profileId) {
+      assert.equal(profileId, "student-1");
+      return createProfile({
+        club_id: "club-1",
+        role: "student"
+      });
+    },
+    async getClubById(clubId) {
+      return createClub({
+        id: clubId,
+        name: clubId === "club-2" ? "Debate Union" : "Nile Innovators Club",
+        code: clubId === "club-2" ? "DBU" : "NIC"
+      });
+    },
+    async listProfiles(filters) {
+      assert.deepEqual(filters, {
+        role: "president",
+        clubId: "club-2"
+      });
+      return [];
+    },
+    async listClubMembers(filters) {
+      assert.deepEqual(filters, {
+        profileId: "student-1",
+        excludeMembershipStatuses: ["alumni"]
+      });
+
+      return [
+        createMemberRecord({
+          id: "member-club-1",
+          club_id: "club-1",
+          club_role: "member",
+          membership_status: "active"
+        })
+      ];
+    },
+    async getClubMemberByProfileAndClub(profileId, clubId) {
+      assert.equal(profileId, "student-1");
+      assert.equal(clubId, "club-2");
+      return null;
+    },
+    async updateClubMember(memberId, update) {
+      memberUpdates.push({ memberId, update });
+      return createMemberRecord({
+        id: memberId,
+        club_id: "club-1",
+        membership_status: update.membership_status ?? "active",
+        club_role: update.club_role ?? "member"
+      });
+    },
+    async createClubMember(member) {
+      createdMember = member;
+      return createMemberRecord({
+        id: "member-club-2",
+        club_id: member.club_id,
+        profile_id: member.profile_id,
+        full_name: member.full_name,
+        student_id: member.student_id,
+        phone_number: member.phone_number,
+        club_role: member.club_role,
+        membership_status: member.membership_status
+      });
+    },
+    async updateProfile(profileId, update) {
+      profileUpdate = { profileId, update };
+      return createProfile({ id: profileId, ...update });
+    },
+    async createProfileRoleHistory(entry) {
+      return entry;
+    }
+  };
+
+  const result = await updateAdminUserRole({
+    actor: { id: "admin-1", role: "admin" },
+    profileId: "student-1",
+    payload: {
+      role: "president",
+      club_id: "club-2",
+      remarks: "Moved to another club leadership team."
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(result.profile.role, "president");
+  assert.deepEqual(memberUpdates, [
+    {
+      memberId: "member-club-1",
+      update: {
+        membership_status: "alumni"
+      }
+    }
+  ]);
+  assert.deepEqual(createdMember, {
+    club_id: "club-2",
+    profile_id: "student-1",
+    full_name: "Ada Student",
+    student_id: "020232255",
+    email: null,
+    phone_number: null,
+    club_role: "president",
+    membership_status: "active"
+  });
+  assert.deepEqual(profileUpdate, {
+    profileId: "student-1",
+    update: {
+      role: "president",
+      club_id: "club-2"
+    }
+  });
 });
 
 test("admin role update returns a structured conflict before replacing an existing president", async () => {
@@ -205,15 +338,25 @@ test("admin can confirm president replacement from user management", async () =>
         });
       }
 
+      if (profileId === "student-1") {
+        return createMemberRecord({
+          id: "member-student-1",
+          profile_id: "student-1",
+          full_name: "Ada Student",
+          student_id: "020232255",
+          club_role: "member"
+        });
+      }
+
       return null;
     },
     async updateClubMember(memberId, update) {
       memberUpdates.push({ memberId, update });
       return createMemberRecord({
         id: memberId,
-        profile_id: "current-president",
-        full_name: "Current President",
-        student_id: "020200001",
+        profile_id: memberId === "member-current-president" ? "current-president" : "student-1",
+        full_name: memberId === "member-current-president" ? "Current President" : "Ada Student",
+        student_id: memberId === "member-current-president" ? "020200001" : "020232255",
         club_role: update.club_role ?? "member"
       });
     },
@@ -258,6 +401,17 @@ test("admin can confirm president replacement from user management", async () =>
       update: {
         club_role: "member"
       }
+    },
+    {
+      memberId: "member-student-1",
+      update: {
+        full_name: "Ada Student",
+        student_id: "020232255",
+        email: "ada@nileuniversity.edu.ng",
+        phone_number: "08000000000",
+        club_role: "president",
+        membership_status: "active"
+      }
     }
   ]);
   assert.equal(roleHistoryEntries.length, 2);
@@ -297,6 +451,13 @@ test("admin can assign an advisor to a club", async () => {
     async getClubById(clubId) {
       assert.equal(clubId, "club-1");
       return createClub();
+    },
+    async listClubMembers(filters) {
+      assert.deepEqual(filters, {
+        profileId: "advisor-1",
+        excludeMembershipStatuses: ["alumni"]
+      });
+      return [];
     },
     async listClubAdvisorAssignments() {
       return [];
@@ -343,6 +504,95 @@ test("admin can assign an advisor to a club", async () => {
   });
   assert.equal(historyEntry.new_role, "advisor");
   assert.equal(result.club.id, "club-1");
+});
+
+test("advisor reassignment aligns the active club even if the user had a previous club", async () => {
+  let profileUpdate;
+
+  const fakeDatabase = {
+    async getProfileById() {
+      return createProfile({
+        id: "advisor-1",
+        role: "student",
+        club_id: "club-1",
+        requested_role: "student"
+      });
+    },
+    async getClubById(clubId) {
+      assert.equal(clubId, "club-2");
+      return createClub({
+        id: "club-2",
+        name: "Debate Union",
+        code: "DBU"
+      });
+    },
+    async listClubMembers(filters) {
+      assert.deepEqual(filters, {
+        profileId: "advisor-1",
+        excludeMembershipStatuses: ["alumni"]
+      });
+      return [
+        createMemberRecord({
+          id: "member-club-1",
+          profile_id: "advisor-1",
+          club_id: "club-1",
+          membership_status: "active"
+        })
+      ];
+    },
+    async updateClubMember() {
+      return createMemberRecord({
+        id: "member-club-1",
+        profile_id: "advisor-1",
+        club_id: "club-1",
+        membership_status: "alumni"
+      });
+    },
+    async listClubAdvisorAssignments() {
+      return [];
+    },
+    async updateProfile(profileId, update) {
+      profileUpdate = { profileId, update };
+      return createProfile({ id: profileId, ...update });
+    },
+    async createClubAdvisorAssignment(input) {
+      return {
+        id: "assignment-2",
+        club_id: input.club_id,
+        advisor_profile_id: input.advisor_profile_id,
+        assigned_by: input.assigned_by,
+        remarks: input.remarks,
+        created_at: "2026-04-17T10:00:00.000Z",
+        club: createClub({
+          id: "club-2",
+          name: "Debate Union",
+          code: "DBU"
+        }),
+        advisor: createProfile({ id: "advisor-1", role: "advisor", club_id: "club-2" })
+      };
+    },
+    async createProfileRoleHistory(entry) {
+      return entry;
+    }
+  };
+
+  await assignAdvisorToClub({
+    actor: { id: "admin-1", role: "admin" },
+    profileId: "advisor-1",
+    payload: {
+      club_id: "club-2",
+      remarks: "Moved to the new advisor assignment."
+    },
+    database: fakeDatabase
+  });
+
+  assert.deepEqual(profileUpdate, {
+    profileId: "advisor-1",
+    update: {
+      role: "advisor",
+      club_id: "club-2"
+    }
+  });
 });
 
 test("advisor assignment rejects duplicate advisor-club links", async () => {

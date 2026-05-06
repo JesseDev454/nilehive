@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { ElementType } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/contexts/RoleContext";
 import { Badge } from "@/components/ui/badge";
@@ -64,6 +65,7 @@ import {
 import { isAttendableEvent } from "@/lib/eventLifecycle";
 import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 import { canViewProposalDetails } from "@/lib/roleAccess";
+import { downloadAdminPerformanceMatrixCsv } from "@/lib/exports";
 
 function StatCard({
   title,
@@ -167,7 +169,7 @@ function ProposalSummaryList({
                 </p>
               </div>
             </div>
-            <StatusBadge status={proposal.status} />
+            <StatusBadge status={proposal.status} eventDate={proposal.event_date} />
           </div>
         </Link>
       ))}
@@ -196,7 +198,7 @@ function UpcomingEventsList({
                 </p>
               </div>
             </div>
-            <StatusBadge status="approved" />
+            <StatusBadge status="approved" eventDate={event.event_date} />
           </div>
         );
 
@@ -1041,7 +1043,24 @@ function PolishedAdminDashboard() {
     (summary?.submitted_dues_payments ?? 0) +
     (summary?.missing_reports ?? 0);
   const totalProposalBottlenecks =
-    dashboard?.proposal_bottlenecks.reduce((sum, item) => sum + item.count, 0) ?? 0;
+      dashboard?.proposal_bottlenecks.reduce((sum, item) => sum + item.count, 0) ?? 0;
+
+  function handleDownloadMatrix() {
+    if (!dashboard) {
+      return;
+    }
+
+    try {
+      downloadAdminPerformanceMatrixCsv(dashboard);
+      toast.success("Matrix download ready", {
+        description: "The club performance matrix has been prepared for your device."
+      });
+    } catch (error) {
+      toast.error("Could not download matrix", {
+        description: getErrorMessage(error)
+      });
+    }
+  }
 
   return (
     <div className="space-y-7 animate-slide-up">
@@ -1210,20 +1229,25 @@ function PolishedAdminDashboard() {
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
             <Card className="xl:col-span-2 overflow-hidden">
-              <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <CardTitle className="text-lg">Club performance matrix</CardTitle>
+                <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <CardTitle className="text-lg">Club performance matrix</CardTitle>
                   <p className="mt-1 text-sm text-muted-foreground">
                     A quick read on activity, dues, reports, and accountability.
                   </p>
                   <p className="mt-2 text-xs font-black uppercase tracking-[0.16em] text-primary">
                     Showing {dashboard?.club_performance.length ?? 0} of {summary?.total_clubs ?? dashboard?.club_performance.length ?? 0} clubs
                   </p>
-                </div>
-                <Button asChild variant="outline" size="sm">
-                  <Link to="/members">Members</Link>
-                </Button>
-              </CardHeader>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" variant="outline" size="sm" onClick={handleDownloadMatrix} disabled={!dashboard?.club_performance.length}>
+                      Download Matrix
+                    </Button>
+                    <Button asChild variant="outline" size="sm">
+                      <Link to="/members">Members</Link>
+                    </Button>
+                  </div>
+                </CardHeader>
               <CardContent className="p-0">
                 {!dashboard?.club_performance.length ? (
                   <div className="p-6">

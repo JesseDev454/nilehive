@@ -34,6 +34,12 @@ function createFeedbackRecord(overrides = {}) {
     rating: 4,
     comment: "The event went well.",
     status: "open",
+    proposal: {
+      id: "proposal-1",
+      title: "Leadership Summit",
+      proposed_activity: "Leadership Summit 2026",
+      event_date: "2026-05-01"
+    },
     created_at: "2026-05-01T10:00:00.000Z",
     updated_at: "2026-05-01T10:00:00.000Z",
     ...overrides
@@ -785,6 +791,39 @@ test("advisor can list announcements and feedback for assigned clubs", async () 
 
   assert.equal(announcements.length, 2);
   assert.equal(feedback.length, 1);
+  assert.equal(feedback[0].proposal?.proposed_activity, "Leadership Summit 2026");
+});
+
+test("listFeedback keeps general feedback readable without a linked proposal", async () => {
+  const fakeDatabase = {
+    async listFeedback(filters) {
+      assert.deepEqual(filters, {
+        clubId: "club-1",
+        proposalId: undefined,
+        status: undefined
+      });
+      return [
+        createFeedbackRecord({
+          proposal_id: null,
+          proposal: null,
+          category: "general"
+        })
+      ];
+    }
+  };
+
+  const feedback = await listFeedback({
+    actor: {
+      id: "president-1",
+      role: "president",
+      clubId: "club-1"
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(feedback.length, 1);
+  assert.equal(feedback[0].proposal, null);
+  assert.equal(feedback[0].category, "general");
 });
 
 test("student sees global, own-club, and matching role announcements only", async () => {

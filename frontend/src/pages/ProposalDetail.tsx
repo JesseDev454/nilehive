@@ -58,6 +58,16 @@ function formatCurrency(value?: number | null) {
   }).format(value || 0);
 }
 
+function getResubmissionLabel(value?: number | null) {
+  const count = value ?? 0;
+
+  if (count === 0) {
+    return "None yet";
+  }
+
+  return `${count} ${count === 1 ? "time" : "times"}`;
+}
+
 function getProposalClubLabel(proposal: ProposalRecord) {
   return proposal.club?.name || "Unknown club";
 }
@@ -108,9 +118,11 @@ function buildApprovalSteps(proposal: ProposalRecord) {
       timestamp: getDateTimeLabel(adminDecision?.decided_at ?? proposal.admin_decided_at)
     },
     {
-      label: "Event",
-      status: proposal.status === "approved" ? "completed" as const : "pending" as const,
-      remarks: proposal.status === "approved" ? "Ready to appear in events." : undefined
+      label: "Event Held",
+      status: getProposalStatusMeta(proposal.status, proposal.event_date).label === "Event Held" ? "completed" as const : "pending" as const,
+      remarks: getProposalStatusMeta(proposal.status, proposal.event_date).label === "Event Held"
+        ? "This approved event has already been held."
+        : undefined
     }
   ];
 }
@@ -238,7 +250,7 @@ export default function ProposalDetail() {
                 ? `Submitted by the club president for ${getProposalClubLabel(proposal)}`
                 : "Created for your club"
             }. Added ${getDateLabel(proposal.created_at)}.`}
-            actions={<StatusBadge status={proposal.status} />}
+            actions={<StatusBadge status={proposal.status} eventDate={proposal.event_date} />}
           />
 
           <Card className="nh-card-dark text-white">
@@ -248,15 +260,15 @@ export default function ProposalDetail() {
             <CardContent className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wide text-white/50">Current Status</p>
-                <p className="mt-1 font-semibold">{getProposalStatusMeta(proposal.status).label}</p>
+                <p className="mt-1 font-semibold">{getProposalStatusMeta(proposal.status, proposal.event_date).label}</p>
               </div>
               <div>
                 <p className="text-xs font-bold uppercase tracking-wide text-white/50">Waiting On</p>
                 <p className="mt-1 font-semibold">{getProposalOwnerLabel(proposal.current_owner_role)}</p>
               </div>
               <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-white/50">Revision Count</p>
-                <p className="mt-1 font-semibold">{proposal.revision_count ?? 0}</p>
+                <p className="text-xs font-bold uppercase tracking-wide text-white/50">Resubmissions After Rejection</p>
+                <p className="mt-1 font-semibold">{getResubmissionLabel(proposal.revision_count)}</p>
               </div>
               <div>
                 <p className="text-xs font-bold uppercase tracking-wide text-white/50">Last Updated</p>
@@ -264,7 +276,7 @@ export default function ProposalDetail() {
               </div>
               <div className="border-2 border-primary-foreground/30 bg-white/10 p-4 sm:col-span-2 lg:col-span-4">
                 <p className="text-xs font-bold uppercase tracking-wide text-[#D4A437]">Next Action</p>
-                <p className="mt-1 text-white/90">{getProposalNextAction(proposal.status)}</p>
+                <p className="mt-1 text-white/90">{getProposalNextAction(proposal.status, proposal.event_date)}</p>
               </div>
             </CardContent>
           </Card>
@@ -275,14 +287,14 @@ export default function ProposalDetail() {
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-base">
-                        {proposal.status === "draft" ? "Draft Actions" : "Returned Proposal Actions"}
+                        {proposal.status === "draft" ? "Draft Actions" : "Rejected Proposal Actions"}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <p className="text-sm text-muted-foreground">
                         {proposal.status === "draft"
                           ? "This proposal is saved but has not been submitted."
-                          : "This proposal was returned. Review the remarks, edit it, then resubmit."}
+                          : "This proposal was rejected. Review the remarks, edit it, then resubmit."}
                       </p>
                       <div className="flex flex-col gap-2 sm:flex-row">
                         <Button
@@ -333,15 +345,18 @@ export default function ProposalDetail() {
                     </div>
                     <div>
                       <span className="text-muted-foreground">Review Step</span>
-                      <p className="font-medium mt-1">{getProposalStatusMeta(proposal.status).label}</p>
+                      <p className="font-medium mt-1">{getProposalStatusMeta(proposal.status, proposal.event_date).label}</p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Waiting On</span>
                       <p className="font-medium mt-1">{getProposalOwnerLabel(proposal.current_owner_role)}</p>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Revision Count</span>
-                      <p className="font-medium mt-1">{proposal.revision_count ?? 0}</p>
+                      <span className="text-muted-foreground">Resubmissions After Rejection</span>
+                      <p className="font-medium mt-1">{getResubmissionLabel(proposal.revision_count)}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        This only counts when a rejected proposal is corrected and submitted again.
+                      </p>
                     </div>
                     <div>
                       <span className="text-muted-foreground">Updated</span>

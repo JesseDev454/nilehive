@@ -37,7 +37,7 @@ export default function Approvals() {
         remarks: remarksByProposalId[proposalId]?.trim() || undefined
       });
 
-      actionSuccess(decision === "approve" ? "Proposal approved" : "Proposal returned", "The proposal queue has been updated.");
+      actionSuccess(decision === "approve" ? "Proposal approved" : "Proposal rejected", "The proposal queue has been updated.");
       await queryClient.invalidateQueries({ queryKey: ["advisor-pending-proposals"] });
     } catch (decisionError) {
       actionError("Decision failed", decisionError, getDecisionErrorMessage(decisionError));

@@ -16,10 +16,12 @@ import { useRole } from "@/contexts/RoleContext";
 import {
   ApiClientError,
   createEventReport,
+  getEventReportDetail,
   getApprovedEvents,
   getEventReports,
   type EventReportRecord
 } from "@/lib/api";
+import { downloadEventReportPdf, downloadReportMediaZip } from "@/lib/exports";
 import { uploadStorageFile } from "@/lib/storage";
 import { actionError, actionSuccess } from "@/lib/notify";
 import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
@@ -50,7 +52,19 @@ function formatCurrency(value?: number | null) {
   }).format(value);
 }
 
-function ReportCard({ report }: { report: EventReportRecord }) {
+function ReportCard({
+  report,
+  isDownloading,
+  isDownloadingMedia,
+  onDownload,
+  onDownloadMedia
+}: {
+  report: EventReportRecord;
+  isDownloading: boolean;
+  isDownloadingMedia: boolean;
+  onDownload: (reportId: string) => void;
+  onDownloadMedia: (reportId: string) => void;
+}) {
   const title = report.proposal?.proposed_activity || report.proposal?.title || "Completed Event";
   const firstMediaUrl = report.media_urls[0];
 
@@ -94,13 +108,47 @@ function ReportCard({ report }: { report: EventReportRecord }) {
         </div>
 
         <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={() => onDownload(report.id)} disabled={isDownloading}>
+            {isDownloading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Preparing PDF
+              </>
+            ) : (
+              <>
+                <FileText className="h-4 w-4 mr-2" />
+                Download Report
+              </>
+            )}
+          </Button>
           {report.media_urls.length ? (
-            <Button asChild variant="outline" size="sm">
-              <a href={report.media_urls[0]} target="_blank" rel="noreferrer">
-                <ImageIcon className="h-4 w-4 mr-2" />
-                View Media ({report.media_urls.length})
-              </a>
-            </Button>
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onDownloadMedia(report.id)}
+                disabled={isDownloadingMedia}
+              >
+                {isDownloadingMedia ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Preparing ZIP
+                  </>
+                ) : (
+                  <>
+                    <ImageIcon className="h-4 w-4 mr-2" />
+                    Download Images ({report.media_urls.length})
+                  </>
+                )}
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <a href={report.media_urls[0]} target="_blank" rel="noreferrer">
+                  <ImageIcon className="h-4 w-4 mr-2" />
+                  View Media
+                </a>
+              </Button>
+            </>
           ) : null}
         </div>
       </CardContent>
@@ -121,6 +169,8 @@ export default function MediaArchive() {
   const [uploadedMediaNames, setUploadedMediaNames] = useState<string[]>([]);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [page, setPage] = useState(1);
+  const [downloadingReportId, setDownloadingReportId] = useState<string | null>(null);
+  const [downloadingMediaReportId, setDownloadingMediaReportId] = useState<string | null>(null);
   const canSubmitReports = role === "president";
   const canViewReports = ["admin", "advisor", "president"].includes(role);
 
@@ -264,6 +314,41 @@ export default function MediaArchive() {
   function removeUploadedMedia(index: number) {
     setUploadedMediaUrls((current) => current.filter((_, currentIndex) => currentIndex !== index));
     setUploadedMediaNames((current) => current.filter((_, currentIndex) => currentIndex !== index));
+  }
+
+  async function handleDownloadReport(reportId: string) {
+    setDownloadingReportId(reportId);
+
+    try {
+      const detail = await getEventReportDetail(reportId);
+      await downloadEventReportPdf(detail);
+      actionSuccess("Report download ready", "The event report PDF has been prepared for your device.");
+    } catch (downloadError) {
+      actionError("Could not download report", downloadError, getErrorMessage(downloadError));
+    } finally {
+      setDownloadingReportId(null);
+    }
+  }
+
+  async function handleDownloadMedia(reportId: string) {
+    setDownloadingMediaReportId(reportId);
+
+    try {
+      const detail = await getEventReportDetail(reportId);
+      const result = await downloadReportMediaZip(detail);
+
+      if (result.failedCount > 0) {
+        toast.warning("Image download completed with some skips", {
+          description: `${result.downloadedCount} image(s) were added to the ZIP, but ${result.failedCount} could not be fetched.`
+        });
+      } else {
+        actionSuccess("Image download ready", `${result.downloadedCount} report image(s) were prepared for your device.`);
+      }
+    } catch (downloadError) {
+      actionError("Could not download report images", downloadError, getErrorMessage(downloadError));
+    } finally {
+      setDownloadingMediaReportId(null);
+    }
   }
 
   if (!canViewReports) {
@@ -439,11 +524,18 @@ export default function MediaArchive() {
             </div>
           ) : (
             <div>
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
-                {reports.map((report) => (
-                  <ReportCard key={report.id} report={report} />
-                ))}
-              </div>
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
+                  {reports.map((report) => (
+                  <ReportCard
+                    key={report.id}
+                    report={report}
+                    isDownloading={downloadingReportId === report.id}
+                    isDownloadingMedia={downloadingMediaReportId === report.id}
+                    onDownload={handleDownloadReport}
+                    onDownloadMedia={handleDownloadMedia}
+                  />
+                  ))}
+                </div>
               <DataPagination
                 page={reportsPage.page}
                 pageSize={reportsPage.page_size}

@@ -169,7 +169,7 @@ export default function Proposals() {
                         {getDateLabel(proposal.event_date)}
                       </td>
                       <td className="p-4">
-                        <StatusBadge status={proposal.status} />
+                        <StatusBadge status={proposal.status} eventDate={proposal.event_date} />
                       </td>
                       <td className="p-4">
                         <Button asChild variant="outline" size="sm">
@@ -201,7 +201,7 @@ export default function Proposals() {
                         {proposal.title}
                       </Link>
                     </div>
-                    <StatusBadge status={proposal.status} />
+                    <StatusBadge status={proposal.status} eventDate={proposal.event_date} />
                   </div>
                   <p className="mt-3 text-sm text-muted-foreground">
                     {isAdmin ? getProposalClubLabel(proposal) : getProposalOwnerLabel(proposal.current_owner_role)}
