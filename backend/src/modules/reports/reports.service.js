@@ -2,6 +2,7 @@ const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
 const { ensurePaginatedResult, mapPaginatedResult } = require("../../shared/pagination");
 const { validateCreateEventReportPayload } = require("./reports.validation");
+const { sendPushForNotifications } = require("../notifications/push.service");
 
 function requireActor(actor) {
   if (!actor) {
@@ -119,6 +120,34 @@ async function createEventReport(options) {
     media_urls: validatedPayload.media_urls,
     status: "submitted"
   });
+
+  if (typeof database.createNotifications === "function") {
+    const [advisorIds, adminIds] = await Promise.all([
+      typeof database.getAdvisorProfileIdsByClubId === "function"
+        ? database.getAdvisorProfileIdsByClubId(actor.clubId)
+        : [],
+      typeof database.getAdminProfileIds === "function"
+        ? database.getAdminProfileIds()
+        : []
+    ]);
+    const recipientIds = [...new Set([actor.id, ...advisorIds, ...adminIds].filter(Boolean))];
+    const notifications = await database.createNotifications(
+      recipientIds.map((recipientId) => ({
+        user_id: recipientId,
+        proposal_id: proposal.id,
+        announcement_id: null,
+        type: "event_report_submitted",
+        message: `Event report for "${proposal.proposed_activity || proposal.title}" has been submitted.`,
+        delivery_status: "stored"
+      }))
+    );
+
+    try {
+      await sendPushForNotifications({ database, notifications });
+    } catch {
+      // Report submission should not fail if a browser push endpoint is unavailable.
+    }
+  }
 
   return formatEventReport({
     ...report,

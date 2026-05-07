@@ -13,6 +13,7 @@ const {
   validateDraftProposalPayload,
   readSaveAsDraft
 } = require("./proposals.validation");
+const { sendPushForNotifications } = require("../notifications/push.service");
 
 const ADVISOR_DECISION_TRANSITIONS = Object.freeze({
   pending_advisor_review: Object.freeze({
@@ -154,7 +155,15 @@ async function createNotificationBatch(database, notifications) {
     return [];
   }
 
-  return database.createNotifications(uniqueNotifications);
+  const createdNotifications = await database.createNotifications(uniqueNotifications);
+
+  try {
+    await sendPushForNotifications({ database, notifications: createdNotifications });
+  } catch {
+    // Push delivery should not block proposal workflow state changes.
+  }
+
+  return createdNotifications;
 }
 
 async function createApprovedEventReminders(database, proposal, recipientIds) {
@@ -168,15 +177,18 @@ async function createApprovedEventReminders(database, proposal, recipientIds) {
     return [];
   }
 
-  return database.createEventReminders(
+  const message = buildApprovedEventReminderMessage(proposal);
+  const reminders = await database.createEventReminders(
     uniqueRecipientIds.map((recipientId) => ({
       user_id: recipientId,
       proposal_id: proposal.id,
-      message: buildApprovedEventReminderMessage(proposal),
+      message,
       remind_at: getApprovedEventReminderAt(proposal),
       delivery_status: "stored"
     }))
   );
+
+  return reminders;
 }
 
 function formatApproval(approval) {
@@ -829,7 +841,8 @@ async function submitAdminDecision(options) {
     if (asyncJobService.areAsyncJobsEnabled()) {
       await asyncJobService.enqueueEventReminderGeneration({
         proposalId: updatedProposal.id,
-        recipientUserIds: recipientIds
+        recipientUserIds: recipientIds,
+        eventDate: updatedProposal.event_date
       });
       await asyncJobService.enqueueMissingReportPrompt({
         proposalId: updatedProposal.id,

@@ -9,6 +9,9 @@ function createNotificationsRouter(options = {}) {
   const auth = createAuthMiddleware({ database });
   const controller = createNotificationsController({ database });
 
+  router.get("/push-config", auth, controller.getPushConfig);
+  router.post("/push-subscriptions", auth, controller.registerPushSubscription);
+  router.post("/push-subscriptions/remove", auth, controller.removePushSubscription);
   router.get("/", auth, controller.listOwnNotifications);
 
   return router;

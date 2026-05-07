@@ -1,6 +1,11 @@
 import JSZip from "jszip";
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
-import type { AdminClubDashboardRecord, AdminOperationsDashboardRecord, EventReportRecord } from "@/lib/api";
+import type {
+  AdminClubDashboardRecord,
+  AdminOperationsDashboardRecord,
+  FeedbackRecord,
+  EventReportRecord
+} from "@/lib/api";
 
 const A4_PAGE = [595.28, 841.89] as const;
 const PAGE_MARGIN = 48;
@@ -373,6 +378,44 @@ export function downloadAdminPerformanceMatrixCsv(dashboard: AdminOperationsDash
     .map((row) => row.map((value) => createCsvValue(value)).join(","))
     .join("\r\n");
   const filename = `NileHive-Club-Performance-Matrix-${new Date().toISOString().slice(0, 10)}.csv`;
+
+  downloadBlob(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" }), filename);
+}
+
+export function downloadFeedbackCsv(
+  feedback: FeedbackRecord[],
+  options: {
+    clubNameById?: Map<string, string>;
+    filenameSuffix?: string;
+  } = {}
+) {
+  const headers = [
+    "Club",
+    "Event",
+    "Category",
+    "Rating",
+    "Comment",
+    "Status",
+    "Submitted Date"
+  ];
+  const rows = feedback.map((entry) => {
+    const eventName = entry.proposal?.proposed_activity || entry.proposal?.title || "";
+
+    return [
+      options.clubNameById?.get(entry.club_id) || entry.club_id,
+      eventName,
+      entry.category,
+      entry.rating ?? "",
+      entry.comment,
+      entry.status,
+      formatDateTime(entry.created_at)
+    ];
+  });
+  const csv = [headers, ...rows]
+    .map((row) => row.map((value) => createCsvValue(value)).join(","))
+    .join("\r\n");
+  const suffix = options.filenameSuffix ? `-${sanitizeFilenamePart(options.filenameSuffix)}` : "";
+  const filename = `NileHive-Feedback${suffix}-${new Date().toISOString().slice(0, 10)}.csv`;
 
   downloadBlob(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" }), filename);
 }

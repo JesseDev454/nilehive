@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const {
   processAnnouncementNotificationChunk,
   processAnnouncementNotificationFanout,
+  processEventReminderGeneration,
   processHighPriorityEmailDelivery,
   processMissingReportPrompt
 } = require("../src/jobs/processors");
@@ -163,4 +164,103 @@ test("missing report prompt skips already reported events", async () => {
 
   assert.equal(result.reason, "report_already_exists");
   assert.equal(createdNotifications.length, 0);
+});
+
+test("event reminder generation creates in-app notifications for RSVP users and leads", async () => {
+  const createdNotifications = [];
+  const createdReminders = [];
+  const result = await processEventReminderGeneration({
+    data: {
+      proposalId: "proposal-1",
+      recipientUserIds: ["president-1", "advisor-1"]
+    }
+  }, {
+    database: {
+      async getProposalById() {
+        return {
+          id: "proposal-1",
+          club_id: "club-1",
+          title: "Club Fair",
+          proposed_activity: "Club Fair",
+          event_date: "2026-05-10",
+          status: "approved"
+        };
+      },
+      async listEventRsvps() {
+        return [
+          { user_id: "student-going", status: "going" },
+          { user_id: "student-interested", status: "interested" },
+          { user_id: "student-not-going", status: "not_going" }
+        ];
+      },
+      async getAdminProfileIds() {
+        return ["admin-1"];
+      },
+      async createEventReminders(reminders) {
+        createdReminders.push(...reminders);
+        return reminders;
+      },
+      async createNotifications(notifications) {
+        createdNotifications.push(...notifications);
+        return notifications;
+      }
+    }
+  });
+
+  assert.equal(result.remindersCreated, 5);
+  assert.equal(result.notificationsCreated, 5);
+  assert.deepEqual(createdNotifications.map((notification) => notification.user_id).sort(), [
+    "admin-1",
+    "advisor-1",
+    "president-1",
+    "student-going",
+    "student-interested"
+  ]);
+  assert.ok(createdReminders.every((reminder) => reminder.delivery_status === "stored"));
+  assert.ok(createdNotifications.every((notification) => notification.type === "event_reminder"));
+});
+
+test("missing report prompt notifies presidents, advisors, and admins", async () => {
+  const createdNotifications = [];
+  const result = await processMissingReportPrompt({
+    data: {
+      proposalId: "proposal-1"
+    }
+  }, {
+    database: {
+      async getProposalById() {
+        return {
+          id: "proposal-1",
+          club_id: "club-1",
+          title: "Club Fair",
+          proposed_activity: "Club Fair",
+          status: "approved"
+        };
+      },
+      async getEventReportByProposalId() {
+        return null;
+      },
+      async getPresidentProfileIdsByClubId() {
+        return ["president-1"];
+      },
+      async getAdvisorProfileIdsByClubId() {
+        return ["advisor-1"];
+      },
+      async getAdminProfileIds() {
+        return ["admin-1"];
+      },
+      async createNotifications(notifications) {
+        createdNotifications.push(...notifications);
+        return notifications;
+      }
+    }
+  });
+
+  assert.equal(result.notificationsCreated, 3);
+  assert.deepEqual(createdNotifications.map((notification) => notification.user_id).sort(), [
+    "admin-1",
+    "advisor-1",
+    "president-1"
+  ]);
+  assert.ok(createdNotifications.every((notification) => notification.type === "missing_report_prompt"));
 });

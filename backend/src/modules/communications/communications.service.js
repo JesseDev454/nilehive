@@ -19,6 +19,7 @@ const {
   validateCreateFeedbackPayload
 } = require("./communications.validation");
 const { getEventLifecycle } = require("../events/event-lifecycle");
+const { sendPushForNotifications } = require("../notifications/push.service");
 
 function requireActor(actor) {
   if (!actor) {
@@ -65,6 +66,12 @@ async function createAnnouncementNotifications(database, announcement) {
       user_id: userId
     }))
   );
+
+  try {
+    await sendPushForNotifications({ database, notifications });
+  } catch {
+    // Push is best-effort; the in-app notification remains the durable record.
+  }
 
   return notifications;
 }

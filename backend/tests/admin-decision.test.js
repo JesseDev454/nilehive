@@ -198,7 +198,8 @@ test("admin approval queues reminders and missing-report prompt when async jobs 
   assert.equal(createdReminders.length, 0);
   assert.deepEqual(queuedReminderJobs, [{
     proposalId: "proposal-1",
-    recipientUserIds: ["executive-1", "advisor-1", "president-1"]
+    recipientUserIds: ["executive-1", "advisor-1", "president-1"],
+    eventDate: "2026-05-20"
   }]);
   assert.deepEqual(queuedMissingReportJobs, [{
     proposalId: "proposal-1",

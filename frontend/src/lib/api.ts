@@ -210,6 +210,23 @@ export interface NotificationRecord {
   created_at: string;
 }
 
+export interface PushConfigRecord {
+  enabled: boolean;
+  public_key: string | null;
+}
+
+export interface PushSubscriptionRecord {
+  id: string;
+  user_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  user_agent: string | null;
+  created_at: string;
+  updated_at: string;
+  last_used_at: string | null;
+}
+
 export interface ApprovedEventRecord {
   id: string;
   proposal_id: string;
@@ -1416,6 +1433,35 @@ export async function getNotifications(pagination: PaginationQuery = {}, token?:
       token
     }
   );
+
+  return response.data;
+}
+
+export async function getPushConfig(token?: string) {
+  const response = await request<ApiEnvelope<PushConfigRecord>>("/api/v1/notifications/push-config", {
+    method: "GET",
+    token
+  });
+
+  return response.data;
+}
+
+export async function registerPushSubscription(payload: PushSubscriptionJSON, token?: string) {
+  const response = await request<ApiEnvelope<PushSubscriptionRecord>>("/api/v1/notifications/push-subscriptions", {
+    method: "POST",
+    token,
+    body: payload
+  });
+
+  return response.data;
+}
+
+export async function removePushSubscription(endpoint: string, token?: string) {
+  const response = await request<ApiEnvelope<{ removed: boolean }>>("/api/v1/notifications/push-subscriptions/remove", {
+    method: "POST",
+    token,
+    body: { endpoint }
+  });
 
   return response.data;
 }

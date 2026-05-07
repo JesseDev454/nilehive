@@ -172,11 +172,23 @@ async function enqueueHighPriorityEmailDelivery({ announcementId, notificationTa
   );
 }
 
-async function enqueueEventReminderGeneration({ proposalId, recipientUserIds }) {
+function getEventReminderDelayMs(eventDate) {
+  if (!eventDate) {
+    return 0;
+  }
+
+  const target = new Date(`${eventDate}T09:00:00.000Z`).getTime();
+  return Math.max(0, target - Date.now());
+}
+
+async function enqueueEventReminderGeneration({ proposalId, recipientUserIds, eventDate }) {
   return enqueueJob(
     JOB_NAMES.EVENT_REMINDER_GENERATION,
-    { proposalId, recipientUserIds },
-    { jobId: `event-reminders:${proposalId}` }
+    { proposalId, recipientUserIds, eventDate },
+    {
+      jobId: `event-reminders:${proposalId}`,
+      delay: getEventReminderDelayMs(eventDate)
+    }
   );
 }
 
@@ -223,6 +235,7 @@ module.exports = {
   ensureQueueReady,
   getBackgroundQueue,
   getDefaultJobOptions,
+  getEventReminderDelayMs,
   getQueuePrefix,
   getQueueHealth,
   getWorkerHeartbeatKey,

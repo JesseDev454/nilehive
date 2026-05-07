@@ -68,6 +68,18 @@ function createFakeDatabase() {
     },
     async listNotificationsByUserId(userId) {
       return notifications.filter((notification) => notification.user_id === userId);
+    },
+    async upsertPushSubscription(subscription) {
+      return {
+        id: "push-subscription-1",
+        created_at: "2026-05-07T10:00:00.000Z",
+        updated_at: "2026-05-07T10:00:00.000Z",
+        last_used_at: null,
+        ...subscription
+      };
+    },
+    async deletePushSubscriptionForUser(userId, endpoint) {
+      return { userId, endpoint, removed: true };
     }
   };
 }
@@ -114,6 +126,20 @@ async function getNotifications(baseUrl, token = "") {
   return { response, payload };
 }
 
+async function postJson(baseUrl, path, body, token = "executive-token") {
+  const response = await fetch(`${baseUrl}${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body)
+  });
+  const payload = await response.json();
+
+  return { response, payload };
+}
+
 test("authenticated users can fetch only their own notifications", async (t) => {
   const database = createFakeDatabase();
   const server = await createTestServer(database);
@@ -136,4 +162,37 @@ test("missing-token access is blocked for notifications retrieval", async (t) =>
 
   assert.equal(response.status, 401);
   assert.equal(payload.error.code, "AUTH_REQUIRED");
+});
+
+test("authenticated users can register and remove push subscriptions", async (t) => {
+  const database = createFakeDatabase();
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const subscriptionPayload = {
+    endpoint: "https://push.example.test/subscription-1",
+    keys: {
+      p256dh: "public-key",
+      auth: "auth-secret"
+    }
+  };
+
+  const createResult = await postJson(
+    server.baseUrl,
+    "/api/v1/notifications/push-subscriptions",
+    subscriptionPayload
+  );
+
+  assert.equal(createResult.response.status, 201);
+  assert.equal(createResult.payload.data.user_id, "executive-1");
+  assert.equal(createResult.payload.data.endpoint, subscriptionPayload.endpoint);
+
+  const removeResult = await postJson(
+    server.baseUrl,
+    "/api/v1/notifications/push-subscriptions/remove",
+    { endpoint: subscriptionPayload.endpoint }
+  );
+
+  assert.equal(removeResult.response.status, 200);
+  assert.equal(removeResult.payload.data.removed, true);
 });

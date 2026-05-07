@@ -124,3 +124,7 @@ export function isPasswordAuthEnabled() {
 export function getMicrosoftPasswordHelpUrl() {
   return import.meta.env.VITE_MICROSOFT_PASSWORD_HELP_URL || "https://passwordreset.microsoftonline.com/";
 }
+
+export function getWebPushPublicKey() {
+  return import.meta.env.VITE_WEB_PUSH_PUBLIC_KEY || "";
+}

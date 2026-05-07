@@ -9,6 +9,7 @@ const {
   shouldEmailAnnouncement,
   uniqueIds
 } = require("../modules/communications/communications.helpers");
+const { sendPushForNotifications } = require("../modules/notifications/push.service");
 const {
   enqueueAnnouncementChunk,
   enqueueHighPriorityEmailDelivery
@@ -83,6 +84,14 @@ async function processAnnouncementNotificationChunk(job, options = {}) {
     }))
   );
 
+  try {
+    await sendPushForNotifications({ database, notifications, logger });
+  } catch (error) {
+    logger.warn("push.delivery_batch_failed", {
+      cause: error instanceof Error ? error.message : "unknown_error"
+    });
+  }
+
   if (shouldEmailAnnouncement(announcement) && notifications.length) {
     await enqueueEmailDelivery({
       announcementId: announcement.id,
@@ -152,25 +161,60 @@ async function processEventReminderGeneration(job, options = {}) {
     return { status: "skipped", reason: "proposal_not_approved" };
   }
 
-  const recipientIds = uniqueIds(job.data.recipientUserIds ?? []);
+  const rsvps = database.listEventRsvps
+    ? await database.listEventRsvps({ proposalId: proposal.id })
+    : [];
+  const rsvpRecipientIds = rsvps
+    .filter((rsvp) => ["going", "interested"].includes(rsvp.status))
+    .map((rsvp) => rsvp.user_id);
+  const adminIds = database.getAdminProfileIds
+    ? await database.getAdminProfileIds()
+    : [];
+  const recipientIds = uniqueIds([
+    ...(job.data.recipientUserIds ?? []),
+    ...rsvpRecipientIds,
+    ...adminIds
+  ]);
 
   if (!recipientIds.length || !database.createEventReminders) {
     return { status: "skipped", reason: "no_recipients" };
   }
 
+  const message = buildApprovedEventReminderMessage(proposal);
   const reminders = await database.createEventReminders(
     recipientIds.map((recipientId) => ({
       user_id: recipientId,
       proposal_id: proposal.id,
-      message: buildApprovedEventReminderMessage(proposal),
+      message,
       remind_at: getApprovedEventReminderAt(proposal),
       delivery_status: "stored"
     }))
   );
+  const notifications = typeof database.createNotifications === "function"
+    ? await database.createNotifications(
+        recipientIds.map((recipientId) => ({
+          user_id: recipientId,
+          proposal_id: proposal.id,
+          announcement_id: null,
+          type: "event_reminder",
+          message,
+          delivery_status: "stored"
+        }))
+      )
+    : [];
+
+  try {
+    await sendPushForNotifications({ database, notifications, logger });
+  } catch (error) {
+    logger.warn("push.delivery_batch_failed", {
+      cause: error instanceof Error ? error.message : "unknown_error"
+    });
+  }
 
   return {
     status: "processed",
-    remindersCreated: reminders.length
+    remindersCreated: reminders.length,
+    notificationsCreated: notifications.length
   };
 }
 
@@ -193,21 +237,37 @@ async function processMissingReportPrompt(job, options = {}) {
   const presidentIds = database.getPresidentProfileIdsByClubId
     ? await database.getPresidentProfileIdsByClubId(proposal.club_id)
     : [];
+  const advisorIds = database.getAdvisorProfileIdsByClubId
+    ? await database.getAdvisorProfileIdsByClubId(proposal.club_id)
+    : [];
+  const adminIds = database.getAdminProfileIds
+    ? await database.getAdminProfileIds()
+    : [];
+  const recipientIds = uniqueIds([...presidentIds, ...advisorIds, ...adminIds]);
 
-  if (!presidentIds.length || typeof database.createNotifications !== "function") {
-    return { status: "skipped", reason: "no_presidents" };
+  if (!recipientIds.length || typeof database.createNotifications !== "function") {
+    return { status: "skipped", reason: "no_recipients" };
   }
 
+  const message = `Post-event report for "${proposal.proposed_activity || proposal.title}" is now due.`;
   const notifications = await database.createNotifications(
-    uniqueIds(presidentIds).map((userId) => ({
+    recipientIds.map((userId) => ({
       user_id: userId,
       proposal_id: proposal.id,
       announcement_id: null,
       type: "missing_report_prompt",
-      message: `Post-event report for "${proposal.proposed_activity || proposal.title}" is now due.`,
+      message,
       delivery_status: "stored"
     }))
   );
+
+  try {
+    await sendPushForNotifications({ database, notifications, logger });
+  } catch (error) {
+    logger.warn("push.delivery_batch_failed", {
+      cause: error instanceof Error ? error.message : "unknown_error"
+    });
+  }
 
   return {
     status: "processed",

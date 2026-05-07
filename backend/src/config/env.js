@@ -46,6 +46,9 @@ function getEnv() {
     MICROSOFT_CLIENT_SECRET: readEnv("MICROSOFT_CLIENT_SECRET", { defaultValue: "" }),
     MICROSOFT_SENDER_EMAIL: readEnv("MICROSOFT_SENDER_EMAIL", { defaultValue: "" }),
     FRONTEND_APP_URL: readEnv("FRONTEND_APP_URL", { defaultValue: "http://localhost:8080" }),
+    WEB_PUSH_PUBLIC_KEY: readEnv("WEB_PUSH_PUBLIC_KEY", { defaultValue: "" }),
+    WEB_PUSH_PRIVATE_KEY: readEnv("WEB_PUSH_PRIVATE_KEY", { defaultValue: "" }),
+    WEB_PUSH_SUBJECT: readEnv("WEB_PUSH_SUBJECT", { defaultValue: "mailto:admin@nilehive.test" }),
     CURRENT_ACADEMIC_SESSION: readEnv("CURRENT_ACADEMIC_SESSION", { defaultValue: "2025/2026" }),
     CORS_ALLOWED_ORIGINS: readEnv("CORS_ALLOWED_ORIGINS", {
       defaultValue: "http://localhost:8080,http://localhost:8081,http://127.0.0.1:8080,http://127.0.0.1:8081"

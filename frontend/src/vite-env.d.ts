@@ -11,6 +11,7 @@ interface ImportMetaEnv {
   readonly VITE_APP_ORIGIN?: string;
   readonly VITE_AUTH_MODE?: "microsoft" | "password" | "mixed";
   readonly VITE_MICROSOFT_PASSWORD_HELP_URL?: string;
+  readonly VITE_WEB_PUSH_PUBLIC_KEY?: string;
 }
 
 interface ImportMeta {

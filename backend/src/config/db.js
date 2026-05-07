@@ -8,6 +8,8 @@ const proposalSelect =
   "id, club_id, submitted_by, title, description, event_date, location, aim_objectives, proposed_activity, event_time, number_of_participants, budget_estimate, budget_line_items, responsible_members, status, submitted_at, resubmitted_at, revision_count, last_edited_at, last_edited_by, advisor_remarks, advisor_decided_at, advisor_decided_by, admin_remarks, admin_decided_at, admin_decided_by, created_at, updated_at, club:clubs!proposals_club_id_fkey(id, name, code)";
 const notificationSelect =
   "id, user_id, proposal_id, announcement_id, type, message, delivery_status, created_at";
+const pushSubscriptionSelect =
+  "id, user_id, endpoint, p256dh, auth, user_agent, created_at, updated_at, last_used_at";
 const eventReminderSelect =
   "id, user_id, proposal_id, message, remind_at, delivery_status, created_at";
 const clubSelect = "id, name, code, advisor_id, dues_amount, created_at";
@@ -1211,6 +1213,79 @@ function createDatabase(options = {}) {
       }
 
       return data;
+    },
+
+    async upsertPushSubscription(subscription) {
+      const { data, error } = await getClient()
+        .from("push_subscriptions")
+        .upsert(subscription, { onConflict: "endpoint" })
+        .select(pushSubscriptionSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async listPushSubscriptionsByUserIds(userIds) {
+      if (!userIds.length) {
+        return [];
+      }
+
+      const { data, error } = await getClient()
+        .from("push_subscriptions")
+        .select(pushSubscriptionSelect)
+        .in("user_id", userIds);
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? [];
+    },
+
+    async deletePushSubscriptionForUser(userId, endpoint) {
+      const { error } = await getClient()
+        .from("push_subscriptions")
+        .delete()
+        .eq("user_id", userId)
+        .eq("endpoint", endpoint);
+
+      if (error) {
+        throw error;
+      }
+
+      return { removed: true };
+    },
+
+    async deletePushSubscriptionByEndpoint(endpoint) {
+      const { error } = await getClient()
+        .from("push_subscriptions")
+        .delete()
+        .eq("endpoint", endpoint);
+
+      if (error) {
+        throw error;
+      }
+
+      return { removed: true };
+    },
+
+    async markPushSubscriptionUsed(endpoint) {
+      const { data, error } = await getClient()
+        .from("push_subscriptions")
+        .update({ last_used_at: new Date().toISOString() })
+        .eq("endpoint", endpoint)
+        .select(pushSubscriptionSelect)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? null;
     },
 
     async createEventReminders(reminders) {

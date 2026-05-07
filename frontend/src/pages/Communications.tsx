@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Filter, Megaphone, MessageSquare, Send, Users } from "lucide-react";
+import { CheckCircle2, Download, Filter, Megaphone, MessageSquare, Send, Users } from "lucide-react";
 import { DataPagination } from "@/components/DataPagination";
 import { NeoCommandPanel, NeoLoadingState } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
@@ -14,16 +14,19 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   AnnouncementRecord,
   ApiClientError,
+  ApprovedEventRecord,
   CreateAnnouncementPayload,
   createAnnouncement,
   createFeedback,
   getAnnouncements,
+  getApprovedEvents,
   getClubs,
   getFeedback,
   markAllAnnouncementsRead,
   markAnnouncementRead
 } from "@/lib/api";
 import { actionError, actionSuccess } from "@/lib/notify";
+import { downloadFeedbackCsv } from "@/lib/exports";
 import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 
 type AnnouncementAudience = AnnouncementRecord["audience"];
@@ -146,9 +149,15 @@ export default function Communications() {
   const [feedbackCategory, setFeedbackCategory] = useState<"general" | "event" | "club">("general");
   const [feedbackRating, setFeedbackRating] = useState("");
   const [feedbackComment, setFeedbackComment] = useState("");
+  const [feedbackClubFilter, setFeedbackClubFilter] = useState("all");
+  const [feedbackProposalFilter, setFeedbackProposalFilter] = useState("all");
   useEffect(() => {
     setAnnouncementPage(1);
   }, [announcementFilter]);
+
+  useEffect(() => {
+    setFeedbackProposalFilter("all");
+  }, [feedbackClubFilter]);
 
   const {
     data: announcementsPage = emptyPaginatedResponse<AnnouncementRecord>(),
@@ -185,14 +194,37 @@ export default function Communications() {
     isError: isFeedbackError,
     error: feedbackError
   } = useQuery({
-    queryKey: ["feedback"],
-    queryFn: () => getFeedback(),
+    queryKey: ["feedback", feedbackClubFilter, feedbackProposalFilter],
+    queryFn: () =>
+      getFeedback({
+        club_id: role === "admin" && feedbackClubFilter !== "all" ? feedbackClubFilter : undefined,
+        proposal_id: feedbackProposalFilter !== "all" ? feedbackProposalFilter : undefined
+      }),
+    retry: false
+  });
+
+  const {
+    data: approvedEventsPage = emptyPaginatedResponse<ApprovedEventRecord>(),
+    isLoading: isLoadingEvents
+  } = useQuery({
+    queryKey: ["feedback-events", feedbackClubFilter],
+    queryFn: () => getApprovedEvents({ page: 1, page_size: 100 }),
+    enabled: activeTab === "feedback",
     retry: false
   });
 
   const clubNameById = useMemo(
     () => new Map(clubs.map((club) => [club.id, club.name])),
     [clubs]
+  );
+  const feedbackEventOptions = useMemo(
+    () =>
+      approvedEventsPage.items.filter((event) =>
+        role === "admin" && feedbackClubFilter !== "all"
+          ? event.club_id === feedbackClubFilter
+          : true
+      ),
+    [approvedEventsPage.items, feedbackClubFilter, role]
   );
 
   const unreadCount = announcements.filter((announcement) => !announcement.is_read).length;
@@ -671,8 +703,69 @@ export default function Communications() {
           )}
 
           <Card>
-            <CardHeader>
-              <CardTitle>Recent Feedback</CardTitle>
+            <CardHeader className="space-y-4">
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <CardTitle>Recent Feedback</CardTitle>
+                {role === "admin" ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() =>
+                      downloadFeedbackCsv(feedback, {
+                        clubNameById,
+                        filenameSuffix:
+                          feedbackProposalFilter !== "all"
+                            ? "Event"
+                            : feedbackClubFilter !== "all"
+                              ? clubNameById.get(feedbackClubFilter) || "Club"
+                              : "All"
+                      })
+                    }
+                    disabled={feedback.length === 0}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download CSV
+                  </Button>
+                ) : null}
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {role === "admin" ? (
+                  <div className="space-y-2">
+                    <Label>Club</Label>
+                    <Select value={feedbackClubFilter} onValueChange={setFeedbackClubFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={isLoadingClubs ? "Loading clubs..." : "All clubs"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All clubs</SelectItem>
+                        {clubs.map((club) => (
+                          <SelectItem key={club.id} value={club.id}>
+                            {club.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : null}
+                <div className="space-y-2">
+                  <Label>Event</Label>
+                  <Select value={feedbackProposalFilter} onValueChange={setFeedbackProposalFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={isLoadingEvents ? "Loading events..." : "All events"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All events</SelectItem>
+                      {feedbackEventOptions.map((event) => (
+                        <SelectItem key={event.proposal_id} value={event.proposal_id}>
+                          {role === "admin" && feedbackClubFilter === "all"
+                            ? `${event.title} - ${clubNameById.get(event.club_id) || "Club"}`
+                            : event.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-3">
               {isLoadingFeedback ? (
