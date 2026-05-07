@@ -1690,8 +1690,8 @@ function createDatabase(options = {}) {
     async listDuePayments(filters = {}) {
       let query = getClient()
         .from("due_payments")
-        .select(duePaymentSelect)
-        .order("created_at", { ascending: false });
+        .select(duePaymentSelect, filters.pagination ? { count: "exact" } : undefined)
+        .order(filters.sort || "created_at", { ascending: (filters.order || "desc") === "asc" });
 
       if (filters.clubId) {
         query = query.eq("club_id", filters.clubId);
@@ -1705,13 +1705,15 @@ function createDatabase(options = {}) {
         query = query.eq("member_id", filters.memberId);
       }
 
-      const { data, error } = await query;
+      query = applyPagination(query, filters.pagination);
+
+      const { data, error, count } = await query;
 
       if (error) {
         throw error;
       }
 
-      return data;
+      return formatQueryResult({ data, count, pagination: filters.pagination });
     },
 
     async updateDuePayment(paymentId, update) {

@@ -43,7 +43,12 @@ function canRsvpToEvent(eventDate, now = new Date()) {
   return ["upcoming", "happening_today"].includes(getEventLifecycle(eventDate, now));
 }
 
+function canCheckInToEvent(eventDate, now = new Date()) {
+  return getEventLifecycle(eventDate, now) === "happening_today";
+}
+
 module.exports = {
+  canCheckInToEvent,
   canRsvpToEvent,
   getEventLifecycle
 };

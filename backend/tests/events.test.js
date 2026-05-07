@@ -94,7 +94,14 @@ function createFakeDatabase(overrides = {}) {
       full_name: "Ada Student",
       role: "student",
       club_id: "club-1"
-    }
+    },
+    "student-2": {
+      id: "student-2",
+      full_name: "Bola Student",
+      role: "student",
+      club_id: "club-2"
+    },
+    ...(overrides.profiles || {})
   };
   const proposals = overrides.proposals || [
     createApprovedProposal(),
@@ -105,16 +112,44 @@ function createFakeDatabase(overrides = {}) {
       proposed_activity: "Cultural Night"
     })
   ];
+  const tokenProfiles = {
+    "executive-token": "executive-1",
+    "advisor-token": "advisor-1",
+    "president-token": "president-1",
+    "admin-token": "admin-1",
+    "student-token": "student-1",
+    "student-2-token": "student-2",
+    ...(overrides.tokenProfiles || {})
+  };
+  const activeClubIdsByProfileId = {
+    "student-1": ["club-1"],
+    "student-2": ["club-2"],
+    "executive-1": [],
+    "president-1": [],
+    ...(overrides.activeClubIdsByProfileId || {})
+  };
+  const rsvpsByProposalId = overrides.rsvpsByProposalId || {
+    "proposal-1": [
+      createRsvp(),
+      createRsvp({
+        id: "rsvp-2",
+        user_id: "student-2",
+        status: "interested",
+        profile: {
+          id: "student-2",
+          full_name: "Bola Student",
+          student_id: "020303344",
+          role: "student"
+        }
+      })
+    ]
+  };
+  const attendanceByProposalId = overrides.attendanceByProposalId || {
+    "proposal-1": [createAttendance()]
+  };
 
   return {
     async getUserByAccessToken(accessToken) {
-      const tokenProfiles = {
-        "executive-token": "executive-1",
-        "advisor-token": "advisor-1",
-        "president-token": "president-1",
-        "admin-token": "admin-1",
-        "student-token": "student-1"
-      };
       const profileId = tokenProfiles[accessToken];
 
       return profileId
@@ -132,19 +167,7 @@ function createFakeDatabase(overrides = {}) {
       return ["club-2"];
     },
     async getActiveClubIdsByProfileId(profileId) {
-      if (profileId === "student-1") {
-        return ["club-1"];
-      }
-
-      if (profileId === "executive-1") {
-        return [];
-      }
-
-      if (profileId === "president-1") {
-        return [];
-      }
-
-      return [];
+      return activeClubIdsByProfileId[profileId] || [];
     },
     async listApprovedProposals(filters = {}) {
       if (!filters.clubIds) {
@@ -157,37 +180,30 @@ function createFakeDatabase(overrides = {}) {
       return proposals.find((proposal) => proposal.id === proposalId && proposal.status === "approved") ?? null;
     },
     async upsertEventRsvp(rsvp) {
+      if (overrides.upsertEventRsvp) {
+        return overrides.upsertEventRsvp(rsvp);
+      }
+
       return createRsvp(rsvp);
     },
     async listEventRsvps(filters = {}) {
-      if (filters.proposalId === "proposal-1") {
-        return [
-          createRsvp(),
-          createRsvp({
-            id: "rsvp-2",
-            user_id: "student-2",
-            status: "interested",
-            profile: {
-              id: "student-2",
-              full_name: "Bola Student",
-              student_id: "020303344",
-              role: "student"
-            }
-          })
-        ];
-      }
-
-      return [];
+      return rsvpsByProposalId[filters.proposalId] || [];
     },
     async upsertEventAttendance(attendance) {
+      if (overrides.upsertEventAttendance) {
+        return overrides.upsertEventAttendance(attendance);
+      }
+
       return createAttendance(attendance);
     },
     async listEventAttendance(filters = {}) {
-      if (filters.proposalId === "proposal-1") {
-        return [createAttendance()];
+      const records = attendanceByProposalId[filters.proposalId] || [];
+
+      if (filters.userId) {
+        return records.filter((record) => record.user_id === filters.userId);
       }
 
-      return [];
+      return records;
     }
   };
 }
@@ -261,6 +277,22 @@ test("executive can fetch approved events for their club", async (t) => {
   assert.equal(payload.data.items[0].proposal_id, "proposal-1");
 });
 
+test("executive only sees current club events even with active memberships in other clubs", async (t) => {
+  const server = await createTestServer(createFakeDatabase({
+    activeClubIdsByProfileId: {
+      "executive-1": ["club-1", "club-2"]
+    }
+  }));
+  t.after(() => server.close());
+
+  const { response, payload } = await getApprovedEvents(server.baseUrl, "executive-token");
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.total, 1);
+  assert.equal(payload.data.items.length, 1);
+  assert.equal(payload.data.items[0].club_id, "club-1");
+});
+
 test("advisor can fetch approved events for assigned clubs", async (t) => {
   const server = await createTestServer(createFakeDatabase());
   t.after(() => server.close());
@@ -284,6 +316,68 @@ test("student can fetch approved events feed", async (t) => {
   assert.equal(payload.data.items.length, 1);
   assert.ok(payload.data.items.every((event) => event.status === "approved"));
   assert.ok(payload.data.items.every((event) => event.club_id === "club-1"));
+});
+
+test("president only sees current club events even with active memberships in other clubs", async (t) => {
+  const server = await createTestServer(createFakeDatabase({
+    activeClubIdsByProfileId: {
+      "president-1": ["club-1", "club-2"]
+    }
+  }));
+  t.after(() => server.close());
+
+  const { response, payload } = await getApprovedEvents(server.baseUrl, "president-token");
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.total, 1);
+  assert.equal(payload.data.items.length, 1);
+  assert.equal(payload.data.items[0].club_id, "club-1");
+});
+
+test("president with no current club sees no events even if old active memberships exist", async (t) => {
+  const server = await createTestServer(createFakeDatabase({
+    profiles: {
+      "president-1": {
+        id: "president-1",
+        full_name: "Tomi President",
+        role: "president",
+        club_id: null
+      }
+    },
+    activeClubIdsByProfileId: {
+      "president-1": ["club-2"]
+    }
+  }));
+  t.after(() => server.close());
+
+  const { response, payload } = await getApprovedEvents(server.baseUrl, "president-token");
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.total, 0);
+  assert.equal(payload.data.items.length, 0);
+});
+
+test("executive with no current club sees no events even if old active memberships exist", async (t) => {
+  const server = await createTestServer(createFakeDatabase({
+    profiles: {
+      "executive-1": {
+        id: "executive-1",
+        full_name: "Amina Executive",
+        role: "executive",
+        club_id: null
+      }
+    },
+    activeClubIdsByProfileId: {
+      "executive-1": ["club-2"]
+    }
+  }));
+  t.after(() => server.close());
+
+  const { response, payload } = await getApprovedEvents(server.baseUrl, "executive-token");
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.total, 0);
+  assert.equal(payload.data.items.length, 0);
 });
 
 test("missing-token access is blocked for approved events", async (t) => {
@@ -403,6 +497,149 @@ test("executive cannot manage event attendance", async (t) => {
       user_id: "student-1",
       attended: true
     })
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 403);
+  assert.equal(payload.error.code, "FORBIDDEN");
+});
+
+test("student can self check in on the event date", async (t) => {
+  const recordedAttendance = [];
+  const server = await createTestServer(createFakeDatabase({
+    proposals: [
+      createApprovedProposal({
+        event_date: "2026-05-07"
+      })
+    ],
+    attendanceByProposalId: {
+      "proposal-1": []
+    },
+    async upsertEventAttendance(attendance) {
+      recordedAttendance.push(attendance);
+      return createAttendance({
+        ...attendance,
+        checked_in_by: attendance.checked_in_by
+      });
+    }
+  }));
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/events/proposal-1/check-in`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer student-token"
+    }
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.user_id, "student-1");
+  assert.equal(payload.data.attended, true);
+  assert.equal(payload.data.checked_in_by, "student-1");
+  assert.equal(recordedAttendance.length, 1);
+});
+
+test("student self check in is idempotent when already attended", async (t) => {
+  let upsertCalls = 0;
+  const server = await createTestServer(createFakeDatabase({
+    proposals: [
+      createApprovedProposal({
+        event_date: "2026-05-07"
+      })
+    ],
+    attendanceByProposalId: {
+      "proposal-1": [
+        createAttendance({
+          checked_in_by: "student-1"
+        })
+      ]
+    },
+    async upsertEventAttendance(attendance) {
+      upsertCalls += 1;
+      return createAttendance(attendance);
+    }
+  }));
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/events/proposal-1/check-in`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer student-token"
+    }
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.user_id, "student-1");
+  assert.equal(upsertCalls, 0);
+});
+
+test("student cannot self check in before the event date", async (t) => {
+  const server = await createTestServer(createFakeDatabase({
+    proposals: [
+      createApprovedProposal({
+        event_date: "2026-05-20"
+      })
+    ],
+    attendanceByProposalId: {
+      "proposal-1": []
+    }
+  }));
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/events/proposal-1/check-in`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer student-token"
+    }
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 409);
+  assert.equal(payload.error.code, "EVENT_CHECK_IN_CLOSED");
+});
+
+test("student without event access cannot self check in", async (t) => {
+  const server = await createTestServer(createFakeDatabase({
+    proposals: [
+      createApprovedProposal({
+        event_date: "2026-05-06"
+      })
+    ],
+    attendanceByProposalId: {
+      "proposal-1": []
+    }
+  }));
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/events/proposal-1/check-in`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer student-2-token"
+    }
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 403);
+  assert.equal(payload.error.code, "FORBIDDEN");
+});
+
+test("non-student cannot self check in", async (t) => {
+  const server = await createTestServer(createFakeDatabase({
+    proposals: [
+      createApprovedProposal({
+        event_date: "2026-05-06"
+      })
+    ]
+  }));
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/events/proposal-1/check-in`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer president-token"
+    }
   });
   const payload = await response.json();
 

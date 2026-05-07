@@ -6,6 +6,7 @@ const {
   validateRsvpPayload
 } = require("./events.validation");
 const {
+  canCheckInToEvent,
   canRsvpToEvent,
   getEventLifecycle
 } = require("./event-lifecycle");
@@ -20,11 +21,7 @@ async function getVisibleClubIds(actor, database) {
   }
 
   if (actor.role === "executive" || actor.role === "president") {
-    const membershipClubIds = database.getActiveClubIdsByProfileId
-      ? await database.getActiveClubIdsByProfileId(actor.id)
-      : [];
-
-    return [...new Set([...(actor.clubId ? [actor.clubId] : []), ...membershipClubIds])];
+    return actor.clubId ? [actor.clubId] : [];
   }
 
   if (actor.role === "student") {
@@ -153,6 +150,16 @@ async function assertCanManageEvent(actor, proposal, database) {
   throw new ApiError(403, "You cannot manage this event", "FORBIDDEN");
 }
 
+async function assertCanAccessEvent(actor, proposal, database) {
+  const visibleClubIds = await getVisibleClubIds(actor, database);
+
+  if (visibleClubIds === null || visibleClubIds.includes(proposal.club_id)) {
+    return;
+  }
+
+  throw new ApiError(403, "You do not have access to this event", "FORBIDDEN");
+}
+
 async function listApprovedEvents(options) {
   const { actor, filters = {}, pagination, database = db } = options;
 
@@ -220,6 +227,7 @@ async function submitEventRsvp(options) {
   }
 
   const proposal = await getApprovedEventOrThrow(proposalId, database);
+  await assertCanAccessEvent(actor, proposal, database);
 
   if (!canRsvpToEvent(proposal.event_date)) {
     throw new ApiError(409, "RSVPs are closed for this event.", "EVENT_RSVP_CLOSED");
@@ -244,6 +252,7 @@ async function getEventEngagement(options) {
   }
 
   const proposal = await getApprovedEventOrThrow(proposalId, database);
+  await assertCanAccessEvent(actor, proposal, database);
   const [rsvps, attendance] = await Promise.all([
     database.listEventRsvps({ proposalId: proposal.id }),
     database.listEventAttendance({ proposalId: proposal.id })
@@ -299,10 +308,51 @@ async function submitEventAttendance(options) {
   return formatAttendance(attendance);
 }
 
+async function submitEventSelfCheckIn(options) {
+  const { actor, proposalId, database = db } = options;
+
+  if (!actor) {
+    throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
+  }
+
+  if (actor.role !== "student") {
+    throw new ApiError(403, "This QR code is for students only", "FORBIDDEN");
+  }
+
+  const proposal = await getApprovedEventOrThrow(proposalId, database);
+  await assertCanAccessEvent(actor, proposal, database);
+
+  if (!canCheckInToEvent(proposal.event_date)) {
+    throw new ApiError(409, "Event check-in is only available on the event date.", "EVENT_CHECK_IN_CLOSED");
+  }
+
+  const existingAttendance = await database.listEventAttendance({
+    proposalId: proposal.id,
+    userId: actor.id
+  });
+  const currentAttendance = existingAttendance.find((record) => record.attended);
+
+  if (currentAttendance) {
+    return formatAttendance(currentAttendance);
+  }
+
+  const attendance = await database.upsertEventAttendance({
+    proposal_id: proposal.id,
+    club_id: proposal.club_id,
+    user_id: actor.id,
+    attended: true,
+    checked_in_by: actor.id,
+    checked_in_at: new Date().toISOString()
+  });
+
+  return formatAttendance(attendance);
+}
+
 module.exports = {
   formatApprovedEvent,
   getEventEngagement,
   listApprovedEvents,
   submitEventAttendance,
+  submitEventSelfCheckIn,
   submitEventRsvp
 };

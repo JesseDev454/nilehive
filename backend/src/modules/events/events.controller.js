@@ -4,6 +4,7 @@ const {
   getEventEngagement,
   listApprovedEvents,
   submitEventAttendance,
+  submitEventSelfCheckIn,
   submitEventRsvp
 } = require("./events.service");
 
@@ -54,6 +55,16 @@ function createEventsController(options = {}) {
         actor: req.user,
         proposalId: req.params.proposalId,
         payload: req.body,
+        database
+      });
+
+      res.status(200).json({ data: attendance });
+    }),
+
+    submitEventSelfCheckIn: asyncHandler(async (req, res) => {
+      const attendance = await submitEventSelfCheckIn({
+        actor: req.user,
+        proposalId: req.params.proposalId,
         database
       });
 

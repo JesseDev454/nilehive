@@ -116,20 +116,33 @@ function summarizeDues(payments) {
 }
 
 async function listDuePayments(options) {
-  const { actor, filters = {}, database = db } = options;
+  const { actor, filters = {}, pagination, database = db } = options;
   requireActor(actor);
   requireSupportedRole(actor);
 
   const clubId = getScopedClubId(actor, filters.club_id);
-  const payments = await database.listDuePayments({
+  const summaryPayments = await database.listDuePayments({
     clubId,
     status: filters.status,
     memberId: filters.member_id
   });
+  const paginatedPayments = pagination
+    ? await database.listDuePayments({
+        clubId,
+        status: filters.status,
+        memberId: filters.member_id,
+        pagination
+      })
+    : summaryPayments;
 
   return {
-    summary: summarizeDues(payments),
-    payments: payments.map(formatDuePayment)
+    summary: summarizeDues(summaryPayments),
+    payments: pagination
+      ? {
+          ...paginatedPayments,
+          items: paginatedPayments.items.map(formatDuePayment)
+        }
+      : summaryPayments.map(formatDuePayment)
   };
 }
 

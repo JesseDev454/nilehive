@@ -81,6 +81,67 @@ test("executive cannot list club due payments", async () => {
   );
 });
 
+test("paginated dues listing keeps full summary totals", async () => {
+  let summaryQueryCount = 0;
+  let paginatedQueryCount = 0;
+  const payments = [
+    createPayment({ id: "payment-1", status: "paid", amount: 5000 }),
+    createPayment({ id: "payment-2", status: "submitted", amount: 6000 }),
+    createPayment({ id: "payment-3", status: "unpaid", amount: 7000 })
+  ];
+  const fakeDatabase = {
+    async listDuePayments(filters) {
+      if (filters.pagination) {
+        paginatedQueryCount += 1;
+        assert.equal(filters.pagination.page, 2);
+        assert.equal(filters.pagination.pageSize, 1);
+
+        return {
+          items: [payments[1]],
+          page: 2,
+          page_size: 1,
+          total: 3,
+          has_next: true
+        };
+      }
+
+      summaryQueryCount += 1;
+      return payments;
+    }
+  };
+
+  const result = await listDuePayments({
+    actor: {
+      id: "president-1",
+      role: "president",
+      clubId: "club-1"
+    },
+    filters: {},
+    pagination: {
+      page: 2,
+      pageSize: 1,
+      page_size: 1,
+      from: 1,
+      to: 1,
+      sort: "created_at",
+      order: "desc"
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(summaryQueryCount, 1);
+  assert.equal(paginatedQueryCount, 1);
+  assert.equal(result.summary.total_records, 3);
+  assert.equal(result.summary.paid, 1);
+  assert.equal(result.summary.submitted, 1);
+  assert.equal(result.summary.unpaid, 1);
+  assert.equal(result.payments.items.length, 1);
+  assert.equal(result.payments.items[0].id, "payment-2");
+  assert.equal(result.payments.page, 2);
+  assert.equal(result.payments.total, 3);
+  assert.equal(result.payments.has_next, true);
+});
+
 test("president can verify a submitted payment as paid", async () => {
   let updatePayload;
   const fakeDatabase = {

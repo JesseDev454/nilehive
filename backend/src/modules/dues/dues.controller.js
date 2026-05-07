@@ -1,4 +1,5 @@
 const asyncHandler = require("../../shared/asyncHandler");
+const { parsePaginationQuery } = require("../../shared/pagination");
 const {
   applyClubPaymentProfileToAllClubs,
   applyPaymentSettingsToAllClubs,
@@ -24,6 +25,11 @@ function createDuesController(options = {}) {
           status: req.query.status,
           member_id: req.query.member_id
         },
+        pagination: parsePaginationQuery(req.query, {
+          defaultSort: "created_at",
+          defaultOrder: "desc",
+          allowedSorts: ["created_at", "updated_at", "amount", "academic_session", "status"]
+        }),
         database
       });
 
