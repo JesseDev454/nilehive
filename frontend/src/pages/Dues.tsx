@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CreditCard, Landmark, Loader2, Receipt, TrendingUp } from "lucide-react";
+import { CounterUp } from "@/components/CounterUp";
 import { DataPagination } from "@/components/DataPagination";
 import { NeoLoadingState, NeoMetricCard, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Button } from "@/components/ui/button";
@@ -234,10 +235,29 @@ export default function Dues() {
       />
 
       <div className="nh-metric-grid">
-        <NeoMetricCard title="Expected" value={formatCurrency(duesData?.summary.expected_amount ?? 0)} icon={CreditCard} tone="navy" />
-        <NeoMetricCard title="Collected" value={formatCurrency(duesData?.summary.collected_amount ?? 0)} icon={Receipt} tone="green" />
-        <NeoMetricCard title="Paid" value={duesData?.summary.paid ?? 0} icon={Landmark} tone="gold" />
-        <NeoMetricCard title="Collection Rate" value={`${duesData?.summary.collection_rate ?? 0}%`} icon={TrendingUp} />
+        <NeoMetricCard
+          title="Expected"
+          value={<CounterUp value={duesData?.summary.expected_amount ?? 0} format={(nextValue) => formatCurrency(Math.round(nextValue))} />}
+          icon={CreditCard}
+          tone="navy"
+        />
+        <NeoMetricCard
+          title="Collected"
+          value={<CounterUp value={duesData?.summary.collected_amount ?? 0} format={(nextValue) => formatCurrency(Math.round(nextValue))} />}
+          icon={Receipt}
+          tone="green"
+        />
+        <NeoMetricCard
+          title="Paid"
+          value={<CounterUp value={duesData?.summary.paid ?? 0} format={(nextValue) => Math.round(nextValue).toLocaleString("en-NG")} />}
+          icon={Landmark}
+          tone="gold"
+        />
+        <NeoMetricCard
+          title="Collection Rate"
+          value={<CounterUp value={duesData?.summary.collection_rate ?? 0} format={(nextValue) => `${Math.round(nextValue)}%`} />}
+          icon={TrendingUp}
+        />
       </div>
 
       <Card>
