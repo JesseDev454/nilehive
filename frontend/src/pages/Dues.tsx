@@ -53,9 +53,11 @@ export default function Dues() {
     "Freshers pay N10,000. Returning students pay N5,000. Submit the payment reference and proof used for Club Services review."
   );
   const [duesPage, setDuesPage] = useState(1);
+  const [selectedClubId, setSelectedClubId] = useState("all");
   const [proofLinksByPaymentId, setProofLinksByPaymentId] = useState<Record<string, string>>({});
   const canViewDues = role === "president" || role === "admin";
   const canManageSharedProfile = role === "admin";
+  const duesClubFilter = role === "admin" && selectedClubId !== "all" ? selectedClubId : undefined;
 
   const {
     data: duesData,
@@ -63,8 +65,13 @@ export default function Dues() {
     isError,
     error
   } = useQuery({
-    queryKey: ["dues", role, duesPage],
-    queryFn: () => getDuePayments({ page: duesPage, page_size: DUES_PAGE_SIZE }),
+    queryKey: ["dues", role, duesPage, duesClubFilter || "all"],
+    queryFn: () =>
+      getDuePayments({
+        page: duesPage,
+        page_size: DUES_PAGE_SIZE,
+        club_id: duesClubFilter
+      }),
     enabled: canViewDues,
     retry: false
   });
@@ -138,6 +145,10 @@ export default function Dues() {
       setDuesPage(duesPage - 1);
     }
   }, [duesData, duesPage]);
+
+  useEffect(() => {
+    setDuesPage(1);
+  }, [duesClubFilter]);
 
   const clubNameById = useMemo(
     () => new Map(clubs.map((club) => [club.id, club.name])),
@@ -337,6 +348,26 @@ export default function Dues() {
           </p>
         </CardHeader>
         <CardContent>
+          {role === "admin" ? (
+            <div className="mb-4 grid gap-3 sm:max-w-xs">
+              <div className="space-y-2">
+                <Label htmlFor="dues_club_filter">Club</Label>
+                <Select value={selectedClubId} onValueChange={setSelectedClubId}>
+                  <SelectTrigger id="dues_club_filter">
+                    <SelectValue placeholder="All clubs" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All clubs</SelectItem>
+                    {clubs.map((club) => (
+                      <SelectItem key={club.id} value={club.id}>
+                        {club.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          ) : null}
           {isLoading ? (
             <NeoLoadingState title="Loading dues records" message="We are checking payment status and receipts." compact />
           ) : isError ? (
