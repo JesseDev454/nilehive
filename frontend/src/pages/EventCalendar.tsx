@@ -1,16 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
-import { Bell, CalendarDays, CheckCircle2, Clock, Loader2, MapPin, MessageSquare, Users } from "lucide-react";
+import QRCode from "qrcode";
+import { Bell, CalendarDays, CheckCircle2, Clock, Copy, Loader2, MapPin, MessageSquare, Printer, QrCode, Users } from "lucide-react";
 import { NeoLoadingState, NeoPageHeader } from "@/components/NeoBrutal";
 import { DataPagination } from "@/components/DataPagination";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRole } from "@/contexts/RoleContext";
 import { getEventLifecycleLabel, isPastEvent } from "@/lib/eventLifecycle";
+import { getEventCheckInUrl } from "@/lib/eventCheckIn";
 import { canViewProposalDetails } from "@/lib/roleAccess";
 import {
   ApiClientError,
@@ -58,11 +61,217 @@ function RsvpBadge({ status }: { status?: string | null }) {
   return <Badge className={`${className} capitalize`}>{status.replace("_", " ")}</Badge>;
 }
 
+function EventQrDialog({
+  event,
+  open,
+  onOpenChange
+}: {
+  event: ApprovedEventRecord;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [qrCodeUrl, setQrCodeUrl] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const checkInUrl = getEventCheckInUrl(event.proposal_id);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (!open) {
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    setIsGenerating(true);
+    setQrCodeUrl("");
+
+    void QRCode.toDataURL(checkInUrl, {
+      errorCorrectionLevel: "M",
+      margin: 1,
+      scale: 10,
+      width: 360
+    })
+      .then((value) => {
+        if (!isMounted) {
+          return;
+        }
+
+        setQrCodeUrl(value);
+      })
+      .catch((error) => {
+        actionError("Could not prepare event QR", error, "Please try again.");
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsGenerating(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [checkInUrl, open]);
+
+  async function copyCheckInLink() {
+    try {
+      await navigator.clipboard.writeText(checkInUrl);
+      actionSuccess("Check-in link copied", "You can paste it into a message or display workflow.");
+    } catch (error) {
+      actionError("Could not copy check-in link", error, "Please copy the link manually.");
+    }
+  }
+
+  function printQrSheet() {
+    if (!qrCodeUrl) {
+      return;
+    }
+
+    if (typeof document === "undefined") {
+      actionError("Could not prepare print view", undefined, "Please try again.");
+      return;
+    }
+    const iframe = document.createElement("iframe");
+    iframe.setAttribute("aria-hidden", "true");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.style.visibility = "hidden";
+
+    const cleanup = () => {
+      window.setTimeout(() => {
+        iframe.remove();
+      }, 150);
+    };
+
+    document.body.appendChild(iframe);
+    const printDocument = iframe.contentWindow?.document;
+
+    if (!printDocument || !iframe.contentWindow) {
+      cleanup();
+      actionError("Could not prepare print view", undefined, "Please try again.");
+      return;
+    }
+
+    const printMarkup = `<!doctype html>
+<html>
+  <head>
+    <title>${event.title} check-in QR</title>
+    <meta charset="utf-8" />
+    <style>
+      body { font-family: Arial, sans-serif; padding: 32px; color: #111; }
+      .sheet { max-width: 720px; margin: 0 auto; text-align: center; }
+      .eyebrow { letter-spacing: 0.18em; text-transform: uppercase; font-size: 12px; font-weight: 700; }
+      h1 { font-size: 34px; margin: 12px 0; }
+      p { font-size: 16px; line-height: 1.5; }
+      img { width: 320px; height: 320px; margin: 24px auto; display: block; }
+      .meta { margin-top: 8px; font-size: 14px; color: #444; }
+      .link { margin-top: 16px; font-size: 13px; word-break: break-all; color: #444; }
+    </style>
+  </head>
+  <body>
+    <div class="sheet">
+      <p class="eyebrow">NileHive Event Check-In</p>
+      <h1>${event.title}</h1>
+      <p>Students should sign in to NileHive and scan this QR on the event date to record attendance.</p>
+      <img src="${qrCodeUrl}" alt="QR code for ${event.title}" />
+      <p class="meta">${getDateLabel(event.event_date)} - ${getTimeLabel(event.event_time)} - ${event.location || "Venue TBC"}</p>
+      <p class="link">${checkInUrl}</p>
+    </div>
+    <script>
+      (function () {
+        const image = document.querySelector("img");
+        const startPrint = function () {
+          window.setTimeout(function () {
+            window.focus();
+            window.print();
+          }, 120);
+        };
+
+        if (!image || image.complete) {
+          startPrint();
+          return;
+        }
+
+        image.addEventListener("load", startPrint, { once: true });
+        image.addEventListener("error", startPrint, { once: true });
+      })();
+    </script>
+  </body>
+</html>`;
+
+    iframe.onload = () => {
+      iframe.contentWindow?.addEventListener("afterprint", cleanup, { once: true });
+      window.setTimeout(cleanup, 5000);
+    };
+
+    printDocument.open();
+    printDocument.write(printMarkup);
+    printDocument.close();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Event Check-In QR</DialogTitle>
+          <DialogDescription>
+            Display or print this QR so eligible students can scan it on the event date and record attendance instantly.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="nh-card-soft space-y-2 p-4 text-sm">
+            <p className="text-lg font-black uppercase">{event.title}</p>
+            <p className="text-muted-foreground">
+              {getDateLabel(event.event_date)} - {getTimeLabel(event.event_time)} - {event.location || "Venue TBC"}
+            </p>
+            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              Students can only use this QR on the event date.
+            </p>
+          </div>
+          <div className="flex min-h-[24rem] items-center justify-center border-2 border-dashed border-foreground/40 bg-muted/30 p-4">
+            {isGenerating ? (
+              <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span>Preparing QR code...</span>
+              </div>
+            ) : qrCodeUrl ? (
+              <img src={qrCodeUrl} alt={`QR code for ${event.title}`} className="w-full max-w-[20rem] bg-white p-3" />
+            ) : (
+              <div className="text-center text-sm text-muted-foreground">
+                <QrCode className="mx-auto mb-3 h-8 w-8" />
+                <p>We could not prepare the QR yet.</p>
+              </div>
+            )}
+          </div>
+          <div className="rounded-lg border border-foreground/20 bg-background p-3 text-xs text-muted-foreground">
+            {checkInUrl}
+          </div>
+        </div>
+        <DialogFooter className="gap-2">
+          <Button type="button" variant="outline" onClick={copyCheckInLink}>
+            <Copy className="h-4 w-4" />
+            Copy Link
+          </Button>
+          <Button type="button" onClick={printQrSheet} disabled={!qrCodeUrl}>
+            <Printer className="h-4 w-4" />
+            Print QR
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
   const { role } = useRole();
   const queryClient = useQueryClient();
   const [feedback, setFeedback] = useState("");
   const [rating, setRating] = useState("5");
+  const [showQrDialog, setShowQrDialog] = useState(false);
   const isStudent = role === "student";
   const canManageAttendance = ["admin", "president"].includes(role);
   const {
@@ -278,7 +487,13 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
 
       {canManageAttendance ? (
         <div className="space-y-3">
-          <p className="text-sm font-medium">RSVP List & Attendance</p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm font-medium">RSVP List & Attendance</p>
+            <Button size="sm" variant="outline" onClick={() => setShowQrDialog(true)}>
+              <QrCode className="h-4 w-4" />
+              Show Event QR
+            </Button>
+          </div>
           {!engagement?.rsvps.length ? (
             <p className="text-sm text-muted-foreground">No RSVPs yet.</p>
           ) : (
@@ -311,6 +526,7 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
               ))}
             </div>
           )}
+          <EventQrDialog event={effectiveEvent} open={showQrDialog} onOpenChange={setShowQrDialog} />
         </div>
       ) : null}
     </div>

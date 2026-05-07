@@ -24,6 +24,7 @@ import AdminClubDashboard from "@/pages/AdminClubDashboard";
 import Communications from "@/pages/Communications";
 import Dues from "@/pages/Dues";
 import EventCalendar from "@/pages/EventCalendar";
+import EventCheckIn from "@/pages/EventCheckIn";
 import MediaArchive from "@/pages/MediaArchive";
 import Members from "@/pages/Members";
 import Membership from "@/pages/Membership";
@@ -99,6 +100,7 @@ const App = () => (
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route element={<ProtectedRoutes />}>
+                <Route path="/events/:proposalId/check-in" element={<EventCheckIn />} />
                 <Route element={<AppLayout />}>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/proposals/new" element={<NewProposal />} />

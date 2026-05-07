@@ -629,6 +629,11 @@ export interface DuesResponse {
   payments: DuePaymentRecord[];
 }
 
+export interface PaginatedDuesResponse {
+  summary: DuesSummary;
+  payments: PaginatedResponse<DuePaymentRecord>;
+}
+
 export interface CreateDuePaymentPayload {
   club_id?: string | null;
   member_id: string;
@@ -1817,7 +1822,7 @@ export async function decideLeadershipApplication(
 }
 
 export async function getDuePayments(
-  filters: { status?: string; member_id?: string; club_id?: string } = {},
+  filters: { status?: string; member_id?: string; club_id?: string } & PaginationQuery = {},
   token?: string
 ) {
   const params = new URLSearchParams();
@@ -1834,8 +1839,10 @@ export async function getDuePayments(
     params.set("club_id", filters.club_id);
   }
 
+  appendPaginationParams(params, filters);
+
   const query = params.toString();
-  const response = await request<ApiEnvelope<DuesResponse>>(
+  const response = await request<ApiEnvelope<PaginatedDuesResponse>>(
     `/api/v1/dues${query ? `?${query}` : ""}`,
     {
       method: "GET",
@@ -1893,6 +1900,15 @@ export async function applyClubDuesAmountToAll(dues_amount: number, token?: stri
       body: { dues_amount }
     }
   );
+
+  return response.data;
+}
+
+export async function submitEventSelfCheckIn(proposalId: string, token?: string) {
+  const response = await request<ApiEnvelope<EventAttendanceRecord>>(`/api/v1/events/${proposalId}/check-in`, {
+    method: "POST",
+    token
+  });
 
   return response.data;
 }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CreditCard, Landmark, Loader2, Receipt, TrendingUp } from "lucide-react";
+import { DataPagination } from "@/components/DataPagination";
 import { NeoLoadingState, NeoMetricCard, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +22,8 @@ import {
 } from "@/lib/api";
 import { actionError, actionSuccess } from "@/lib/notify";
 import { resolveStorageFileUrl } from "@/lib/storage";
+
+const DUES_PAGE_SIZE = 10;
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -49,6 +52,7 @@ export default function Dues() {
   const [paymentInstructions, setPaymentInstructions] = useState(
     "Freshers pay N10,000. Returning students pay N5,000. Submit the payment reference and proof used for Club Services review."
   );
+  const [duesPage, setDuesPage] = useState(1);
   const [proofLinksByPaymentId, setProofLinksByPaymentId] = useState<Record<string, string>>({});
   const canViewDues = role === "president" || role === "admin";
   const canManageSharedProfile = role === "admin";
@@ -59,8 +63,8 @@ export default function Dues() {
     isError,
     error
   } = useQuery({
-    queryKey: ["dues", role],
-    queryFn: () => getDuePayments(),
+    queryKey: ["dues", role, duesPage],
+    queryFn: () => getDuePayments({ page: duesPage, page_size: DUES_PAGE_SIZE }),
     enabled: canViewDues,
     retry: false
   });
@@ -91,7 +95,7 @@ export default function Dues() {
   }, [sharedPaymentSettings]);
 
   useEffect(() => {
-    const payments = duesData?.payments || [];
+    const payments = duesData?.payments.items || [];
 
     if (!payments.length) {
       setProofLinksByPaymentId({});
@@ -127,12 +131,19 @@ export default function Dues() {
     return () => {
       cancelled = true;
     };
-  }, [duesData?.payments]);
+  }, [duesData?.payments.items]);
+
+  useEffect(() => {
+    if (duesPage > 1 && duesData && duesData.payments.total > 0 && duesData.payments.items.length === 0) {
+      setDuesPage(duesPage - 1);
+    }
+  }, [duesData, duesPage]);
 
   const clubNameById = useMemo(
     () => new Map(clubs.map((club) => [club.id, club.name])),
     [clubs]
   );
+  const visiblePayments = duesData?.payments.items || [];
 
   const saveSharedProfileMutation = useMutation({
     mutationFn: () =>
@@ -333,7 +344,7 @@ export default function Dues() {
               <p className="font-medium">Unable to load dues</p>
               <p className="text-sm text-muted-foreground mt-1">{getErrorMessage(error)}</p>
             </div>
-          ) : !duesData?.payments.length ? (
+          ) : !visiblePayments.length ? (
             <div className="nh-empty">
               <CreditCard className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
               <p className="font-medium">No dues records yet</p>
@@ -354,7 +365,7 @@ export default function Dues() {
                   </tr>
                 </thead>
                 <tbody>
-                  {duesData.payments.map((payment) => (
+                  {visiblePayments.map((payment) => (
                     <tr key={payment.id} className="transition-colors hover:bg-accent/50">
                       <td className="p-3">
                         <p className="font-medium">{clubNameById.get(payment.club_id) || "Unknown club"}</p>
@@ -405,6 +416,13 @@ export default function Dues() {
                   ))}
                 </tbody>
               </table>
+              <DataPagination
+                page={duesData?.payments.page ?? 1}
+                pageSize={duesData?.payments.page_size ?? DUES_PAGE_SIZE}
+                total={duesData?.payments.total ?? 0}
+                hasNext={duesData?.payments.has_next ?? false}
+                onPageChange={setDuesPage}
+              />
             </div>
           )}
         </CardContent>
