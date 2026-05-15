@@ -31,6 +31,7 @@ import {
 } from "@/lib/api";
 import { actionError, actionSuccess } from "@/lib/notify";
 import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
+import { isValidStudentId } from "@/lib/studentId";
 
 type EditableRole = Exclude<ProfileRecord["role"], "admin">;
 
@@ -60,6 +61,10 @@ function getPresidentConflictDetails(error: unknown): PresidentConflictDetails["
 
   const details = error.details as PresidentConflictDetails | undefined;
   return details?.current_president ?? null;
+}
+
+function roleCreatesClubMember(role: EditableRole, clubId: string) {
+  return clubId !== "none" && (role === "student" || role === "executive" || role === "president");
 }
 
 function formatDate(value?: string) {
@@ -158,6 +163,15 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (requiresStudentIdForClubRole) {
+      actionError(
+        "University ID required",
+        undefined,
+        "Add the user's 9-digit University ID before assigning this club role."
+      );
+      return;
+    }
+
     if (role === "advisor") {
       advisorMutation.mutate();
       return;
@@ -168,6 +182,7 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
 
   const currentPresidentLabel = presidentConflict?.full_name || presidentConflict?.student_id || "the current president";
   const replacementUserLabel = user.full_name || "this user";
+  const requiresStudentIdForClubRole = roleCreatesClubMember(role, clubId) && !isValidStudentId(user.student_id ?? "");
 
   return (
     <>
@@ -245,6 +260,15 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
                   {user.advisor_assignments
                     .map((assignment) => assignment.club?.name || "Unknown club")
                     .join(", ")}
+                </p>
+              </div>
+            ) : null}
+
+            {requiresStudentIdForClubRole ? (
+              <div className="rounded-xl border-2 border-destructive bg-destructive/10 p-4 text-sm text-destructive lg:col-span-2">
+                <p className="font-black uppercase tracking-[0.08em]">University ID required</p>
+                <p className="mt-1">
+                  Add this user's 9-digit University ID before assigning them as a club member, executive, or president.
                 </p>
               </div>
             ) : null}

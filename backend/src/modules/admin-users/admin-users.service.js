@@ -3,6 +3,7 @@ const { logger: baseLogger } = require("../../config/logger");
 const ApiError = require("../../shared/ApiError");
 const { writeAuditLog } = require("../../shared/auditLog");
 const { ensurePaginatedResult, mapPaginatedResult } = require("../../shared/pagination");
+const { isValidStudentId } = require("../../shared/studentId");
 const {
   validateAdvisorAssignmentPayload,
   validateRoleUpdatePayload
@@ -118,6 +119,22 @@ function getDesiredClubMemberRole(role) {
   }
 
   return null;
+}
+
+function ensureProfileCanBecomeClubMember(profile, role, clubId) {
+  if (!getDesiredClubMemberRole(role) || !clubId || isValidStudentId(profile.student_id)) {
+    return;
+  }
+
+  throw new ApiError(
+    400,
+    "This user needs a University ID before they can be assigned to a club member, executive, or president role.",
+    "VALIDATION_ERROR",
+    {
+      field: "student_id",
+      message: "Add the user's University ID before assigning this club role."
+    }
+  );
 }
 
 async function archiveHistoricalMemberships({
@@ -347,6 +364,8 @@ async function updateAdminUserRole(options) {
       });
     }
   }
+
+  ensureProfileCanBecomeClubMember(profile, update.role, update.club_id);
 
   if (update.role === "president") {
     requestLogger.info("admin_users.president_replacement.requested", {

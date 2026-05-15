@@ -928,9 +928,17 @@ export function getApiErrorFieldMessages(error: unknown) {
 export function getUserFacingErrorMessage(error: unknown, fallback = "Please try again.") {
   if (error instanceof ApiClientError) {
     const fieldMessages = getApiErrorFieldMessages(error);
+    const normalizedMessage = error.message.toLowerCase();
 
     if (fieldMessages.length > 0) {
       return `Please fix: ${fieldMessages.join("; ")}`;
+    }
+
+    if (
+      normalizedMessage.includes('null value in column "student_id"') &&
+      normalizedMessage.includes("club_members")
+    ) {
+      return "Add the user's 9-digit University ID before assigning this club role.";
     }
 
     if (error.code === "NETWORK_ERROR" || error.status === 0) {

@@ -231,6 +231,63 @@ test("admin role reassignment keeps old club history and creates a new active cl
   });
 });
 
+for (const role of ["student", "executive", "president"]) {
+  test(`admin cannot assign ${role} club access when the user has no University ID`, async () => {
+    let listProfilesCalled = false;
+    let listClubMembersCalled = false;
+    let updateProfileCalled = false;
+
+    const fakeDatabase = {
+      async getProfileById(profileId) {
+        assert.equal(profileId, "student-1");
+        return createProfile({
+          student_id: null,
+          role: "student",
+          club_id: null
+        });
+      },
+      async getClubById(clubId) {
+        assert.equal(clubId, "club-1");
+        return createClub();
+      },
+      async listProfiles() {
+        listProfilesCalled = true;
+        return [];
+      },
+      async listClubMembers() {
+        listClubMembersCalled = true;
+        return [];
+      },
+      async updateProfile() {
+        updateProfileCalled = true;
+        return createProfile({ role });
+      }
+    };
+
+    await assert.rejects(
+      () =>
+        updateAdminUserRole({
+          actor: { id: "admin-1", role: "admin" },
+          profileId: "student-1",
+          payload: {
+            role,
+            club_id: "club-1"
+          },
+          database: fakeDatabase
+        }),
+      (error) =>
+        error.statusCode === 400 &&
+        error.code === "VALIDATION_ERROR" &&
+        error.details?.field === "student_id" &&
+        error.message.includes("University ID")
+    );
+
+    assert.equal(listProfilesCalled, false);
+    assert.equal(listClubMembersCalled, false);
+    assert.equal(updateProfileCalled, false);
+  });
+}
+
 test("admin role update returns a structured conflict before replacing an existing president", async () => {
   let updateCalled = false;
   const fakeDatabase = {

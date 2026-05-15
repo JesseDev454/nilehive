@@ -19,7 +19,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       className="toaster group"
       toastOptions={{
         classNames: {
-          toast: `${baseToastClass} ${successToastClass}`,
+          toast: baseToastClass,
           success: successToastClass,
           info: successToastClass,
           warning: successToastClass,
