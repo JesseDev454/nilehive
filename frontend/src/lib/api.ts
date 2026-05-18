@@ -608,7 +608,7 @@ export interface ClubPaymentSettingsRecord {
 
 export interface PaymentConfirmationPayload {
   payment_account_name: string;
-  payment_reference: string;
+  payment_reference?: string | null;
   payment_paid_at?: string | null;
   proof_url?: string | null;
   payer_note?: string | null;
@@ -1707,7 +1707,7 @@ export async function createMembershipRequest(
     student_type?: "fresher" | "returning" | null;
     join_reason?: string | null;
     payment_account_name: string;
-    payment_reference: string;
+    payment_reference?: string | null;
     payment_paid_at?: string | null;
     proof_url?: string | null;
     payer_note?: string | null;

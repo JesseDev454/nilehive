@@ -212,14 +212,12 @@ function DuesConfirmationCard({
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [accountName, setAccountName] = useState(payment?.payment_account_name || "");
-  const [reference, setReference] = useState(payment?.payment_reference || "");
   const [paidAt, setPaidAt] = useState(payment?.payment_paid_at?.slice(0, 10) || "");
   const [proofUrl, setProofUrl] = useState(payment?.proof_url || "");
   const [proofFileName, setProofFileName] = useState("");
   const proofInputRef = useRef<HTMLInputElement | null>(null);
   const [isUploadingProof, setIsUploadingProof] = useState(false);
   const [paymentProofLink, setPaymentProofLink] = useState<string | null>(null);
-  const [note, setNote] = useState(payment?.payer_note || "");
   const { data: settings, isLoading: isLoadingSettings } = useQuery({
     queryKey: ["club-payment-settings", request.club_id],
     queryFn: () => getClubPaymentSettings(request.club_id),
@@ -229,10 +227,10 @@ function DuesConfirmationCard({
     mutationFn: () =>
       submitDuePaymentConfirmation(request.due_payment_id || "", {
         payment_account_name: accountName,
-        payment_reference: reference,
+        payment_reference: null,
         payment_paid_at: paidAt || null,
         proof_url: proofUrl || null,
-        payer_note: note || null
+        payer_note: null
       }),
     onSuccess: async () => {
       toast.success("Payment details sent again", {
@@ -330,7 +328,7 @@ function DuesConfirmationCard({
       <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">
         <p className="font-semibold text-primary">Payment submitted for review</p>
         <p className="mt-1 text-muted-foreground">
-          Reference: {payment.payment_reference || "-"} {payment.payment_account_name ? `- Paid by ${payment.payment_account_name}` : ""}
+          {payment.payment_account_name ? `Paid by ${payment.payment_account_name}` : "Receipt submitted for review."}
         </p>
         {paymentProofLink ? (
           <a className="mt-2 inline-block text-primary underline" href={paymentProofLink} target="_blank" rel="noreferrer">
@@ -446,10 +444,6 @@ function DuesConfirmationCard({
           <Input value={accountName} onChange={(event) => setAccountName(event.target.value)} required />
         </div>
         <div className="space-y-2">
-          <Label>Payment reference / transaction ID</Label>
-          <Input value={reference} onChange={(event) => setReference(event.target.value)} required />
-        </div>
-        <div className="space-y-2">
           <Label>Payment date</Label>
           <Input type="date" value={paidAt} onChange={(event) => setPaidAt(event.target.value)} />
         </div>
@@ -466,16 +460,12 @@ function DuesConfirmationCard({
           {proofFileName ? <p className="text-xs text-muted-foreground">Uploaded: {proofFileName}</p> : null}
           {proofUrl ? (
             <div className="space-y-2">
-              <p className="text-xs text-muted-foreground break-all">Stored path: {proofUrl}</p>
+              <p className="text-xs text-muted-foreground">Receipt ready to submit.</p>
               <Button type="button" variant="outline" size="sm" onClick={clearReceiptSelection}>
                 Remove receipt
               </Button>
             </div>
           ) : null}
-        </div>
-        <div className="space-y-2 sm:col-span-2">
-          <Label>Note</Label>
-          <Textarea value={note} onChange={(event) => setNote(event.target.value)} placeholder="Optional note for verification" />
         </div>
         <div className="sm:col-span-2 flex justify-end">
           <Button type="submit" disabled={submitMutation.isPending || isUploadingProof}>
@@ -525,12 +515,10 @@ function JoinClubPanel({
   const [department, setDepartment] = useState(savedDraft?.department ?? defaultDepartment ?? "");
   const [joinReason, setJoinReason] = useState(savedDraft?.joinReason ?? "");
   const [accountName, setAccountName] = useState(savedDraft?.accountName ?? "");
-  const [reference, setReference] = useState(savedDraft?.reference ?? "");
   const [paidAt, setPaidAt] = useState(savedDraft?.paidAt ?? "");
   const [proofUrl, setProofUrl] = useState("");
   const [proofFileName, setProofFileName] = useState("");
   const proofInputRef = useRef<HTMLInputElement | null>(null);
-  const [note, setNote] = useState(savedDraft?.note ?? "");
   const [isUploadingProof, setIsUploadingProof] = useState(false);
 
   // Apply profile defaults only once when they first arrive (e.g. on slow load)
@@ -560,11 +548,9 @@ function JoinClubPanel({
       department,
       joinReason,
       accountName,
-      reference,
-      paidAt,
-      note
+      paidAt
     });
-  }, [userId, club.id, studentType, studentId, phoneNumber, department, joinReason, accountName, reference, paidAt, note]);
+  }, [userId, club.id, studentType, studentId, phoneNumber, department, joinReason, accountName, paidAt]);
 
   useEffect(() => {
     persistDraft();
@@ -591,10 +577,10 @@ function JoinClubPanel({
         student_type: studentType,
         join_reason: joinReason || null,
         payment_account_name: accountName,
-        payment_reference: reference,
+        payment_reference: null,
         payment_paid_at: paidAt || null,
         proof_url: proofUrl || null,
-        payer_note: note || null
+        payer_note: null
       }),
     onSuccess: async () => {
       toast.success("Join request submitted", {
@@ -609,11 +595,9 @@ function JoinClubPanel({
       setDepartment("");
       setJoinReason("");
       setAccountName("");
-      setReference("");
       setPaidAt("");
       setProofUrl("");
       setProofFileName("");
-      setNote("");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["my-membership-requests"] }),
         queryClient.invalidateQueries({ queryKey: ["my-dues"] })
@@ -714,7 +698,7 @@ function JoinClubPanel({
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Join dues</p>
             <p className="mt-1 text-lg font-bold">{formatCurrency(joinAmount)}</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Pay first, then send the transaction details with your join request.
+              Pay first, then upload your receipt with your join request.
             </p>
           </div>
         </div>
@@ -802,10 +786,6 @@ function JoinClubPanel({
               <Input value={accountName} onChange={(event) => setAccountName(event.target.value)} required />
             </div>
             <div className="space-y-2">
-              <Label>Payment reference / transaction ID</Label>
-              <Input value={reference} onChange={(event) => setReference(event.target.value)} required />
-            </div>
-            <div className="space-y-2">
               <Label>Payment date</Label>
               <Input type="date" value={paidAt} onChange={(event) => setPaidAt(event.target.value)} />
             </div>
@@ -822,16 +802,12 @@ function JoinClubPanel({
               {proofFileName ? <p className="text-xs text-muted-foreground">Uploaded: {proofFileName}</p> : null}
               {proofUrl ? (
                 <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground break-all">Stored path: {proofUrl}</p>
+                  <p className="text-xs text-muted-foreground">Receipt ready to submit.</p>
                   <Button type="button" variant="outline" size="sm" onClick={clearReceiptSelection}>
                     Remove receipt
                   </Button>
                 </div>
               ) : null}
-            </div>
-            <div className="space-y-2">
-              <Label>Note (Optional)</Label>
-              <Textarea value={note} onChange={(event) => setNote(event.target.value)} rows={2} />
             </div>
             <Button className="w-full" type="submit" disabled={createRequestMutation.isPending || isUploadingProof}>
               {createRequestMutation.isPending ? (
@@ -1143,7 +1119,7 @@ function StudentMembershipView() {
                       Session {payment.academic_session} - Paid on {formatDate(payment.payment_paid_at)}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {payment.payment_reference || "No reference submitted yet"}
+                      {payment.payment_account_name ? `Paid by ${payment.payment_account_name}` : "Receipt uploaded for review"}
                     </p>
                   </div>
                   <Badge className="capitalize">{payment.status}</Badge>
@@ -1271,9 +1247,11 @@ function ReviewerMembershipView() {
                         <p className="text-sm text-muted-foreground">
                           {request.club?.name || "Selected club"} - {getStudentTypeLabel(request.student_type)} - {formatCurrency(request.dues_amount)}
                         </p>
-                        <p className="text-sm text-muted-foreground">
-                          Payment reference: {request.due_payment?.payment_reference || "Not submitted yet"}
-                        </p>
+                        {request.due_payment?.payment_account_name ? (
+                          <p className="text-sm text-muted-foreground">
+                            Paid by: {request.due_payment.payment_account_name}
+                          </p>
+                        ) : null}
                         {request.join_reason ? (
                           <p className="text-sm text-muted-foreground">{request.join_reason}</p>
                         ) : null}

@@ -86,16 +86,10 @@ async function syncMemberStatusFromDuePayment({
     return member;
   }
 
-  const linkedRequest = database.getMembershipRequestByMemberId
-    ? await database.getMembershipRequestByMemberId(member.id, ["pending", "approved_pending_dues", "active"])
-    : null;
-
   const nextStatus =
-    payment.status === "paid" && linkedRequest?.status !== "pending"
+    payment.status === "paid"
       ? "active"
-      : payment.status === "paid" && !linkedRequest
-        ? "active"
-        : "inactive";
+      : "inactive";
 
   if (!["paid", "unpaid", "submitted", "rejected"].includes(payment.status)) {
     return member;

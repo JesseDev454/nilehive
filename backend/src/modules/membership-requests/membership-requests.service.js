@@ -399,9 +399,11 @@ async function activateMembershipAfterPaidDues(options) {
         membership_status: "active"
       });
 
-  const updatedRequest = await database.updateMembershipRequest(request.id, {
-    status: "active"
-  });
+  const updatedRequest = typeof database.updateMembershipRequest === "function"
+    ? await database.updateMembershipRequest(request.id, {
+        status: "active"
+      })
+    : request;
 
   return {
     request: formatMembershipRequest(updatedRequest),

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileText, ImageIcon, Loader2, Upload } from "lucide-react";
@@ -18,6 +18,7 @@ import {
   createEventReport,
   getEventReportDetail,
   getApprovedEvents,
+  getClubs,
   getEventReports,
   type EventReportRecord
 } from "@/lib/api";
@@ -169,10 +170,12 @@ export default function MediaArchive() {
   const [uploadedMediaNames, setUploadedMediaNames] = useState<string[]>([]);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
   const [page, setPage] = useState(1);
+  const [selectedClubId, setSelectedClubId] = useState("all");
   const [downloadingReportId, setDownloadingReportId] = useState<string | null>(null);
   const [downloadingMediaReportId, setDownloadingMediaReportId] = useState<string | null>(null);
   const canSubmitReports = role === "president";
   const canViewReports = ["admin", "advisor", "president"].includes(role);
+  const reportClubFilter = role === "admin" && selectedClubId !== "all" ? selectedClubId : undefined;
 
   const {
     data: reportsPage = emptyPaginatedResponse<EventReportRecord>(),
@@ -180,12 +183,18 @@ export default function MediaArchive() {
     isError,
     error
   } = useQuery({
-    queryKey: ["event-reports", role, page],
-    queryFn: () => getEventReports({ page, page_size: DEFAULT_PAGE_SIZE }),
+    queryKey: ["event-reports", role, page, reportClubFilter || "all"],
+    queryFn: () => getEventReports({ page, page_size: DEFAULT_PAGE_SIZE, club_id: reportClubFilter }),
     enabled: canViewReports,
     retry: false
   });
   const reports = reportsPage.items;
+  const { data: clubs = [] } = useQuery({
+    queryKey: ["archive-clubs"],
+    queryFn: () => getClubs(),
+    enabled: role === "admin",
+    retry: false
+  });
   const { data: approvedEventsPage = emptyPaginatedResponse() } = useQuery({
     queryKey: ["approved-events", "report-form"],
     queryFn: () => getApprovedEvents({ page: 1, page_size: 100 }),
@@ -203,6 +212,11 @@ export default function MediaArchive() {
     [proposalId, reportableEvents]
   );
   const totalMediaCount = uploadedMediaUrls.length;
+
+  useEffect(() => {
+    setPage(1);
+  }, [reportClubFilter]);
+
   const createMutation = useMutation({
     mutationFn: () =>
       createEventReport({
@@ -504,7 +518,27 @@ export default function MediaArchive() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Archive</CardTitle>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <CardTitle className="text-lg">Archive</CardTitle>
+            {role === "admin" ? (
+              <div className="grid gap-2 sm:w-72">
+                <Label htmlFor="report_club_filter">Club</Label>
+                <Select value={selectedClubId} onValueChange={setSelectedClubId}>
+                  <SelectTrigger id="report_club_filter">
+                    <SelectValue placeholder="All clubs" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All clubs</SelectItem>
+                    {clubs.map((club) => (
+                      <SelectItem key={club.id} value={club.id}>
+                        {club.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (

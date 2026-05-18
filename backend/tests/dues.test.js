@@ -237,6 +237,63 @@ test("paid current-session dues activate an inactive member", async () => {
   assert.equal(historyEntry.new_status, "active");
 });
 
+test("paid dues activate a member even while the linked join request is pending", async () => {
+  let memberUpdate;
+  const fakeDatabase = {
+    async getDuePaymentById() {
+      return createPayment({
+        status: "submitted",
+        academic_session: "2025/2026"
+      });
+    },
+    async updateDuePayment(paymentId, update) {
+      return createPayment({
+        id: paymentId,
+        academic_session: "2025/2026",
+        ...update
+      });
+    },
+    async getClubMemberById() {
+      return createMember({
+        id: "member-1",
+        membership_status: "inactive"
+      });
+    },
+    async getMembershipRequestByMemberId() {
+      return {
+        id: "request-1",
+        member_id: "member-1",
+        status: "pending"
+      };
+    },
+    async updateClubMember(memberId, update) {
+      assert.equal(memberId, "member-1");
+      memberUpdate = update;
+      return createMember({
+        id: memberId,
+        ...update
+      });
+    }
+  };
+
+  await updateDuePayment({
+    actor: {
+      id: "admin-1",
+      role: "admin",
+      clubId: null
+    },
+    paymentId: "payment-1",
+    payload: {
+      status: "paid"
+    },
+    database: fakeDatabase
+  });
+
+  assert.deepEqual(memberUpdate, {
+    membership_status: "active"
+  });
+});
+
 test("unpaid or rejected current-session dues keep a member inactive", async () => {
   let memberUpdate;
   const fakeDatabase = {
@@ -337,17 +394,16 @@ test("student can submit payment confirmation for own unpaid dues", async () => 
     paymentId: "payment-1",
     payload: {
       payment_account_name: "Ada Student",
-      payment_reference: "NUE-12345",
       payment_paid_at: "2026-04-15",
-      proof_url: "https://example.com/receipt.png",
-      payer_note: "Paid from my GTBank account."
+      proof_url: "https://example.com/receipt.png"
     },
     database: fakeDatabase
   });
 
   assert.equal(updatePayload.status, "submitted");
   assert.equal(updatePayload.payment_account_name, "Ada Student");
-  assert.equal(updatePayload.payment_reference, "NUE-12345");
+  assert.equal(updatePayload.payment_reference, null);
+  assert.equal(updatePayload.payer_note, null);
   assert.ok(updatePayload.submitted_at);
   assert.equal(payment.status, "submitted");
 });

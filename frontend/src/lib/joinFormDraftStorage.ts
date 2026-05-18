@@ -1,4 +1,4 @@
-const JOIN_FORM_DRAFT_VERSION = 1;
+const JOIN_FORM_DRAFT_VERSION = 2;
 const JOIN_FORM_DRAFT_TTL_MS = 2 * 24 * 60 * 60 * 1000; // 2 days
 
 export interface JoinFormDraft {
@@ -12,9 +12,7 @@ export interface JoinFormDraft {
   department: string;
   joinReason: string;
   accountName: string;
-  reference: string;
   paidAt: string;
-  note: string;
 }
 
 function getStorage() {

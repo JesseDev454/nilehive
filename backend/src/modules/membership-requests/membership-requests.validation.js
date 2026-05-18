@@ -93,7 +93,7 @@ function validateCreateMembershipRequestPayload(payload = {}) {
     student_type: readStudentType(payload, false),
     join_reason: readOptionalString(payload, "join_reason"),
     payment_account_name: readRequiredString(payload, "payment_account_name", "Name on account"),
-    payment_reference: readRequiredString(payload, "payment_reference", "Payment reference"),
+    payment_reference: readOptionalString(payload, "payment_reference"),
     payment_paid_at: readOptionalDate(payload, "payment_paid_at"),
     proof_url: readRequiredString(payload, "proof_url", "Receipt upload"),
     payer_note: readOptionalString(payload, "payer_note"),

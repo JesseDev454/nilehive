@@ -111,7 +111,7 @@ test("student can create a paid membership request", async () => {
         ...payment,
         status: "submitted",
         payment_account_name: "Ada Student",
-        payment_reference: "JOIN-001"
+        payment_reference: payment.payment_reference
       });
     },
     async createMembershipRequest(request) {
@@ -125,7 +125,7 @@ test("student can create a paid membership request", async () => {
           academic_session: request.academic_session,
           status: "submitted",
           payment_account_name: "Ada Student",
-          payment_reference: "JOIN-001"
+          payment_reference: null
         })
       });
     }
@@ -143,10 +143,8 @@ test("student can create a paid membership request", async () => {
       student_id: "020232255",
       remarks: "I want to help run events.",
       payment_account_name: "Ada Student",
-      payment_reference: "JOIN-001",
       payment_paid_at: "2026-04-18",
-      proof_url: "https://example.com/proof.png",
-      payer_note: "Paid this morning."
+      proof_url: "https://example.com/proof.png"
     },
     database: fakeDatabase
   });
@@ -155,6 +153,8 @@ test("student can create a paid membership request", async () => {
   assert.equal(createdRequest.status, "pending");
   assert.equal(createdMember.membership_status, "inactive");
   assert.equal(createdPayment.status, "submitted");
+  assert.equal(createdPayment.payment_reference, null);
+  assert.equal(createdPayment.payer_note, null);
   assert.equal(createdRequest.dues_amount, 5000);
   assert.equal(request.requested_role, "member");
 });

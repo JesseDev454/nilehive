@@ -5,6 +5,7 @@ import { CreditCard, Landmark, Loader2, Receipt, TrendingUp } from "lucide-react
 import { CounterUp } from "@/components/CounterUp";
 import { DataPagination } from "@/components/DataPagination";
 import { NeoLoadingState, NeoMetricCard, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,24 @@ function formatCurrency(value: number) {
     currency: "NGN",
     maximumFractionDigits: 0
   }).format(value || 0);
+}
+
+function getPaymentStatusLabel(status: DuePaymentRecord["status"]) {
+  return {
+    unpaid: "Unpaid",
+    submitted: "Submitted",
+    paid: "Paid",
+    rejected: "Rejected"
+  }[status];
+}
+
+function getPaymentStatusClassName(status: DuePaymentRecord["status"]) {
+  return {
+    unpaid: "bg-muted text-muted-foreground hover:bg-muted",
+    submitted: "bg-warning/15 text-warning hover:bg-warning/15",
+    paid: "bg-success/15 text-success hover:bg-success/15",
+    rejected: "bg-destructive/15 text-destructive hover:bg-destructive/15"
+  }[status];
 }
 
 export default function Dues() {
@@ -442,26 +461,42 @@ export default function Dues() {
                       <td className="p-3 font-medium">{formatCurrency(payment.amount)}</td>
                       <td className="p-3 hidden md:table-cell text-muted-foreground">{payment.academic_session}</td>
                       <td className="p-3">
-                        <Select
-                          value={payment.status}
-                          disabled={updateMutation.isPending}
-                          onValueChange={(value) =>
-                            updateMutation.mutate({
-                              payment,
-                              nextStatus: value as DuePaymentRecord["status"]
-                            })
-                          }
-                        >
-                          <SelectTrigger className="w-[140px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="unpaid">Unpaid</SelectItem>
-                            <SelectItem value="submitted">Submitted</SelectItem>
-                            <SelectItem value="paid">Paid</SelectItem>
-                            <SelectItem value="rejected">Rejected</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                          <Badge className={`${getPaymentStatusClassName(payment.status)} capitalize`}>
+                            {getPaymentStatusLabel(payment.status)}
+                          </Badge>
+                          {payment.status !== "paid" ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              disabled={updateMutation.isPending}
+                              onClick={() =>
+                                updateMutation.mutate({
+                                  payment,
+                                  nextStatus: "paid"
+                                })
+                              }
+                            >
+                              Mark Paid
+                            </Button>
+                          ) : null}
+                          {payment.status !== "rejected" ? (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={updateMutation.isPending}
+                              onClick={() =>
+                                updateMutation.mutate({
+                                  payment,
+                                  nextStatus: "rejected"
+                                })
+                              }
+                            >
+                              Reject
+                            </Button>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   ))}
