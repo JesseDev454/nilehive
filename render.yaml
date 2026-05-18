@@ -1,0 +1,62 @@
+services:
+  - type: web
+    name: nilehive-backend
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/v1/ready
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: HOST
+        value: 0.0.0.0
+      - key: REQUEST_TIMEOUT_MS
+        value: 15000
+      - key: CURRENT_ACADEMIC_SESSION
+        value: 2025/2026
+      - key: ASYNC_JOBS_ENABLED
+        value: false
+      - key: REDIS_QUEUE_PREFIX
+        value: nilehive
+      - key: JOB_CHUNK_SIZE
+        value: 250
+      - key: JOB_DEFAULT_ATTEMPTS
+        value: 3
+      - key: JOB_BACKOFF_MS
+        value: 5000
+      - key: EMAIL_DELIVERY_ENABLED
+        value: false
+      - key: EMAIL_PROVIDER
+        value: microsoft_graph
+      - key: MICROSOFT_SENDER_EMAIL
+        value: clubservices@nileuniversity.edu.ng
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: FRONTEND_APP_URL
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: ALLOWED_EMAIL_DOMAINS
+        value: nileuniversity.edu.ng
+      - key: REDIS_URL
+        sync: false
+      - key: SENTRY_DSN_BACKEND
+        sync: false
+      - key: SENTRY_DSN_FRONTEND
+        sync: false
+      - key: MICROSOFT_TENANT_ID
+        sync: false
+      - key: MICROSOFT_CLIENT_ID
+        sync: false
+      - key: MICROSOFT_CLIENT_SECRET
+        sync: false

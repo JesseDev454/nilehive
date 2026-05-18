@@ -1,16 +1,20 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { BrandLogo } from "@/components/BrandLogo";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+export default function Index() {
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
-    </div>
+    <main className="flex min-h-screen items-center justify-center bg-background px-6 text-foreground">
+      <div className="nh-card max-w-xl bg-card p-10 text-center">
+        <BrandLogo
+          size="lg"
+          className="mx-auto mb-6 h-24 w-[22rem] max-w-full sm:h-28 sm:w-[24rem]"
+        />
+        <p className="nh-eyebrow">Official university platform</p>
+        <h1 className="nh-title mt-3">Club Services</h1>
+        <p className="mt-4 text-sm leading-6 text-muted-foreground">
+          This fallback route is branded and ready, but the main Nile University Club Services experience
+          lives inside the authenticated application routes.
+        </p>
+      </div>
+    </main>
   );
-};
-
-const Index = PlaceholderIndex;
-
-export default Index;
+}

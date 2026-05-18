@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Membership Status</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Work+Sans:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "outline-variant": "#c4c6ce",
+                      "error-container": "#ffdad6",
+                      "surface-container-high": "#eee8da",
+                      "on-surface-variant": "#44474d",
+                      "surface-bright": "#fff9eb",
+                      "surface-container-low": "#f9f3e5",
+                      "primary": "#00030c",
+                      "outline": "#74777e",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-dim": "#dfdacc",
+                      "on-secondary": "#ffffff",
+                      "secondary-fixed-dim": "#85d7b4",
+                      "on-primary-fixed": "#051b38",
+                      "on-surface": "#1d1c13",
+                      "on-tertiary-fixed-variant": "#5f4100",
+                      "tertiary-fixed": "#ffdeaa",
+                      "on-tertiary-fixed": "#271900",
+                      "inverse-primary": "#b4c7ec",
+                      "inverse-surface": "#333027",
+                      "tertiary-fixed-dim": "#f5bd58",
+                      "secondary-container": "#a0f3cf",
+                      "surface-variant": "#e8e2d4",
+                      "surface-tint": "#4c5f7f",
+                      "surface-container": "#f3eddf",
+                      "on-primary-container": "#7386a8",
+                      "tertiary-container": "#291a00",
+                      "on-primary-fixed-variant": "#354766",
+                      "tertiary": "#040200",
+                      "on-error-container": "#93000a",
+                      "inverse-on-surface": "#f6f0e2",
+                      "secondary": "#0c6b4f",
+                      "on-secondary-container": "#187255",
+                      "on-primary": "#ffffff",
+                      "surface": "#fff9eb",
+                      "on-secondary-fixed-variant": "#00513b",
+                      "on-tertiary-container": "#ac7c1a",
+                      "on-error": "#ffffff",
+                      "surface-container-highest": "#e8e2d4",
+                      "secondary-fixed": "#a0f3cf",
+                      "primary-fixed": "#d6e3ff",
+                      "on-tertiary": "#ffffff",
+                      "on-background": "#1d1c13",
+                      "error": "#ba1a1a",
+                      "background": "#fff9eb",
+                      "on-secondary-fixed": "#002116",
+                      "primary-fixed-dim": "#b4c7ec",
+                      "primary-container": "#071d3a"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0px",
+                      "lg": "0px",
+                      "xl": "0px",
+                      "full": "0px"
+              },
+              "spacing": {},
+              "fontFamily": {
+                      "headline": [
+                              "Work Sans"
+                      ],
+                      "body": [
+                              "Inter"
+                      ],
+                      "label": [
+                              "Inter"
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        body {
+            background-color: #fff9eb; /* surface */
+            color: #1d1c13; /* on-surface */
+            font-family: 'Inter', sans-serif;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Work Sans', sans-serif;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex flex-col pb-20 md:pb-0">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-4 h-16 bg-[#fff9eb] dark:bg-[#00030c] text-[#00030c] dark:text-[#fff9eb] border-b-2 border-[#00030c] font-['Work_Sans'] font-bold tracking-tight uppercase shadow-none">
+<div class="flex items-center gap-3">
+<button aria-label="Menu" class="flex items-center justify-center p-2 hover:bg-[#071d3a] hover:text-white transition-colors active:translate-x-[2px] active:translate-y-[2px]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">menu</span>
+</button>
+<span class="text-xl font-black text-[#00030c] dark:text-[#fff9eb]">Club Services</span>
+</div>
+<div class="flex items-center">
+<button aria-label="User profile avatar" class="flex items-center justify-center hover:bg-[#071d3a] hover:text-white transition-colors p-1 active:translate-x-[2px] active:translate-y-[2px]">
+<img alt="User profile avatar" class="w-8 h-8 object-cover border-2 border-primary" data-alt="Close up portrait of a young male student looking confident, wearing a simple collared shirt, well lit studio portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDAQl-ulMXl6FCr_eH7FfeKnF40vSNqddpG7WENR0JpyIqr_2pLmvfxI0Utr7Up5O3YKBsSDZjEyrv11NzbuaQ-x80Nbrm_OybF7UW0iG6R0uJPE2VaWWugGqO3t8DvcY0hLcLY0vZeYfeGf-QYsoqD_GehFcl638iScitSPdU9czDcpQ6YGvL13K3rCYGsZHG6cq8FUnD1edCGy4VdDAQz0q2LEsnn_0p8ZZvQGjNuSFJUBQEMk6Jyv6-myO4iVJMXPNpGA78rG5EM"/>
+</button>
+</div>
+</header>
+<!-- NavigationDrawer (Hidden on Mobile by default, included for structure) -->
+<aside class="hidden md:flex fixed inset-y-0 left-0 z-[60] flex-col overflow-y-auto h-full w-80 border-r-4 border-[#00030c] bg-[#fff9eb] dark:bg-[#00030c] text-[#00030c] dark:text-[#fff9eb] shadow-[8px_0px_0px_0px_#00030c]">
+<div class="bg-[#071d3a] text-white p-6 border-b-2 border-[#00030c] flex flex-col items-start gap-4">
+<img alt="Nile Student Avatar" class="w-16 h-16 object-cover border-2 border-white" data-alt="Close up portrait of a young male student looking confident, wearing a simple collared shirt, well lit studio portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC35lzUNR8e-iuz183rQ-VG4o4BLh3ar6sI23VYBgcM_FyEaCHDbLAncrWssHDqmskqa-Rs1BoTp83uw0oSUy19XT1cMfVpcMWAbyuzNaJsJeqsLJuVmzWci3F_l-6Ma7S2Hch2zIExBQn-P3v1aWO1pW8hVhMXojmBi3ng4QhBKaFoIG2iykxK8BCMKhOLlSWwUoJvTAjv9pZ9tj3jozYMKFLwOmVAVszmApnDv4D5K5Q6bP0P9hdayrZpKJswKtdfIyTx25V4ZqC2"/>
+<div>
+<h2 class="font-headline font-bold text-xl">Institutional Architect</h2>
+<p class="font-body text-sm opacity-90">Executive Board Member</p>
+<p class="font-body text-xs opacity-70 mt-1 uppercase tracking-wider">Nile University</p>
+</div>
+</div>
+<nav class="flex-1 py-4 font-['Work_Sans'] font-semibold">
+<a class="flex items-center gap-4 text-[#00030c] dark:text-[#f9f3e5] m-2 px-4 py-3 border-2 border-transparent hover:border-[#00030c] hover:bg-[#f9f3e5] dark:hover:bg-[#071d3a] active:translate-x-1 transition-all" href="#">
+<span class="material-symbols-outlined">groups</span>
+                Browse Clubs
+            </a>
+<a class="flex items-center gap-4 text-[#00030c] dark:text-[#f9f3e5] m-2 px-4 py-3 border-2 border-transparent hover:border-[#00030c] hover:bg-[#f9f3e5] dark:hover:bg-[#071d3a] active:translate-x-1 transition-all" href="#">
+<span class="material-symbols-outlined">verified_user</span>
+                My Memberships
+            </a>
+<a class="flex items-center gap-4 text-[#00030c] dark:text-[#f9f3e5] m-2 px-4 py-3 border-2 border-transparent hover:border-[#00030c] hover:bg-[#f9f3e5] dark:hover:bg-[#071d3a] active:translate-x-1 transition-all" href="#">
+<span class="material-symbols-outlined">assignment_late</span>
+                Executive Tasks
+            </a>
+<a class="flex items-center gap-4 bg-[#0c6b4f] text-white border-2 border-[#00030c] shadow-[2px_2px_0px_0px_#00030c] m-2 px-4 py-3 active:translate-x-1 transition-all" href="#">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+                Financials
+            </a>
+<a class="flex items-center gap-4 text-[#00030c] dark:text-[#f9f3e5] m-2 px-4 py-3 border-2 border-transparent hover:border-[#00030c] hover:bg-[#f9f3e5] dark:hover:bg-[#071d3a] active:translate-x-1 transition-all" href="#">
+<span class="material-symbols-outlined">manage_accounts</span>
+                Manage Users
+            </a>
+<a class="flex items-center gap-4 text-[#00030c] dark:text-[#f9f3e5] m-2 px-4 py-3 border-2 border-transparent hover:border-[#00030c] hover:bg-[#f9f3e5] dark:hover:bg-[#071d3a] active:translate-x-1 transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Settings
+            </a>
+</nav>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 mt-16 md:ml-80 p-4 md:p-8 max-w-3xl mx-auto w-full">
+<!-- Hero Section -->
+<div class="mb-8">
+<h1 class="font-headline text-[3.5rem] leading-[1.1] font-black text-primary tracking-[-0.02em] uppercase mb-2">Status</h1>
+<p class="font-body text-body-lg text-on-surface-variant font-medium">Robotics Club Application Process</p>
+</div>
+<!-- Status Badge -->
+<div class="mb-8 flex items-center gap-3">
+<div class="bg-tertiary-fixed text-on-tertiary-fixed font-label text-label-md px-3 py-1 border-2 border-primary uppercase tracking-[0.1em] font-bold inline-flex items-center gap-2">
+<span class="w-2 h-2 bg-primary rounded-none"></span>
+                 Dues payment required
+             </div>
+</div>
+<!-- Timeline Section -->
+<section class="bg-surface-container-low border-2 border-primary shadow-[4px_4px_0px_0px_#00030c] p-6 mb-8 relative">
+<div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjEiIGZpbGw9IiNjNGM2Y2UiIGZpbGwtb3BhY2l0eT0iMC4yIi8+PC9zdmc+')] opacity-50 z-0"></div>
+<h2 class="font-headline text-2xl font-bold text-primary mb-6 relative z-10 border-b-2 border-primary pb-2 uppercase">Application Journey</h2>
+<div class="relative z-10 font-body ml-4 border-l-4 border-primary pb-4">
+<!-- Step 1: Completed -->
+<div class="relative pl-8 pb-8">
+<div class="absolute -left-[14px] top-0 w-6 h-6 bg-secondary border-2 border-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-[16px] font-bold">check</span>
+</div>
+<h3 class="font-bold text-primary text-lg leading-none mb-1">Request Sent</h3>
+<p class="text-sm text-on-surface-variant">Sept 12, 2023 - 14:30</p>
+</div>
+<!-- Step 2: Completed -->
+<div class="relative pl-8 pb-8">
+<div class="absolute -left-[14px] top-0 w-6 h-6 bg-secondary border-2 border-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-[16px] font-bold">check</span>
+</div>
+<h3 class="font-bold text-primary text-lg leading-none mb-1">Under Review</h3>
+<p class="text-sm text-on-surface-variant">Sept 14, 2023 - Faculty Advisor</p>
+</div>
+<!-- Step 3: Current Actionable -->
+<div class="relative pl-8 pb-8">
+<div class="absolute -left-[14px] top-0 w-6 h-6 bg-tertiary-fixed-dim border-2 border-primary flex items-center justify-center animate-pulse">
+<div class="w-2 h-2 bg-primary"></div>
+</div>
+<h3 class="font-bold text-primary text-lg leading-none mb-1">Approved, Dues Required</h3>
+<p class="text-sm text-primary font-medium mt-2 bg-tertiary-fixed inline-block px-2 py-1 border border-primary">Action Needed</p>
+</div>
+<!-- Step 4: Future -->
+<div class="relative pl-8">
+<div class="absolute -left-[14px] top-0 w-6 h-6 bg-surface border-2 border-outline-variant flex items-center justify-center">
+</div>
+<h3 class="font-bold text-outline text-lg leading-none mb-1">Active Member</h3>
+<p class="text-sm text-outline-variant">Pending Payment Verification</p>
+</div>
+</div>
+</section>
+<!-- Dues Payment Card -->
+<section class="bg-surface-container-highest border-2 border-primary shadow-[4px_4px_0px_0px_#00030c] flex flex-col mb-8 relative overflow-hidden group">
+<div class="bg-primary-container text-white p-4 border-b-2 border-primary flex items-center gap-3">
+<span class="material-symbols-outlined text-2xl">account_balance</span>
+<h2 class="font-headline text-xl font-bold uppercase tracking-tight">Dues Payment Instructions</h2>
+</div>
+<div class="p-6 bg-surface-container-highest">
+<p class="font-body text-body-lg text-primary mb-6 font-medium">Please transfer the club membership fee of <strong class="text-xl">500 EGP</strong> to the following university account to finalize your registration.</p>
+<div class="bg-surface border-2 border-primary p-4 mb-6 relative">
+<!-- Decorative ghost corner -->
+<div class="absolute top-0 right-0 w-8 h-8 border-l-2 border-b-2 border-outline-variant opacity-20"></div>
+<dl class="font-body grid grid-cols-1 gap-y-4">
+<div>
+<dt class="text-xs uppercase tracking-widest text-on-surface-variant font-bold mb-1">Bank Name</dt>
+<dd class="text-lg font-bold text-primary font-headline">Nile University Bank</dd>
+</div>
+<div class="border-t-2 border-surface-variant pt-4">
+<dt class="text-xs uppercase tracking-widest text-on-surface-variant font-bold mb-1">Account Number</dt>
+<dd class="text-2xl font-black text-primary font-headline tracking-widest bg-surface-container-low inline-block px-2 border border-primary">123456789</dd>
+</div>
+</dl>
+</div>
+<!-- Payment Form -->
+<div class="border-t-2 border-primary pt-6 mt-2">
+<h3 class="font-headline text-lg font-bold text-primary mb-4 uppercase">Submit Payment Proof</h3>
+<form class="space-y-4 font-body">
+<div>
+<label class="block text-sm font-bold text-primary uppercase tracking-wider mb-2" for="payer_name">Payer Name</label>
+<input class="w-full bg-surface border-2 border-primary px-4 py-3 text-primary focus:outline-none focus:ring-0 focus:border-tertiary-fixed-dim transition-colors placeholder-outline" id="payer_name" name="payer_name" placeholder="Name on the bank transfer" type="text"/>
+</div>
+<div>
+<label class="block text-sm font-bold text-primary uppercase tracking-wider mb-2" for="reference">Transfer Reference Number</label>
+<input class="w-full bg-surface border-2 border-primary px-4 py-3 text-primary focus:outline-none focus:ring-0 focus:border-tertiary-fixed-dim transition-colors placeholder-outline" id="reference" name="reference" placeholder="e.g., TRN-987654321" type="text"/>
+</div>
+<button class="w-full bg-primary text-on-primary font-headline font-bold text-lg uppercase tracking-wider py-4 mt-4 shadow-[4px_4px_0px_0px_#f5bd58] hover:shadow-[0px_0px_0px_0px_#f5bd58] hover:translate-x-[4px] hover:translate-y-[4px] transition-all flex items-center justify-center gap-2" type="button">
+                             I Have Paid
+                             <span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+</form>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-2 py-1 bg-[#fff9eb] dark:bg-[#00030c] border-t-2 border-[#00030c] shadow-[4px_0px_0px_0px_#00030c] font-['Inter'] text-[10px] font-bold tracking-widest uppercase">
+<a class="flex flex-col items-center justify-center text-[#00030c] dark:text-[#e8e2d4] p-2 hover:bg-[#e8e2d4] dark:hover:bg-[#071d3a] transition-all duration-100 active:scale-95 w-full" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">explore</span>
+            Discover
+        </a>
+<a class="flex flex-col items-center justify-center bg-[#071d3a] text-white p-2 scale-105 transition-all duration-100 active:scale-95 w-full" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">assignment_ind</span>
+            Status
+        </a>
+<a class="flex flex-col items-center justify-center text-[#00030c] dark:text-[#e8e2d4] p-2 hover:bg-[#e8e2d4] dark:hover:bg-[#071d3a] transition-all duration-100 active:scale-95 w-full" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">task_alt</span>
+            Tasks
+        </a>
+<a class="flex flex-col items-center justify-center text-[#00030c] dark:text-[#e8e2d4] p-2 hover:bg-[#e8e2d4] dark:hover:bg-[#071d3a] transition-all duration-100 active:scale-95 w-full" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">payments</span>
+            Dues
+        </a>
+<a class="flex flex-col items-center justify-center text-[#00030c] dark:text-[#e8e2d4] p-2 hover:bg-[#e8e2d4] dark:hover:bg-[#071d3a] transition-all duration-100 active:scale-95 w-full" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 0;">admin_panel_settings</span>
+            Admin
+        </a>
+</nav>
+</body></html>

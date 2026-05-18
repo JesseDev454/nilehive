@@ -7,6 +7,7 @@ interface Step {
   label: string;
   status: StepStatus;
   remarks?: string;
+  timestamp?: string;
 }
 
 export function ApprovalStepper({ steps }: { steps: Step[] }) {
@@ -17,7 +18,7 @@ export function ApprovalStepper({ steps }: { steps: Step[] }) {
           <div className="flex flex-col items-center">
             <div
               className={cn(
-                "h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium",
+                "flex h-9 w-9 items-center justify-center border-2 border-foreground text-sm font-black shadow-[3px_3px_0_hsl(var(--foreground))]",
                 step.status === "completed" && "bg-success text-success-foreground",
                 step.status === "current" && "bg-warning text-warning-foreground",
                 step.status === "pending" && "bg-muted text-muted-foreground",
@@ -31,20 +32,23 @@ export function ApprovalStepper({ steps }: { steps: Step[] }) {
             </div>
             {i < steps.length - 1 && (
               <div className={cn(
-                "w-0.5 h-12",
+                "h-12 w-1 border-x border-foreground",
                 step.status === "completed" ? "bg-success" : "bg-border"
               )} />
             )}
           </div>
           <div className="pt-1 pb-4">
             <p className={cn(
-              "text-sm font-medium",
+              "text-sm font-black uppercase tracking-[0.08em]",
               step.status === "pending" && "text-muted-foreground"
             )}>
               {step.label}
             </p>
             {step.remarks && (
               <p className="text-xs text-muted-foreground mt-1">{step.remarks}</p>
+            )}
+            {step.timestamp && (
+              <p className="text-[11px] font-medium text-muted-foreground mt-1">{step.timestamp}</p>
             )}
           </div>
         </div>
