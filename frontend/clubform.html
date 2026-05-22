@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Club Management System feedback form</title>
+    <link rel="stylesheet" href="clubform.css">
+</head>
+<body>
+    
+    
+<section class="feedback-card">
+
+    <div class="feedback-header">
+        <h2>Give Feedback</h2>
+
+        <p>
+            Tell us what was easy, confusing, or broken
+            while using NileHive.
+        </p>
+    </div>
+
+    <form class="feedback-form">
+        <div class="form-group">
+            <label>Feedback Type</label>
+    <select name="role">
+        
+        <option value="">
+            Select your role
+        </option>
+
+        <option value="student">
+            Student
+        </option>
+
+        <option value="club president">
+            Club President
+        </option>
+
+        <option value="club_admin">
+            Club Administrator
+        </option>
+
+        <option value="Club advisor">
+            Club advisor
+        </option>
+
+        <option value="super_admin">
+            System Administrator
+        </option>
+    </select>
+</div>
+
+<div class="form-group">
+            <label>How was your onboarding experience?</label>
+
+            <div class="rating-stars">
+                <span>★</span>
+                <span>★</span>
+                <span>★</span>
+                <span>★</span>
+                <span>★</span>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>
+                What were you trying to do?
+            </label>
+
+             <select>
+                <option>Onboarding</option>
+                <option>Joining a Club</option>
+                <option>Making Payment</option>
+                <option>Login or Signup</option>
+                <option>Track dues</option>
+                <option>Event Management or supervision</option>
+                <option>Other</option>
+            </select>
+        </div>
+        </div>
+
+        <div class="form-group">
+            <label>
+                Were you able to complete it?
+            </label>
+
+            <div class="radio-group">
+                <label>
+                    <input type="radio" name="status">
+                    Yes
+                </label>
+
+                <label>
+                    <input type="radio" name="status">
+                    No
+                </label>
+
+                <label>
+                    <input type="radio" name="status">
+                    Partially
+                </label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>
+                What confused you or went wrong?
+            </label>
+
+            <textarea
+                rows="4"
+                placeholder="Describe any issue..."
+            ></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>
+                Upload Screenshot (Optional)
+            </label>
+
+            <input type="file">
+        </div>
+
+        <div class="form-group">
+            <label>
+                Can we contact you for follow-up?
+            </label>
+
+            <div class="radio-group">
+                <label>
+                    <input type="radio" name="contact">
+                    Yes
+                </label>
+
+                <label>
+                    <input type="radio" name="contact">
+                    No
+                </label>
+            </div>
+        </div>
+    </form>
+    <div class="form-group">
+    <label for="contactEmail">
+        Contact Email (Optional)
+    </label>
+<div class="form-group">
+    <label for="suggestions">
+        Any other suggestions on how we can improve NileHive?
+    </label>
+
+    <textarea
+        id="suggestions"
+        name="suggestions"
+        rows="4"
+        placeholder="Share ideas, improvements, or features you'd like to see..."
+    ></textarea>
+</div>
+    <input
+        type="email"
+        id="contactEmail"
+        name="contactEmail"
+        placeholder="Enter your email if you need assistance or a follow-up"
+    >
+</div>
+<button type="submit">
+            Submit Feedback
+        </button>
+</section>
+ 
+</body>
+</html>
