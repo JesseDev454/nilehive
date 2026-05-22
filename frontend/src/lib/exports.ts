@@ -402,7 +402,7 @@ export function downloadFeedbackCsv(
     const eventName = entry.proposal?.proposed_activity || entry.proposal?.title || "";
 
     return [
-      options.clubNameById?.get(entry.club_id) || entry.club_id,
+      entry.club_id ? options.clubNameById?.get(entry.club_id) || entry.club_id : "No club",
       eventName,
       entry.category,
       entry.rating ?? "",

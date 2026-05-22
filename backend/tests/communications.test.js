@@ -607,6 +607,185 @@ test("student marked attended can submit post-event feedback", async () => {
   assert.equal(feedback.rating, 4);
 });
 
+test("student without a club can submit onboarding feedback", async () => {
+  let createdFeedback;
+  const fakeDatabase = {
+    async createFeedback(feedback) {
+      createdFeedback = feedback;
+      return createFeedbackRecord({
+        ...feedback,
+        id: "feedback-onboarding-1",
+        club_id: null,
+        proposal_id: null,
+        proposal: null
+      });
+    }
+  };
+
+  const feedback = await createFeedback({
+    actor: {
+      id: "student-1",
+      role: "student",
+      clubId: null
+    },
+    payload: {
+      category: "onboarding",
+      rating: 3,
+      comment: "Trying to understand how to join a club."
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(createdFeedback.club_id, null);
+  assert.equal(createdFeedback.submitted_by, "student-1");
+  assert.equal(createdFeedback.category, "onboarding");
+  assert.equal(feedback.club_id, null);
+  assert.equal(feedback.proposal, null);
+});
+
+test("advisor can submit general app feedback", async () => {
+  let createdFeedback;
+  const fakeDatabase = {
+    async createFeedback(feedback) {
+      createdFeedback = feedback;
+      return createFeedbackRecord({
+        ...feedback,
+        id: "feedback-advisor-1",
+        club_id: null,
+        proposal_id: null,
+        proposal: null
+      });
+    }
+  };
+
+  const feedback = await createFeedback({
+    actor: {
+      id: "advisor-1",
+      role: "advisor",
+      clubId: null
+    },
+    payload: {
+      category: "general",
+      rating: 4,
+      comment: "The review workflow is clear."
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(createdFeedback.club_id, null);
+  assert.equal(createdFeedback.submitted_by, "advisor-1");
+  assert.equal(feedback.category, "general");
+});
+
+test("club feedback still requires a club context", async () => {
+  await assert.rejects(
+    () =>
+      createFeedback({
+        actor: {
+          id: "student-1",
+          role: "student",
+          clubId: null
+        },
+        payload: {
+          category: "club",
+          comment: "I need help from a club."
+        },
+        database: {}
+      }),
+    (error) => error.statusCode === 400 && error.code === "VALIDATION_ERROR"
+  );
+});
+
+test("feedback manager can list app feedback from all users only", async () => {
+  const fakeDatabase = {
+    async listFeedback(filters) {
+      assert.deepEqual(filters, {
+        categories: ["general", "onboarding", "club_joining", "dues_payment", "login_access"],
+        proposalId: null,
+        status: undefined
+      });
+      return [
+        createFeedbackRecord({
+          id: "feedback-app-1",
+          club_id: null,
+          proposal_id: null,
+          proposal: null,
+          category: "onboarding",
+          submitted_by: "student-1"
+        })
+      ];
+    }
+  };
+
+  const feedback = await listFeedback({
+    actor: {
+      id: "feedback-manager-1",
+      role: "feedback_manager",
+      clubId: null
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(feedback.length, 1);
+  assert.equal(feedback[0].category, "onboarding");
+  assert.equal(feedback[0].proposal, null);
+});
+
+test("feedback manager category filter remains limited to app feedback", async () => {
+  const fakeDatabase = {
+    async listFeedback(filters) {
+      assert.deepEqual(filters, {
+        categories: ["general", "onboarding", "club_joining", "dues_payment", "login_access"],
+        proposalId: null,
+        status: "open"
+      });
+      return [];
+    }
+  };
+
+  await listFeedback({
+    actor: {
+      id: "feedback-manager-1",
+      role: "feedback_manager",
+      clubId: null
+    },
+    filters: {
+      category: "event",
+      status: "open"
+    },
+    database: fakeDatabase
+  });
+});
+
+test("feedback save database failures return a friendly app message", async () => {
+  const fakeDatabase = {
+    async createFeedback() {
+      throw new Error("null value in column club_id violates not-null constraint");
+    }
+  };
+
+  await assert.rejects(
+    () =>
+      createFeedback({
+        actor: {
+          id: "student-1",
+          role: "student",
+          clubId: null
+        },
+        payload: {
+          category: "onboarding",
+          rating: 4,
+          comment: "The form did not save."
+        },
+        database: fakeDatabase
+      }),
+    (error) =>
+      error.statusCode === 500 &&
+      error.code === "FEEDBACK_SAVE_FAILED" &&
+      error.message === "Feedback could not be saved. Please try again or contact Club Services."
+  );
+});
+
 test("student cannot submit event feedback without attendance", async () => {
   const fakeDatabase = {
     async getApprovedProposalById() {

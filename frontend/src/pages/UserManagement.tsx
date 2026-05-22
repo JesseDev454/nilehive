@@ -33,7 +33,7 @@ import { actionError, actionSuccess } from "@/lib/notify";
 import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 import { isValidStudentId } from "@/lib/studentId";
 
-type EditableRole = Exclude<ProfileRecord["role"], "admin">;
+type EditableRole = Exclude<ProfileRecord["role"], "admin" | "feedback_manager">;
 
 const ROLE_OPTIONS: EditableRole[] = ["student", "executive", "president", "advisor"];
 
@@ -83,7 +83,8 @@ function RoleBadge({ role }: { role: ProfileRecord["role"] }) {
     advisor: "bg-primary/15 text-primary hover:bg-primary/15",
     president: "bg-secondary/15 text-secondary hover:bg-secondary/15",
     executive: "bg-warning/15 text-warning hover:bg-warning/15",
-    student: "bg-muted text-muted-foreground hover:bg-muted"
+    student: "bg-muted text-muted-foreground hover:bg-muted",
+    feedback_manager: "bg-primary/10 text-primary hover:bg-primary/10"
   }[role];
 
   return <Badge className={`${className} capitalize`}>{role}</Badge>;
@@ -92,7 +93,9 @@ function RoleBadge({ role }: { role: ProfileRecord["role"] }) {
 function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onClose: () => void }) {
   const queryClient = useQueryClient();
   const roleTriggerRef = useRef<HTMLButtonElement | null>(null);
-  const [role, setRole] = useState<EditableRole>(user.role === "admin" ? "student" : user.role);
+  const [role, setRole] = useState<EditableRole>(
+    user.role === "admin" || user.role === "feedback_manager" ? "student" : user.role
+  );
   const [clubId, setClubId] = useState(user.club_id || "none");
   const [remarks, setRemarks] = useState("");
   const [presidentConflict, setPresidentConflict] = useState<PresidentConflictDetails["current_president"]>(null);

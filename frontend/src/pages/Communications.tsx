@@ -16,6 +16,7 @@ import {
   ApiClientError,
   ApprovedEventRecord,
   CreateAnnouncementPayload,
+  FeedbackRecord,
   createAnnouncement,
   createFeedback,
   getAnnouncements,
@@ -34,10 +35,29 @@ type AnnouncementPriority = AnnouncementRecord["priority"];
 type AnnouncementFilter = "all" | "unread" | "priority" | "club";
 type HubTab = "announcements" | "feedback";
 type TargetRole = "student" | "executive" | "president" | "advisor" | "admin";
+type FeedbackCategory = FeedbackRecord["category"];
+type FeedbackCompletion = "yes" | "no" | "partially";
 
 const priorityOptions: AnnouncementPriority[] = ["low", "normal", "high", "urgent"];
 const adminRoleOptions: TargetRole[] = ["student", "executive", "president", "advisor", "admin"];
 const presidentRoleOptions: TargetRole[] = ["student", "executive"];
+const feedbackCategoryOptions: Array<{ value: FeedbackCategory; label: string }> = [
+  { value: "onboarding", label: "Onboarding" },
+  { value: "club_joining", label: "Club joining" },
+  { value: "dues_payment", label: "Dues payment" },
+  { value: "login_access", label: "Login/access" },
+  { value: "event", label: "Event" },
+  { value: "club", label: "Club" },
+  { value: "general", label: "General" }
+];
+const feedbackCompletionOptions: Array<{ value: FeedbackCompletion; label: string }> = [
+  { value: "yes", label: "Yes" },
+  { value: "partially", label: "Partially" },
+  { value: "no", label: "No" }
+];
+const appFeedbackCategoryOptions = feedbackCategoryOptions.filter(
+  (option) => !["event", "club"].includes(option.value)
+);
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -130,12 +150,36 @@ function getAudienceHelp(audience: AnnouncementAudience, role: string | null) {
   return "Only users with the selected role will receive this announcement.";
 }
 
-export default function Communications() {
+function getFeedbackCategoryLabel(category: FeedbackCategory) {
+  return feedbackCategoryOptions.find((option) => option.value === category)?.label ?? category;
+}
+
+function buildStructuredFeedbackComment(input: {
+  role: string | null;
+  tryingToDo: string;
+  completion: FeedbackCompletion;
+  issue: string;
+  suggestions: string;
+  canContact: boolean;
+}) {
+  return [
+    `Role: ${input.role ?? "unknown"}`,
+    `Trying to do: ${input.tryingToDo.trim()}`,
+    `Completed task: ${input.completion}`,
+    `Confusing or broken: ${input.issue.trim()}`,
+    `Improvement suggestion: ${input.suggestions.trim() || "Not provided"}`,
+    `Can contact for follow-up: ${input.canContact ? "Yes" : "No"}`
+  ].join("\n");
+}
+
+export default function Communications({ defaultTab = "announcements" }: { defaultTab?: HubTab }) {
   const queryClient = useQueryClient();
   const { role } = useAuth();
+  const isFeedbackManager = role === "feedback_manager";
   const canCreateAnnouncement = role === "admin" || role === "president";
-  const canSubmitFeedback = role === "president" || role === "executive";
-  const [activeTab, setActiveTab] = useState<HubTab>("announcements");
+  const canSubmitFeedback = Boolean(role) && !isFeedbackManager;
+  const canViewFeedback = role === "admin" || role === "advisor" || role === "president" || role === "executive" || isFeedbackManager;
+  const [activeTab, setActiveTab] = useState<HubTab>(defaultTab);
   const [announcementFilter, setAnnouncementFilter] = useState<AnnouncementFilter>("all");
   const [announcementPage, setAnnouncementPage] = useState(1);
   const [announcementTitle, setAnnouncementTitle] = useState("");
@@ -146,11 +190,21 @@ export default function Communications() {
   const [announcementPriority, setAnnouncementPriority] = useState<AnnouncementPriority>("normal");
   const [announcementClubId, setAnnouncementClubId] = useState("");
   const [announcementTargetRole, setAnnouncementTargetRole] = useState<TargetRole>("student");
-  const [feedbackCategory, setFeedbackCategory] = useState<"general" | "event" | "club">("general");
+  const [feedbackCategory, setFeedbackCategory] = useState<FeedbackCategory>("onboarding");
   const [feedbackRating, setFeedbackRating] = useState("");
-  const [feedbackComment, setFeedbackComment] = useState("");
+  const [feedbackTryingToDo, setFeedbackTryingToDo] = useState("");
+  const [feedbackCompletion, setFeedbackCompletion] = useState<FeedbackCompletion>("partially");
+  const [feedbackIssue, setFeedbackIssue] = useState("");
+  const [feedbackSuggestions, setFeedbackSuggestions] = useState("");
+  const [feedbackCanContact, setFeedbackCanContact] = useState("yes");
   const [feedbackClubFilter, setFeedbackClubFilter] = useState("all");
   const [feedbackProposalFilter, setFeedbackProposalFilter] = useState("all");
+  const [feedbackCategoryFilter, setFeedbackCategoryFilter] = useState("all");
+  const [feedbackStatusFilter, setFeedbackStatusFilter] = useState("all");
+  useEffect(() => {
+    setActiveTab(defaultTab);
+  }, [defaultTab]);
+
   useEffect(() => {
     setAnnouncementPage(1);
   }, [announcementFilter]);
@@ -194,12 +248,15 @@ export default function Communications() {
     isError: isFeedbackError,
     error: feedbackError
   } = useQuery({
-    queryKey: ["feedback", feedbackClubFilter, feedbackProposalFilter],
+    queryKey: ["feedback", feedbackClubFilter, feedbackProposalFilter, feedbackCategoryFilter, feedbackStatusFilter, role],
     queryFn: () =>
       getFeedback({
         club_id: role === "admin" && feedbackClubFilter !== "all" ? feedbackClubFilter : undefined,
-        proposal_id: feedbackProposalFilter !== "all" ? feedbackProposalFilter : undefined
+        proposal_id: feedbackProposalFilter !== "all" ? feedbackProposalFilter : undefined,
+        category: feedbackCategoryFilter !== "all" ? (feedbackCategoryFilter as FeedbackCategory) : undefined,
+        status: feedbackStatusFilter !== "all" ? feedbackStatusFilter : undefined
       }),
+    enabled: activeTab === "feedback" && canViewFeedback,
     retry: false
   });
 
@@ -209,7 +266,7 @@ export default function Communications() {
   } = useQuery({
     queryKey: ["feedback-events", feedbackClubFilter],
     queryFn: () => getApprovedEvents({ page: 1, page_size: 100 }),
-    enabled: activeTab === "feedback",
+    enabled: activeTab === "feedback" && canViewFeedback && !isFeedbackManager,
     retry: false
   });
 
@@ -293,13 +350,24 @@ export default function Communications() {
       createFeedback({
         category: feedbackCategory,
         rating: feedbackRating ? Number(feedbackRating) : null,
-        comment: feedbackComment
+        comment: buildStructuredFeedbackComment({
+          role,
+          tryingToDo: feedbackTryingToDo,
+          completion: feedbackCompletion,
+          issue: feedbackIssue,
+          suggestions: feedbackSuggestions,
+          canContact: feedbackCanContact === "yes"
+        })
       }),
     onSuccess: () => {
       actionSuccess("Feedback submitted", "Club Services can now review it.");
-      setFeedbackCategory("general");
+      setFeedbackCategory("onboarding");
       setFeedbackRating("");
-      setFeedbackComment("");
+      setFeedbackTryingToDo("");
+      setFeedbackCompletion("partially");
+      setFeedbackIssue("");
+      setFeedbackSuggestions("");
+      setFeedbackCanContact("yes");
       queryClient.invalidateQueries({ queryKey: ["feedback"] });
     },
     onError: (error) => {
@@ -633,17 +701,22 @@ export default function Communications() {
           </Card>
         </div>
       ) : (
-        <div className="nh-section-grid">
+        <div className={canViewFeedback && !isFeedbackManager ? "nh-section-grid" : "mx-auto grid w-full max-w-5xl gap-6"}>
           {canSubmitFeedback ? (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <MessageSquare className="h-5 w-5 text-primary" />
-                  Submit Feedback
+                  Send App Feedback
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Share club or event feedback for follow-up.
+                  Tell the NileHive team what you were trying to do, what felt confusing, and what would make the app easier.
                 </p>
+                {!canViewFeedback ? (
+                  <p className="border-2 border-primary bg-primary/10 p-3 text-sm font-semibold text-primary">
+                    Your feedback is saved privately for Club Services reviewers. Students cannot see submitted feedback.
+                  </p>
+                ) : null}
               </CardHeader>
               <CardContent>
                 <form className="space-y-4" onSubmit={handleFeedbackSubmit}>
@@ -652,15 +725,17 @@ export default function Communications() {
                       <Label>Category</Label>
                       <Select
                         value={feedbackCategory}
-                        onValueChange={(value) => setFeedbackCategory(value as "general" | "event" | "club")}
+                        onValueChange={(value) => setFeedbackCategory(value as FeedbackCategory)}
                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="general">General</SelectItem>
-                          <SelectItem value="event">Event</SelectItem>
-                          <SelectItem value="club">Club</SelectItem>
+                          {feedbackCategoryOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -674,19 +749,70 @@ export default function Communications() {
                         placeholder="1-5"
                         type="number"
                         value={feedbackRating}
+                        required
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="feedback-comment">Comment</Label>
+                    <Label htmlFor="feedback-goal">What were you trying to do?</Label>
+                    <Input
+                      id="feedback-goal"
+                      value={feedbackTryingToDo}
+                      onChange={(event) => setFeedbackTryingToDo(event.target.value)}
+                      placeholder="e.g. Join a club, upload dues proof, check an event"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Were you able to complete it?</Label>
+                    <Select
+                      value={feedbackCompletion}
+                      onValueChange={(value) => setFeedbackCompletion(value as FeedbackCompletion)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {feedbackCompletionOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="feedback-issue">What confused you or went wrong?</Label>
                     <Textarea
-                      id="feedback-comment"
-                      value={feedbackComment}
-                      onChange={(event) => setFeedbackComment(event.target.value)}
-                      placeholder="Share the feedback..."
+                      id="feedback-issue"
+                      value={feedbackIssue}
+                      onChange={(event) => setFeedbackIssue(event.target.value)}
+                      placeholder="Describe the issue in simple terms..."
                       required
                       rows={5}
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="feedback-suggestion">What should we improve?</Label>
+                    <Textarea
+                      id="feedback-suggestion"
+                      value={feedbackSuggestions}
+                      onChange={(event) => setFeedbackSuggestions(event.target.value)}
+                      placeholder="Optional suggestions from your experience..."
+                      rows={4}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Can the team contact you for follow-up?</Label>
+                    <Select value={feedbackCanContact} onValueChange={setFeedbackCanContact}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="yes">Yes</SelectItem>
+                        <SelectItem value="no">No</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <Button disabled={createFeedbackMutation.isPending} type="submit">
                     {createFeedbackMutation.isPending ? "Submitting..." : "Submit Feedback"}
@@ -694,26 +820,36 @@ export default function Communications() {
                 </form>
               </CardContent>
             </Card>
-          ) : (
+          ) : !isFeedbackManager ? (
             <Card>
               <CardContent className="pt-6 text-sm text-muted-foreground">
-                Feedback submission is currently limited to club operators. You can still read announcements from the main tab.
+                Sign in to send feedback about onboarding, club joining, dues, login access, or events.
               </CardContent>
             </Card>
-          )}
+          ) : null}
 
+          {canViewFeedback ? (
           <Card>
             <CardHeader className="space-y-4">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                <CardTitle>Recent Feedback</CardTitle>
-                {role === "admin" ? (
+                <div>
+                  <CardTitle>{isFeedbackManager ? "App Feedback Inbox" : "Recent Feedback"}</CardTitle>
+                  {isFeedbackManager ? (
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Review onboarding, login/access, club joining, dues payment, and general app feedback from all users.
+                    </p>
+                  ) : null}
+                </div>
+                {role === "admin" || isFeedbackManager ? (
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() =>
                       downloadFeedbackCsv(feedback, {
                         clubNameById,
-                        filenameSuffix:
+                        filenameSuffix: isFeedbackManager
+                          ? "App-Feedback"
+                          :
                           feedbackProposalFilter !== "all"
                             ? "Event"
                             : feedbackClubFilter !== "all"
@@ -728,6 +864,40 @@ export default function Communications() {
                   </Button>
                 ) : null}
               </div>
+              {isFeedbackManager ? (
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Category</Label>
+                    <Select value={feedbackCategoryFilter} onValueChange={setFeedbackCategoryFilter}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All app feedback</SelectItem>
+                        {appFeedbackCategoryOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Status</Label>
+                    <Select value={feedbackStatusFilter} onValueChange={setFeedbackStatusFilter}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All statuses</SelectItem>
+                        <SelectItem value="open">Open</SelectItem>
+                        <SelectItem value="reviewed">Reviewed</SelectItem>
+                        <SelectItem value="archived">Archived</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              ) : (
               <div className="grid gap-3 md:grid-cols-2">
                 {role === "admin" ? (
                   <div className="space-y-2">
@@ -766,6 +936,7 @@ export default function Communications() {
                   </Select>
                 </div>
               </div>
+              )}
             </CardHeader>
             <CardContent className="space-y-3">
               {isLoadingFeedback ? (
@@ -779,9 +950,11 @@ export default function Communications() {
                   <div key={entry.id} className="nh-list-card">
                     {getFeedbackEventLabel(entry) ? (
                       <p className="text-sm font-semibold">{getFeedbackEventLabel(entry)}</p>
-                    ) : null}
+                    ) : (
+                      <p className="text-sm font-semibold">{getFeedbackCategoryLabel(entry.category)} feedback</p>
+                    )}
                     {entry.rating && <p className="mt-1 text-xs text-muted-foreground">Rating: {entry.rating}/5</p>}
-                    <p className="mt-2 text-sm text-muted-foreground">{entry.comment}</p>
+                    <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">{entry.comment}</p>
                     <p className="mt-3 text-xs text-muted-foreground">
                       {getDateLabel(entry.created_at)}
                     </p>
@@ -790,6 +963,7 @@ export default function Communications() {
               )}
             </CardContent>
           </Card>
+          ) : null}
         </div>
       )}
     </div>

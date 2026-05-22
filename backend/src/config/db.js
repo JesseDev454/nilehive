@@ -2318,10 +2318,24 @@ function createDatabase(options = {}) {
 
       if (filters.proposalId) {
         query = query.eq("proposal_id", filters.proposalId);
+      } else if (filters.proposalId === null) {
+        query = query.is("proposal_id", null);
       }
 
       if (filters.submittedBy) {
         query = query.eq("submitted_by", filters.submittedBy);
+      }
+
+      if (filters.category) {
+        query = query.eq("category", filters.category);
+      }
+
+      if (filters.categories) {
+        if (!filters.categories.length) {
+          return [];
+        }
+
+        query = query.in("category", filters.categories);
       }
 
       if (filters.status) {

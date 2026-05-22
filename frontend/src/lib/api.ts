@@ -52,9 +52,9 @@ export interface ClubRecord {
   created_at: string;
 }
 
-export type LocalAppRole = "executive" | "advisor" | "admin" | "president" | "student";
+export type LocalAppRole = "executive" | "advisor" | "admin" | "president" | "student" | "feedback_manager";
 export type PortalRole = "student" | "staff" | "admin";
-export type EffectiveRole = "executive" | "advisor" | "admin" | "president" | "student";
+export type EffectiveRole = "executive" | "advisor" | "admin" | "president" | "student" | "feedback_manager";
 
 export interface ProfileRecord {
   id: string;
@@ -135,7 +135,7 @@ export interface AdminAdvisorAssignmentResult extends AdminRoleChangeResult {
 }
 
 export interface UpdateAdminUserRolePayload {
-  role: Exclude<ProfileRecord["role"], "admin">;
+  role: Exclude<ProfileRecord["role"], "admin" | "feedback_manager">;
   club_id?: string | null;
   remarks?: string | null;
   replace_existing_president?: boolean;
@@ -814,10 +814,10 @@ export interface CreateAnnouncementPayload {
 
 export interface FeedbackRecord {
   id: string;
-  club_id: string;
+  club_id: string | null;
   proposal_id: string | null;
   submitted_by: string;
-  category: "general" | "event" | "club";
+  category: "general" | "event" | "club" | "onboarding" | "club_joining" | "dues_payment" | "login_access";
   rating: number | null;
   comment: string;
   status: "open" | "reviewed" | "archived";
@@ -2199,7 +2199,7 @@ export async function createAnnouncement(payload: CreateAnnouncementPayload, tok
 }
 
 export async function getFeedback(
-  filters: { club_id?: string; proposal_id?: string; status?: string } = {},
+  filters: { club_id?: string; proposal_id?: string; category?: FeedbackRecord["category"]; status?: string } = {},
   token?: string
 ) {
   const params = new URLSearchParams();
@@ -2210,6 +2210,10 @@ export async function getFeedback(
 
   if (filters.proposal_id) {
     params.set("proposal_id", filters.proposal_id);
+  }
+
+  if (filters.category) {
+    params.set("category", filters.category);
   }
 
   if (filters.status) {

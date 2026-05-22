@@ -1,4 +1,4 @@
-import { CalendarDays, ClipboardList, CreditCard, FileText, Home, Plus, Clock, Bell, Users, MessageSquare, UserPlus, UserCog } from "lucide-react";
+import { CalendarDays, ClipboardList, CreditCard, FileText, Home, Plus, Clock, Bell, Users, MessageSquare, UserPlus, UserCog, type LucideIcon } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,6 +7,13 @@ import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, useSidebar,
 } from "@/components/ui/sidebar";
+
+type SidebarItem = {
+  title: string;
+  url: string;
+  icon: LucideIcon;
+  onboardingTarget: string;
+};
 
 export function AppSidebar() {
   const { role } = useRole();
@@ -19,59 +26,69 @@ export function AppSidebar() {
     advisor: "Advisor",
     admin: "Campus One Admin",
     president: "Club President",
-    student: "Student"
+    student: "Student",
+    feedback_manager: "Feedback Manager"
   };
 
-  const execItems = [
-    { title: "Dashboard", url: "/", icon: Home },
-    { title: "My Tasks", url: "/tasks", icon: ClipboardList },
-    { title: "Announcements", url: "/communications", icon: MessageSquare },
-    { title: "Events", url: "/events", icon: CalendarDays },
-    { title: "Notifications", url: "/notifications", icon: Bell },
+  const execItems: SidebarItem[] = [
+    { title: "Dashboard", url: "/", icon: Home, onboardingTarget: "nav-dashboard" },
+    { title: "My Tasks", url: "/tasks", icon: ClipboardList, onboardingTarget: "nav-tasks" },
+    { title: "Announcements", url: "/communications", icon: MessageSquare, onboardingTarget: "nav-communications" },
+    { title: "Events", url: "/events", icon: CalendarDays, onboardingTarget: "nav-events" },
+    { title: "Feedback", url: "/feedback", icon: MessageSquare, onboardingTarget: "nav-feedback" },
+    { title: "Notifications", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications" },
   ];
 
-  const advisorItems = [
-    { title: "Dashboard", url: "/", icon: Home },
-    { title: "Pending Approvals", url: "/approvals", icon: Clock },
-    { title: "Announcements", url: "/communications", icon: MessageSquare },
-    { title: "Events", url: "/events", icon: CalendarDays },
-    { title: "Reports Archive", url: "/archive", icon: FileText },
-    { title: "Notifications", url: "/notifications", icon: Bell },
+  const advisorItems: SidebarItem[] = [
+    { title: "Dashboard", url: "/", icon: Home, onboardingTarget: "nav-dashboard" },
+    { title: "Pending Approvals", url: "/approvals", icon: Clock, onboardingTarget: "nav-approvals" },
+    { title: "Announcements", url: "/communications", icon: MessageSquare, onboardingTarget: "nav-communications" },
+    { title: "Events", url: "/events", icon: CalendarDays, onboardingTarget: "nav-events" },
+    { title: "Reports Archive", url: "/archive", icon: FileText, onboardingTarget: "nav-archive" },
+    { title: "Feedback", url: "/feedback", icon: MessageSquare, onboardingTarget: "nav-feedback" },
+    { title: "Notifications", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications" },
   ];
 
-  const adminItems = [
-    { title: "Dashboard", url: "/", icon: Home },
-    { title: "User Management", url: "/user-management", icon: UserCog },
-    { title: "Final Review", url: "/proposals", icon: FileText },
-    { title: "Membership", url: "/membership", icon: UserPlus },
-    { title: "Members", url: "/members", icon: Users },
-    { title: "Tasks", url: "/tasks", icon: ClipboardList },
-    { title: "Dues", url: "/dues", icon: CreditCard },
-    { title: "Announcements", url: "/communications", icon: MessageSquare },
-    { title: "Events", url: "/events", icon: CalendarDays },
-    { title: "Reports Archive", url: "/archive", icon: FileText },
-    { title: "Notifications", url: "/notifications", icon: Bell },
+  const adminItems: SidebarItem[] = [
+    { title: "Dashboard", url: "/", icon: Home, onboardingTarget: "nav-dashboard" },
+    { title: "User Management", url: "/user-management", icon: UserCog, onboardingTarget: "nav-user-management" },
+    { title: "Final Review", url: "/proposals", icon: FileText, onboardingTarget: "nav-proposals" },
+    { title: "Membership", url: "/membership", icon: UserPlus, onboardingTarget: "nav-membership" },
+    { title: "Members", url: "/members", icon: Users, onboardingTarget: "nav-members" },
+    { title: "Tasks", url: "/tasks", icon: ClipboardList, onboardingTarget: "nav-tasks" },
+    { title: "Dues", url: "/dues", icon: CreditCard, onboardingTarget: "nav-dues" },
+    { title: "Announcements", url: "/communications", icon: MessageSquare, onboardingTarget: "nav-communications" },
+    { title: "Events", url: "/events", icon: CalendarDays, onboardingTarget: "nav-events" },
+    { title: "Reports Archive", url: "/archive", icon: FileText, onboardingTarget: "nav-archive" },
+    { title: "Feedback", url: "/feedback", icon: MessageSquare, onboardingTarget: "nav-feedback" },
+    { title: "Notifications", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications" },
   ];
 
-  const presidentItems = [
-    { title: "Dashboard", url: "/", icon: Home },
-    { title: "Create Proposal", url: "/proposals/new", icon: Plus },
-    { title: "Club Proposals", url: "/proposals", icon: FileText },
-    { title: "Membership Requests", url: "/membership", icon: UserPlus },
-    { title: "Task Delegation", url: "/tasks", icon: ClipboardList },
-    { title: "Members", url: "/members", icon: Users },
-    { title: "Dues", url: "/dues", icon: CreditCard },
-    { title: "Announcements", url: "/communications", icon: MessageSquare },
-    { title: "Events", url: "/events", icon: CalendarDays },
-    { title: "Reports Archive", url: "/archive", icon: FileText },
-    { title: "Notifications", url: "/notifications", icon: Bell },
+  const presidentItems: SidebarItem[] = [
+    { title: "Dashboard", url: "/", icon: Home, onboardingTarget: "nav-dashboard" },
+    { title: "Create Proposal", url: "/proposals/new", icon: Plus, onboardingTarget: "nav-create-proposal" },
+    { title: "Club Proposals", url: "/proposals", icon: FileText, onboardingTarget: "nav-proposals" },
+    { title: "Membership Requests", url: "/membership", icon: UserPlus, onboardingTarget: "nav-membership" },
+    { title: "Task Delegation", url: "/tasks", icon: ClipboardList, onboardingTarget: "nav-tasks" },
+    { title: "Members", url: "/members", icon: Users, onboardingTarget: "nav-members" },
+    { title: "Dues", url: "/dues", icon: CreditCard, onboardingTarget: "nav-dues" },
+    { title: "Announcements", url: "/communications", icon: MessageSquare, onboardingTarget: "nav-communications" },
+    { title: "Events", url: "/events", icon: CalendarDays, onboardingTarget: "nav-events" },
+    { title: "Reports Archive", url: "/archive", icon: FileText, onboardingTarget: "nav-archive" },
+    { title: "Feedback", url: "/feedback", icon: MessageSquare, onboardingTarget: "nav-feedback" },
+    { title: "Notifications", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications" },
   ];
 
-  const studentItems = [
-    { title: "Home", url: "/", icon: Home },
-    { title: "Discover Clubs", url: "/membership", icon: UserPlus },
-    { title: "Events", url: "/events", icon: CalendarDays },
-    { title: "Announcements", url: "/communications", icon: MessageSquare },
+  const studentItems: SidebarItem[] = [
+    { title: "Home", url: "/", icon: Home, onboardingTarget: "nav-dashboard" },
+    { title: "Discover Clubs", url: "/membership", icon: UserPlus, onboardingTarget: "nav-membership" },
+    { title: "Events", url: "/events", icon: CalendarDays, onboardingTarget: "nav-events" },
+    { title: "Announcements", url: "/communications", icon: MessageSquare, onboardingTarget: "nav-communications" },
+    { title: "Feedback", url: "/feedback", icon: MessageSquare, onboardingTarget: "nav-feedback" },
+  ];
+
+  const feedbackManagerItems: SidebarItem[] = [
+    { title: "App Feedback", url: "/feedback", icon: MessageSquare, onboardingTarget: "nav-feedback" },
   ];
 
   const itemsMap = {
@@ -79,7 +96,8 @@ export function AppSidebar() {
     advisor: advisorItems,
     admin: adminItems,
     president: presidentItems,
-    student: studentItems
+    student: studentItems,
+    feedback_manager: feedbackManagerItems
   };
 
   const items = role ? itemsMap[role] : [];
@@ -162,6 +180,7 @@ export function AppSidebar() {
                       to={item.url}
                       end={item.url === "/"}
                       activeOverride={getActiveOverride(item.url)}
+                      data-onboarding-target={item.onboardingTarget}
                       className="flex min-w-0 items-center border-2 border-transparent font-bold uppercase tracking-[0.08em] transition-all duration-200 hover:border-sidebar-primary hover:bg-sidebar-accent/50"
                       activeClassName="translate-x-1 border-sidebar-primary bg-sidebar-accent text-sidebar-accent-foreground shadow-[4px_4px_0_hsl(var(--sidebar-primary))]"
                     >

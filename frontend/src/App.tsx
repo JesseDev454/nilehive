@@ -82,6 +82,12 @@ function ProtectedRoutes() {
     return <ProfileSetup />;
   }
 
+  const effectiveRole = profile.effective_role ?? profile.role;
+
+  if (effectiveRole === "feedback_manager" && location.pathname !== "/feedback") {
+    return <Navigate to="/feedback" replace />;
+  }
+
   return <Outlet />;
 }
 
@@ -114,6 +120,7 @@ const App = () => (
                   <Route path="/members" element={<Members />} />
                   <Route path="/dues" element={<Dues />} />
                   <Route path="/communications" element={<Communications />} />
+                  <Route path="/feedback" element={<Communications defaultTab="feedback" />} />
                   <Route path="/tasks" element={<Tasks />} />
                   <Route path="/clubs/:clubId/dashboard" element={<AdminClubDashboard />} />
                   <Route path="/user-management" element={<UserManagement />} />

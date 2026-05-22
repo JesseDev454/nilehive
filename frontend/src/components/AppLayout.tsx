@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { BrandLogo } from "@/components/BrandLogo";
+import { GuidedOnboarding } from "@/components/GuidedOnboarding";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -60,6 +61,7 @@ function AppShellEffects() {
 
 export function AppLayout() {
   const { profile, role, signOut } = useAuth();
+  const [guideRestartSignal, setGuideRestartSignal] = useState(0);
 
   async function handleSignOut() {
     await signOut();
@@ -70,6 +72,7 @@ export function AppLayout() {
       <div className="flex min-h-screen w-full">
         <AppShellEffects />
         <AppSidebar />
+        <GuidedOnboarding restartSignal={guideRestartSignal} />
         <div className="flex-1 flex flex-col min-w-0">
           <header className="flex h-16 items-center justify-between border-b-2 border-foreground bg-card/95 px-4 backdrop-blur">
             <div className="flex items-center gap-3">
@@ -90,6 +93,14 @@ export function AppLayout() {
                     ? `${role} Mode`
                     : profile?.role ?? "Loading"}
               </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setGuideRestartSignal((value) => value + 1)}
+              >
+                Help / Guide
+              </Button>
               <Button variant="outline" size="sm" onClick={handleSignOut}>
                 Logout
               </Button>

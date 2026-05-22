@@ -74,6 +74,7 @@ function createCommunicationsController(options = {}) {
         filters: {
           club_id: req.query.club_id,
           proposal_id: req.query.proposal_id,
+          category: req.query.category,
           status: req.query.status
         },
         database

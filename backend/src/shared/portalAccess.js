@@ -1,5 +1,5 @@
 const PORTAL_ROLES = new Set(["student", "staff", "admin"]);
-const APP_ROLES = new Set(["student", "executive", "president", "advisor", "admin"]);
+const APP_ROLES = new Set(["student", "executive", "president", "advisor", "admin", "feedback_manager"]);
 
 function normalizePortalRole(role) {
   return PORTAL_ROLES.has(role) ? role : "student";

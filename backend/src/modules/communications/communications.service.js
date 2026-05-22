@@ -15,6 +15,7 @@ const {
   uniqueIds
 } = require("./communications.helpers");
 const {
+  APP_FEEDBACK_CATEGORIES,
   validateCreateAnnouncementPayload,
   validateCreateFeedbackPayload
 } = require("./communications.validation");
@@ -433,14 +434,10 @@ async function createFeedback(options) {
   const { actor, payload, database = db } = options;
   requireActor(actor);
 
-  if (actor.role === "advisor") {
-    throw new ApiError(403, "Advisors can view feedback but should not submit club feedback", "FORBIDDEN");
-  }
-
   const validatedPayload = validateCreateFeedbackPayload(payload);
   let clubId = actor.role === "admin"
-    ? validatedPayload.club_id
-    : requireClubLinkedActor(actor);
+    ? (validatedPayload.club_id ?? null)
+    : (actor.clubId ?? null);
 
   if (validatedPayload.category === "event" && validatedPayload.proposal_id) {
     if (actor.role !== "student") {
@@ -479,7 +476,7 @@ async function createFeedback(options) {
 
     clubId = proposal.club_id;
   } else {
-    if (!clubId) {
+    if (validatedPayload.category === "club" && !clubId) {
       throw new ApiError(400, "Feedback requires a club_id", "VALIDATION_ERROR", {
         field: "club_id"
       });
@@ -498,15 +495,25 @@ async function createFeedback(options) {
     }
   }
 
-  const feedback = await database.createFeedback({
-    club_id: clubId,
-    proposal_id: validatedPayload.proposal_id,
-    submitted_by: actor.id,
-    category: validatedPayload.category,
-    rating: validatedPayload.rating,
-    comment: validatedPayload.comment,
-    status: "open"
-  });
+  let feedback;
+
+  try {
+    feedback = await database.createFeedback({
+      club_id: clubId,
+      proposal_id: validatedPayload.proposal_id,
+      submitted_by: actor.id,
+      category: validatedPayload.category,
+      rating: validatedPayload.rating,
+      comment: validatedPayload.comment,
+      status: "open"
+    });
+  } catch {
+    throw new ApiError(
+      500,
+      "Feedback could not be saved. Please try again or contact Club Services.",
+      "FEEDBACK_SAVE_FAILED"
+    );
+  }
 
   return formatFeedback(feedback);
 }
@@ -515,16 +522,35 @@ async function listFeedback(options) {
   const { actor, filters = {}, database = db } = options;
   requireActor(actor);
 
-  if (!["admin", "advisor", "president", "executive"].includes(actor.role)) {
+  if (!["admin", "advisor", "president", "executive", "feedback_manager"].includes(actor.role)) {
     throw new ApiError(403, "This role cannot view feedback", "FORBIDDEN");
   }
 
+  if (actor.role === "feedback_manager") {
+    const requestedCategory = APP_FEEDBACK_CATEGORIES.includes(filters.category)
+      ? filters.category
+      : null;
+    const feedback = await database.listFeedback({
+      categories: requestedCategory ? [requestedCategory] : APP_FEEDBACK_CATEGORIES,
+      proposalId: null,
+      status: filters.status
+    });
+
+    return feedback.map(formatFeedback);
+  }
+
   const clubFilters = await getVisibleClubFilters(actor, filters.club_id, database);
-  const feedback = await database.listFeedback({
+  const feedbackFilters = {
     ...clubFilters,
     proposalId: filters.proposal_id,
     status: filters.status
-  });
+  };
+
+  if (filters.category) {
+    feedbackFilters.category = filters.category;
+  }
+
+  const feedback = await database.listFeedback(feedbackFilters);
 
   return feedback.map(formatFeedback);
 }

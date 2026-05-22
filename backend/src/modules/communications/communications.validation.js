@@ -1,6 +1,23 @@
 const ApiError = require("../../shared/ApiError");
 const { assertPlainText } = require("../../shared/plainText");
 
+const FEEDBACK_CATEGORIES = [
+  "general",
+  "event",
+  "club",
+  "onboarding",
+  "club_joining",
+  "dues_payment",
+  "login_access"
+];
+const APP_FEEDBACK_CATEGORIES = [
+  "general",
+  "onboarding",
+  "club_joining",
+  "dues_payment",
+  "login_access"
+];
+
 function readRequiredString(payload, fieldName, label) {
   const value = typeof payload[fieldName] === "string"
     ? assertPlainText(payload[fieldName], fieldName, label)
@@ -91,13 +108,15 @@ function validateCreateFeedbackPayload(payload = {}) {
   return {
     club_id: readOptionalString(payload, "club_id"),
     proposal_id: readOptionalString(payload, "proposal_id"),
-    category: readChoice(payload, "category", "Feedback category", ["general", "event", "club"], "general"),
+    category: readChoice(payload, "category", "Feedback category", FEEDBACK_CATEGORIES, "general"),
     rating,
     comment: readRequiredString(payload, "comment", "Feedback comment")
   };
 }
 
 module.exports = {
+  APP_FEEDBACK_CATEGORIES,
+  FEEDBACK_CATEGORIES,
   validateCreateAnnouncementPayload,
   validateCreateFeedbackPayload
 };
