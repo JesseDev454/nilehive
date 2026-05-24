@@ -39,17 +39,18 @@ export default function Login() {
 
   const requestedRedirect = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || "/";
   const redirectTo = isRoleSensitivePath(requestedRedirect) ? "/" : requestedRedirect;
+  const isSignedOutView = new URLSearchParams(location.search).get("signed_out") === "1";
   const passwordAuthEnabled = isPasswordAuthEnabled();
   const cookieAuthEnabled = usesCookieAuthProvider();
 
   useEffect(() => {
-    if (cookieAuthEnabled && !isLoading && !session) {
+    if (cookieAuthEnabled && !isSignedOutView && !isLoading && !session) {
       const targetUrl = isCampusOneOidcAuthProvider()
         ? getCampusOneOidcAuthUrl("login", redirectTo)
         : getPortalAuthUrl("sign-in", `${window.location.origin}${redirectTo}`);
       window.location.assign(targetUrl);
     }
-  }, [cookieAuthEnabled, isLoading, redirectTo, session]);
+  }, [cookieAuthEnabled, isLoading, isSignedOutView, redirectTo, session]);
 
   if (!isLoading && session) {
     return <Navigate to={redirectTo} replace />;
@@ -60,8 +61,22 @@ export default function Login() {
       <main className="flex min-h-screen items-center justify-center bg-background p-6">
         <div className="nh-card max-w-md bg-card p-6 text-center">
           <BrandLogo size="lg" variant="plain" className="mx-auto mb-4 h-20 w-72 max-w-full" />
-          <h1 className="text-2xl font-black uppercase">Opening sign in</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Please wait while we send you to the shared portal.</p>
+          <h1 className="text-2xl font-black uppercase">
+            {isSignedOutView ? "Signed out" : "Opening sign in"}
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {isSignedOutView
+              ? "You have signed out of Club Services. Your CampusOne session may still be active."
+              : "Please wait while we send you to CampusOne."}
+          </p>
+          {isSignedOutView ? (
+            <Button
+              className="mt-5"
+              onClick={() => window.location.assign(getCampusOneOidcAuthUrl("login", redirectTo))}
+            >
+              Sign in with CampusOne
+            </Button>
+          ) : null}
         </div>
       </main>
     );

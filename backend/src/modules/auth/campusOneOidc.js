@@ -468,7 +468,7 @@ function createCampusOneAuthRouter(options = {}) {
 
   router.get("/campus-one/logout", (req, res) => {
     clearCampusOneSessionCookie(res);
-    res.redirect(getEnv().FRONTEND_APP_URL);
+    res.redirect(`${getEnv().FRONTEND_APP_URL.replace(/\/+$/, "")}/login?signed_out=1`);
   });
 
   return router;
