@@ -286,6 +286,7 @@ async function exchangeCodeForTokens({ code, codeVerifier }) {
 }
 
 function getProfileDefaultsFromClaims(claims) {
+  const env = getEnv();
   const portalUserId = String(claims.sub || "").trim();
   const email = String(claims.email || "").trim().toLowerCase();
   const fullName = String(claims.name || claims.preferred_username || email || "Campus One User").trim();
@@ -295,7 +296,7 @@ function getProfileDefaultsFromClaims(claims) {
     throw new ApiError(401, "CampusOne sign-in did not include required profile details", "INVALID_CAMPUS_ONE_PROFILE");
   }
 
-  if (!isAllowedEmail(email)) {
+  if (env.CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN === "true" && !isAllowedEmail(email)) {
     throw new ApiError(403, "Please use your Nile University email address", "UNSUPPORTED_EMAIL_DOMAIN", {
       field: "email"
     });

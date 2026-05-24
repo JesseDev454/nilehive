@@ -2,6 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { createApp } = require("../src/app");
 const { clearEnvCache } = require("../src/config/env");
+const { resolveCampusOneProfile } = require("../src/modules/auth/campusOneOidc");
 const { CAMPUS_ONE_SESSION_COOKIE, createCampusOneSessionToken } = require("../src/shared/campusOneSession");
 
 function createFakeDatabase(profileOverrides = {}) {
@@ -48,6 +49,7 @@ function withCampusOneOidcEnv(t) {
   const previousEnv = {
     AUTH_PROVIDER: process.env.AUTH_PROVIDER,
     CAMPUS_ONE_CLIENT_SECRET: process.env.CAMPUS_ONE_CLIENT_SECRET,
+    CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN: process.env.CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN,
     SUPABASE_URL: process.env.SUPABASE_URL,
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -55,6 +57,7 @@ function withCampusOneOidcEnv(t) {
 
   process.env.AUTH_PROVIDER = "campus_one_oidc";
   process.env.CAMPUS_ONE_CLIENT_SECRET = "test-campus-one-secret";
+  process.env.CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN = "false";
   process.env.SUPABASE_URL = process.env.SUPABASE_URL || "https://example.supabase.co";
   process.env.SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "anon";
   process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "service";
@@ -95,6 +98,41 @@ test("CampusOne OIDC session cookie authenticates profile requests", async (t) =
   assert.equal(payload.data.profile.id, "profile-1");
   assert.equal(payload.data.profile.effective_role, "student");
   assert.equal(payload.data.profile.portal_role, "student");
+});
+
+test("CampusOne OIDC profile resolution trusts CampusOne email claims by default", async (t) => {
+  withCampusOneOidcEnv(t);
+  let createdProfile = null;
+  const database = {
+    async getProfileByPortalUserId() {
+      return null;
+    },
+    async getProfileByEmail() {
+      return null;
+    },
+    async createProfile(profile) {
+      createdProfile = {
+        ...profile,
+        created_at: "2026-05-24T10:00:00.000Z",
+        updated_at: "2026-05-24T10:00:00.000Z"
+      };
+      return createdProfile;
+    }
+  };
+
+  const result = await resolveCampusOneProfile(database, {
+    sub: "campus-user-2",
+    email: "student@campusone.com.ng",
+    email_verified: true,
+    name: "Campus One Student",
+    role: "student",
+    student_id: "020232255"
+  });
+
+  assert.equal(result.profile.email, "student@campusone.com.ng");
+  assert.equal(result.profile.portal_user_id, "campus-user-2");
+  assert.equal(result.portalRole, "student");
+  assert.equal(createdProfile.student_id, "020232255");
 });
 
 test("CampusOne admin session receives effective admin role", async (t) => {

@@ -22,6 +22,7 @@ This document lists the important environment variables used by the frontend and
 | `CAMPUS_ONE_ISSUER` | OIDC mode | CampusOne OIDC issuer | Default is `https://auth.campusone.com.ng` |
 | `CAMPUS_ONE_REDIRECT_URI` | OIDC mode | Backend callback URL registered in CampusOne | Example: `https://clubs-api.campusone.com.ng/api/v1/auth/campus-one/callback` |
 | `CAMPUS_ONE_SCOPES` | No | OIDC scopes requested | Defaults to `openid profile email academic roles offline_access` |
+| `CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN` | No | Optional extra email-domain gate for OIDC users | Defaults to `false` because CampusOne is the trusted identity provider |
 | `ALLOWED_EMAIL_DOMAINS` | Yes | Allowed signup domains | Local often includes `nilehive.test`; production should not |
 | `FRONTEND_APP_URL` | Yes | Frontend origin | Used for redirects and environment alignment |
 | `CORS_ALLOWED_ORIGINS` | Yes | Allowed browser origins | Keep aligned with active frontend URLs |

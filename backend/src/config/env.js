@@ -40,6 +40,7 @@ function getEnv() {
     CAMPUS_ONE_SCOPES: readEnv("CAMPUS_ONE_SCOPES", {
       defaultValue: "openid profile email academic roles offline_access"
     }),
+    CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN: readEnv("CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN", { defaultValue: "false" }),
     REQUEST_TIMEOUT_MS: readEnv("REQUEST_TIMEOUT_MS", { defaultValue: "15000" }),
     ASYNC_JOBS_ENABLED: readEnv("ASYNC_JOBS_ENABLED", { defaultValue: "false" }),
     REDIS_URL: readEnv("REDIS_URL", { defaultValue: "" }),
