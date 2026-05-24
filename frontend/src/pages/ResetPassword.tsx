@@ -8,7 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getUserFacingErrorMessage } from "@/lib/api";
-import { getPortalAuthUrl, isPortalAuthProvider } from "@/lib/env";
+import {
+  getCampusOneOidcAuthUrl,
+  getPortalAuthUrl,
+  isCampusOneOidcAuthProvider,
+  usesCookieAuthProvider
+} from "@/lib/env";
 import { supabase } from "@/lib/supabase";
 
 export default function ResetPassword() {
@@ -18,11 +23,14 @@ export default function ResetPassword() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasRecoverySession, setHasRecoverySession] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
-  const portalAuthEnabled = isPortalAuthProvider();
+  const cookieAuthEnabled = usesCookieAuthProvider();
 
   useEffect(() => {
-    if (portalAuthEnabled) {
-      window.location.assign(getPortalAuthUrl("forgot-password", window.location.origin));
+    if (cookieAuthEnabled) {
+      const targetUrl = isCampusOneOidcAuthProvider()
+        ? getCampusOneOidcAuthUrl("login", "/")
+        : getPortalAuthUrl("forgot-password", window.location.origin);
+      window.location.assign(targetUrl);
       return;
     }
 
@@ -49,9 +57,9 @@ export default function ResetPassword() {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [portalAuthEnabled]);
+  }, [cookieAuthEnabled]);
 
-  if (portalAuthEnabled) {
+  if (cookieAuthEnabled) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background p-6">
         <div className="nh-card max-w-md bg-card p-6 text-center">

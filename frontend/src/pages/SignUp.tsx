@@ -10,7 +10,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
-import { getAllowedEmailDomainLabel, getPortalAuthUrl, isAllowedEmailDomain, isPortalAuthProvider } from "@/lib/env";
+import {
+  getAllowedEmailDomainLabel,
+  getCampusOneOidcAuthUrl,
+  getPortalAuthUrl,
+  isAllowedEmailDomain,
+  isCampusOneOidcAuthProvider,
+  usesCookieAuthProvider
+} from "@/lib/env";
 import { getUserFacingErrorMessage } from "@/lib/api";
 
 const REQUESTED_ROLES = [
@@ -27,19 +34,22 @@ export default function SignUp() {
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [signupError, setSignupError] = useState<string | null>(null);
-  const portalAuthEnabled = isPortalAuthProvider();
+  const cookieAuthEnabled = usesCookieAuthProvider();
 
   useEffect(() => {
-    if (portalAuthEnabled && !isLoading && !session) {
-      window.location.assign(getPortalAuthUrl("sign-up", window.location.origin));
+    if (cookieAuthEnabled && !isLoading && !session) {
+      const targetUrl = isCampusOneOidcAuthProvider()
+        ? getCampusOneOidcAuthUrl("login", "/")
+        : getPortalAuthUrl("sign-up", window.location.origin);
+      window.location.assign(targetUrl);
     }
-  }, [isLoading, portalAuthEnabled, session]);
+  }, [cookieAuthEnabled, isLoading, session]);
 
   if (!isLoading && session) {
     return <Navigate to="/" replace />;
   }
 
-  if (portalAuthEnabled) {
+  if (cookieAuthEnabled) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background p-6">
         <div className="nh-card max-w-md bg-card p-6 text-center">

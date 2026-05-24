@@ -5,6 +5,7 @@ const { logger } = require("./config/logger");
 const errorHandler = require("./middleware/errorHandler");
 const { createRequestContextMiddleware } = require("./middleware/requestContext");
 const { createRequestTimeoutMiddleware } = require("./middleware/requestTimeout");
+const { createCampusOneAuthRouter } = require("./modules/auth/campusOneOidc");
 const { createAdminUsersRouter } = require("./modules/admin-users/admin-users.routes");
 const { createHealthRouter, createReadyRouter } = require("./modules/health/health.routes");
 const { createClubsRouter } = require("./modules/clubs/clubs.routes");
@@ -90,8 +91,21 @@ function createApp(options = {}) {
     });
   });
 
+  app.head("/api/health", (req, res) => {
+    res.status(200).end();
+  });
+
+  app.get("/api/health", (req, res) => {
+    res.status(200).json({
+      status: "healthy",
+      service: "nilehive-backend",
+      timestamp: new Date().toISOString()
+    });
+  });
+
   app.use("/api/v1/health", createHealthRouter({ database }));
   app.use("/api/v1/ready", createReadyRouter({ database }));
+  app.use("/api/v1/auth", createCampusOneAuthRouter({ database }));
   app.use("/api/v1/admin/users", createAdminUsersRouter({ database }));
   app.use("/api/v1/clubs", createClubsRouter({ database }));
   app.use("/api/v1/communications", createCommunicationsRouter({ database }));

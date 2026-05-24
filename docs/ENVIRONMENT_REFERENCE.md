@@ -13,9 +13,15 @@ This document lists the important environment variables used by the frontend and
 | `SUPABASE_URL` | Yes | Supabase project URL | Must match the intended environment |
 | `SUPABASE_ANON_KEY` | Yes | Supabase anon key | Used by some backend flows and parity checks |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Privileged Supabase access | Backend only. Never expose to the frontend |
-| `AUTH_PROVIDER` | No | Backend auth verifier | Use `supabase` locally and `portal` for Buildathon shared auth |
-| `PORTAL_API_BASE_URL` | Portal mode | Campus One auth API | Buildathon default is `https://api.builtbysalih.com` |
-| `PORTAL_ORIGIN` | Portal mode | Campus One portal site | Buildathon default is `https://portal.builtbysalih.com` |
+| `AUTH_PROVIDER` | No | Backend auth verifier | Use `supabase`, `portal`, or `campus_one_oidc` |
+| `PORTAL_API_BASE_URL` | Legacy portal mode | Old shared portal API | Only for the old `portal` auth flow |
+| `PORTAL_ORIGIN` | Legacy portal mode | Old shared portal site | Only for the old `portal` auth flow |
+| `CAMPUS_ONE_CLIENT_ID` | OIDC mode | CampusOne OIDC client ID | Backend only |
+| `CAMPUS_ONE_CLIENT_SECRET` | OIDC mode | CampusOne OIDC client secret | Backend only; never expose to frontend |
+| `CAMPUS_ONE_SESSION_SECRET` | No | Optional local session signing secret | Falls back to CampusOne client secret/service key if empty |
+| `CAMPUS_ONE_ISSUER` | OIDC mode | CampusOne OIDC issuer | Default is `https://auth.campusone.com.ng` |
+| `CAMPUS_ONE_REDIRECT_URI` | OIDC mode | Backend callback URL registered in CampusOne | Example: `https://clubs-api.campusone.com.ng/api/v1/auth/campus-one/callback` |
+| `CAMPUS_ONE_SCOPES` | No | OIDC scopes requested | Defaults to `openid profile email academic roles offline_access` |
 | `ALLOWED_EMAIL_DOMAINS` | Yes | Allowed signup domains | Local often includes `nilehive.test`; production should not |
 | `FRONTEND_APP_URL` | Yes | Frontend origin | Used for redirects and environment alignment |
 | `CORS_ALLOWED_ORIGINS` | Yes | Allowed browser origins | Keep aligned with active frontend URLs |
@@ -43,10 +49,10 @@ This document lists the important environment variables used by the frontend and
 | `VITE_SUPABASE_URL` | Yes | Supabase project URL | Must match the backend environment |
 | `VITE_SUPABASE_ANON_KEY` | Yes | Browser-safe Supabase key | Safe for frontend use |
 | `VITE_ALLOWED_EMAIL_DOMAINS` | Yes | Allowed email domains | Should align with backend rules |
-| `VITE_AUTH_PROVIDER` | No | Frontend auth owner | Use `supabase` locally and `portal` for Buildathon production |
-| `VITE_PORTAL_ORIGIN` | Portal mode | Shared sign-in site | Buildathon default is `https://portal.builtbysalih.com` |
-| `VITE_PORTAL_API_BASE_URL` | Portal mode | Shared auth API | Buildathon default is `https://api.builtbysalih.com` |
-| `VITE_APP_ORIGIN` | Portal mode | Public app origin | Use `https://clubs.builtbysalih.com` in Buildathon production |
+| `VITE_AUTH_PROVIDER` | No | Frontend auth owner | Use `supabase`, `portal`, or `campus_one_oidc` |
+| `VITE_PORTAL_ORIGIN` | Legacy portal mode | Old shared sign-in site | Only for the old `portal` auth flow |
+| `VITE_PORTAL_API_BASE_URL` | Legacy portal mode | Old shared auth API | Only for the old `portal` auth flow |
+| `VITE_APP_ORIGIN` | Cookie auth modes | Public app origin | Use `https://clubs.campusone.com.ng` in CampusOne production |
 | `VITE_AUTH_MODE` | Yes | Active auth mode | Current supported value is `password` |
 | `VITE_MICROSOFT_PASSWORD_HELP_URL` | No | Password reset helper link | Used in auth UI |
 
@@ -63,10 +69,43 @@ This document lists the important environment variables used by the frontend and
 
 - frontend and backend should point to the same Supabase project
 - frontend and backend should agree on allowed email domains
-- portal mode requires the app frontend and app backend to live under `*.builtbysalih.com` so the Campus One cookie can reach the backend
+- `VITE_API_BASE_URL` should be the backend origin only, not the `/api/v1` path
+- OIDC mode requires frontend and backend domains under `campusone.com.ng` so browser cookies work reliably
 - local work should never point at production by accident
 
-## Buildathon Portal Defaults
+## CampusOne OIDC Production Defaults
+
+For the CampusOne production deployment, use OIDC as the identity owner:
+
+Backend:
+
+```env
+AUTH_PROVIDER=campus_one_oidc
+CAMPUS_ONE_CLIENT_ID=your-campusone-client-id
+CAMPUS_ONE_CLIENT_SECRET=your-campusone-client-secret
+CAMPUS_ONE_ISSUER=https://auth.campusone.com.ng
+CAMPUS_ONE_REDIRECT_URI=https://clubs-api.campusone.com.ng/api/v1/auth/campus-one/callback
+FRONTEND_APP_URL=https://clubs.campusone.com.ng
+CORS_ALLOWED_ORIGINS=https://clubs.campusone.com.ng
+```
+
+Frontend:
+
+```env
+VITE_AUTH_PROVIDER=campus_one_oidc
+VITE_API_BASE_URL=https://clubs-api.campusone.com.ng
+VITE_APP_ORIGIN=https://clubs.campusone.com.ng
+```
+
+Register this redirect URL in the CampusOne developer dashboard:
+
+```text
+https://clubs-api.campusone.com.ng/api/v1/auth/campus-one/callback
+```
+
+Keep Supabase configured in both services because NileHive still uses Supabase for Club Services data and storage. In OIDC mode, Supabase Auth is no longer the production sign-in owner.
+
+## Legacy Buildathon Portal Defaults
 
 For the Team G/7 Buildathon deployment, use the shared Campus One portal as the identity owner:
 

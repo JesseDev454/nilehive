@@ -1,4 +1,4 @@
-import { getApiBaseUrl, isPortalAuthProvider } from "@/lib/env";
+import { getApiBaseUrl, usesCookieAuthProvider } from "@/lib/env";
 import { supabase } from "@/lib/supabase";
 
 export interface HealthCheckResponse {
@@ -968,7 +968,7 @@ function dispatchSessionExpired() {
 }
 
 async function getFreshAccessToken(explicitToken?: string, forceRefresh = false) {
-  if (isPortalAuthProvider()) {
+  if (usesCookieAuthProvider()) {
     return "";
   }
 
@@ -1028,7 +1028,7 @@ async function executeRequest<T>(path: string, options: ApiRequestOptions, acces
       method,
       headers,
       body: body !== undefined ? JSON.stringify(body) : undefined,
-      credentials: isPortalAuthProvider() ? "include" : "same-origin"
+      credentials: usesCookieAuthProvider() ? "include" : "same-origin"
     });
   } catch (error) {
     throw new ApiClientError(
@@ -1085,7 +1085,7 @@ async function request<T>(path: string, options: ApiRequestOptions = {}) {
   try {
     return await executeRequest<T>(path, options, accessToken);
   } catch (error) {
-    if (isPortalAuthProvider()) {
+    if (usesCookieAuthProvider()) {
       if (error instanceof ApiClientError && error.status === 401) {
         dispatchSessionExpired();
       }

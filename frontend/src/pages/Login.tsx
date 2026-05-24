@@ -8,7 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
-import { getPortalAuthUrl, getMicrosoftPasswordHelpUrl, isPasswordAuthEnabled, isPortalAuthProvider } from "@/lib/env";
+import {
+  getCampusOneOidcAuthUrl,
+  getPortalAuthUrl,
+  getMicrosoftPasswordHelpUrl,
+  isCampusOneOidcAuthProvider,
+  isPasswordAuthEnabled,
+  usesCookieAuthProvider
+} from "@/lib/env";
 import { getUserFacingErrorMessage } from "@/lib/api";
 
 function isRoleSensitivePath(pathname: string) {
@@ -33,19 +40,22 @@ export default function Login() {
   const requestedRedirect = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || "/";
   const redirectTo = isRoleSensitivePath(requestedRedirect) ? "/" : requestedRedirect;
   const passwordAuthEnabled = isPasswordAuthEnabled();
-  const portalAuthEnabled = isPortalAuthProvider();
+  const cookieAuthEnabled = usesCookieAuthProvider();
 
   useEffect(() => {
-    if (portalAuthEnabled && !isLoading && !session) {
-      window.location.assign(getPortalAuthUrl("sign-in", `${window.location.origin}${redirectTo}`));
+    if (cookieAuthEnabled && !isLoading && !session) {
+      const targetUrl = isCampusOneOidcAuthProvider()
+        ? getCampusOneOidcAuthUrl("login", redirectTo)
+        : getPortalAuthUrl("sign-in", `${window.location.origin}${redirectTo}`);
+      window.location.assign(targetUrl);
     }
-  }, [isLoading, portalAuthEnabled, redirectTo, session]);
+  }, [cookieAuthEnabled, isLoading, redirectTo, session]);
 
   if (!isLoading && session) {
     return <Navigate to={redirectTo} replace />;
   }
 
-  if (portalAuthEnabled) {
+  if (cookieAuthEnabled) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background p-6">
         <div className="nh-card max-w-md bg-card p-6 text-center">

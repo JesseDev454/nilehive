@@ -1,5 +1,5 @@
 import { createStorageSignedUrl, uploadStorageObject } from "@/lib/api";
-import { isPortalAuthProvider } from "@/lib/env";
+import { usesCookieAuthProvider } from "@/lib/env";
 import { supabase } from "@/lib/supabase";
 
 export type StorageBucket = "club-logos" | "event-media" | "dues-receipts" | "reports";
@@ -64,7 +64,7 @@ export async function uploadStorageFile(
 
   const storagePath = toStoragePath(file, options.folder);
 
-  if (isPortalAuthProvider()) {
+  if (usesCookieAuthProvider()) {
     const upload = await uploadStorageObject({
       bucket,
       path: storagePath,
@@ -128,7 +128,7 @@ export async function resolveStorageFileUrl(bucket: StorageBucket, value: string
     return data.publicUrl;
   }
 
-  if (isPortalAuthProvider()) {
+  if (usesCookieAuthProvider()) {
     return createStorageSignedUrl({ bucket, path: value });
   }
 

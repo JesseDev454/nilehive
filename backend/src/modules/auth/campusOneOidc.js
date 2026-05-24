@@ -1,0 +1,405 @@
+const crypto = require("crypto");
+const ApiError = require("../../shared/ApiError");
+const { appendSetCookie, buildCookie, parseCookies } = require("../../shared/cookies");
+const {
+  CAMPUS_ONE_SESSION_COOKIE,
+  SESSION_MAX_AGE_SECONDS,
+  createCampusOneSessionToken
+} = require("../../shared/campusOneSession");
+const { getEnv } = require("../../config/env");
+const { isAllowedEmail } = require("../../config/emailPolicy");
+const { resolveEffectiveRole } = require("../../shared/portalAccess");
+
+const OIDC_STATE_COOKIE = "nilehive_oidc_state";
+const OIDC_VERIFIER_COOKIE = "nilehive_oidc_verifier";
+const OIDC_NONCE_COOKIE = "nilehive_oidc_nonce";
+const OIDC_COOKIE_PATH = "/api/v1/auth/campus-one";
+const OIDC_COOKIE_MAX_AGE_SECONDS = 10 * 60;
+const JWKS_CACHE_TTL_MS = 10 * 60 * 1000;
+
+let jwksCache = {
+  fetchedAt: 0,
+  keys: []
+};
+
+function base64UrlEncode(input) {
+  return Buffer.from(input)
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+}
+
+function base64UrlDecode(input) {
+  const normalized = String(input).replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
+  return Buffer.from(padded, "base64");
+}
+
+function randomToken(byteLength = 32) {
+  return base64UrlEncode(crypto.randomBytes(byteLength));
+}
+
+function getIssuer() {
+  return getEnv().CAMPUS_ONE_ISSUER.replace(/\/+$/, "");
+}
+
+function getAuthorizationEndpoint() {
+  return `${getIssuer()}/api/auth/oauth2/authorize`;
+}
+
+function getTokenEndpoint() {
+  return `${getIssuer()}/api/auth/oauth2/token`;
+}
+
+function getJwksEndpoint() {
+  return `${getIssuer()}/api/auth/jwks`;
+}
+
+function getOidcCookieOptions(maxAge = OIDC_COOKIE_MAX_AGE_SECONDS) {
+  return {
+    httpOnly: true,
+    secure: getEnv().NODE_ENV === "production",
+    sameSite: "Lax",
+    path: OIDC_COOKIE_PATH,
+    maxAge
+  };
+}
+
+function getSessionCookieOptions(maxAge = SESSION_MAX_AGE_SECONDS) {
+  return {
+    httpOnly: true,
+    secure: getEnv().NODE_ENV === "production",
+    sameSite: "Lax",
+    path: "/",
+    maxAge
+  };
+}
+
+function clearCampusOneOidcCookies(res) {
+  for (const cookieName of [OIDC_STATE_COOKIE, OIDC_VERIFIER_COOKIE, OIDC_NONCE_COOKIE]) {
+    appendSetCookie(res, buildCookie(cookieName, "", getOidcCookieOptions(0)));
+  }
+}
+
+function clearCampusOneSessionCookie(res) {
+  appendSetCookie(res, buildCookie(CAMPUS_ONE_SESSION_COOKIE, "", getSessionCookieOptions(0)));
+}
+
+async function fetchJwks() {
+  if (Date.now() - jwksCache.fetchedAt < JWKS_CACHE_TTL_MS && jwksCache.keys.length > 0) {
+    return jwksCache.keys;
+  }
+
+  const response = await fetch(getJwksEndpoint(), { method: "GET" });
+
+  if (!response.ok) {
+    throw new ApiError(502, "CampusOne keys could not be loaded", "CAMPUS_ONE_JWKS_FAILED");
+  }
+
+  const jwks = await response.json();
+  jwksCache = {
+    fetchedAt: Date.now(),
+    keys: Array.isArray(jwks.keys) ? jwks.keys : []
+  };
+
+  return jwksCache.keys;
+}
+
+function decodeJwtSegment(token, index) {
+  const segment = String(token || "").split(".")[index];
+
+  if (!segment) {
+    throw new ApiError(401, "CampusOne returned an invalid sign-in token", "INVALID_ID_TOKEN");
+  }
+
+  try {
+    return JSON.parse(base64UrlDecode(segment).toString("utf8"));
+  } catch {
+    throw new ApiError(401, "CampusOne returned an invalid sign-in token", "INVALID_ID_TOKEN");
+  }
+}
+
+async function verifyCampusOneIdToken(idToken, expectedNonce) {
+  const [encodedHeader, encodedPayload, encodedSignature] = String(idToken || "").split(".");
+
+  if (!encodedHeader || !encodedPayload || !encodedSignature) {
+    throw new ApiError(401, "CampusOne returned an invalid sign-in token", "INVALID_ID_TOKEN");
+  }
+
+  const header = decodeJwtSegment(idToken, 0);
+  const payload = decodeJwtSegment(idToken, 1);
+
+  if (header.alg !== "RS256") {
+    throw new ApiError(401, "CampusOne used an unsupported token signature", "UNSUPPORTED_ID_TOKEN_ALG");
+  }
+
+  const keys = await fetchJwks();
+  const jwk = keys.find((key) => key.kid === header.kid);
+
+  if (!jwk) {
+    throw new ApiError(401, "CampusOne sign-in key was not recognized", "UNKNOWN_ID_TOKEN_KEY");
+  }
+
+  const publicKey = crypto.createPublicKey({ key: jwk, format: "jwk" });
+  const verifier = crypto.createVerify("RSA-SHA256");
+  verifier.update(`${encodedHeader}.${encodedPayload}`);
+  verifier.end();
+
+  const signature = base64UrlDecode(encodedSignature);
+
+  if (!verifier.verify(publicKey, signature)) {
+    throw new ApiError(401, "CampusOne sign-in token could not be verified", "INVALID_ID_TOKEN_SIGNATURE");
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  const env = getEnv();
+
+  if (payload.iss !== getIssuer()) {
+    throw new ApiError(401, "CampusOne sign-in token has an invalid issuer", "INVALID_ID_TOKEN_ISSUER");
+  }
+
+  const audienceMatches = Array.isArray(payload.aud)
+    ? payload.aud.includes(env.CAMPUS_ONE_CLIENT_ID)
+    : payload.aud === env.CAMPUS_ONE_CLIENT_ID;
+
+  if (!audienceMatches) {
+    throw new ApiError(401, "CampusOne sign-in token is for a different app", "INVALID_ID_TOKEN_AUDIENCE");
+  }
+
+  if (!payload.exp || Number(payload.exp) <= now) {
+    throw new ApiError(401, "CampusOne sign-in token has expired", "EXPIRED_ID_TOKEN");
+  }
+
+  if (payload.nonce && payload.nonce !== expectedNonce) {
+    throw new ApiError(401, "CampusOne sign-in could not be verified", "INVALID_OIDC_NONCE");
+  }
+
+  return payload;
+}
+
+async function exchangeCodeForTokens({ code, codeVerifier }) {
+  const env = getEnv();
+  const body = new URLSearchParams({
+    grant_type: "authorization_code",
+    code,
+    redirect_uri: env.CAMPUS_ONE_REDIRECT_URI,
+    client_id: env.CAMPUS_ONE_CLIENT_ID,
+    client_secret: env.CAMPUS_ONE_CLIENT_SECRET,
+    code_verifier: codeVerifier
+  });
+
+  const response = await fetch(getTokenEndpoint(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "application/json"
+    },
+    body
+  });
+
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok || !payload?.id_token) {
+    throw new ApiError(401, "CampusOne sign-in could not be completed", "CAMPUS_ONE_TOKEN_EXCHANGE_FAILED", {
+      status: response.status,
+      error: payload?.error
+    });
+  }
+
+  return payload;
+}
+
+function getProfileDefaultsFromClaims(claims) {
+  const portalUserId = String(claims.sub || "").trim();
+  const email = String(claims.email || "").trim().toLowerCase();
+  const fullName = String(claims.name || claims.preferred_username || email || "Campus One User").trim();
+  const studentId = claims.student_id ? String(claims.student_id).trim() : null;
+
+  if (!portalUserId || !email) {
+    throw new ApiError(401, "CampusOne sign-in did not include required profile details", "INVALID_CAMPUS_ONE_PROFILE");
+  }
+
+  if (!isAllowedEmail(email)) {
+    throw new ApiError(403, "Please use your Nile University email address", "UNSUPPORTED_EMAIL_DOMAIN", {
+      field: "email"
+    });
+  }
+
+  return {
+    portalUserId,
+    email,
+    fullName,
+    studentId,
+    portalRole: claims.role || "student"
+  };
+}
+
+async function resolveCampusOneProfile(database, claims) {
+  const profileDefaults = getProfileDefaultsFromClaims(claims);
+  let profile = database.getProfileByPortalUserId
+    ? await database.getProfileByPortalUserId(profileDefaults.portalUserId)
+    : null;
+
+  if (!profile && database.getProfileByEmail) {
+    profile = await database.getProfileByEmail(profileDefaults.email);
+  }
+
+  if (profile) {
+    const updates = {};
+
+    if (!profile.portal_user_id) {
+      updates.portal_user_id = profileDefaults.portalUserId;
+    }
+
+    if (!profile.email) {
+      updates.email = profileDefaults.email;
+    }
+
+    if (!profile.full_name && profileDefaults.fullName) {
+      updates.full_name = profileDefaults.fullName;
+    }
+
+    if (!profile.student_id && profileDefaults.studentId) {
+      updates.student_id = profileDefaults.studentId;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      profile = await database.updateProfile(profile.id, updates);
+    }
+
+    return {
+      profile,
+      portalRole: profileDefaults.portalRole
+    };
+  }
+
+  profile = await database.createProfile({
+    id: crypto.randomUUID(),
+    portal_user_id: profileDefaults.portalUserId,
+    email: profileDefaults.email,
+    full_name: profileDefaults.fullName,
+    role: "student",
+    club_id: null,
+    student_id: profileDefaults.studentId,
+    requested_role: "student",
+    onboarding_status: "complete",
+    account_status: "active"
+  });
+
+  return {
+    profile,
+    portalRole: profileDefaults.portalRole
+  };
+}
+
+function createCampusOneAuthRouter(options = {}) {
+  const { database } = options;
+  const router = require("express").Router();
+
+  router.get("/campus-one/login", (req, res) => {
+    const env = getEnv();
+
+    if (!env.CAMPUS_ONE_CLIENT_ID || !env.CAMPUS_ONE_CLIENT_SECRET || !env.CAMPUS_ONE_REDIRECT_URI) {
+      throw new ApiError(500, "CampusOne sign-in is not configured yet", "CAMPUS_ONE_NOT_CONFIGURED");
+    }
+
+    const state = randomToken();
+    const nonce = randomToken();
+    const codeVerifier = randomToken(48);
+    const codeChallenge = base64UrlEncode(crypto.createHash("sha256").update(codeVerifier).digest());
+    const returnTo = typeof req.query.return_to === "string" && req.query.return_to.startsWith("/")
+      ? req.query.return_to
+      : "/";
+    const stateValue = base64UrlEncode(JSON.stringify({ state, returnTo }));
+    const authorizationUrl = new URL(getAuthorizationEndpoint());
+
+    authorizationUrl.searchParams.set("response_type", "code");
+    authorizationUrl.searchParams.set("client_id", env.CAMPUS_ONE_CLIENT_ID);
+    authorizationUrl.searchParams.set("redirect_uri", env.CAMPUS_ONE_REDIRECT_URI);
+    authorizationUrl.searchParams.set("scope", env.CAMPUS_ONE_SCOPES);
+    authorizationUrl.searchParams.set("state", stateValue);
+    authorizationUrl.searchParams.set("nonce", nonce);
+    authorizationUrl.searchParams.set("code_challenge", codeChallenge);
+    authorizationUrl.searchParams.set("code_challenge_method", "S256");
+
+    appendSetCookie(res, buildCookie(OIDC_STATE_COOKIE, state, getOidcCookieOptions()));
+    appendSetCookie(res, buildCookie(OIDC_VERIFIER_COOKIE, codeVerifier, getOidcCookieOptions()));
+    appendSetCookie(res, buildCookie(OIDC_NONCE_COOKIE, nonce, getOidcCookieOptions()));
+
+    res.redirect(authorizationUrl.toString());
+  });
+
+  router.get("/campus-one/callback", async (req, res, next) => {
+    try {
+      const code = typeof req.query.code === "string" ? req.query.code : "";
+      const encodedState = typeof req.query.state === "string" ? req.query.state : "";
+      const cookies = parseCookies(req.headers.cookie || "");
+
+      if (!code || !encodedState) {
+        throw new ApiError(400, "CampusOne did not return the required sign-in details", "INVALID_OIDC_CALLBACK");
+      }
+
+      let statePayload;
+
+      try {
+        statePayload = JSON.parse(base64UrlDecode(encodedState).toString("utf8"));
+      } catch {
+        throw new ApiError(400, "CampusOne sign-in state could not be verified", "INVALID_OIDC_STATE");
+      }
+
+      if (!statePayload?.state || statePayload.state !== cookies[OIDC_STATE_COOKIE]) {
+        throw new ApiError(400, "CampusOne sign-in state could not be verified", "INVALID_OIDC_STATE");
+      }
+
+      const codeVerifier = cookies[OIDC_VERIFIER_COOKIE];
+      const nonce = cookies[OIDC_NONCE_COOKIE];
+
+      if (!codeVerifier || !nonce) {
+        throw new ApiError(400, "CampusOne sign-in expired. Please try again.", "OIDC_COOKIE_EXPIRED");
+      }
+
+      const tokens = await exchangeCodeForTokens({ code, codeVerifier });
+      const claims = await verifyCampusOneIdToken(tokens.id_token, nonce);
+      const { profile, portalRole } = await resolveCampusOneProfile(database, claims);
+      const roleContext = resolveEffectiveRole({
+        portalRole,
+        appRole: profile.role
+      });
+      const sessionToken = createCampusOneSessionToken({
+        profileId: profile.id,
+        portalUserId: profile.portal_user_id,
+        portalRole: roleContext.portalRole,
+        email: profile.email
+      });
+      const returnTo = typeof statePayload.returnTo === "string" && statePayload.returnTo.startsWith("/")
+        ? statePayload.returnTo
+        : "/";
+
+      clearCampusOneOidcCookies(res);
+      appendSetCookie(res, buildCookie(CAMPUS_ONE_SESSION_COOKIE, sessionToken, getSessionCookieOptions()));
+      res.redirect(`${getEnv().FRONTEND_APP_URL.replace(/\/+$/, "")}${returnTo}`);
+    } catch (error) {
+      clearCampusOneOidcCookies(res);
+      next(error);
+    }
+  });
+
+  router.post("/campus-one/logout", (req, res) => {
+    clearCampusOneSessionCookie(res);
+    res.status(200).json({ data: { signed_out: true } });
+  });
+
+  router.get("/campus-one/logout", (req, res) => {
+    clearCampusOneSessionCookie(res);
+    res.redirect(getEnv().FRONTEND_APP_URL);
+  });
+
+  return router;
+}
+
+module.exports = {
+  createCampusOneAuthRouter,
+  resolveCampusOneProfile,
+  verifyCampusOneIdToken
+};

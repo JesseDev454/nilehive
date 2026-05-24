@@ -10,11 +10,13 @@ import { Label } from "@/components/ui/label";
 import { getUserFacingErrorMessage } from "@/lib/api";
 import {
   getAllowedEmailDomainLabel,
+  getCampusOneOidcAuthUrl,
   getMicrosoftPasswordHelpUrl,
   getPortalAuthUrl,
   isAllowedEmailDomain,
+  isCampusOneOidcAuthProvider,
   isPasswordAuthEnabled,
-  isPortalAuthProvider
+  usesCookieAuthProvider
 } from "@/lib/env";
 import { supabase } from "@/lib/supabase";
 
@@ -23,15 +25,18 @@ export default function ForgotPassword() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sentEmail, setSentEmail] = useState("");
   const passwordAuthEnabled = isPasswordAuthEnabled();
-  const portalAuthEnabled = isPortalAuthProvider();
+  const cookieAuthEnabled = usesCookieAuthProvider();
 
   useEffect(() => {
-    if (portalAuthEnabled) {
-      window.location.assign(getPortalAuthUrl("forgot-password", window.location.origin));
+    if (cookieAuthEnabled) {
+      const targetUrl = isCampusOneOidcAuthProvider()
+        ? getCampusOneOidcAuthUrl("login", "/")
+        : getPortalAuthUrl("forgot-password", window.location.origin);
+      window.location.assign(targetUrl);
     }
-  }, [portalAuthEnabled]);
+  }, [cookieAuthEnabled]);
 
-  if (portalAuthEnabled) {
+  if (cookieAuthEnabled) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background p-6">
         <div className="nh-card max-w-md bg-card p-6 text-center">

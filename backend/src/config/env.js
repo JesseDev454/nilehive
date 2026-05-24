@@ -30,6 +30,16 @@ function getEnv() {
     AUTH_PROVIDER: readEnv("AUTH_PROVIDER", { defaultValue: "supabase" }),
     PORTAL_API_BASE_URL: readEnv("PORTAL_API_BASE_URL", { defaultValue: "https://api.builtbysalih.com" }),
     PORTAL_ORIGIN: readEnv("PORTAL_ORIGIN", { defaultValue: "https://portal.builtbysalih.com" }),
+    CAMPUS_ONE_CLIENT_ID: readEnv("CAMPUS_ONE_CLIENT_ID", { defaultValue: "" }),
+    CAMPUS_ONE_CLIENT_SECRET: readEnv("CAMPUS_ONE_CLIENT_SECRET", { defaultValue: "" }),
+    CAMPUS_ONE_SESSION_SECRET: readEnv("CAMPUS_ONE_SESSION_SECRET", { defaultValue: "" }),
+    CAMPUS_ONE_ISSUER: readEnv("CAMPUS_ONE_ISSUER", { defaultValue: "https://auth.campusone.com.ng" }),
+    CAMPUS_ONE_REDIRECT_URI: readEnv("CAMPUS_ONE_REDIRECT_URI", {
+      defaultValue: "http://localhost:4000/api/v1/auth/campus-one/callback"
+    }),
+    CAMPUS_ONE_SCOPES: readEnv("CAMPUS_ONE_SCOPES", {
+      defaultValue: "openid profile email academic roles offline_access"
+    }),
     REQUEST_TIMEOUT_MS: readEnv("REQUEST_TIMEOUT_MS", { defaultValue: "15000" }),
     ASYNC_JOBS_ENABLED: readEnv("ASYNC_JOBS_ENABLED", { defaultValue: "false" }),
     REDIS_URL: readEnv("REDIS_URL", { defaultValue: "" }),

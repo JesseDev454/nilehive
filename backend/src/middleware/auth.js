@@ -3,6 +3,7 @@ const { db } = require("../config/db");
 const { getEnv } = require("../config/env");
 const { isAllowedEmail } = require("../config/emailPolicy");
 const ApiError = require("../shared/ApiError");
+const { readCampusOneSessionFromRequest } = require("../shared/campusOneSession");
 const { resolveEffectiveRole } = require("../shared/portalAccess");
 
 function extractBearerToken(authorizationHeader) {
@@ -27,6 +28,10 @@ function assertProfileIsAllowed(profile) {
 
 function isPortalAuthEnabled() {
   return getEnv().AUTH_PROVIDER === "portal";
+}
+
+function isCampusOneOidcAuthEnabled() {
+  return getEnv().AUTH_PROVIDER === "campus_one_oidc";
 }
 
 async function getPortalSessionUser(cookieHeader) {
@@ -153,6 +158,50 @@ async function getPortalAuthContext(req, database) {
   return { authUser, profile, user };
 }
 
+async function getCampusOneOidcAuthContext(req, database) {
+  const session = readCampusOneSessionFromRequest(req);
+  const profile = await database.getProfileById(session.profileId);
+
+  if (!profile) {
+    throw new ApiError(401, "Please sign in again", "PROFILE_NOT_FOUND");
+  }
+
+  assertProfileIsAllowed(profile);
+  const roleContext = resolveEffectiveRole({
+    portalRole: session.portalRole,
+    appRole: profile.role
+  });
+
+  const authUser = {
+    id: profile.id,
+    email: profile.email ?? session.email ?? null,
+    metadata: {
+      portal_user_id: session.portalUserId,
+      portal_role: roleContext.portalRole,
+      app_role: roleContext.appRole,
+      effective_role: roleContext.effectiveRole,
+      role_sync_state: roleContext.roleSyncState
+    }
+  };
+
+  const user = {
+    id: profile.id,
+    email: authUser.email,
+    fullName: profile.full_name ?? null,
+    role: roleContext.effectiveRole,
+    portalRole: roleContext.portalRole,
+    appRole: roleContext.appRole,
+    clubId: profile.club_id,
+    studentId: profile.student_id ?? null,
+    requestedRole: profile.requested_role ?? null,
+    accountStatus: profile.account_status ?? "active",
+    accessPending: roleContext.accessPending,
+    roleSyncState: roleContext.roleSyncState
+  };
+
+  return { authUser, profile, user };
+}
+
 function createAuthMiddleware(options = {}) {
   const { database = db } = options;
 
@@ -160,6 +209,15 @@ function createAuthMiddleware(options = {}) {
     try {
       if (isPortalAuthEnabled()) {
         const context = await getPortalAuthContext(req, database);
+        req.authUser = context.authUser;
+        req.profile = context.profile;
+        req.user = context.user;
+        next();
+        return;
+      }
+
+      if (isCampusOneOidcAuthEnabled()) {
+        const context = await getCampusOneOidcAuthContext(req, database);
         req.authUser = context.authUser;
         req.profile = context.profile;
         req.user = context.user;
@@ -229,6 +287,15 @@ function createAuthUserMiddleware(options = {}) {
         return;
       }
 
+      if (isCampusOneOidcAuthEnabled()) {
+        const context = await getCampusOneOidcAuthContext(req, database);
+        req.authUser = context.authUser;
+        req.profile = context.profile;
+        req.user = context.user;
+        next();
+        return;
+      }
+
       const accessToken = extractBearerToken(req.headers.authorization);
 
       if (!accessToken) {
@@ -287,5 +354,6 @@ module.exports = {
   auth,
   createAuthUserMiddleware,
   createAuthMiddleware,
-  extractBearerToken
+  extractBearerToken,
+  isCampusOneOidcAuthEnabled
 };

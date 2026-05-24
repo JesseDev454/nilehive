@@ -2,11 +2,13 @@ import React, { createContext, useContext, useEffect, useMemo, useRef, useState 
 import type { Session, User } from "@supabase/supabase-js";
 import { getMyProfile, getUserFacingErrorMessage, SESSION_EXPIRED_EVENT } from "@/lib/api";
 import {
+  getCampusOneOidcAuthUrl,
   getAllowedEmailDomainLabel,
   getPortalAuthUrl,
   isAllowedEmailDomain,
+  isCampusOneOidcAuthProvider,
   isPasswordAuthEnabled,
-  isPortalAuthProvider
+  usesCookieAuthProvider
 } from "@/lib/env";
 import { queryClient } from "@/lib/queryClient";
 import { supabase, SUPABASE_AUTH_STORAGE_KEY } from "@/lib/supabase";
@@ -109,6 +111,32 @@ function redirectToPortal(path: "sign-in" | "sign-up" | "forgot-password" | "sig
   window.location.assign(targetUrl);
 }
 
+function redirectToCampusOneOidc(returnTo = "/") {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const nextReturnTo = returnTo.startsWith("/") ? returnTo : "/";
+  window.location.assign(getCampusOneOidcAuthUrl("login", nextReturnTo));
+}
+
+function redirectToCookieAuth(path: "sign-in" | "sign-up" | "forgot-password" | "sign-out", callbackUrl = getCurrentUrl()) {
+  if (isCampusOneOidcAuthProvider()) {
+    if (path === "sign-out") {
+      window.location.assign(getCampusOneOidcAuthUrl("logout"));
+      return;
+    }
+
+    const returnTo = callbackUrl && typeof window !== "undefined" && callbackUrl.startsWith(window.location.origin)
+      ? callbackUrl.slice(window.location.origin.length) || "/"
+      : "/";
+    redirectToCampusOneOidc(returnTo);
+    return;
+  }
+
+  redirectToPortal(path, callbackUrl);
+}
+
 function createPortalSession(input: {
   user: { id: string; email: string | null; role?: PlatformRole | null };
   profile: AppProfile | null;
@@ -186,8 +214,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function expireSessionForInactivity() {
     clearAuthState();
-    if (isPortalAuthProvider()) {
-      redirectToPortal("sign-in");
+    if (usesCookieAuthProvider()) {
+      redirectToCookieAuth("sign-in");
       return;
     }
 
@@ -279,7 +307,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async function loadSession() {
       setIsLoading(true);
 
-      if (isPortalAuthProvider()) {
+      if (usesCookieAuthProvider()) {
         try {
           await loadPortalProfile();
           writeLastActivityAt();
@@ -290,7 +318,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (isMounted) {
             const message = getUserFacingErrorMessage(error, "Please sign in to continue.");
             setProfileError(message);
-            redirectToPortal("sign-in");
+            redirectToCookieAuth("sign-in");
           }
         }
 
@@ -327,7 +355,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     loadSession();
 
-    if (isPortalAuthProvider()) {
+    if (usesCookieAuthProvider()) {
       return () => {
         isMounted = false;
       };
@@ -360,7 +388,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!isPortalAuthProvider() || !session) {
+    if (!usesCookieAuthProvider() || !session) {
       return;
     }
 
@@ -379,7 +407,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         clearAuthState();
         const message = getUserFacingErrorMessage(error, "Please sign in to continue.");
         setProfileError(message);
-        redirectToPortal("sign-in");
+        redirectToCookieAuth("sign-in");
       } finally {
         isRefreshing = false;
       }
@@ -407,8 +435,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     function handleSessionExpired() {
       clearAuthState();
-      if (isPortalAuthProvider()) {
-        redirectToPortal("sign-in");
+      if (usesCookieAuthProvider()) {
+        redirectToCookieAuth("sign-in");
         return;
       }
 
@@ -434,8 +462,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const remainingTime = Math.max(INACTIVITY_TIMEOUT_MS - (Date.now() - lastActivityAt), 0);
       timeoutId = window.setTimeout(() => {
         clearLastActivityAt();
-        if (isPortalAuthProvider()) {
-          redirectToPortal("sign-in");
+        if (usesCookieAuthProvider()) {
+          redirectToCookieAuth("sign-in");
           return;
         }
 
@@ -446,8 +474,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     function handleActivity() {
       if (!hasValidPersistedActivity()) {
         clearLastActivityAt();
-        if (isPortalAuthProvider()) {
-          redirectToPortal("sign-in");
+        if (usesCookieAuthProvider()) {
+          redirectToCookieAuth("sign-in");
           return;
         }
 
@@ -517,8 +545,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       profileError,
       requiresProfileRecovery,
       async signIn(email, password) {
-        if (isPortalAuthProvider()) {
-          redirectToPortal("sign-in");
+        if (usesCookieAuthProvider()) {
+          redirectToCookieAuth("sign-in");
           return;
         }
 
@@ -533,8 +561,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       },
       async signInWithMicrosoft(redirectTo) {
-        if (isPortalAuthProvider()) {
-          redirectToPortal("sign-in", redirectTo);
+        if (usesCookieAuthProvider()) {
+          redirectToCookieAuth("sign-in", redirectTo);
           return;
         }
 
@@ -559,8 +587,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         fullName,
         requestedRole
       }) {
-        if (isPortalAuthProvider()) {
-          redirectToPortal("sign-up");
+        if (usesCookieAuthProvider()) {
+          redirectToCookieAuth("sign-up");
           return {
             needsEmailConfirmation: false,
             userId: null
@@ -604,8 +632,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       },
       async signOut() {
-        if (isPortalAuthProvider()) {
-          redirectToPortal("sign-out", null);
+        if (usesCookieAuthProvider()) {
+          clearAuthState();
+          redirectToCookieAuth("sign-out", null);
           return;
         }
 
@@ -616,7 +645,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return session?.access_token ?? "";
       },
       async refreshProfile() {
-        if (isPortalAuthProvider()) {
+        if (usesCookieAuthProvider()) {
           return loadPortalProfile();
         }
 

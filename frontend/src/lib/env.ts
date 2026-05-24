@@ -9,7 +9,9 @@ function readEnv(name: keyof ImportMetaEnv) {
 }
 
 export function getApiBaseUrl() {
-  return readEnv("VITE_API_BASE_URL").replace(/\/+$/, "");
+  return readEnv("VITE_API_BASE_URL")
+    .replace(/\/+$/, "")
+    .replace(/\/api\/v1$/i, "");
 }
 
 export function getSupabaseUrl() {
@@ -51,14 +53,30 @@ export function getAllowedEmailDomainLabel() {
     .join(", ");
 }
 
-export type AppAuthProvider = "supabase" | "portal";
+export type AppAuthProvider = "supabase" | "portal" | "campus_one_oidc";
 
 export function getAuthProvider(): AppAuthProvider {
-  return import.meta.env.VITE_AUTH_PROVIDER === "portal" ? "portal" : "supabase";
+  if (import.meta.env.VITE_AUTH_PROVIDER === "portal") {
+    return "portal";
+  }
+
+  if (import.meta.env.VITE_AUTH_PROVIDER === "campus_one_oidc") {
+    return "campus_one_oidc";
+  }
+
+  return "supabase";
 }
 
 export function isPortalAuthProvider() {
   return getAuthProvider() === "portal";
+}
+
+export function isCampusOneOidcAuthProvider() {
+  return getAuthProvider() === "campus_one_oidc";
+}
+
+export function usesCookieAuthProvider() {
+  return isPortalAuthProvider() || isCampusOneOidcAuthProvider();
 }
 
 export function getPortalOrigin() {
@@ -99,6 +117,18 @@ export function getPortalAuthUrl(
   }
 
   return `${portalOrigin}/${path}?callbackURL=${callback}`;
+}
+
+export function getCampusOneOidcAuthUrl(path: "login" | "logout", returnTo?: string | null) {
+  const apiBaseUrl = getApiBaseUrl();
+
+  if (path === "logout") {
+    return `${apiBaseUrl}/api/v1/auth/campus-one/logout`;
+  }
+
+  const nextReturnTo = returnTo || "/";
+  const normalizedReturnTo = nextReturnTo.startsWith("/") ? nextReturnTo : "/";
+  return `${apiBaseUrl}/api/v1/auth/campus-one/login?return_to=${encodeURIComponent(normalizedReturnTo)}`;
 }
 
 export type AuthMode = "microsoft" | "password" | "mixed";
