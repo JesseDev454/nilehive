@@ -120,6 +120,88 @@ function decodeJwtSegment(token, index) {
   }
 }
 
+function getJwtHashAlgorithm(alg) {
+  switch (alg) {
+    case "RS256":
+    case "PS256":
+    case "ES256":
+      return "SHA256";
+    case "RS384":
+    case "PS384":
+    case "ES384":
+      return "SHA384";
+    case "RS512":
+    case "PS512":
+    case "ES512":
+      return "SHA512";
+    default:
+      return null;
+  }
+}
+
+function isSupportedJwtAlgorithm(alg) {
+  return ["RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "ES256", "ES384", "ES512", "EdDSA"].includes(alg);
+}
+
+function findSigningKey(keys, header) {
+  if (header.kid) {
+    return keys.find((key) => key.kid === header.kid);
+  }
+
+  return keys.find((key) => key.alg === header.alg) || keys.find((key) => {
+    if (header.alg?.startsWith("RS") || header.alg?.startsWith("PS")) {
+      return key.kty === "RSA";
+    }
+
+    if (header.alg?.startsWith("ES")) {
+      return key.kty === "EC";
+    }
+
+    if (header.alg === "EdDSA") {
+      return key.kty === "OKP";
+    }
+
+    return false;
+  });
+}
+
+function verifyJwtSignature({ alg, publicKey, signingInput, signature }) {
+  if (!isSupportedJwtAlgorithm(alg)) {
+    throw new ApiError(401, "CampusOne used an unsupported token signature", "UNSUPPORTED_ID_TOKEN_ALG", {
+      alg
+    });
+  }
+
+  if (alg === "EdDSA") {
+    return crypto.verify(null, Buffer.from(signingInput), publicKey, signature);
+  }
+
+  const hashAlgorithm = getJwtHashAlgorithm(alg);
+
+  if (!hashAlgorithm) {
+    throw new ApiError(401, "CampusOne used an unsupported token signature", "UNSUPPORTED_ID_TOKEN_ALG", {
+      alg
+    });
+  }
+
+  if (alg.startsWith("PS")) {
+    return crypto.verify(hashAlgorithm, Buffer.from(signingInput), {
+      key: publicKey,
+      padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
+      saltLength: crypto.constants.RSA_PSS_SALTLEN_DIGEST
+    }, signature);
+  }
+
+  if (alg.startsWith("ES")) {
+    return crypto.verify(hashAlgorithm, Buffer.from(signingInput), {
+      key: publicKey,
+      dsaEncoding: "ieee-p1363"
+    }, signature);
+  }
+
+  return crypto.verify(hashAlgorithm, Buffer.from(signingInput), publicKey, signature);
+}
+
 async function verifyCampusOneIdToken(idToken, expectedNonce) {
   const [encodedHeader, encodedPayload, encodedSignature] = String(idToken || "").split(".");
 
@@ -130,25 +212,18 @@ async function verifyCampusOneIdToken(idToken, expectedNonce) {
   const header = decodeJwtSegment(idToken, 0);
   const payload = decodeJwtSegment(idToken, 1);
 
-  if (header.alg !== "RS256") {
-    throw new ApiError(401, "CampusOne used an unsupported token signature", "UNSUPPORTED_ID_TOKEN_ALG");
-  }
-
   const keys = await fetchJwks();
-  const jwk = keys.find((key) => key.kid === header.kid);
+  const jwk = findSigningKey(keys, header);
 
   if (!jwk) {
     throw new ApiError(401, "CampusOne sign-in key was not recognized", "UNKNOWN_ID_TOKEN_KEY");
   }
 
   const publicKey = crypto.createPublicKey({ key: jwk, format: "jwk" });
-  const verifier = crypto.createVerify("RSA-SHA256");
-  verifier.update(`${encodedHeader}.${encodedPayload}`);
-  verifier.end();
-
+  const signingInput = `${encodedHeader}.${encodedPayload}`;
   const signature = base64UrlDecode(encodedSignature);
 
-  if (!verifier.verify(publicKey, signature)) {
+  if (!verifyJwtSignature({ alg: header.alg, publicKey, signingInput, signature })) {
     throw new ApiError(401, "CampusOne sign-in token could not be verified", "INVALID_ID_TOKEN_SIGNATURE");
   }
 
