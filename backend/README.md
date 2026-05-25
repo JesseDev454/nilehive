@@ -41,14 +41,12 @@ Most important variables:
 - `SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `AUTH_PROVIDER`
-- `PORTAL_API_BASE_URL`
-- `PORTAL_ORIGIN`
 - `ALLOWED_EMAIL_DOMAINS`
 - `FRONTEND_APP_URL`
 
 Never expose `SUPABASE_SERVICE_ROLE_KEY` in the frontend.
 
-Use `AUTH_PROVIDER=supabase` for local fallback. Use `AUTH_PROVIDER=portal` for the Buildathon deployment so the backend verifies the Campus One session by forwarding cookies to `https://api.builtbysalih.com/api/session`.
+Use `AUTH_PROVIDER=supabase` for local fallback. Use `AUTH_PROVIDER=campus_one_oidc` for CampusOne production so the backend verifies the OIDC callback, creates the NileHive session cookie, and redirects users back to the frontend.
 
 ## Run
 
@@ -128,11 +126,11 @@ Current migration ceiling:
 0043_portal_auth_profile_bridge.sql
 ```
 
-## Role Model In Portal Mode
+## Role Model In CampusOne OIDC Mode
 
-In `AUTH_PROVIDER=portal`, the backend should treat roles as two separate layers:
+In `AUTH_PROVIDER=campus_one_oidc`, the backend should treat roles as two separate layers:
 
-- Campus One platform role from `/api/session`
+- CampusOne platform role from the verified OIDC token/session
   - `student`
   - `staff`
   - `admin`
@@ -161,6 +159,23 @@ This means NileHive no longer treats local `admin` assignment as the source of t
 
 - [supabase/demo_seed.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/demo_seed.sql)
 - [supabase/seed.sql](C:/Users/goodl/Documents/NileHive/backend/supabase/seed.sql)
+
+## CampusOne Production URLs
+
+Use the frontend as the CampusOne app domain and homepage:
+
+```text
+https://clubs.campusone.com.ng
+```
+
+Use the backend for API calls and the OIDC callback:
+
+```text
+https://clubs-api.campusone.com.ng
+https://clubs-api.campusone.com.ng/api/v1/auth/campus-one/callback
+```
+
+The redirect URL registered in CampusOne must exactly match `CAMPUS_ONE_REDIRECT_URI`.
 
 ## Development Rules
 

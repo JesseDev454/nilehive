@@ -78,6 +78,18 @@ This document lists the important environment variables used by the frontend and
 
 For the CampusOne production deployment, use OIDC as the identity owner:
 
+CampusOne app domain, reserved subdomain, and homepage settings should point to the frontend:
+
+```text
+https://clubs.campusone.com.ng
+```
+
+The backend remains the API and OIDC callback service:
+
+```text
+https://clubs-api.campusone.com.ng
+```
+
 Backend:
 
 ```env
@@ -86,6 +98,7 @@ CAMPUS_ONE_CLIENT_ID=your-campusone-client-id
 CAMPUS_ONE_CLIENT_SECRET=your-campusone-client-secret
 CAMPUS_ONE_ISSUER=https://auth.campusone.com.ng
 CAMPUS_ONE_REDIRECT_URI=https://clubs-api.campusone.com.ng/api/v1/auth/campus-one/callback
+CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN=false
 FRONTEND_APP_URL=https://clubs.campusone.com.ng
 CORS_ALLOWED_ORIGINS=https://clubs.campusone.com.ng
 ```
@@ -105,6 +118,8 @@ https://clubs-api.campusone.com.ng/api/v1/auth/campus-one/callback
 ```
 
 Keep Supabase configured in both services because NileHive still uses Supabase for Club Services data and storage. In OIDC mode, Supabase Auth is no longer the production sign-in owner.
+
+See [CAMPUSONE_RECONFIGURATION_GUIDE.md](C:/Users/goodl/Documents/NileHive/docs/CAMPUSONE_RECONFIGURATION_GUIDE.md) for the full CampusOne dashboard, DNS, Vercel, and Render checklist.
 
 ## Legacy Buildathon Portal Defaults
 

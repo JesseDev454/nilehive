@@ -101,6 +101,15 @@ function getCurrentUrl() {
   return typeof window === "undefined" ? undefined : window.location.href;
 }
 
+function isSignedOutLoginRoute() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const searchParams = new URLSearchParams(window.location.search);
+  return window.location.pathname === "/login" && searchParams.get("signed_out") === "1";
+}
+
 function redirectToPortal(path: "sign-in" | "sign-up" | "forgot-password" | "sign-out", callbackUrl = getCurrentUrl()) {
   if (typeof window === "undefined") {
     return;
@@ -308,6 +317,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
 
       if (usesCookieAuthProvider()) {
+        if (isSignedOutLoginRoute()) {
+          clearAuthState();
+          return;
+        }
+
         try {
           await loadPortalProfile();
           writeLastActivityAt();

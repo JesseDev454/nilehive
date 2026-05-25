@@ -8,7 +8,7 @@ This package contains the NileHive web application. It handles routing, auth-awa
 - session and role contexts
 - the shared API client
 - Supabase browser auth setup for local fallback
-- Campus One portal redirects for Buildathon production
+- CampusOne OIDC redirects for production
 - shared UI components and app shell
 
 ## Stack
@@ -50,13 +50,12 @@ VITE_AUTH_MODE=password
 
 Do not place the Supabase service role key in the frontend.
 
-For Buildathon production, switch to the shared portal:
+For CampusOne production, switch to OIDC:
 
 ```env
-VITE_AUTH_PROVIDER=portal
-VITE_PORTAL_ORIGIN=https://portal.builtbysalih.com
-VITE_PORTAL_API_BASE_URL=https://api.builtbysalih.com
-VITE_APP_ORIGIN=https://clubs.builtbysalih.com
+VITE_AUTH_PROVIDER=campus_one_oidc
+VITE_API_BASE_URL=https://clubs-api.campusone.com.ng
+VITE_APP_ORIGIN=https://clubs.campusone.com.ng
 ```
 
 ## Run
@@ -102,15 +101,15 @@ Signup does not assign a club. Students join a club later from `Discover Clubs`.
 ### Sign-in and session behavior
 
 - Supabase browser auth is used in local fallback mode
-- Campus One portal owns signup, sign-in, logout, and account recovery in Buildathon production
+- CampusOne OIDC owns signup, sign-in, logout, and account recovery in production
 - the app loads the linked profile after sign-in
-- in portal mode the app reads two role layers:
+- in CampusOne OIDC mode the app reads two role layers:
   - Campus One platform role: `student`, `staff`, or `admin`
   - NileHive local app role: `student`, `executive`, `president`, or `advisor`
 - the frontend resolves an effective experience from those two layers
 - inactivity protection signs the user out after the configured timeout, including persisted-session re-entry checks
 
-### Role routing in portal mode
+### Role routing in CampusOne OIDC mode
 
 - Campus One `admin` -> NileHive admin experience
 - Campus One `staff` + local `advisor` -> advisor experience
@@ -149,12 +148,12 @@ Students browse clubs, open one club’s join page, and submit:
 Example:
 
 ```env
-VITE_API_BASE_URL=https://clubs-api.builtbysalih.com
+VITE_API_BASE_URL=https://clubs-api.campusone.com.ng
 ```
 
 Do not append `/api/v1`.
 
-For Buildathon production, prefer a backend under `*.builtbysalih.com` so the Campus One cookie can reach it. A plain `onrender.com` backend can cause portal sign-in loops because the shared cookie is scoped to `.builtbysalih.com`.
+For CampusOne production, the CampusOne app domain and homepage should be the frontend: `https://clubs.campusone.com.ng`. The backend should remain the API and OIDC callback service: `https://clubs-api.campusone.com.ng`.
 
 ## More Reading
 

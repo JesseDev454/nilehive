@@ -42,6 +42,22 @@ services:
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
+      - key: AUTH_PROVIDER
+        sync: false
+      - key: CAMPUS_ONE_CLIENT_ID
+        sync: false
+      - key: CAMPUS_ONE_CLIENT_SECRET
+        sync: false
+      - key: CAMPUS_ONE_SESSION_SECRET
+        sync: false
+      - key: CAMPUS_ONE_ISSUER
+        value: https://auth.campusone.com.ng
+      - key: CAMPUS_ONE_REDIRECT_URI
+        sync: false
+      - key: CAMPUS_ONE_SCOPES
+        value: openid profile email academic roles offline_access
+      - key: CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN
+        value: false
       - key: FRONTEND_APP_URL
         sync: false
       - key: CORS_ALLOWED_ORIGINS

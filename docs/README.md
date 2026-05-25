@@ -18,6 +18,9 @@ Use this index to find the right guide quickly.
 - [ENVIRONMENT_REFERENCE.md](C:/Users/goodl/Documents/NileHive/docs/ENVIRONMENT_REFERENCE.md)
   Backend and frontend environment variables, examples, and safety notes
 
+- [CAMPUSONE_RECONFIGURATION_GUIDE.md](C:/Users/goodl/Documents/NileHive/docs/CAMPUSONE_RECONFIGURATION_GUIDE.md)
+  CampusOne app recreation, frontend-domain setup, OIDC redirect, DNS, Vercel, and Render checklist
+
 - [WORKFLOWS.md](C:/Users/goodl/Documents/NileHive/docs/WORKFLOWS.md)
   Business flows for signup, club joining, dues, proposals, and events
 
@@ -31,3 +34,7 @@ Use this index to find the right guide quickly.
 - [PRODUCTION_HANDOFF.md](C:/Users/goodl/Documents/NileHive/docs/PRODUCTION_HANDOFF.md)
 - [PRODUCTION_FRESH_START.md](C:/Users/goodl/Documents/NileHive/docs/PRODUCTION_FRESH_START.md)
 - [SUPABASE_RLS_AUDIT_CHECKLIST.md](C:/Users/goodl/Documents/NileHive/docs/SUPABASE_RLS_AUDIT_CHECKLIST.md)
+- [CAMPUSONE_LIVE_DEPLOYMENT_ACTION_PLAN.md](C:/Users/goodl/Documents/NileHive/docs/CAMPUSONE_LIVE_DEPLOYMENT_ACTION_PLAN.md)
+  CampusOne rollout plan covering onboarding, KPIs, first two weeks, feedback, privacy, and support
+- [MIGAKI_DEPLOYMENT_STANDARD_RESPONSE.md](C:/Users/goodl/Documents/NileHive/docs/MIGAKI_DEPLOYMENT_STANDARD_RESPONSE.md)
+  NileHive response mapped to the Migaki Deployment Standard for Buildathon 2026
