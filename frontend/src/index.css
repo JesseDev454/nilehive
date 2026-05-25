@@ -221,7 +221,7 @@
     align-items: center;
     justify-content: center;
     border: 3px solid hsl(var(--sidebar-border));
-    border-radius: 1.25rem;
+    border-radius: 9999px;
     background: hsl(var(--primary));
     color: hsl(var(--primary-foreground));
     box-shadow: 5px 5px 0 hsl(var(--neo-shadow));

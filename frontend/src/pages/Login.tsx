@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { toast } from "sonner";
-import { ArrowRight, Lock, Mail, ShieldCheck } from "lucide-react";
+import { ArrowRight, Lock, Mail, School, ShieldCheck } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Button } from "@/components/ui/button";
@@ -88,10 +88,22 @@ export default function Login() {
             <div className="absolute -left-5 -top-5 rounded-full border-3 border-foreground bg-accent px-4 py-2 text-xs font-black uppercase tracking-[0.12em] shadow-[4px_4px_0_hsl(var(--neo-shadow))]">
               CampusOne SSO
             </div>
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full border-3 border-foreground bg-muted shadow-neo-sm">
-              <ShieldCheck className="h-8 w-8 text-primary" />
+            <div className="mx-auto mb-8 flex justify-center" aria-hidden="true">
+              <div className="club-logo-orbit">
+                <span className="club-logo-orbit-ring club-logo-orbit-ring-primary">
+                  <span className="club-logo-orbit-dot club-logo-orbit-dot-green" />
+                </span>
+                <span className="club-logo-orbit-ring club-logo-orbit-ring-secondary">
+                  <span className="club-logo-orbit-dot club-logo-orbit-dot-blue" />
+                </span>
+                <span className="club-logo-orbit-ring club-logo-orbit-ring-tertiary">
+                  <span className="club-logo-orbit-dot club-logo-orbit-dot-sky" />
+                </span>
+                <div className="club-logo-core">
+                  <School className="h-8 w-8" />
+                </div>
+              </div>
             </div>
-            <BrandLogo size="lg" variant="plain" className="mx-auto mb-8 h-20 w-[22rem] max-w-full" />
             <h1 className="text-5xl font-black leading-none tracking-[-0.05em] md:text-7xl">
               Welcome Back.
             </h1>
