@@ -137,6 +137,153 @@ test("CampusOne OIDC profile resolution trusts CampusOne email claims by default
   assert.equal(createdProfile.student_id, "020232255");
 });
 
+test("CampusOne OIDC ignores invalid student ID claims on new profiles", async (t) => {
+  withCampusOneOidcEnv(t);
+  let createdProfile = null;
+  const database = {
+    async getProfileByPortalUserId() {
+      return null;
+    },
+    async getProfileByEmail() {
+      return null;
+    },
+    async createProfile(profile) {
+      createdProfile = {
+        ...profile,
+        created_at: "2026-05-24T10:00:00.000Z",
+        updated_at: "2026-05-24T10:00:00.000Z"
+      };
+      return createdProfile;
+    }
+  };
+
+  const result = await resolveCampusOneProfile(database, {
+    sub: "campus-user-invalid-id",
+    email: "student-invalid-id@campusone.com.ng",
+    email_verified: true,
+    name: "Campus One Student",
+    role: "student",
+    student_id: "20232286"
+  });
+
+  assert.equal(result.profile.student_id, null);
+  assert.equal(createdProfile.student_id, null);
+});
+
+test("CampusOne OIDC does not write invalid student ID claims to existing profiles", async (t) => {
+  withCampusOneOidcEnv(t);
+  let updatePayload = null;
+  const database = {
+    async getProfileByPortalUserId() {
+      return null;
+    },
+    async getProfileByEmail() {
+      return {
+        id: "profile-existing",
+        portal_user_id: null,
+        email: "existing@campusone.com.ng",
+        full_name: "Existing Student",
+        role: "student",
+        club_id: null,
+        student_id: null,
+        requested_role: "student",
+        onboarding_status: "complete",
+        account_status: "active",
+        created_at: "2026-05-24T10:00:00.000Z",
+        updated_at: "2026-05-24T10:00:00.000Z"
+      };
+    },
+    async updateProfile(profileId, update) {
+      updatePayload = update;
+      return {
+        id: profileId,
+        portal_user_id: update.portal_user_id,
+        email: "existing@campusone.com.ng",
+        full_name: "Existing Student",
+        role: "student",
+        club_id: null,
+        student_id: null,
+        requested_role: "student",
+        onboarding_status: "complete",
+        account_status: "active",
+        created_at: "2026-05-24T10:00:00.000Z",
+        updated_at: "2026-05-24T10:00:00.000Z"
+      };
+    }
+  };
+
+  const result = await resolveCampusOneProfile(database, {
+    sub: "campus-user-existing-invalid-id",
+    email: "existing@campusone.com.ng",
+    email_verified: true,
+    name: "Existing Student",
+    role: "student",
+    student_id: "20232286"
+  });
+
+  assert.equal(result.profile.student_id, null);
+  assert.deepEqual(updatePayload, {
+    portal_user_id: "campus-user-existing-invalid-id"
+  });
+});
+
+test("CampusOne OIDC keeps existing valid student ID when claim is invalid", async (t) => {
+  withCampusOneOidcEnv(t);
+  let updatePayload = null;
+  const database = {
+    async getProfileByPortalUserId() {
+      return null;
+    },
+    async getProfileByEmail() {
+      return {
+        id: "profile-existing-valid-id",
+        portal_user_id: null,
+        email: "existing-valid@campusone.com.ng",
+        full_name: "Existing Student",
+        role: "student",
+        club_id: null,
+        student_id: "020232255",
+        requested_role: "student",
+        onboarding_status: "complete",
+        account_status: "active",
+        created_at: "2026-05-24T10:00:00.000Z",
+        updated_at: "2026-05-24T10:00:00.000Z"
+      };
+    },
+    async updateProfile(profileId, update) {
+      updatePayload = update;
+      return {
+        id: profileId,
+        portal_user_id: update.portal_user_id,
+        email: "existing-valid@campusone.com.ng",
+        full_name: "Existing Student",
+        role: "student",
+        club_id: null,
+        student_id: "020232255",
+        requested_role: "student",
+        onboarding_status: "complete",
+        account_status: "active",
+        created_at: "2026-05-24T10:00:00.000Z",
+        updated_at: "2026-05-24T10:00:00.000Z"
+      };
+    }
+  };
+
+  const result = await resolveCampusOneProfile(database, {
+    sub: "campus-user-existing-valid-id",
+    email: "existing-valid@campusone.com.ng",
+    email_verified: true,
+    name: "Existing Student",
+    role: "student",
+    student_id: "20232286"
+  });
+
+  assert.equal(result.profile.student_id, "020232255");
+  assert.deepEqual(updatePayload, {
+    portal_user_id: "campus-user-existing-valid-id"
+  });
+});
+
 test("CampusOne admin session receives effective admin role", async (t) => {
   withCampusOneOidcEnv(t);
   const server = await createTestServer(createFakeDatabase({ role: "student" }));

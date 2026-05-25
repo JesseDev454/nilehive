@@ -9,6 +9,7 @@ const {
 const { getEnv } = require("../../config/env");
 const { isAllowedEmail } = require("../../config/emailPolicy");
 const { resolveEffectiveRole } = require("../../shared/portalAccess");
+const { isValidStudentId, normalizeStudentId } = require("../../shared/studentId");
 
 const OIDC_STATE_COOKIE = "nilehive_oidc_state";
 const OIDC_VERIFIER_COOKIE = "nilehive_oidc_verifier";
@@ -302,7 +303,8 @@ function getProfileDefaultsFromClaims(claims) {
   const portalUserId = String(claims.sub || "").trim();
   const email = String(claims.email || "").trim().toLowerCase();
   const fullName = String(claims.name || claims.preferred_username || email || "Campus One User").trim();
-  const studentId = claims.student_id ? String(claims.student_id).trim() : null;
+  const claimedStudentId = normalizeStudentId(claims.student_id);
+  const studentId = isValidStudentId(claimedStudentId) ? claimedStudentId : null;
 
   if (!portalUserId || !email) {
     throw new ApiError(401, "CampusOne sign-in did not include required profile details", "INVALID_CAMPUS_ONE_PROFILE");
@@ -457,7 +459,19 @@ function createCampusOneAuthRouter(options = {}) {
 
       const tokens = await exchangeCodeForTokens({ code, codeVerifier });
       const claims = await verifyCampusOneIdToken(tokens.id_token, nonce);
-      const { profile, portalRole } = await resolveCampusOneProfile(database, claims);
+      let profile;
+      let portalRole;
+
+      try {
+        const resolvedProfile = await resolveCampusOneProfile(database, claims);
+        profile = resolvedProfile.profile;
+        portalRole = resolvedProfile.portalRole;
+      } catch (error) {
+        clearCampusOneOidcCookies(res);
+        res.redirect(getFrontendLoginUrl({ auth_error: "failed" }));
+        return;
+      }
+
       const roleContext = resolveEffectiveRole({
         portalRole,
         appRole: profile.role
