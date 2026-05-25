@@ -4,85 +4,87 @@
 
 @layer base {
   :root {
-    --background: 210 45% 98%;
-    --foreground: 221 46% 13%;
+    --background: 210 33% 98%;
+    --foreground: 220 100% 6%;
 
     --card: 0 0% 100%;
-    --card-foreground: 221 46% 13%;
+    --card-foreground: 220 100% 6%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 221 46% 13%;
+    --popover-foreground: 220 100% 6%;
 
-    --primary: 219 70% 37%;
+    --primary: 212 100% 14%;
     --primary-foreground: 210 45% 98%;
 
-    --secondary: 160 48% 31%;
-    --secondary-foreground: 210 45% 98%;
+    --secondary: 107 45% 54%;
+    --secondary-foreground: 220 100% 6%;
 
-    --muted: 213 30% 92%;
-    --muted-foreground: 219 19% 38%;
+    --muted: 210 17% 94%;
+    --muted-foreground: 220 7% 29%;
 
-    --accent: 42 64% 57%;
-    --accent-foreground: 221 46% 13%;
+    --accent: 199 88% 84%;
+    --accent-foreground: 220 100% 6%;
 
-    --destructive: 0 70% 42%;
+    --destructive: 0 75% 42%;
     --destructive-foreground: 210 45% 98%;
 
-    --warning: 42 64% 57%;
-    --warning-foreground: 221 46% 13%;
+    --warning: 199 88% 84%;
+    --warning-foreground: 220 100% 6%;
 
-    --success: 160 48% 31%;
-    --success-foreground: 210 45% 98%;
+    --success: 107 45% 54%;
+    --success-foreground: 220 100% 6%;
 
-    --border: 221 46% 13%;
-    --input: 213 30% 84%;
-    --ring: 219 69% 37%;
+    --border: 220 100% 6%;
+    --input: 220 11% 78%;
+    --ring: 107 45% 54%;
+    --neo-shadow: 220 100% 6%;
 
-    --radius: 0.125rem;
+    --radius: 1.5rem;
 
-    --sidebar-background: 219 70% 37%;
-    --sidebar-foreground: 210 45% 97%;
+    --sidebar-background: 210 33% 98%;
+    --sidebar-foreground: 220 100% 6%;
     --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 219 70% 37%;
-    --sidebar-accent: 42 64% 57%;
-    --sidebar-accent-foreground: 221 46% 13%;
-    --sidebar-border: 221 46% 13%;
-    --sidebar-ring: 42 64% 57%;
-    --sidebar-muted: 219 62% 31%;
+    --sidebar-primary-foreground: 220 100% 6%;
+    --sidebar-accent: 107 78% 74%;
+    --sidebar-accent-foreground: 220 100% 6%;
+    --sidebar-border: 220 100% 6%;
+    --sidebar-ring: 107 45% 54%;
+    --sidebar-muted: 210 17% 94%;
   }
 
   .dark {
-    --background: 222 39% 10%;
+    --background: 220 52% 10%;
     --foreground: 210 40% 98%;
-    --card: 222 36% 12%;
+    --card: 220 43% 13%;
     --card-foreground: 210 40% 98%;
-    --popover: 222 36% 12%;
+    --popover: 220 43% 13%;
     --popover-foreground: 210 40% 98%;
-    --primary: 219 64% 62%;
+    --primary: 212 100% 22%;
     --primary-foreground: 222 39% 10%;
-    --secondary: 160 43% 43%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 107 45% 54%;
+    --secondary-foreground: 220 100% 6%;
     --muted: 221 28% 20%;
     --muted-foreground: 215 20% 65%;
-    --accent: 42 58% 55%;
-    --accent-foreground: 222 39% 10%;
+    --accent: 199 70% 72%;
+    --accent-foreground: 220 100% 6%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
-    --warning: 42 58% 55%;
-    --warning-foreground: 222 39% 10%;
-    --success: 160 43% 43%;
-    --success-foreground: 0 0% 100%;
+    --warning: 199 70% 72%;
+    --warning-foreground: 220 100% 6%;
+    --success: 107 45% 54%;
+    --success-foreground: 220 100% 6%;
     --border: 220 28% 22%;
     --input: 220 28% 22%;
-    --ring: 219 64% 62%;
-    --sidebar-background: 221 58% 19%;
+    --ring: 107 45% 54%;
+    --neo-shadow: 220 100% 3%;
+    --sidebar-background: 220 52% 10%;
     --sidebar-foreground: 210 40% 90%;
     --sidebar-primary: 210 40% 98%;
-    --sidebar-primary-foreground: 221 58% 19%;
-    --sidebar-accent: 42 58% 55%;
-    --sidebar-accent-foreground: 222 39% 10%;
+    --sidebar-primary-foreground: 220 52% 10%;
+    --sidebar-accent: 107 45% 54%;
+    --sidebar-accent-foreground: 220 100% 6%;
     --sidebar-border: 220 28% 22%;
-    --sidebar-ring: 42 58% 55%;
+    --sidebar-ring: 107 45% 54%;
     --sidebar-muted: 220 34% 24%;
   }
 }
@@ -94,19 +96,19 @@
   body {
     @apply bg-background text-foreground antialiased;
     background-image:
-      radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.06) 1px, transparent 0),
-      linear-gradient(140deg, hsl(var(--primary) / 0.09), transparent 34%),
-      linear-gradient(215deg, hsl(var(--accent) / 0.08), transparent 48%);
-    background-size: 22px 22px, 100% 100%, 100% 100%;
-    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      radial-gradient(circle at 1px 1px, hsl(var(--accent) / 0.55) 1.4px, transparent 0),
+      linear-gradient(140deg, hsl(var(--accent) / 0.32), transparent 34%),
+      linear-gradient(215deg, hsl(var(--secondary) / 0.13), transparent 48%);
+    background-size: 28px 28px, 100% 100%, 100% 100%;
+    font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
   }
 
   h1,
   h2,
   h3,
   h4 {
-    font-family: 'Manrope', 'Inter', 'Segoe UI', system-ui, sans-serif;
-    letter-spacing: -0.04em;
+    font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
+    letter-spacing: -0.035em;
   }
 }
 
@@ -116,7 +118,7 @@
   }
 
   .nh-page-header {
-    @apply border-l-4 border-primary pl-5;
+    @apply rounded-[24px] border-3 border-foreground bg-card px-5 py-4 shadow-neo-sm;
   }
 
   .nh-eyebrow {
@@ -125,19 +127,19 @@
 
   .nh-title {
     @apply text-4xl font-black uppercase leading-none text-foreground md:text-5xl;
-    text-shadow: 2px 2px 0 hsl(var(--accent) / 0.32);
+    text-shadow: 2px 2px 0 hsl(var(--accent) / 0.75);
   }
 
   .nh-card {
-    @apply border-2 border-foreground bg-card shadow-[6px_6px_0_hsl(var(--foreground))];
+    @apply rounded-[28px] border-3 border-foreground bg-card shadow-neo;
   }
 
   .nh-card-soft {
-    @apply border-2 border-foreground bg-background shadow-[4px_4px_0_hsl(var(--foreground))];
+    @apply rounded-[24px] border-3 border-foreground bg-background shadow-neo-sm;
   }
 
   .nh-card-dark {
-    @apply border-2 border-foreground bg-primary text-primary-foreground shadow-[6px_6px_0_hsl(var(--foreground))];
+    @apply rounded-[28px] border-3 border-foreground bg-primary text-primary-foreground shadow-neo;
   }
 
   .nh-panel-title {
@@ -145,16 +147,16 @@
   }
 
   .nh-action-strip {
-    @apply border-2 border-foreground bg-primary p-4 text-primary-foreground shadow-[6px_6px_0_hsl(var(--foreground))];
+    @apply rounded-[24px] border-3 border-foreground bg-primary p-4 text-primary-foreground shadow-neo;
   }
 
   .nh-command-panel {
-    @apply relative overflow-hidden border-2 border-foreground bg-primary p-6 text-primary-foreground shadow-[8px_8px_0_hsl(var(--foreground))];
+    @apply relative overflow-hidden rounded-[28px] border-3 border-foreground bg-primary p-6 text-primary-foreground shadow-neo-lg;
   }
 
   .nh-command-panel::after {
     content: "";
-    @apply pointer-events-none absolute -right-10 -top-10 h-32 w-32 border-2 border-primary-foreground/25 bg-accent/30;
+    @apply pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-[32px] border-3 border-primary-foreground/25 bg-accent/35;
     transform: rotate(10deg);
   }
 
@@ -167,15 +169,15 @@
   }
 
   .nh-mobile-card {
-    @apply border-2 border-foreground bg-card p-4 shadow-[4px_4px_0_hsl(var(--foreground))];
+    @apply rounded-[24px] border-3 border-foreground bg-card p-4 shadow-neo-sm;
   }
 
   .nh-list-card {
-    @apply border-2 border-foreground bg-card p-4 shadow-[4px_4px_0_hsl(var(--foreground))] transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[6px_6px_0_hsl(var(--foreground))];
+    @apply rounded-[24px] border-3 border-foreground bg-card p-4 shadow-neo-sm transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-[2px_2px_0_hsl(var(--neo-shadow))];
   }
 
   .nh-empty {
-    @apply border-2 border-dashed border-foreground bg-background p-8 text-center shadow-[4px_4px_0_hsl(var(--foreground))];
+    @apply rounded-[28px] border-3 border-dashed border-foreground bg-background p-8 text-center shadow-neo-sm;
   }
 
   .nh-status {
@@ -183,7 +185,7 @@
   }
 
   .nh-table-wrap {
-    @apply overflow-x-auto border-2 border-foreground bg-card shadow-[6px_6px_0_hsl(var(--foreground))];
+    @apply overflow-x-auto rounded-[28px] border-3 border-foreground bg-card shadow-neo;
   }
 
   .nh-table {
@@ -191,7 +193,7 @@
   }
 
   .nh-table th {
-    @apply border-b-2 border-foreground bg-primary p-3 text-left text-xs font-black uppercase tracking-[0.14em] text-primary-foreground;
+    @apply border-b-3 border-foreground bg-primary p-3 text-left text-xs font-black uppercase tracking-[0.14em] text-primary-foreground;
   }
 
   .nh-table td {
@@ -200,6 +202,80 @@
 
   .nh-form-grid {
     @apply grid grid-cols-1 gap-4 lg:grid-cols-2;
+  }
+
+  .club-logo-orbit {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    height: 6.75rem;
+    width: 6.75rem;
+    place-items: center;
+  }
+
+  .club-logo-core {
+    position: absolute;
+    inset: 1.25rem;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid hsl(var(--sidebar-border));
+    border-radius: 1.25rem;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    box-shadow: 5px 5px 0 hsl(var(--neo-shadow));
+  }
+
+  .club-logo-orbit-ring {
+    position: absolute;
+    border-radius: 9999px;
+    border: 2.5px solid hsl(var(--sidebar-border) / 0.32);
+    pointer-events: none;
+    animation: clubLogoOrbit 7.5s linear infinite;
+  }
+
+  .club-logo-orbit-ring-primary {
+    inset: 0.28rem;
+    border-color: hsl(var(--secondary) / 0.58);
+  }
+
+  .club-logo-orbit-ring-secondary {
+    inset: -0.1rem;
+    border-color: hsl(var(--accent) / 0.72);
+    animation-duration: 10s;
+    animation-direction: reverse;
+  }
+
+  .club-logo-orbit-ring-tertiary {
+    inset: 0.72rem;
+    border-style: dashed;
+    border-color: hsl(212 100% 28% / 0.52);
+    animation-duration: 5.75s;
+  }
+
+  .club-logo-orbit-dot {
+    position: absolute;
+    top: 50%;
+    right: -0.25rem;
+    height: 0.62rem;
+    width: 0.62rem;
+    border: 2px solid hsl(var(--sidebar-border));
+    border-radius: 9999px;
+    box-shadow: 2px 2px 0 hsl(var(--neo-shadow));
+    transform: translateY(-50%);
+  }
+
+  .club-logo-orbit-dot-green {
+    background: hsl(var(--secondary));
+  }
+
+  .club-logo-orbit-dot-blue {
+    background: hsl(var(--accent));
+  }
+
+  .club-logo-orbit-dot-sky {
+    background: hsl(212 100% 28%);
   }
 }
 
@@ -220,4 +296,16 @@
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes clubLogoOrbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .club-logo-orbit-ring {
+    animation: none;
+  }
 }

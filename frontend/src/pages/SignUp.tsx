@@ -56,13 +56,13 @@ export default function SignUp() {
             <p className="nh-eyebrow">Campus One Access</p>
             <h1 className="mt-2 text-3xl font-black uppercase md:text-5xl">No separate signup needed</h1>
             <p className="mt-4 text-sm leading-6 text-muted-foreground">
-              NileHive uses your Nile University Campus One account. Sign in with Campus One, then Club Services will open or create your local club profile.
+              Club Services uses your Nile University CampusOne account. Sign in with CampusOne, then Club Services will open or create your local club profile.
             </p>
             <Button
               className="mt-6 h-14 w-full"
               onClick={() => window.location.assign(getCampusOneOidcAuthUrl("login", "/"))}
             >
-              Sign in with Campus One
+              Sign in with CampusOne
               <ArrowRight className="h-5 w-5" />
             </Button>
             <Link className="mt-5 inline-block text-sm font-black underline underline-offset-4" to="/login">

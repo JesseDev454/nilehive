@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { ElementType } from "react";
+import type { ElementType, ReactNode } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -55,7 +55,6 @@ import {
   TrendingUp,
   UserPlus,
   Users,
-  WalletCards,
   XCircle
 } from "lucide-react";
 import {
@@ -88,12 +87,14 @@ function StatCard({
   return (
     <Card className="animate-fade-in">
       <CardContent className="p-5">
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="nh-panel-title text-muted-foreground">{title}</p>
-            <p className="mt-2 text-3xl font-black">{value}</p>
+            <QuestSticker tone={variant === "success" ? "green" : variant === "destructive" ? "red" : variant === "warning" ? "blue" : "muted"}>
+              {title}
+            </QuestSticker>
+            <p className="mt-8 text-5xl font-black tracking-[-0.06em] text-primary">{value}</p>
           </div>
-          <Icon className={`h-8 w-8 ${colors[variant || "default"]} opacity-80`} />
+          <Icon className={`h-12 w-12 ${colors[variant || "default"]} opacity-15`} />
         </div>
       </CardContent>
     </Card>
@@ -122,6 +123,60 @@ function formatCurrency(value?: number) {
     currency: "NGN",
     maximumFractionDigits: 0
   }).format(value ?? 0);
+}
+
+function QuestProgressBar({ value, className = "" }: { value: number; className?: string }) {
+  const safeValue = Math.max(0, Math.min(100, value));
+
+  return (
+    <div className={`h-5 overflow-hidden rounded-full border-3 border-foreground bg-muted ${className}`}>
+      <div className="h-full bg-secondary transition-all duration-700 ease-out" style={{ width: `${safeValue}%` }} />
+    </div>
+  );
+}
+
+function QuestSticker({
+  children,
+  tone = "blue"
+}: {
+  children: ReactNode;
+  tone?: "blue" | "green" | "red" | "navy" | "muted";
+}) {
+  const toneClass = {
+    blue: "bg-accent text-foreground",
+    green: "bg-secondary text-secondary-foreground",
+    red: "bg-destructive/15 text-destructive",
+    navy: "bg-primary text-primary-foreground",
+    muted: "bg-muted text-foreground"
+  }[tone];
+
+  return (
+    <span className={`inline-flex w-fit items-center gap-2 rounded-full border-2 border-foreground px-3 py-1 text-xs font-black uppercase tracking-[0.08em] ${toneClass}`}>
+      {children}
+    </span>
+  );
+}
+
+function QuestIconBadge({
+  icon: Icon,
+  tone = "blue"
+}: {
+  icon: ElementType;
+  tone?: "blue" | "green" | "red" | "navy" | "muted";
+}) {
+  const toneClass = {
+    blue: "bg-accent text-foreground",
+    green: "bg-secondary text-secondary-foreground",
+    red: "bg-destructive/15 text-destructive",
+    navy: "bg-primary text-primary-foreground",
+    muted: "bg-muted text-foreground"
+  }[tone];
+
+  return (
+    <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] border-3 border-foreground shadow-neo-sm ${toneClass}`}>
+      <Icon className="h-7 w-7" />
+    </div>
+  );
 }
 
 function ProposalListState({
@@ -301,7 +356,7 @@ function getClubInitials(name: string) {
     .filter(Boolean)
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
-    .join("") || "NH";
+    .join("") || "CS";
 }
 
 function getClubPulse(club: AdminOperationsDashboardRecord["club_performance"][number]) {
@@ -347,15 +402,17 @@ function AdminMetricCard({
   };
 
   return (
-    <Card className="overflow-hidden transition-all hover:-translate-y-0.5">
+    <Card className="min-h-[180px] overflow-hidden transition-all hover:translate-x-1 hover:translate-y-1">
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{title}</p>
-            <p className="mt-3 text-3xl font-black tracking-tight text-primary">{value}</p>
+            <QuestSticker tone={variant === "green" ? "green" : variant === "red" ? "red" : variant === "navy" ? "navy" : "blue"}>
+              {title}
+            </QuestSticker>
+            <p className="mt-8 text-5xl font-black tracking-[-0.06em] text-primary">{value}</p>
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{detail}</p>
           </div>
-          <div className={`border-2 border-foreground p-3 shadow-[3px_3px_0_hsl(var(--foreground))] ${variants[variant]}`}>
+          <div className={`rounded-[18px] border-3 border-foreground p-3 shadow-neo-sm ${variants[variant]}`}>
             <Icon className="h-5 w-5" />
           </div>
         </div>
@@ -614,13 +671,14 @@ function ExecutiveDashboard() {
   };
 
   return (
-    <div className="space-y-6 animate-slide-up">
-      <div className="relative overflow-hidden border-2 border-foreground bg-primary p-8 text-primary-foreground shadow-[8px_8px_0_hsl(var(--foreground))]">
-        <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 border-2 border-primary-foreground/20 bg-warning opacity-20" />
-        <div className="relative z-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+    <div className="space-y-8 animate-slide-up">
+      <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div>
-            <h1 className="mb-2 text-3xl font-black tracking-tight">Executive Dashboard</h1>
-            <p className="max-w-md text-white/80">
+            <div className="flex flex-wrap items-center gap-4">
+              <h1 className="text-5xl font-black leading-none tracking-[-0.07em] md:text-6xl">Executive Dashboard</h1>
+              <QuestSticker tone="green">Exec</QuestSticker>
+            </div>
+            <p className="mt-4 max-w-2xl text-xl font-medium text-muted-foreground">
               Welcome back. You have {summary.pending === 0 ? "no" : summary.pending} open{" "}
               {summary.pending === 1 ? "task" : "tasks"} requiring action and {summary.upcomingEvents === 0 ? "no" : summary.upcomingEvents} approved{" "}
               {summary.upcomingEvents === 1 ? "event" : "events"} to support.
@@ -640,7 +698,6 @@ function ExecutiveDashboard() {
               </Link>
             </Button>
           </div>
-        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -740,36 +797,31 @@ function AdvisorDashboard() {
   const { data: pending = [], isLoading, isError, error } = useAdvisorPendingProposals();
 
   return (
-    <div className="space-y-7 animate-slide-up">
-      <section className="relative overflow-hidden border-2 border-foreground bg-primary p-6 text-primary-foreground shadow-[8px_8px_0_hsl(var(--foreground))] md:p-8">
-        <div className="absolute -right-16 -top-16 h-48 w-48 border-2 border-primary-foreground/20 bg-warning/20" />
-        <div className="absolute bottom-0 right-10 h-24 w-24 border-2 border-primary-foreground/10 bg-secondary/15" />
-        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+    <div className="space-y-8 animate-slide-up">
+      <section className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white/80">
-              <ShieldCheck className="h-3.5 w-3.5 text-warning" />
-              Advisor Review Desk
+            <div className="flex flex-wrap items-center gap-4">
+              <h1 className="text-5xl font-black leading-none tracking-[-0.07em] md:text-6xl">Advisor Dashboard</h1>
+              <QuestSticker tone="blue">Review Desk</QuestSticker>
             </div>
-            <h1 className="text-3xl font-black tracking-tight md:text-4xl">Advisor Dashboard</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75 md:text-base">
+            <p className="mt-4 max-w-2xl text-xl font-medium text-muted-foreground">
               Keep proposals moving with timely feedback, clean approvals, and a clear view of what still needs your review.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3 lg:min-w-[420px]">
-            <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
-              <p className="text-xs text-white/60">Pending reviews</p>
-              <p className="mt-2 text-2xl font-black">{formatNumber(pending.length)}</p>
+            <div className="rounded-[24px] border-3 border-foreground bg-card p-4 shadow-neo-sm">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-muted-foreground">Pending reviews</p>
+              <p className="mt-2 text-3xl font-black text-primary">{formatNumber(pending.length)}</p>
             </div>
-            <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
-              <p className="text-xs text-white/60">Queue health</p>
+            <div className="rounded-[24px] border-3 border-foreground bg-card p-4 shadow-neo-sm">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-muted-foreground">Queue health</p>
               <p className="mt-2 text-2xl font-black">{pending.length === 0 ? "Clear" : "Active"}</p>
             </div>
-            <div className="col-span-2 border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4 sm:col-span-1">
-              <p className="text-xs text-white/60">Next stop</p>
+            <div className="col-span-2 rounded-[24px] border-3 border-foreground bg-card p-4 shadow-neo-sm sm:col-span-1">
+              <p className="text-xs font-black uppercase tracking-[0.14em] text-muted-foreground">Next stop</p>
               <p className="mt-2 text-sm font-black uppercase tracking-[0.12em]">Review queue</p>
             </div>
           </div>
-        </div>
       </section>
 
       <div className="grid grid-cols-1 sm:grid-cols-1 gap-4 max-w-sm">
@@ -1063,37 +1115,18 @@ function PolishedAdminDashboard() {
   }
 
   return (
-    <div className="space-y-7 animate-slide-up">
-      <section className="relative overflow-hidden border-2 border-foreground bg-primary p-6 text-primary-foreground shadow-[8px_8px_0_hsl(var(--foreground))] md:p-8">
-        <div className="absolute -right-16 -top-16 h-48 w-48 border-2 border-primary-foreground/20 bg-warning/20" />
-        <div className="absolute bottom-0 right-10 h-24 w-24 border-2 border-primary-foreground/10 bg-success/10" />
-        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white/80">
-              <Gauge className="h-3.5 w-3.5 text-warning" />
-              Club Services Control Tower
-            </div>
-            <h1 className="text-3xl font-black tracking-tight md:text-4xl">Admin Operations</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75 md:text-base">
-              One calm place to see what needs attention across clubs, proposals, dues,
-              reports, events, and student membership activity.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3 lg:min-w-[420px]">
-            <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
-              <p className="text-xs text-white/60">Needs attention</p>
-              <p className="mt-2 text-2xl font-black">{formatNumber(totalPending)}</p>
-            </div>
-            <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
-              <p className="text-xs text-white/60">Attendance rate</p>
-              <p className="mt-2 text-2xl font-black">{formatNumber(summary?.attendance_rate)}%</p>
-            </div>
-            <div className="col-span-2 border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4 sm:col-span-1">
-              <p className="text-xs text-white/60">Dues collected</p>
-              <p className="mt-2 text-2xl font-black">{formatCurrency(summary?.dues_collected_amount)}</p>
-            </div>
-          </div>
+    <div className="space-y-8 animate-slide-up">
+      <section className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h1 className="text-5xl font-black leading-none tracking-[-0.07em] md:text-6xl">Admin Operations</h1>
+          <p className="mt-4 text-xl font-medium text-muted-foreground">
+            Overview of university club health and activities.
+          </p>
         </div>
+        <Button type="button" variant="secondary" className="h-14 px-8" onClick={handleDownloadMatrix} disabled={!dashboard}>
+          <BarChart3 className="h-5 w-5" />
+          Export Report
+        </Button>
       </section>
 
       {isError ? (
@@ -1110,7 +1143,7 @@ function PolishedAdminDashboard() {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <AdminMetricCard
-              title="Clubs"
+              title="Total Clubs"
               value={formatNumber(summary?.total_clubs)}
               detail={`${formatNumber(summary?.active_members)} active member records are currently tracked.`}
               icon={Users}
@@ -1137,6 +1170,53 @@ function PolishedAdminDashboard() {
               icon={AlertTriangle}
               variant={(summary?.missing_reports ?? 0) > 0 ? "red" : "navy"}
             />
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-[390px_1fr]">
+            <Card className="overflow-hidden bg-accent/70">
+              <CardHeader className="flex flex-row items-center justify-between border-b-0 bg-transparent">
+                <div className="flex items-center gap-3">
+                  <AlertTriangle className="h-6 w-6 text-destructive" />
+                  <CardTitle className="text-3xl tracking-[-0.05em]">Alerts</CardTitle>
+                </div>
+                <QuestSticker tone="red">{formatNumber(totalPending)} New</QuestSticker>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="rounded-[22px] border-3 border-foreground bg-destructive/15 p-5 text-destructive shadow-neo-sm">
+                  <p className="font-black">Missing Reports</p>
+                  <p className="mt-2 text-sm leading-6">{formatNumber(summary?.missing_reports)} approved past events still need documentation.</p>
+                  <Button asChild variant="outline" size="sm" className="mt-4">
+                    <Link to="/archive">Send Reminders</Link>
+                  </Button>
+                </div>
+                <div className="rounded-[22px] border-3 border-foreground bg-card p-5 shadow-neo-sm">
+                  <p className="font-black">Dues Queue</p>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{formatNumber(summary?.submitted_dues_payments)} payment confirmations need a human check.</p>
+                  <Button asChild variant="outline" size="sm" className="mt-4">
+                    <Link to="/dues">Review Ledger</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="overflow-hidden">
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Activity className="h-6 w-6" />
+                  <CardTitle className="text-3xl tracking-[-0.05em]">Recent Activity</CardTitle>
+                </div>
+                <Button asChild variant="ghost" size="sm">
+                  <Link to="/proposals">View All <ArrowRight className="h-4 w-4" /></Link>
+                </Button>
+              </CardHeader>
+              <CardContent>
+                {dashboard?.recent_activity.length ? (
+                  <RecentActivityList activity={dashboard.recent_activity} />
+                ) : (
+                  <AdminEmptyState icon={Activity} title="No recent activity yet" message="Club updates will appear here once operations start moving." />
+                )}
+              </CardContent>
+            </Card>
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -1558,22 +1638,26 @@ function StudentQuickLink({
   title,
   description,
   to,
-  icon: Icon
+  icon: Icon,
+  featured = false
 }: {
   title: string;
   description: string;
   to: string;
   icon: ElementType;
+  featured?: boolean;
 }) {
   return (
     <Link to={to} className="group block">
-      <div className="flex h-full items-start gap-4 border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4 text-primary-foreground transition-all hover:-translate-y-0.5 hover:bg-primary-foreground/15">
-        <div className="border-2 border-primary-foreground/25 bg-primary-foreground/15 p-3">
+      <div className={`flex h-full items-center gap-4 rounded-[24px] border-3 border-foreground p-5 shadow-neo transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-[2px_2px_0_hsl(var(--neo-shadow))] ${
+        featured ? "bg-secondary text-secondary-foreground" : "bg-card text-foreground"
+      }`}>
+        <div className={`rounded-full border-3 border-foreground p-3 ${featured ? "bg-primary text-primary-foreground" : "bg-accent text-foreground"}`}>
           <Icon className="h-5 w-5" />
         </div>
         <div className="min-w-0">
-          <p className="font-semibold">{title}</p>
-          <p className="mt-1 text-xs leading-5 text-primary-foreground/70">{description}</p>
+          <p className="text-lg font-black tracking-[-0.03em]">{title}</p>
+          <p className="mt-1 text-xs leading-5 opacity-70">{description}</p>
         </div>
         <ArrowRight className="ml-auto h-4 w-4 shrink-0 opacity-60 transition-transform group-hover:translate-x-1" />
       </div>
@@ -1590,33 +1674,39 @@ function StudentEventCard({
 }) {
   return (
     <Link to="/events" className="block">
-      <div className="nh-list-card transition-all hover:-translate-y-0.5 hover:bg-accent">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="font-semibold">{event.title}</p>
-            <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{event.description}</p>
+      <div className="nh-card overflow-hidden transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-[2px_2px_0_hsl(var(--neo-shadow))]">
+        <div className="relative h-40 border-b-3 border-foreground bg-[linear-gradient(135deg,hsl(var(--accent)),hsl(var(--primary)/0.88))]">
+          <div className="absolute left-5 top-5 rounded-[14px] border-3 border-foreground bg-card px-4 py-2 text-sm font-black shadow-neo-sm">
+            {getDateLabel(event.event_date).slice(5)}
           </div>
-          <Badge className="w-fit bg-success/15 text-success hover:bg-success/15">Approved</Badge>
+          <div className="absolute bottom-4 right-4 rounded-full border-3 border-foreground bg-secondary px-3 py-1 text-xs font-black uppercase shadow-neo-sm">
+            Approved
+          </div>
         </div>
-        <div className="mt-4 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
-          <span className="inline-flex items-center gap-2">
-            <CalendarDays className="h-4 w-4" />
-            {getDateLabel(event.event_date)}
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            {event.event_time ? event.event_time.slice(0, 5) : "Time TBC"}
-          </span>
-          <span className="inline-flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            {event.location || "Venue TBC"}
-          </span>
-        </div>
-        <div className="mt-4 flex items-center justify-between gap-3 border-2 border-foreground bg-muted/70 p-3">
-          <p className="text-xs text-muted-foreground">Your RSVP</p>
-          <Badge variant={rsvp?.status ? "default" : "outline"} className={rsvp?.status ? "capitalize" : ""}>
-            {rsvp?.status ? rsvp.status.replace("_", " ") : "Not selected"}
-          </Badge>
+        <div className="p-6">
+          <QuestSticker tone="green">Campus Quest</QuestSticker>
+          <p className="mt-4 text-2xl font-black tracking-[-0.04em]">{event.title}</p>
+          <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">{event.description}</p>
+          <div className="mt-5 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
+            <span className="inline-flex items-center gap-2">
+              <CalendarDays className="h-4 w-4" />
+              {getDateLabel(event.event_date)}
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              {event.event_time ? event.event_time.slice(0, 5) : "Time TBC"}
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              {event.location || "Venue TBC"}
+            </span>
+          </div>
+          <div className="mt-5 flex items-center justify-between gap-3 rounded-[18px] border-3 border-foreground bg-muted/70 p-3">
+            <p className="text-xs text-muted-foreground">Your RSVP</p>
+            <Badge variant={rsvp?.status ? "default" : "outline"} className={rsvp?.status ? "capitalize" : ""}>
+              {rsvp?.status ? rsvp.status.replace("_", " ") : "Not selected"}
+            </Badge>
+          </div>
         </div>
       </div>
     </Link>
@@ -1682,36 +1772,87 @@ function StudentDashboard() {
   );
   const duePayments = duesData?.payments || [];
   const activeMemberships = membershipRequests.filter((request) => request.status === "active");
-  const pendingRequests = membershipRequests.filter((request) => request.status === "pending");
-  const duesRequiredRequests = membershipRequests.filter((request) => request.status === "approved_pending_dues");
-  const unpaidDues = duePayments.filter((payment) => payment.status === "unpaid" || payment.status === "rejected");
   const duesById = useMemo(
     () => new Map(duePayments.map((payment) => [payment.id, payment] as const)),
     [duePayments]
   );
   const firstName = profile?.full_name?.trim().split(/\s+/).filter(Boolean)[0] || "student";
+  const paidDuesCount = duePayments.filter((payment) => payment.status === "paid").length;
+  const duesProgress = duePayments.length > 0 ? Math.round((paidDuesCount / duePayments.length) * 100) : 0;
+  const featuredMembership = activeMemberships[0] || membershipRequests[0];
+  const featuredPayment = featuredMembership?.due_payment_id ? duesById.get(featuredMembership.due_payment_id) : duePayments[0];
 
   return (
-    <div className="space-y-7 animate-slide-up">
-      <section className="relative overflow-hidden border-2 border-foreground bg-primary p-6 text-primary-foreground shadow-[8px_8px_0_hsl(var(--foreground))] md:p-8">
-        <div className="absolute -right-20 -top-20 h-56 w-56 border-2 border-primary-foreground/20 bg-warning/20" />
-        <div className="absolute -bottom-16 left-1/2 h-40 w-40 border-2 border-primary-foreground/10 bg-success/10" />
-        <div className="relative">
+    <div className="space-y-8 animate-slide-up">
+      <section className="grid gap-7 xl:grid-cols-[1fr_390px]">
+        <div className="space-y-7">
           <div>
-            <Badge className="mb-4 bg-white/15 text-white hover:bg-white/15">Student Home</Badge>
-            <h1 className="text-3xl font-black tracking-tight md:text-4xl">
-              Welcome back, {firstName}
+            <h1 className="text-5xl font-black leading-none tracking-[-0.07em] md:text-6xl">
+              Hello, {firstName}!
             </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75 md:text-base">
-              Track your club membership, dues, events, RSVP choices, and reminders from one simple home base.
+            <p className="mt-3 text-xl font-medium text-muted-foreground">
+              Ready to continue your campus quest?
             </p>
           </div>
+
+          <div className="grid gap-5 lg:grid-cols-2">
+            <Card className="relative min-h-[210px] overflow-hidden">
+              <div className="absolute -right-10 -top-14 h-48 w-48 rounded-full bg-accent/45" />
+              <CardContent className="relative p-7">
+                <QuestSticker tone="navy">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  Status
+                </QuestSticker>
+                <div className="mt-8 flex items-center gap-5">
+                  <QuestIconBadge icon={ShieldCheck} tone="green" />
+                  <div>
+                    <p className="text-3xl font-black tracking-[-0.05em]">
+                      {featuredMembership?.club?.name || "No club yet"}
+                    </p>
+                    <p className="mt-1 text-xl font-black text-success">
+                      {featuredMembership ? getMembershipStatusLabel(resolveStudentMembershipStatus(featuredMembership, featuredPayment)) : "Start by joining a club"}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="min-h-[210px]">
+              <CardContent className="p-7">
+                <div className="flex items-start justify-between gap-4">
+                  <QuestSticker tone="blue">
+                    <CreditCard className="h-3.5 w-3.5" />
+                    Dues
+                  </QuestSticker>
+                  <span className="text-4xl font-black tracking-[-0.06em]">{duesProgress}%</span>
+                </div>
+                <p className="mt-8 text-lg text-muted-foreground">Semester contribution progress</p>
+                <QuestProgressBar value={duesProgress} className="mt-5" />
+              </CardContent>
+            </Card>
+          </div>
         </div>
-        <div className="relative mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          <StudentQuickLink title="Find clubs" description="Discover clubs and request to join." to="/membership" icon={UserPlus} />
-          <StudentQuickLink title="Events" description="See official events and RSVP." to="/events" icon={CalendarDays} />
+
+        <aside className="space-y-5 xl:pt-24">
+          <div className="rounded-[24px] border-3 border-foreground bg-primary p-5 text-primary-foreground shadow-neo">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-2xl font-black tracking-[-0.04em]">Discover Clubs</h2>
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border-3 border-foreground bg-card text-foreground">
+                <UserPlus className="h-6 w-6" />
+              </div>
+            </div>
+          </div>
+          <StudentQuickLink featured title="Join a Club" description="Find your next community." to="/membership" icon={UserPlus} />
+          <StudentQuickLink title="Pay Dues" description="Upload proof and track status." to="/membership" icon={CreditCard} />
           <StudentQuickLink title="Announcements" description="Catch updates from clubs and admins." to="/communications" icon={MessageSquare} />
-        </div>
+          <Link to="/feedback" className="block">
+            <div className="rounded-[28px] border-3 border-foreground bg-primary p-8 text-center text-primary-foreground shadow-neo transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-[2px_2px_0_hsl(var(--neo-shadow))]">
+              <MessageSquare className="mx-auto h-9 w-9" />
+              <h3 className="mt-5 text-3xl font-black tracking-[-0.05em]">Help us improve!</h3>
+              <p className="mt-3 text-sm text-primary-foreground/80">Got ideas for Club Services? Drop a line.</p>
+            </div>
+          </Link>
+        </aside>
       </section>
 
       {(membershipsFailed || duesFailed || eventsFailed) ? (
@@ -1724,37 +1865,6 @@ function StudentDashboard() {
           </CardContent>
         </Card>
       ) : null}
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <AdminMetricCard
-          title="Active Clubs"
-          value={formatNumber(activeMemberships.length)}
-          detail="Clubs where your membership is officially active."
-          icon={ShieldCheck}
-          variant="green"
-        />
-        <AdminMetricCard
-          title="Requests"
-          value={formatNumber(pendingRequests.length)}
-          detail="Club membership requests waiting for review."
-          icon={UserPlus}
-          variant="gold"
-        />
-        <AdminMetricCard
-          title="Dues Alerts"
-          value={formatNumber(duesRequiredRequests.length + unpaidDues.length)}
-          detail="Payments you may need to complete or resubmit."
-          icon={WalletCards}
-          variant={(duesRequiredRequests.length + unpaidDues.length) > 0 ? "red" : "blue"}
-        />
-        <AdminMetricCard
-          title="Upcoming Events"
-          value={formatNumber(upcomingApprovedEvents.length)}
-          detail="Approved events coming up for students."
-          icon={CalendarDays}
-          variant="blue"
-        />
-      </div>
 
       <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
         <div className="space-y-6">
@@ -1916,40 +2026,25 @@ function PresidentDashboard() {
   const summary = dashboard?.summary;
   const pendingCount = summary?.pending_proposals ?? 0;
   const upcomingCount = summary?.upcoming_events ?? 0;
-  const executiveCount = summary?.executive_count ?? 0;
+  const totalProposals = summary?.total_proposals ?? 0;
+  const approvedShare = totalProposals > 0
+    ? Math.round(((totalProposals - pendingCount) / totalProposals) * 100)
+    : 92;
+  const clubHealthScore = Math.max(0, Math.min(99, approvedShare));
 
   return (
-    <div className="space-y-7 animate-slide-up">
-      <section className="relative overflow-hidden border-2 border-foreground bg-primary p-6 text-primary-foreground shadow-[8px_8px_0_hsl(var(--foreground))] md:p-8">
-        <div className="absolute -right-16 -top-16 h-48 w-48 border-2 border-primary-foreground/20 bg-warning/20" />
-        <div className="absolute bottom-0 right-10 h-24 w-24 border-2 border-primary-foreground/10 bg-secondary/15" />
-        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-3xl">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white/80">
-              <ShieldCheck className="h-3.5 w-3.5 text-warning" />
-              Club Leadership Hub
-            </div>
-            <h1 className="text-3xl font-black tracking-tight md:text-4xl">President Dashboard</h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-white/75 md:text-base">
-              {dashboard?.club?.name
-                ? `${dashboard.club.name} at a glance: keep proposals moving, track upcoming events, and stay close to executive activity.`
-                : "Keep proposals moving, track upcoming events, and stay close to executive activity."}
-            </p>
+    <div className="space-y-8 animate-slide-up">
+      <section className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-4">
+            <h1 className="text-5xl font-black leading-none tracking-[-0.07em] md:text-6xl">
+              {dashboard?.club?.name || "President Dashboard"}
+            </h1>
+            <QuestSticker tone="green">President</QuestSticker>
           </div>
-          <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-3 lg:min-w-[420px]">
-            <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
-              <p className="text-xs text-white/60">Pending proposals</p>
-              <p className="mt-2 text-2xl font-black">{formatNumber(pendingCount)}</p>
-            </div>
-            <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
-              <p className="text-xs text-white/60">Upcoming events</p>
-              <p className="mt-2 text-2xl font-black">{formatNumber(upcomingCount)}</p>
-            </div>
-            <div className="col-span-2 border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4 sm:col-span-1">
-              <p className="text-xs text-white/60">Executive team</p>
-              <p className="mt-2 text-2xl font-black">{formatNumber(executiveCount)}</p>
-            </div>
-          </div>
+          <p className="mt-4 text-xl font-medium text-muted-foreground">
+            Welcome back. Here is your club's quest log for today.
+          </p>
         </div>
       </section>
 
@@ -1963,11 +2058,57 @@ function PresidentDashboard() {
         </Card>
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard title="Total Proposals" value={summary?.total_proposals ?? 0} icon={FileText} />
-            <StatCard title="Pending" value={summary?.pending_proposals ?? 0} icon={Clock} variant="warning" />
-            <StatCard title="Events" value={summary?.upcoming_events ?? 0} icon={CalendarDays} variant="success" />
-            <StatCard title="Executives" value={summary?.executive_count ?? 0} icon={Users} />
+          <div className="grid gap-6 xl:grid-cols-[1fr_380px]">
+            <Card className="relative min-h-[340px] overflow-hidden">
+              <div className="absolute right-0 top-0 h-full w-1/2 bg-[radial-gradient(circle_at_center,hsl(var(--secondary)/0.22),transparent_62%)]" />
+              <CardContent className="relative flex h-full flex-col justify-between p-8">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <QuestSticker tone="blue">Core Metric</QuestSticker>
+                    <h2 className="mt-6 text-4xl font-black tracking-[-0.06em] md:text-5xl">Club Health Score</h2>
+                  </div>
+                  <div className="rotate-2 rounded-[24px] border-3 border-foreground bg-primary px-7 py-5 text-6xl font-black text-primary-foreground shadow-neo">
+                    {clubHealthScore}
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-3 flex items-center justify-between text-xs font-black uppercase tracking-[0.14em]">
+                    <span>Engagement</span>
+                    <span>Outstanding</span>
+                  </div>
+                  <QuestProgressBar value={clubHealthScore} />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-7">
+                <div className="mb-6 flex items-center gap-4">
+                  <QuestIconBadge icon={AlertTriangle} tone="red" />
+                  <h2 className="text-3xl font-black tracking-[-0.05em]">Pending Quests</h2>
+                </div>
+                <div className="space-y-4">
+                  <div className="rounded-[20px] border-3 border-foreground bg-muted p-4 shadow-neo-sm">
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="font-black">Proposal Reviews</p>
+                      <QuestSticker tone="navy">{formatNumber(pendingCount)}</QuestSticker>
+                    </div>
+                    <Button asChild variant="outline" className="mt-4 w-full">
+                      <Link to="/proposals">Review Proposals</Link>
+                    </Button>
+                  </div>
+                  <div className="rounded-[20px] border-3 border-foreground bg-muted p-4 shadow-neo-sm">
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="font-black">Upcoming Events</p>
+                      <QuestSticker tone="navy">{formatNumber(upcomingCount)}</QuestSticker>
+                    </div>
+                    <Button asChild variant="outline" className="mt-4 w-full">
+                      <Link to="/events">View Calendar</Link>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

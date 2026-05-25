@@ -74,19 +74,19 @@ export function AppLayout() {
         <AppSidebar />
         <GuidedOnboarding restartSignal={guideRestartSignal} />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="flex h-16 items-center justify-between border-b-2 border-foreground bg-card/95 px-4 backdrop-blur">
+          <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-3 border-b-3 border-foreground bg-card/95 px-3 py-3 backdrop-blur md:absolute md:right-8 md:top-8 md:min-h-0 md:rounded-[24px] md:border-3 md:bg-card/95 md:p-2 md:shadow-neo-sm">
             <div className="flex items-center gap-3">
-              <SidebarTrigger />
+              <SidebarTrigger className="md:hidden" />
               <div className="hidden items-center sm:flex">
                 <BrandLogo
                   size="md"
                   variant="plain"
-                  className="h-10 w-[13rem] shrink-0 lg:h-11 lg:w-[14rem]"
+                  className="h-10 w-[13rem] shrink-0 md:hidden lg:h-11 lg:w-[14rem]"
                 />
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="hidden border-2 border-warning bg-warning px-2 py-1 text-[11px] font-black uppercase tracking-[0.12em] text-warning-foreground sm:inline">
+            <div className="flex min-w-0 items-center justify-end gap-2 sm:gap-3">
+              <span className="hidden rounded-full border-2 border-foreground bg-accent px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.12em] text-accent-foreground shadow-[3px_3px_0_hsl(var(--neo-shadow))] sm:inline">
                 {role === "admin"
                   ? "Admin Access"
                   : role
@@ -97,6 +97,7 @@ export function AppLayout() {
                 type="button"
                 variant="outline"
                 size="sm"
+                className="hidden sm:inline-flex"
                 onClick={() => setGuideRestartSignal((value) => value + 1)}
               >
                 Help / Guide
@@ -106,7 +107,7 @@ export function AppLayout() {
               </Button>
             </div>
           </header>
-          <main className="flex-1 p-4 md:p-6">
+          <main className="flex-1 p-4 md:p-8 md:pt-28">
             <Outlet />
           </main>
           <SiteFooter />

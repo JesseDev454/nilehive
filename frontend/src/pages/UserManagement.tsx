@@ -218,7 +218,7 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
               </p>
               {user.role === "admin" ? (
                 <p className="mt-2 text-xs text-warning">
-                  Campus One manages admin access. NileHive can still update local club roles, but it cannot grant or remove admin access here.
+                  CampusOne manages admin access. Club Services can still update local club roles, but it cannot grant or remove admin access here.
                 </p>
               ) : null}
             </div>
@@ -329,7 +329,7 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
               {replacementUserLabel}
             </p>
             <p className="text-muted-foreground">
-              {currentPresidentLabel} will be demoted to a regular member record and lose local president access in NileHive.
+              {currentPresidentLabel} will be demoted to a regular member record and lose local president access in Club Services.
             </p>
           </div>
           <DialogFooter>

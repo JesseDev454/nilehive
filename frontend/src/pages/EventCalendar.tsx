@@ -174,9 +174,9 @@ function EventQrDialog({
   </head>
   <body>
     <div class="sheet">
-      <p class="eyebrow">NileHive Event Check-In</p>
+      <p class="eyebrow">Club Services Event Check-In</p>
       <h1>${event.title}</h1>
-      <p>Students should sign in to NileHive and scan this QR on the event date to record attendance.</p>
+      <p>Students should sign in to Club Services and scan this QR on the event date to record attendance.</p>
       <img src="${qrCodeUrl}" alt="QR code for ${event.title}" />
       <p class="meta">${getDateLabel(event.event_date)} - ${getTimeLabel(event.event_time)} - ${event.location || "Venue TBC"}</p>
       <p class="link">${checkInUrl}</p>

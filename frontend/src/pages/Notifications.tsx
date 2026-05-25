@@ -46,7 +46,7 @@ export default function Notifications() {
     mutationFn: enablePushNotifications,
     onSuccess: () => {
       setPushEnabled(true);
-      actionSuccess("Phone notifications enabled", "This device can now receive NileHive alerts.");
+      actionSuccess("Phone notifications enabled", "This device can now receive Club Services alerts.");
     },
     onError: (mutationError) => {
       actionError("Could not enable notifications", mutationError, getErrorMessage(mutationError));

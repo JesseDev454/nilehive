@@ -6,7 +6,7 @@ type ToasterProps = React.ComponentProps<typeof Sonner>;
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme();
   const baseToastClass =
-    "group toast group-[.toaster]:border-2 group-[.toaster]:border-foreground group-[.toaster]:text-foreground group-[.toaster]:shadow-[6px_6px_0_hsl(var(--foreground))]";
+    "group toast group-[.toaster]:rounded-[24px] group-[.toaster]:border-3 group-[.toaster]:border-foreground group-[.toaster]:text-foreground group-[.toaster]:shadow-neo";
   const successToastClass =
     "group-[.toaster]:bg-success group-[.toaster]:text-success-foreground group-[.toast]:bg-success group-[.toast]:text-success-foreground";
   const errorToastClass =

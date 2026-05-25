@@ -14,13 +14,13 @@ export function NeoPageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <section className="relative overflow-hidden border-2 border-foreground bg-primary p-6 text-primary-foreground shadow-[8px_8px_0_hsl(var(--foreground))] md:p-8">
-      <div className="absolute -right-20 -top-20 h-56 w-56 border-2 border-primary-foreground/20 bg-warning/20" />
-      <div className="absolute -bottom-16 left-1/2 h-40 w-40 border-2 border-primary-foreground/10 bg-success/10" />
+    <section className="relative overflow-hidden rounded-[28px] border-3 border-foreground bg-primary p-6 text-primary-foreground shadow-neo-lg md:p-8">
+      <div className="absolute -right-20 -top-20 h-56 w-56 rounded-[44px] border-3 border-primary-foreground/20 bg-accent/25" />
+      <div className="absolute -bottom-16 left-1/2 h-40 w-40 rounded-[36px] border-3 border-primary-foreground/10 bg-success/20" />
       <div className="relative grid gap-6 lg:grid-cols-[1.3fr_0.7fr] lg:items-end">
         <div className="min-w-0">
           {eyebrow ? (
-            <p className="mb-4 inline-flex bg-white/15 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-white">
+            <p className="mb-4 inline-flex rounded-full border-2 border-primary-foreground/40 bg-white/15 px-3 py-1 text-xs font-black uppercase tracking-[0.18em] text-white">
               {eyebrow}
             </p>
           ) : null}
@@ -32,7 +32,7 @@ export function NeoPageHeader({
           ) : null}
         </div>
         {actions ? (
-          <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
+          <div className="rounded-[24px] border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4">
             <p className="text-xs uppercase tracking-[0.18em] text-primary-foreground/60">Quick actions</p>
             <div className="mt-3 flex flex-wrap gap-3">{actions}</div>
           </div>
@@ -64,13 +64,18 @@ export function NeoMetricCard({
   }[tone];
 
   return (
-    <div className={cn("nh-card p-5", toneClass)}>
+    <div className={cn("nh-card relative overflow-hidden p-5", toneClass)}>
+      <div className="pointer-events-none absolute -right-8 -top-10 h-24 w-24 rounded-full bg-accent/35" />
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="nh-panel-title opacity-75">{title}</p>
           <div className="mt-3 text-3xl font-black md:text-4xl">{value}</div>
         </div>
-        {Icon ? <Icon className="h-8 w-8 shrink-0 opacity-80" /> : null}
+        {Icon ? (
+          <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] border-3 border-current bg-background/25 shadow-[3px_3px_0_hsl(var(--neo-shadow))]">
+            <Icon className="h-6 w-6 opacity-90" />
+          </div>
+        ) : null}
       </div>
       {detail ? <div className="mt-3 text-sm opacity-80">{detail}</div> : null}
     </div>
@@ -101,7 +106,7 @@ export function NeoCommandPanel({
         {stats?.length ? (
           <div className="grid min-w-[280px] grid-cols-2 gap-3">
             {stats.map((stat) => (
-              <div key={stat.label} className="border-2 border-primary-foreground/40 bg-primary-foreground/10 p-4">
+              <div key={stat.label} className="rounded-[18px] border-2 border-primary-foreground/40 bg-primary-foreground/10 p-4">
                 <p className="text-2xl font-black">{stat.value}</p>
                 <p className="text-xs font-black uppercase tracking-[0.16em] text-primary-foreground/70">{stat.label}</p>
               </div>
@@ -139,7 +144,7 @@ export function NeoActionCard({
     <div className={cn("nh-card p-5", toneClass)}>
       <div className="flex items-start gap-4">
         {Icon ? (
-          <div className="border-2 border-current bg-background/20 p-3">
+          <div className="rounded-[18px] border-3 border-current bg-background/20 p-3 shadow-[3px_3px_0_hsl(var(--neo-shadow))]">
             <Icon className="h-5 w-5" />
           </div>
         ) : null}
@@ -210,7 +215,7 @@ export function NeoPanel({
   return (
     <section className={cn("nh-card overflow-hidden", toneClass, className)}>
       {(title || description || eyebrow || actions) ? (
-        <div className="flex flex-col gap-3 border-b-2 border-current p-5 md:flex-row md:items-start md:justify-between">
+        <div className="flex flex-col gap-3 border-b-3 border-current p-5 md:flex-row md:items-start md:justify-between">
           <div>
             {eyebrow ? <p className="nh-eyebrow opacity-75">{eyebrow}</p> : null}
             {title ? <h2 className="text-xl font-black uppercase leading-tight">{title}</h2> : null}
@@ -314,12 +319,12 @@ export function NeoLoadingState({
 
   return (
     <div className={cn("nh-card overflow-hidden bg-background", compact ? "p-5" : "p-8")}>
-      <div className="mb-5 h-3 border-2 border-foreground bg-primary" />
+      <div className="mb-5 h-3 rounded-full border-2 border-foreground bg-primary" />
       <div className="flex flex-col gap-5 md:flex-row md:items-center">
         <div className="flex gap-2">
-          <span className="h-12 w-5 animate-pulse border-2 border-foreground bg-accent shadow-[3px_3px_0_hsl(var(--foreground))]" />
-          <span className="h-12 w-5 animate-pulse border-2 border-foreground bg-secondary shadow-[3px_3px_0_hsl(var(--foreground))] [animation-delay:140ms]" />
-          <span className="h-12 w-5 animate-pulse border-2 border-foreground bg-primary shadow-[3px_3px_0_hsl(var(--foreground))] [animation-delay:280ms]" />
+          <span className="h-12 w-5 animate-pulse rounded-full border-2 border-foreground bg-accent shadow-[3px_3px_0_hsl(var(--neo-shadow))]" />
+          <span className="h-12 w-5 animate-pulse rounded-full border-2 border-foreground bg-secondary shadow-[3px_3px_0_hsl(var(--neo-shadow))] [animation-delay:140ms]" />
+          <span className="h-12 w-5 animate-pulse rounded-full border-2 border-foreground bg-primary shadow-[3px_3px_0_hsl(var(--neo-shadow))] [animation-delay:280ms]" />
         </div>
         <div>
           <p className="nh-eyebrow">Please wait</p>

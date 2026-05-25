@@ -710,7 +710,7 @@ export default function Communications({ defaultTab = "announcements" }: { defau
                   Send App Feedback
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Tell the NileHive team what you were trying to do, what felt confusing, and what would make the app easier.
+                  Tell the Club Services team what you were trying to do, what felt confusing, and what would make the app easier.
                 </p>
                 {!canViewFeedback ? (
                   <p className="border-2 border-primary bg-primary/10 p-3 text-sm font-semibold text-primary">

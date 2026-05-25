@@ -80,59 +80,52 @@ export default function Login() {
     return (
       <main className="flex min-h-screen flex-col overflow-hidden bg-background text-foreground">
         <section className="relative flex min-h-screen flex-1 items-center justify-center p-5 md:p-10">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,hsl(var(--secondary)/0.18),transparent_34%),linear-gradient(135deg,hsl(var(--muted)),hsl(var(--background))_45%,hsl(var(--accent)/0.12))]" />
-          <div className="absolute left-8 top-10 hidden h-40 w-40 rotate-12 border-[14px] border-secondary/25 md:block" />
-          <div className="absolute bottom-10 right-10 hidden h-56 w-56 -rotate-12 border-[18px] border-primary/15 lg:block" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_1px_1px,hsl(var(--accent)/0.7)_1.4px,transparent_0)] bg-[length:28px_28px]" />
+          <div className="absolute left-8 top-10 hidden h-40 w-40 rotate-12 rounded-[32px] border-[14px] border-secondary/25 md:block" />
+          <div className="absolute bottom-10 right-10 hidden h-56 w-56 -rotate-12 rounded-[44px] border-[18px] border-primary/15 lg:block" />
 
-          <div className="relative z-10 grid w-full max-w-6xl gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-            <aside className="nh-card-dark p-7 md:p-10">
-              <BrandLogo size="lg" variant="plain" className="mb-8 h-24 w-[22rem] max-w-full bg-white/95 p-2" />
-              <p className="nh-eyebrow text-primary-foreground/70">Club Services Access</p>
-              <h1 className="mt-4 text-5xl font-black uppercase leading-none tracking-tighter md:text-7xl">
-                Welcome Back.
-              </h1>
-              <p className="mt-6 max-w-xl border-l-4 border-secondary pl-5 text-lg leading-8 text-primary-foreground/80">
-                Sign in once with Campus One and open your official workspace for clubs, dues, events, reports, and feedback.
+          <section className="nh-card relative z-10 w-full max-w-2xl bg-card p-6 text-center md:p-10">
+            <div className="absolute -left-5 -top-5 rounded-full border-3 border-foreground bg-accent px-4 py-2 text-xs font-black uppercase tracking-[0.12em] shadow-[4px_4px_0_hsl(var(--neo-shadow))]">
+              CampusOne SSO
+            </div>
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full border-3 border-foreground bg-muted shadow-neo-sm">
+              <ShieldCheck className="h-8 w-8 text-primary" />
+            </div>
+            <BrandLogo size="lg" variant="plain" className="mx-auto mb-8 h-20 w-[22rem] max-w-full" />
+            <h1 className="text-5xl font-black leading-none tracking-[-0.05em] md:text-7xl">
+              Welcome Back.
+            </h1>
+            <p className="mt-4 text-lg font-medium text-muted-foreground">
+              Sign in with your Nile University account
+            </p>
+
+            <div className="mx-auto my-8 h-1 max-w-md rounded-full bg-accent" />
+
+            <div className="mx-auto max-w-xl rounded-[24px] border-3 border-foreground bg-muted p-5 text-left shadow-neo-sm">
+              <p className="text-2xl font-black tracking-[-0.04em]">Single Sign-On</p>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                Use your Nile University CampusOne account. No separate password needed. Club Services applies your correct club access after sign-in.
               </p>
-            </aside>
+            </div>
 
-            <section className="nh-card bg-card p-6 md:p-10">
-              <div className="mb-8 border-b-2 border-foreground pb-6">
-                <p className="nh-eyebrow">Single Sign-On</p>
-                <h2 className="mt-2 text-3xl font-black uppercase leading-tight md:text-5xl">
-                  Sign in with your Nile University account
-                </h2>
-                <p className="mt-4 text-sm leading-6 text-muted-foreground">
-                  Use your Nile University Campus One account. No separate password needed, just sign in with your university credentials.
-                </p>
+            {(isSignedOutView || authError === "cancelled" || authError === "failed") ? (
+              <div className={`mt-6 rounded-[18px] border-3 p-4 text-left text-sm font-bold ${
+                authError === "cancelled" || authError === "failed"
+                  ? "border-destructive bg-destructive/10 text-destructive"
+                  : "border-success bg-success/15 text-foreground"
+              }`}>
+                {statusMessage}
               </div>
+            ) : null}
 
-              {(isSignedOutView || authError === "cancelled" || authError === "failed") ? (
-                <div className={`mb-6 border-2 p-4 text-sm font-bold ${
-                  authError === "cancelled" || authError === "failed"
-                    ? "border-destructive bg-destructive/10 text-destructive"
-                    : "border-success bg-success/10 text-success"
-                }`}>
-                  {statusMessage}
-                </div>
-              ) : null}
-
-              <Button
-                className="h-14 w-full text-base font-black uppercase tracking-[0.08em]"
-                onClick={() => window.location.assign(getCampusOneOidcAuthUrl("login", redirectTo))}
-              >
-                Sign in with Campus One
-                <ArrowRight className="h-5 w-5" />
-              </Button>
-
-              <div className="mt-6 flex items-start gap-3 border-2 border-foreground bg-muted p-4 text-xs text-muted-foreground">
-                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
-                <p>
-                  Campus One verifies your identity. Club Services then applies your club-specific access, such as student, president, advisor, admin, or feedback manager.
-                </p>
-              </div>
-            </section>
-          </div>
+            <Button
+              className="mt-8 h-14 w-full text-base font-black uppercase tracking-[0.08em]"
+              onClick={() => window.location.assign(getCampusOneOidcAuthUrl("login", redirectTo))}
+            >
+              Sign in with Campus One
+              <ArrowRight className="h-5 w-5" />
+            </Button>
+          </section>
         </section>
         <SiteFooter />
       </main>
@@ -173,7 +166,7 @@ export default function Login() {
         <aside className="relative hidden overflow-hidden bg-primary p-12 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
           <div className="absolute inset-10 border-2 border-primary-foreground/20" />
           <div className="absolute -right-28 top-20 h-80 w-80 rotate-45 border-[18px] border-secondary/30" />
-          <div className="absolute -bottom-20 left-12 h-72 w-72 rotate-12 border-[18px] border-accent/30" />
+          <div className="absolute -bottom-20 left-12 h-72 w-72 rotate-12 rounded-[44px] border-[18px] border-accent/30" />
 
           <div className="relative z-10 max-w-xl">
             <p className="nh-eyebrow text-primary-foreground/70">Institutional Access</p>
@@ -185,7 +178,7 @@ export default function Login() {
             </p>
           </div>
 
-          <div className="relative z-10 border-2 border-primary-foreground/40 bg-primary/70 p-5">
+          <div className="relative z-10 rounded-[24px] border-2 border-primary-foreground/40 bg-primary/70 p-5">
             <p className="text-sm font-black uppercase tracking-[0.14em]">Notice to Students</p>
             <p className="mt-2 text-sm text-primary-foreground/75">
               Use your Nile University email address. Campus One manages shared sign-in and admin access, while Club Services manages student, advisor, and leadership roles locally.
@@ -206,7 +199,7 @@ export default function Login() {
             </div>
 
             <form className="nh-card bg-card p-6 md:p-10" onSubmit={handleSubmit}>
-              <div className="mb-8 border-b-2 border-foreground pb-6">
+              <div className="mb-8 border-b-3 border-foreground pb-6">
                 <p className="nh-eyebrow">Access Portal</p>
                 <h2 className="mt-2 text-4xl font-black uppercase">Sign In</h2>
                 <p className="mt-2 text-sm text-muted-foreground">Access your Club Services workspace.</p>
@@ -272,7 +265,7 @@ export default function Login() {
                   <ArrowRight className="h-5 w-5" />
                 </Button>
 
-                <div className="border-2 border-foreground bg-muted p-4 text-sm">
+                <div className="rounded-[18px] border-3 border-foreground bg-muted p-4 text-sm">
                   New club officer or student?{" "}
                   <Link className="font-black underline underline-offset-4" to="/signup">
                     Create an account

@@ -260,7 +260,7 @@ export async function downloadEventReportPdf(report: EventReportRecord) {
   const mediaCount = report.media_urls.length;
   const firstMediaUrl = report.media_urls[0];
 
-  builder.drawTextLine("NileHive", {
+  builder.drawTextLine("Club Services", {
     font: builder.boldFont,
     size: TITLE_FONT_SIZE,
     color: rgb(0.08, 0.29, 0.56)
@@ -377,7 +377,7 @@ export function downloadAdminPerformanceMatrixCsv(dashboard: AdminOperationsDash
   const csv = [headers, ...rows]
     .map((row) => row.map((value) => createCsvValue(value)).join(","))
     .join("\r\n");
-  const filename = `NileHive-Club-Performance-Matrix-${new Date().toISOString().slice(0, 10)}.csv`;
+  const filename = `Club-Services-Performance-Matrix-${new Date().toISOString().slice(0, 10)}.csv`;
 
   downloadBlob(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" }), filename);
 }
@@ -415,7 +415,7 @@ export function downloadFeedbackCsv(
     .map((row) => row.map((value) => createCsvValue(value)).join(","))
     .join("\r\n");
   const suffix = options.filenameSuffix ? `-${sanitizeFilenamePart(options.filenameSuffix)}` : "";
-  const filename = `NileHive-Feedback${suffix}-${new Date().toISOString().slice(0, 10)}.csv`;
+  const filename = `Club-Services-Feedback${suffix}-${new Date().toISOString().slice(0, 10)}.csv`;
 
   downloadBlob(new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8;" }), filename);
 }
@@ -474,7 +474,7 @@ export async function downloadAdminClubPerformancePdf(dashboard: AdminClubDashbo
   const currentLabel = dashboard.dues_comparison.current_academic_session;
   const previousLabel = dashboard.dues_comparison.previous_academic_session || "Previous session";
 
-  builder.drawTextLine("NileHive", {
+  builder.drawTextLine("Club Services", {
     font: builder.boldFont,
     size: TITLE_FONT_SIZE,
     color: rgb(0.08, 0.29, 0.56)

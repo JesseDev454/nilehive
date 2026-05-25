@@ -214,7 +214,7 @@ export default function ProfileSetup() {
                       ? (clubsError instanceof Error ? clubsError.message : "We could not load clubs right now. Please refresh and try again.")
                       : clubs.length === 0
                         ? "No clubs are available yet. Ask Club Services to add the official clubs for production."
-                        : "Official clubs appear here automatically. If no clubs are marked public yet, NileHive falls back to the current club directory."}
+                        : "Official clubs appear here automatically. If no clubs are marked public yet, Club Services falls back to the current club directory."}
                 </p>
               </div>
             </div>

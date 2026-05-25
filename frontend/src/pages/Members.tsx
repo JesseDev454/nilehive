@@ -444,7 +444,7 @@ export default function Members() {
               {replacementMemberLabel}
             </p>
             <p className="text-muted-foreground">
-              {currentPresidentLabel} will be demoted to a regular member record and lose local president access in NileHive.
+              {currentPresidentLabel} will be demoted to a regular member record and lose local president access in Club Services.
             </p>
           </div>
           <DialogFooter>
