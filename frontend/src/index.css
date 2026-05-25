@@ -248,7 +248,7 @@
   }
 
   .club-logo-orbit-ring-tertiary {
-    inset: 0.72rem;
+    inset: 0.48rem;
     border-style: dashed;
     border-color: hsl(212 100% 28% / 0.52);
     animation-duration: 5.75s;
@@ -257,9 +257,9 @@
   .club-logo-orbit-dot {
     position: absolute;
     top: 50%;
-    right: -0.25rem;
-    height: 0.62rem;
-    width: 0.62rem;
+    right: -0.18rem;
+    height: 0.48rem;
+    width: 0.48rem;
     border: 2px solid hsl(var(--sidebar-border));
     border-radius: 9999px;
     box-shadow: 2px 2px 0 hsl(var(--neo-shadow));
