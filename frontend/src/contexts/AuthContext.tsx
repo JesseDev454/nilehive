@@ -110,6 +110,14 @@ function isSignedOutLoginRoute() {
   return window.location.pathname === "/login" && searchParams.get("signed_out") === "1";
 }
 
+function isCampusOnePublicAuthRoute() {
+  if (typeof window === "undefined" || !isCampusOneOidcAuthProvider()) {
+    return false;
+  }
+
+  return ["/login", "/signup", "/signup/confirm", "/forgot-password", "/reset-password"].includes(window.location.pathname);
+}
+
 function redirectToPortal(path: "sign-in" | "sign-up" | "forgot-password" | "sign-out", callbackUrl = getCurrentUrl()) {
   if (typeof window === "undefined") {
     return;
@@ -317,7 +325,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
 
       if (usesCookieAuthProvider()) {
-        if (isSignedOutLoginRoute()) {
+        if (isSignedOutLoginRoute() || isCampusOnePublicAuthRoute()) {
           clearAuthState();
           return;
         }

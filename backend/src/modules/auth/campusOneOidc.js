@@ -86,6 +86,18 @@ function clearCampusOneSessionCookie(res) {
   appendSetCookie(res, buildCookie(CAMPUS_ONE_SESSION_COOKIE, "", getSessionCookieOptions(0)));
 }
 
+function getFrontendLoginUrl(searchParams = {}) {
+  const loginUrl = new URL(`${getEnv().FRONTEND_APP_URL.replace(/\/+$/, "")}/login`);
+
+  for (const [key, value] of Object.entries(searchParams)) {
+    if (value) {
+      loginUrl.searchParams.set(key, value);
+    }
+  }
+
+  return loginUrl.toString();
+}
+
 async function fetchJwks() {
   if (Date.now() - jwksCache.fetchedAt < JWKS_CACHE_TTL_MS && jwksCache.keys.length > 0) {
     return jwksCache.keys;
@@ -410,7 +422,15 @@ function createCampusOneAuthRouter(options = {}) {
     try {
       const code = typeof req.query.code === "string" ? req.query.code : "";
       const encodedState = typeof req.query.state === "string" ? req.query.state : "";
+      const oidcError = typeof req.query.error === "string" ? req.query.error : "";
       const cookies = parseCookies(req.headers.cookie || "");
+
+      if (oidcError || !code) {
+        const authError = oidcError ? (oidcError === "access_denied" ? "cancelled" : "failed") : "cancelled";
+        clearCampusOneOidcCookies(res);
+        res.redirect(getFrontendLoginUrl({ auth_error: authError }));
+        return;
+      }
 
       if (!code || !encodedState) {
         throw new ApiError(400, "CampusOne did not return the required sign-in details", "INVALID_OIDC_CALLBACK");
@@ -468,7 +488,7 @@ function createCampusOneAuthRouter(options = {}) {
 
   router.get("/campus-one/logout", (req, res) => {
     clearCampusOneSessionCookie(res);
-    res.redirect(`${getEnv().FRONTEND_APP_URL.replace(/\/+$/, "")}/login?signed_out=1`);
+    res.redirect(getFrontendLoginUrl({ signed_out: "1" }));
   });
 
   return router;

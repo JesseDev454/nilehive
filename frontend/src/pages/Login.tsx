@@ -39,21 +39,104 @@ export default function Login() {
 
   const requestedRedirect = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || "/";
   const redirectTo = isRoleSensitivePath(requestedRedirect) ? "/" : requestedRedirect;
-  const isSignedOutView = new URLSearchParams(location.search).get("signed_out") === "1";
+  const searchParams = new URLSearchParams(location.search);
+  const isSignedOutView = searchParams.get("signed_out") === "1";
+  const authError = searchParams.get("auth_error");
   const passwordAuthEnabled = isPasswordAuthEnabled();
   const cookieAuthEnabled = usesCookieAuthProvider();
+  const campusOneAuthEnabled = isCampusOneOidcAuthProvider();
 
   useEffect(() => {
-    if (cookieAuthEnabled && !isSignedOutView && !isLoading && !session) {
-      const targetUrl = isCampusOneOidcAuthProvider()
-        ? getCampusOneOidcAuthUrl("login", redirectTo)
-        : getPortalAuthUrl("sign-in", `${window.location.origin}${redirectTo}`);
-      window.location.assign(targetUrl);
+    if (cookieAuthEnabled && !campusOneAuthEnabled && !isSignedOutView && !isLoading && !session) {
+      window.location.assign(getPortalAuthUrl("sign-in", `${window.location.origin}${redirectTo}`));
     }
-  }, [cookieAuthEnabled, isLoading, isSignedOutView, redirectTo, session]);
+  }, [campusOneAuthEnabled, cookieAuthEnabled, isLoading, isSignedOutView, redirectTo, session]);
+
+  useEffect(() => {
+    if (authError === "cancelled") {
+      toast.error("Sign-in was cancelled", {
+        description: "Click Sign in with Campus One when you are ready to continue."
+      });
+    } else if (authError === "failed") {
+      toast.error("Campus One sign-in could not be completed", {
+        description: "Please try again. If it keeps happening, contact Club Services."
+      });
+    }
+  }, [authError]);
 
   if (!isLoading && session) {
     return <Navigate to={redirectTo} replace />;
+  }
+
+  if (cookieAuthEnabled && campusOneAuthEnabled) {
+    const statusMessage = authError === "cancelled"
+      ? "Sign-in was cancelled. Click Sign in with Campus One when you are ready to continue."
+      : authError === "failed"
+        ? "Campus One sign-in could not be completed. Please try again or contact Club Services."
+        : isSignedOutView
+          ? "You have signed out of Club Services. Your CampusOne session may still be active."
+          : "Use your Nile University Campus One account. No separate password needed.";
+
+    return (
+      <main className="flex min-h-screen flex-col overflow-hidden bg-background text-foreground">
+        <section className="relative flex min-h-screen flex-1 items-center justify-center p-5 md:p-10">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,hsl(var(--secondary)/0.18),transparent_34%),linear-gradient(135deg,hsl(var(--muted)),hsl(var(--background))_45%,hsl(var(--accent)/0.12))]" />
+          <div className="absolute left-8 top-10 hidden h-40 w-40 rotate-12 border-[14px] border-secondary/25 md:block" />
+          <div className="absolute bottom-10 right-10 hidden h-56 w-56 -rotate-12 border-[18px] border-primary/15 lg:block" />
+
+          <div className="relative z-10 grid w-full max-w-6xl gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+            <aside className="nh-card-dark p-7 md:p-10">
+              <BrandLogo size="lg" variant="plain" className="mb-8 h-24 w-[22rem] max-w-full bg-white/95 p-2" />
+              <p className="nh-eyebrow text-primary-foreground/70">Club Services Access</p>
+              <h1 className="mt-4 text-5xl font-black uppercase leading-none tracking-tighter md:text-7xl">
+                Welcome Back.
+              </h1>
+              <p className="mt-6 max-w-xl border-l-4 border-secondary pl-5 text-lg leading-8 text-primary-foreground/80">
+                Sign in once with Campus One and open your official workspace for clubs, dues, events, reports, and feedback.
+              </p>
+            </aside>
+
+            <section className="nh-card bg-card p-6 md:p-10">
+              <div className="mb-8 border-b-2 border-foreground pb-6">
+                <p className="nh-eyebrow">Single Sign-On</p>
+                <h2 className="mt-2 text-3xl font-black uppercase leading-tight md:text-5xl">
+                  Sign in with your Nile University account
+                </h2>
+                <p className="mt-4 text-sm leading-6 text-muted-foreground">
+                  Use your Nile University Campus One account. No separate password needed, just sign in with your university credentials.
+                </p>
+              </div>
+
+              {(isSignedOutView || authError === "cancelled" || authError === "failed") ? (
+                <div className={`mb-6 border-2 p-4 text-sm font-bold ${
+                  authError === "cancelled" || authError === "failed"
+                    ? "border-destructive bg-destructive/10 text-destructive"
+                    : "border-success bg-success/10 text-success"
+                }`}>
+                  {statusMessage}
+                </div>
+              ) : null}
+
+              <Button
+                className="h-14 w-full text-base font-black uppercase tracking-[0.08em]"
+                onClick={() => window.location.assign(getCampusOneOidcAuthUrl("login", redirectTo))}
+              >
+                Sign in with Campus One
+                <ArrowRight className="h-5 w-5" />
+              </Button>
+
+              <div className="mt-6 flex items-start gap-3 border-2 border-foreground bg-muted p-4 text-xs text-muted-foreground">
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
+                <p>
+                  Campus One verifies your identity. Club Services then applies your club-specific access, such as student, president, advisor, admin, or feedback manager.
+                </p>
+              </div>
+            </section>
+          </div>
+        </section>
+        <SiteFooter />
+      </main>
+    );
   }
 
   if (cookieAuthEnabled) {
@@ -61,22 +144,8 @@ export default function Login() {
       <main className="flex min-h-screen items-center justify-center bg-background p-6">
         <div className="nh-card max-w-md bg-card p-6 text-center">
           <BrandLogo size="lg" variant="plain" className="mx-auto mb-4 h-20 w-72 max-w-full" />
-          <h1 className="text-2xl font-black uppercase">
-            {isSignedOutView ? "Signed out" : "Opening sign in"}
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {isSignedOutView
-              ? "You have signed out of Club Services. Your CampusOne session may still be active."
-              : "Please wait while we send you to CampusOne."}
-          </p>
-          {isSignedOutView ? (
-            <Button
-              className="mt-5"
-              onClick={() => window.location.assign(getCampusOneOidcAuthUrl("login", redirectTo))}
-            >
-              Sign in with CampusOne
-            </Button>
-          ) : null}
+          <h1 className="text-2xl font-black uppercase">Opening sign in</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Please wait while we send you to the shared portal.</p>
         </div>
       </main>
     );

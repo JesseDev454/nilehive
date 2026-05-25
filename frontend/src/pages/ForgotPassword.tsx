@@ -26,15 +26,41 @@ export default function ForgotPassword() {
   const [sentEmail, setSentEmail] = useState("");
   const passwordAuthEnabled = isPasswordAuthEnabled();
   const cookieAuthEnabled = usesCookieAuthProvider();
+  const campusOneAuthEnabled = isCampusOneOidcAuthProvider();
 
   useEffect(() => {
-    if (cookieAuthEnabled) {
-      const targetUrl = isCampusOneOidcAuthProvider()
-        ? getCampusOneOidcAuthUrl("login", "/")
-        : getPortalAuthUrl("forgot-password", window.location.origin);
-      window.location.assign(targetUrl);
+    if (cookieAuthEnabled && !campusOneAuthEnabled) {
+      window.location.assign(getPortalAuthUrl("forgot-password", window.location.origin));
     }
-  }, [cookieAuthEnabled]);
+  }, [campusOneAuthEnabled, cookieAuthEnabled]);
+
+  if (cookieAuthEnabled && campusOneAuthEnabled) {
+    return (
+      <main className="flex min-h-screen flex-col bg-background text-foreground">
+        <section className="flex flex-1 items-center justify-center p-5">
+          <div className="nh-card max-w-xl bg-card p-6 text-center md:p-10">
+            <BrandLogo size="lg" variant="plain" className="mx-auto mb-5 h-24 w-[22rem] max-w-full" />
+            <p className="nh-eyebrow">Account Recovery</p>
+            <h1 className="mt-2 text-3xl font-black uppercase md:text-5xl">Use Campus One recovery</h1>
+            <p className="mt-4 text-sm leading-6 text-muted-foreground">
+              Club Services does not manage your Campus One password. Use Campus One or your Nile University account recovery options to restore access.
+            </p>
+            <Button
+              className="mt-6 h-14 w-full"
+              onClick={() => window.location.assign(getCampusOneOidcAuthUrl("login", "/"))}
+            >
+              Sign in with Campus One
+            </Button>
+            <Link className="mt-5 inline-flex items-center justify-center gap-2 text-sm font-black underline underline-offset-4" to="/login">
+              <ArrowLeft className="h-4 w-4" />
+              Back to sign in
+            </Link>
+          </div>
+        </section>
+        <SiteFooter />
+      </main>
+    );
+  }
 
   if (cookieAuthEnabled) {
     return (

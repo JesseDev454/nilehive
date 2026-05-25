@@ -50,6 +50,7 @@ function withCampusOneOidcEnv(t) {
     AUTH_PROVIDER: process.env.AUTH_PROVIDER,
     CAMPUS_ONE_CLIENT_SECRET: process.env.CAMPUS_ONE_CLIENT_SECRET,
     CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN: process.env.CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN,
+    FRONTEND_APP_URL: process.env.FRONTEND_APP_URL,
     SUPABASE_URL: process.env.SUPABASE_URL,
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -58,6 +59,7 @@ function withCampusOneOidcEnv(t) {
   process.env.AUTH_PROVIDER = "campus_one_oidc";
   process.env.CAMPUS_ONE_CLIENT_SECRET = "test-campus-one-secret";
   process.env.CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN = "false";
+  process.env.FRONTEND_APP_URL = "https://clubs.campusone.com.ng";
   process.env.SUPABASE_URL = process.env.SUPABASE_URL || "https://example.supabase.co";
   process.env.SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "anon";
   process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "service";
@@ -157,4 +159,17 @@ test("CampusOne admin session receives effective admin role", async (t) => {
   assert.equal(payload.data.profile.app_role, "student");
   assert.equal(payload.data.profile.effective_role, "admin");
   assert.equal(payload.data.profile.portal_role, "admin");
+});
+
+test("CampusOne cancelled consent redirects to friendly login page", async (t) => {
+  withCampusOneOidcEnv(t);
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/auth/campus-one/callback?error=access_denied`, {
+    redirect: "manual"
+  });
+
+  assert.equal(response.status, 302);
+  assert.equal(response.headers.get("location"), "https://clubs.campusone.com.ng/login?auth_error=cancelled");
 });
