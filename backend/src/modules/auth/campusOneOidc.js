@@ -298,6 +298,23 @@ async function exchangeCodeForTokens({ code, codeVerifier }) {
   return payload;
 }
 
+function resolveCampusOnePortalRole(claims = {}) {
+  const candidates = [
+    claims.role,
+    ...(Array.isArray(claims.roles) ? claims.roles : [])
+  ].map((role) => String(role || "").trim().toLowerCase());
+
+  if (candidates.includes("admin")) {
+    return "admin";
+  }
+
+  if (candidates.includes("staff")) {
+    return "staff";
+  }
+
+  return "student";
+}
+
 function getProfileDefaultsFromClaims(claims) {
   const env = getEnv();
   const portalUserId = String(claims.sub || "").trim();
@@ -321,7 +338,7 @@ function getProfileDefaultsFromClaims(claims) {
     email,
     fullName,
     studentId,
-    portalRole: claims.role || "student"
+    portalRole: resolveCampusOnePortalRole(claims)
   };
 }
 
@@ -511,5 +528,6 @@ function createCampusOneAuthRouter(options = {}) {
 module.exports = {
   createCampusOneAuthRouter,
   resolveCampusOneProfile,
+  resolveCampusOnePortalRole,
   verifyCampusOneIdToken
 };

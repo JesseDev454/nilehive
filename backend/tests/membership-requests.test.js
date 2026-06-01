@@ -3,7 +3,9 @@ const assert = require("node:assert/strict");
 const { createApp } = require("../src/app");
 const {
   createMembershipRequest,
-  decideMembershipRequest
+  decideMembershipRequest,
+  formatMembershipRequest,
+  markWhatsAppOnboardingAdded
 } = require("../src/modules/membership-requests/membership-requests.service");
 const { updateDuePayment } = require("../src/modules/dues/dues.service");
 
@@ -64,7 +66,7 @@ function createPayment(overrides = {}) {
     id: "payment-1",
     club_id: "club-1",
     member_id: "member-1",
-    amount: 5000,
+    amount: 10000,
     academic_session: "2025/2026",
     payment_reference: null,
     proof_url: null,
@@ -155,7 +157,7 @@ test("student can create a paid membership request", async () => {
   assert.equal(createdPayment.status, "submitted");
   assert.equal(createdPayment.payment_reference, null);
   assert.equal(createdPayment.payer_note, null);
-  assert.equal(createdRequest.dues_amount, 5000);
+  assert.equal(createdRequest.dues_amount, 10000);
   assert.equal(request.requested_role, "member");
 });
 
@@ -317,7 +319,7 @@ test("membership request creation rejects leadership roles", async () => {
   );
 });
 
-test("president approval activates membership and verifies the submitted payment", async () => {
+test("admin approval activates membership and verifies the submitted payment", async () => {
   let updatedPayment;
   let memberStatusUpdate;
   let requestUpdate;
@@ -372,9 +374,9 @@ test("president approval activates membership and verifies the submitted payment
 
   const result = await decideMembershipRequest({
     actor: {
-      id: "president-1",
-      role: "president",
-      clubId: "club-1"
+      id: "admin-1",
+      role: "admin",
+      clubId: null
     },
     requestId: "request-1",
     payload: {
@@ -425,7 +427,7 @@ test("approving a membership request sets club_id on a profile with no club", as
   };
 
   await decideMembershipRequest({
-    actor: { id: "president-1", role: "president", clubId: "club-1" },
+    actor: { id: "admin-1", role: "admin", clubId: null },
     requestId: "request-1",
     payload: { decision: "approve", remarks: "Welcome aboard." },
     database: fakeDatabase
@@ -436,7 +438,7 @@ test("approving a membership request sets club_id on a profile with no club", as
   assert.equal(profileUpdateCall.updates.club_id, "club-1");
 });
 
-test("president cannot review membership requests for another club", async () => {
+test("president cannot review membership requests", async () => {
   const fakeDatabase = {
     async getMembershipRequestById() {
       return createRequest({
@@ -531,9 +533,9 @@ test("dues payment verification activates membership and updates request state",
 
   const payment = await updateDuePayment({
     actor: {
-      id: "president-1",
-      role: "president",
-      clubId: "club-1"
+      id: "admin-1",
+      role: "admin",
+      clubId: null
     },
     paymentId: "payment-1",
     payload: {
@@ -546,6 +548,70 @@ test("dues payment verification activates membership and updates request state",
   assert.equal(payment.status, "paid");
   assert.equal(memberUpdate.membership_status, "active");
   assert.equal(requestUpdate.status, "active");
+  assert.equal(requestUpdate.whatsapp_onboarding_status, "ready");
+});
+
+test("admin can mark a paid active member as added to WhatsApp", async () => {
+  let updatePayload;
+  const fakeDatabase = {
+    async getMembershipRequestById() {
+      return createRequest({
+        status: "active",
+        due_payment: createPayment({ status: "paid" }),
+        profile: { id: "student-1", full_name: "Ada Student", phone_number: "08012345678", role: "student" },
+        club: { id: "club-1", name: "Robotics Club", code: "ROB" }
+      });
+    },
+    async markMembershipRequestWhatsAppAdded(requestId, update) {
+      updatePayload = update;
+      return createRequest({
+        id: requestId,
+        status: "active",
+        due_payment: createPayment({ status: "paid" }),
+        profile: { id: "student-1", full_name: "Ada Student", phone_number: "08012345678", role: "student" },
+        club: { id: "club-1", name: "Robotics Club", code: "ROB" },
+        ...update
+      });
+    }
+  };
+
+  const request = await markWhatsAppOnboardingAdded({
+    actor: { id: "admin-1", role: "admin" },
+    requestId: "request-1",
+    payload: { notes: "Added manually." },
+    database: fakeDatabase
+  });
+
+  assert.equal(updatePayload.whatsapp_onboarding_status, "added");
+  assert.equal(request.whatsapp_onboarding_status, "added");
+  assert.equal(request.whatsapp_phone_number, "2348012345678");
+  assert.match(request.whatsapp_chat_url, /^https:\/\/wa\.me\/2348012345678/);
+});
+
+test("admin WhatsApp details show no chat link when a student phone number is missing", () => {
+  const request = formatMembershipRequest(createRequest({
+    status: "active",
+    due_payment: createPayment({ status: "paid" }),
+    profile: { id: "student-1", full_name: "Ada Student", phone_number: null, role: "student" }
+  }), {
+    includeFinancialDetails: true,
+    includeWhatsAppAdminDetails: true
+  });
+
+  assert.equal(request.whatsapp_phone_number, null);
+  assert.equal(request.whatsapp_chat_url, null);
+});
+
+test("president cannot complete WhatsApp onboarding", async () => {
+  await assert.rejects(
+    () =>
+      markWhatsAppOnboardingAdded({
+        actor: { id: "president-1", role: "president", clubId: "club-1" },
+        requestId: "request-1",
+        database: {}
+      }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
 });
 
 function createRouteDatabase() {

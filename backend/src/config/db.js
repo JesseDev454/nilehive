@@ -12,10 +12,10 @@ const pushSubscriptionSelect =
   "id, user_id, endpoint, p256dh, auth, user_agent, created_at, updated_at, last_used_at";
 const eventReminderSelect =
   "id, user_id, proposal_id, message, remind_at, delivery_status, created_at";
-const clubSelect = "id, name, code, advisor_id, dues_amount, created_at";
+const clubSelect = "id, name, code, description, advisor_id, dues_amount, is_public_signup, whatsapp_group_name, whatsapp_onboarding_notes, created_at";
 const clubAdvisorAssignmentSelect =
   "id, club_id, advisor_profile_id, assigned_by, remarks, created_at, club:clubs!club_advisors_club_id_fkey(id, name, code), advisor:profiles!club_advisors_advisor_profile_id_fkey(id, full_name, role, club_id, student_id)";
-const publicClubSelect = "id, name, code, dues_amount, created_at, is_public_signup";
+const publicClubSelect = "id, name, code, description, dues_amount, created_at, is_public_signup";
 const taskSelect =
   "id, club_id, assigned_by, assigned_to, title, description, priority, status, due_date, created_at, updated_at, assigned_by_profile:profiles!tasks_assigned_by_fkey(id, full_name, student_id, role), assigned_to_profile:profiles!tasks_assigned_to_fkey(id, full_name, student_id, role)";
 const taskStatusHistorySelect =
@@ -47,7 +47,7 @@ const profileWithClubSelect =
 const legacyProfileWithClubSelect =
   "id, full_name, role, club_id, student_id, requested_role, onboarding_status, created_at, updated_at, club:clubs!profiles_club_id_fkey(id, name, code)";
 const membershipRequestSelect =
-  "id, profile_id, club_id, requested_role, status, remarks, decision_remarks, reviewed_by, reviewed_at, member_id, due_payment_id, dues_amount, academic_session, student_type, join_reason, created_at, updated_at, profile:profiles!membership_requests_profile_id_fkey(id, full_name, student_id, role), club:clubs!membership_requests_club_id_fkey(id, name, code), due_payment:due_payments!membership_requests_due_payment_id_fkey(id, club_id, member_id, amount, academic_session, payment_reference, payment_account_name, payment_paid_at, payer_note, proof_url, submitted_at, status, verified_by, verified_at, created_at, updated_at)";
+  "id, profile_id, club_id, requested_role, status, remarks, decision_remarks, reviewed_by, reviewed_at, member_id, due_payment_id, dues_amount, academic_session, student_type, join_reason, whatsapp_onboarding_status, whatsapp_added_by, whatsapp_added_at, whatsapp_onboarding_notes, created_at, updated_at, profile:profiles!membership_requests_profile_id_fkey(id, full_name, student_id, phone_number, role), club:clubs!membership_requests_club_id_fkey(id, name, code), due_payment:due_payments!membership_requests_due_payment_id_fkey(id, club_id, member_id, amount, academic_session, payment_reference, payment_account_name, payment_paid_at, payer_note, proof_url, submitted_at, status, verified_by, verified_at, created_at, updated_at)";
 const leadershipApplicationSelect =
   "id, profile_id, club_id, current_app_role, requested_role, status, reason, experience, goals, availability, reviewed_by, reviewed_at, decision_remarks, created_at, updated_at, profile:profiles!leadership_applications_profile_id_fkey(id, full_name, student_id, role), club:clubs!leadership_applications_club_id_fkey(id, name, code)";
 const profileRoleHistorySelect =
@@ -145,8 +145,12 @@ function createDatabase(options = {}) {
       id: club.id,
       name: club.name,
       code: club.code ?? null,
+      description: club.description ?? null,
       advisor_id: club.advisor_id ?? null,
-      dues_amount: club.dues_amount === null || club.dues_amount === undefined ? 5000 : Number(club.dues_amount),
+      dues_amount: club.dues_amount === null || club.dues_amount === undefined ? 10000 : Number(club.dues_amount),
+      is_public_signup: club.is_public_signup ?? true,
+      whatsapp_group_name: club.whatsapp_group_name ?? null,
+      whatsapp_onboarding_notes: club.whatsapp_onboarding_notes ?? null,
       created_at: club.created_at ?? null
     };
   }
@@ -194,6 +198,13 @@ function createDatabase(options = {}) {
     publicClubsCache = {
       items: clubs,
       expiresAt: Date.now() + PUBLIC_CLUB_CACHE_TTL_MS
+    };
+  }
+
+  function clearCachedPublicClubs() {
+    publicClubsCache = {
+      items: null,
+      expiresAt: 0
     };
   }
 
@@ -1288,6 +1299,37 @@ function createDatabase(options = {}) {
       return data ?? null;
     },
 
+    async createClub(club) {
+      const { data, error } = await getClient()
+        .from("clubs")
+        .insert(club)
+        .select(clubSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      clearCachedPublicClubs();
+      return normalizeClub(data);
+    },
+
+    async updateClub(clubId, update) {
+      const { data, error } = await getClient()
+        .from("clubs")
+        .update(update)
+        .eq("id", clubId)
+        .select(clubSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      clearCachedPublicClubs();
+      return normalizeClub(data);
+    },
+
     async createEventReminders(reminders) {
       if (!reminders.length) {
         return [];
@@ -1620,6 +1662,7 @@ function createDatabase(options = {}) {
         throw error;
       }
 
+      clearCachedPublicClubs();
       return normalizeClub(data);
     },
 
@@ -1634,6 +1677,7 @@ function createDatabase(options = {}) {
         throw error;
       }
 
+      clearCachedPublicClubs();
       return (data ?? []).map(normalizeClub);
     },
 
@@ -2141,6 +2185,21 @@ function createDatabase(options = {}) {
         .from("announcements")
         .insert(announcement)
         .select(announcementSelect)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    },
+
+    async markMembershipRequestWhatsAppAdded(requestId, update) {
+      const { data, error } = await getClient()
+        .from("membership_requests")
+        .update(update)
+        .eq("id", requestId)
+        .select(membershipRequestSelect)
         .single();
 
       if (error) {

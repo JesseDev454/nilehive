@@ -22,6 +22,7 @@ import Approvals from "@/pages/Approvals";
 import Analytics from "@/pages/Analytics";
 import AdminClubDashboard from "@/pages/AdminClubDashboard";
 import Communications from "@/pages/Communications";
+import Clubs from "@/pages/Clubs";
 import Dues from "@/pages/Dues";
 import EventCalendar from "@/pages/EventCalendar";
 import EventCheckIn from "@/pages/EventCheckIn";
@@ -120,6 +121,7 @@ const App = () => (
                   <Route path="/members" element={<Members />} />
                   <Route path="/dues" element={<Dues />} />
                   <Route path="/communications" element={<Communications />} />
+                  <Route path="/clubs" element={<Clubs />} />
                   <Route path="/feedback" element={<Communications defaultTab="feedback" />} />
                   <Route path="/tasks" element={<Tasks />} />
                   <Route path="/clubs/:clubId/dashboard" element={<AdminClubDashboard />} />

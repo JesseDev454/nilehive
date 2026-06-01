@@ -65,17 +65,17 @@ export default function Dues() {
   const { role } = useRole();
   const queryClient = useQueryClient();
   const [fresherAmount, setFresherAmount] = useState("10000");
-  const [returningAmount, setReturningAmount] = useState("5000");
+  const [returningAmount, setReturningAmount] = useState("10000");
   const [bankName, setBankName] = useState("Providus Bank");
   const [accountNumber, setAccountNumber] = useState("1305861314");
   const [accountName, setAccountName] = useState("Nile Arts & Creative Hub");
   const [paymentInstructions, setPaymentInstructions] = useState(
-    "Freshers pay N10,000. Returning students pay N5,000. Submit the payment reference and proof used for Club Services review."
+    "All students pay N10,000 per session. Submit the payment reference and proof used for Club Services review."
   );
   const [duesPage, setDuesPage] = useState(1);
   const [selectedClubId, setSelectedClubId] = useState("all");
   const [proofLinksByPaymentId, setProofLinksByPaymentId] = useState<Record<string, string>>({});
-  const canViewDues = role === "president" || role === "admin";
+  const canViewDues = role === "admin";
   const canManageSharedProfile = role === "admin";
   const duesClubFilter = role === "admin" && selectedClubId !== "all" ? selectedClubId : undefined;
 
@@ -114,7 +114,7 @@ export default function Dues() {
     }
 
     setFresherAmount(String(sharedPaymentSettings.fresher_dues_amount ?? 10000));
-    setReturningAmount(String(sharedPaymentSettings.returning_student_dues_amount ?? 5000));
+    setReturningAmount(String(sharedPaymentSettings.returning_student_dues_amount ?? 10000));
     setBankName(sharedPaymentSettings.bank_name);
     setAccountNumber(sharedPaymentSettings.account_number);
     setAccountName(sharedPaymentSettings.account_name);
@@ -234,7 +234,7 @@ export default function Dues() {
         <NeoPageHeader
           eyebrow="Finance"
           title="Dues & Payments"
-          description="Dues tracking is available to club presidents and Club Services admins."
+          description="Dues tracking is available only to Club Services admins."
         />
         <NeoStateCard
           icon={CreditCard}
@@ -250,7 +250,7 @@ export default function Dues() {
       <NeoPageHeader
         eyebrow="Finance"
         title="Dues & Payment Review"
-        description="Students attach payment details when they sign up or join a club. Presidents and Club Services verify those dues records here."
+        description="Students attach payment details when they join a club. Club Services verifies those records here."
       />
 
       <div className="nh-metric-grid">
@@ -283,7 +283,7 @@ export default function Dues() {
         <CardHeader>
           <CardTitle className="text-lg">Club Services Account</CardTitle>
           <p className="text-sm text-muted-foreground">
-            All clubs use one payment destination. Freshers and returning students are charged from this shared profile.
+            All clubs use one payment destination. Every student is charged ₦10,000 per session from this shared profile.
           </p>
         </CardHeader>
         <CardContent>
@@ -296,7 +296,7 @@ export default function Dues() {
                   type="number"
                   min="0"
                   value={fresherAmount}
-                  onChange={(event) => setFresherAmount(event.target.value)}
+                  readOnly
                   required
                 />
               </div>
@@ -307,7 +307,7 @@ export default function Dues() {
                   type="number"
                   min="0"
                   value={returningAmount}
-                  onChange={(event) => setReturningAmount(event.target.value)}
+                  readOnly
                   required
                 />
               </div>
@@ -357,7 +357,7 @@ export default function Dues() {
               </div>
               <div className="nh-card-soft p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Returning Students Dues</p>
-                <p className="mt-1 font-semibold">{formatCurrency(sharedPaymentSettings?.returning_student_dues_amount ?? 5000)}</p>
+                <p className="mt-1 font-semibold">{formatCurrency(sharedPaymentSettings?.returning_student_dues_amount ?? 10000)}</p>
               </div>
               <div className="nh-card-soft p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Bank</p>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { FileText, ImageIcon, Loader2, Upload } from "lucide-react";
+import { Download, FileText, ImageIcon, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { DataPagination } from "@/components/DataPagination";
 import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
@@ -22,7 +22,7 @@ import {
   getEventReports,
   type EventReportRecord
 } from "@/lib/api";
-import { downloadEventReportPdf, downloadReportMediaZip } from "@/lib/exports";
+import { downloadEventReportPdf, downloadEventReportsZip, downloadReportMediaZip } from "@/lib/exports";
 import { uploadStorageFile } from "@/lib/storage";
 import { actionError, actionSuccess } from "@/lib/notify";
 import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
@@ -173,6 +173,7 @@ export default function MediaArchive() {
   const [selectedClubId, setSelectedClubId] = useState("all");
   const [downloadingReportId, setDownloadingReportId] = useState<string | null>(null);
   const [downloadingMediaReportId, setDownloadingMediaReportId] = useState<string | null>(null);
+  const [isDownloadingBulkReports, setIsDownloadingBulkReports] = useState(false);
   const canSubmitReports = role === "president";
   const canViewReports = ["admin", "advisor", "president"].includes(role);
   const reportClubFilter = role === "admin" && selectedClubId !== "all" ? selectedClubId : undefined;
@@ -365,6 +366,41 @@ export default function MediaArchive() {
     }
   }
 
+  async function handleDownloadBulkReports() {
+    setIsDownloadingBulkReports(true);
+
+    try {
+      const allReports: EventReportRecord[] = [];
+      let nextPage = 1;
+      let hasNext = true;
+
+      while (hasNext) {
+        const reportPage = await getEventReports({
+          page: nextPage,
+          page_size: 100,
+          club_id: reportClubFilter
+        });
+        allReports.push(...reportPage.items);
+        hasNext = reportPage.has_next;
+        nextPage += 1;
+      }
+
+      if (!allReports.length) {
+        toast.info("No reports to download", {
+          description: "This filter does not have any event reports yet."
+        });
+        return;
+      }
+
+      await downloadEventReportsZip(allReports);
+      actionSuccess("Reports ZIP ready", `${allReports.length} event report PDF(s) were prepared for your device.`);
+    } catch (downloadError) {
+      actionError("Could not download reports ZIP", downloadError, getErrorMessage(downloadError));
+    } finally {
+      setIsDownloadingBulkReports(false);
+    }
+  }
+
   if (!canViewReports) {
     return (
       <div className="nh-page">
@@ -536,6 +572,10 @@ export default function MediaArchive() {
                     ))}
                   </SelectContent>
                 </Select>
+                <Button type="button" variant="outline" disabled={isDownloadingBulkReports} onClick={handleDownloadBulkReports}>
+                  {isDownloadingBulkReports ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                  {isDownloadingBulkReports ? "Preparing ZIP..." : "Download Filtered Reports ZIP"}
+                </Button>
               </div>
             ) : null}
           </div>

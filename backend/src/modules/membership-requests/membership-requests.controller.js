@@ -4,7 +4,8 @@ const {
   createMembershipRequest,
   decideMembershipRequest,
   listMembershipRequests,
-  listMyMembershipRequests
+  listMyMembershipRequests,
+  markWhatsAppOnboardingAdded
 } = require("./membership-requests.service");
 
 function createMembershipRequestsController(options = {}) {
@@ -58,6 +59,17 @@ function createMembershipRequestsController(options = {}) {
       });
 
       res.status(200).json({ data: result });
+    }),
+
+    markWhatsAppAdded: asyncHandler(async (req, res) => {
+      const request = await markWhatsAppOnboardingAdded({
+        actor: req.user,
+        requestId: req.params.requestId,
+        payload: req.body,
+        database
+      });
+
+      res.status(200).json({ data: request });
     })
   };
 }

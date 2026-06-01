@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Loader2, Search, ShieldCheck, Users } from "lucide-react";
+import { ArrowLeft, Check, Copy, ExternalLink, Loader2, Search, ShieldCheck, Users } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { DataPagination } from "@/components/DataPagination";
@@ -22,8 +22,8 @@ import {
   getClubs,
   getClubPaymentSettings,
   getMembershipRequests,
-  getMyDuePayments,
   getMyMembershipRequests,
+  markMembershipWhatsAppAdded,
   submitDuePaymentConfirmation,
   type ClubRecord,
   type DuePaymentRecord,
@@ -198,7 +198,7 @@ function resolveJoinAmount(
     return settings?.fresher_dues_amount ?? 10000;
   }
 
-  return settings?.returning_student_dues_amount ?? 5000;
+  return settings?.returning_student_dues_amount ?? 10000;
 }
 
 function DuesConfirmationCard({
@@ -343,6 +343,9 @@ function DuesConfirmationCard({
     return (
       <div className="mt-4 rounded-xl border border-success/20 bg-success/5 p-4 text-sm">
         <p className="font-semibold text-success">Dues verified. You are now an active member.</p>
+        <p className="mt-1 text-muted-foreground">
+          Club Services will add you to the official club WhatsApp group. You do not need to request or share an invite link.
+        </p>
       </div>
     );
   }
@@ -968,12 +971,6 @@ function StudentMembershipView() {
     queryFn: () => getMyMembershipRequests(),
     retry: false
   });
-  const { data: myDuesData } = useQuery({
-    queryKey: ["my-dues"],
-    queryFn: () => getMyDuePayments(),
-    retry: false
-  });
-
   const requestByClubId = useMemo(
     () => new Map(myRequests.map((request) => [request.club_id, request])),
     [myRequests]
@@ -1104,31 +1101,6 @@ function StudentMembershipView() {
         </Card>
       ) : null}
 
-      {myDuesData?.payments.length ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Your Dues Records</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {myDuesData.payments.map((payment) => (
-              <div key={payment.id} className="nh-list-card">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <p className="font-semibold">{formatCurrency(payment.amount)}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Session {payment.academic_session} - Paid on {formatDate(payment.payment_paid_at)}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {payment.payment_account_name ? `Paid by ${payment.payment_account_name}` : "Receipt uploaded for review"}
-                    </p>
-                  </div>
-                  <Badge className="capitalize">{payment.status}</Badge>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      ) : null}
     </div>
   );
 }
@@ -1138,6 +1110,21 @@ function ReviewerMembershipView() {
   const [statusFilter, setStatusFilter] = useState<(typeof REQUEST_STATUSES)[number]>("all");
   const [clubFilter, setClubFilter] = useState("all");
   const [page, setPage] = useState(1);
+  const queryClient = useQueryClient();
+  const whatsappMutation = useMutation({
+    mutationFn: (requestId: string) => markMembershipWhatsAppAdded(requestId),
+    onSuccess: async () => {
+      toast.success("WhatsApp onboarding completed", {
+        description: "The student is marked as added to the official club group."
+      });
+      await queryClient.invalidateQueries({ queryKey: ["membership-requests"] });
+    },
+    onError: (mutationError) => {
+      toast.error("Could not complete WhatsApp onboarding", {
+        description: getErrorMessage(mutationError)
+      });
+    }
+  });
 
   useEffect(() => {
     setPage(1);
@@ -1164,7 +1151,7 @@ function ReviewerMembershipView() {
         page,
         page_size: DEFAULT_PAGE_SIZE
       }),
-    enabled: role === "president" || role === "admin",
+    enabled: role === "admin",
     retry: false
   });
 
@@ -1258,6 +1245,40 @@ function ReviewerMembershipView() {
                         {request.decision_remarks ? (
                           <p className="text-sm text-muted-foreground">Last note: {request.decision_remarks}</p>
                         ) : null}
+                        {request.status === "active" ? (
+                          <div className="mt-3 rounded-xl border-2 border-primary/20 bg-primary/5 p-3">
+                            <p className="font-semibold text-primary">WhatsApp onboarding</p>
+                            {request.whatsapp_onboarding_status === "added" ? (
+                              <p className="mt-1 text-sm text-success">Student marked as added to the official group.</p>
+                            ) : request.whatsapp_phone_number ? (
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                <Button asChild type="button" size="sm" variant="outline">
+                                  <a href={request.whatsapp_chat_url || "#"} target="_blank" rel="noreferrer">
+                                    <ExternalLink className="h-4 w-4" /> Open WhatsApp Chat
+                                  </a>
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => void navigator.clipboard.writeText(request.whatsapp_phone_number || "")}
+                                >
+                                  <Copy className="h-4 w-4" /> Copy Phone Number
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  disabled={whatsappMutation.isPending}
+                                  onClick={() => whatsappMutation.mutate(request.id)}
+                                >
+                                  <Check className="h-4 w-4" /> Mark Added to Group
+                                </Button>
+                              </div>
+                            ) : (
+                              <p className="mt-1 text-sm text-destructive">Phone number is missing. Ask the student to update their profile before adding them.</p>
+                            )}
+                          </div>
+                        ) : null}
                       </div>
                       <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
                         <p className="font-semibold text-primary">Next step</p>
@@ -1291,7 +1312,7 @@ export default function Membership() {
     return <StudentMembershipView />;
   }
 
-  if (role === "president" || role === "admin") {
+  if (role === "admin") {
     return <ReviewerMembershipView />;
   }
 

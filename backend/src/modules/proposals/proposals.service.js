@@ -26,6 +26,12 @@ const ADMIN_DECISION_TRANSITIONS = Object.freeze({
   pending_admin_review: Object.freeze({
     approve: "approved",
     reject: "admin_rejected"
+  }),
+  advisor_rejected: Object.freeze({
+    approve: "approved"
+  }),
+  admin_rejected: Object.freeze({
+    approve: "approved"
   })
 });
 
@@ -789,6 +795,17 @@ async function submitAdminDecision(options) {
   assertProposalIsNotSelfReviewed(actor, proposal);
 
   const decidedAt = new Date().toISOString();
+  const isRejectedOverride = ["advisor_rejected", "admin_rejected"].includes(proposal.status);
+
+  if (isRejectedOverride && (!validatedPayload.remarks || validatedPayload.decision !== "approve")) {
+    throw new ApiError(
+      400,
+      "Add override remarks before approving a rejected proposal",
+      "PROPOSAL_OVERRIDE_REMARKS_REQUIRED",
+      { field: "remarks" }
+    );
+  }
+
   const nextStatus = getNextAdminProposalStatus(proposal.status, validatedPayload.decision);
 
   const updatedProposal = await database.applyAdminDecision({
@@ -865,7 +882,8 @@ async function submitAdminDecision(options) {
       stage: "admin",
       decision: validatedPayload.decision,
       previous_status: proposal.status,
-      new_status: updatedProposal.status
+      new_status: updatedProposal.status,
+      override_rejection: isRejectedOverride
     }
   });
 

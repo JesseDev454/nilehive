@@ -174,6 +174,19 @@ export default function ProposalDetail() {
       return;
     }
 
+    const isRejectedOverride = ["advisor_rejected", "admin_rejected"].includes(proposal.status);
+
+    if (isRejectedOverride && !adminRemarks.trim()) {
+      toast.error("Add override remarks", {
+        description: "Explain why Club Services is approving this rejected proposal."
+      });
+      return;
+    }
+
+    if (isRejectedOverride && !window.confirm("Approve this rejected proposal and record the override?")) {
+      return;
+    }
+
     setAdminDecision(decision);
 
     try {
@@ -439,25 +452,34 @@ export default function ProposalDetail() {
                 </Card>
               )}
 
-              {role === "admin" && proposal.status === "pending_admin_review" && (
+              {role === "admin" && ["pending_admin_review", "advisor_rejected", "admin_rejected"].includes(proposal.status) && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">Club Services Decision</CardTitle>
+                    <CardTitle className="text-base">
+                      {proposal.status === "pending_admin_review" ? "Club Services Decision" : "Approve Rejected Proposal"}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {proposal.status !== "pending_admin_review" ? (
+                      <p className="text-sm text-muted-foreground">
+                        This bypasses the previous rejection. Add a clear explanation so the override remains auditable.
+                      </p>
+                    ) : null}
                     <Textarea
-                      placeholder="Add notes for the club president or advisor..."
+                      placeholder={proposal.status === "pending_admin_review" ? "Add notes for the club president or advisor..." : "Required: explain why this rejected proposal should now be approved..."}
                       rows={3}
                       value={adminRemarks}
                       onChange={(event) => setAdminRemarks(event.target.value)}
                     />
                     <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
                       <Button variant="secondary" disabled={adminDecision !== null} onClick={() => handleAdminDecision("approve")}>
-                        {adminDecision === "approve" ? "Approving..." : "Approve Proposal"}
+                        {adminDecision === "approve" ? "Approving..." : proposal.status === "pending_admin_review" ? "Approve Proposal" : "Approve Rejected Proposal"}
                       </Button>
-                      <Button variant="destructive" disabled={adminDecision !== null} onClick={() => handleAdminDecision("reject")}>
-                        {adminDecision === "reject" ? "Rejecting..." : "Reject"}
-                      </Button>
+                      {proposal.status === "pending_admin_review" ? (
+                        <Button variant="destructive" disabled={adminDecision !== null} onClick={() => handleAdminDecision("reject")}>
+                          {adminDecision === "reject" ? "Rejecting..." : "Reject"}
+                        </Button>
+                      ) : null}
                     </div>
                   </CardContent>
                 </Card>

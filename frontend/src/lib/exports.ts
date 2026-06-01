@@ -254,7 +254,7 @@ async function createPdfBuilder() {
   };
 }
 
-export async function downloadEventReportPdf(report: EventReportRecord) {
+async function buildEventReportPdf(report: EventReportRecord) {
   const title = report.proposal?.proposed_activity || report.proposal?.title || "Completed Event";
   const builder = await createPdfBuilder();
   const mediaCount = report.media_urls.length;
@@ -328,7 +328,24 @@ export async function downloadEventReportPdf(report: EventReportRecord) {
     sanitizeFilenamePart(report.proposal?.event_date || new Date().toISOString().slice(0, 10))
   ].join("-");
 
-  downloadBlob(new Blob([bytes], { type: "application/pdf" }), `${filename}.pdf`);
+  return { bytes, filename: `${filename}.pdf` };
+}
+
+export async function downloadEventReportPdf(report: EventReportRecord) {
+  const { bytes, filename } = await buildEventReportPdf(report);
+  downloadBlob(new Blob([bytes], { type: "application/pdf" }), filename);
+}
+
+export async function downloadEventReportsZip(reports: EventReportRecord[]) {
+  const zip = new JSZip();
+
+  for (const report of reports) {
+    const { bytes, filename } = await buildEventReportPdf(report);
+    zip.file(filename, bytes);
+  }
+
+  const blob = await zip.generateAsync({ type: "blob" });
+  downloadBlob(blob, `Club-Services-Event-Reports-${new Date().toISOString().slice(0, 10)}.zip`);
 }
 
 export function downloadAdminPerformanceMatrixCsv(dashboard: AdminOperationsDashboardRecord) {

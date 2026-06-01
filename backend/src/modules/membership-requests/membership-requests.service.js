@@ -1,5 +1,6 @@
 const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
+const { writeAuditLog } = require("../../shared/auditLog");
 const { ensurePaginatedResult, mapPaginatedResult } = require("../../shared/pagination");
 const {
   validateCreateMembershipRequestPayload,
@@ -21,14 +22,48 @@ function normalizeStudentType(value) {
 }
 
 function resolveJoinDuesAmount(studentType, paymentSettings) {
-  if (normalizeStudentType(studentType) === "fresher") {
-    return Number(paymentSettings?.fresher_dues_amount ?? 10000);
-  }
-
-  return Number(paymentSettings?.returning_student_dues_amount ?? 5000);
+  return 10000;
 }
 
-function formatMembershipRequest(request) {
+function formatStudentDuePayment(payment) {
+  return {
+    id: payment.id,
+    club_id: payment.club_id,
+    member_id: payment.member_id,
+    amount: payment.amount === null || payment.amount === undefined ? null : Number(payment.amount),
+    academic_session: payment.academic_session,
+    status: payment.status,
+    has_proof: Boolean(payment.proof_url),
+    submitted_at: payment.submitted_at,
+    verified_at: payment.verified_at,
+    created_at: payment.created_at,
+    updated_at: payment.updated_at
+  };
+}
+
+function normalizeWhatsAppPhone(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+
+  if (!digits) {
+    return null;
+  }
+
+  if (digits.startsWith("234")) {
+    return digits;
+  }
+
+  if (digits.startsWith("0")) {
+    return `234${digits.slice(1)}`;
+  }
+
+  return digits;
+}
+
+function formatMembershipRequest(request, { includeFinancialDetails = false, includeWhatsAppAdminDetails = false } = {}) {
+  const phoneNumber = request.profile?.phone_number ?? null;
+  const whatsappPhone = normalizeWhatsAppPhone(phoneNumber);
+  const message = `Hello ${request.profile?.full_name || "student"}, your payment for ${request.club?.name || "your club"} has been verified. Club Services is ready to add you to the official WhatsApp group.`;
+
   return {
     id: request.id,
     profile_id: request.profile_id,
@@ -50,6 +85,7 @@ function formatMembershipRequest(request) {
           id: request.profile.id,
           full_name: request.profile.full_name,
           student_id: request.profile.student_id,
+          ...(includeWhatsAppAdminDetails ? { phone_number: phoneNumber } : {}),
           role: request.profile.role
         }
       : null,
@@ -61,7 +97,8 @@ function formatMembershipRequest(request) {
         }
       : null,
     due_payment: request.due_payment
-      ? {
+      ? includeFinancialDetails
+        ? {
           id: request.due_payment.id,
           club_id: request.due_payment.club_id,
           member_id: request.due_payment.member_id,
@@ -81,7 +118,20 @@ function formatMembershipRequest(request) {
           created_at: request.due_payment.created_at,
           updated_at: request.due_payment.updated_at
         }
+        : formatStudentDuePayment(request.due_payment)
       : null,
+    whatsapp_onboarding_status: request.whatsapp_onboarding_status ?? "not_ready",
+    whatsapp_added_by: request.whatsapp_added_by ?? null,
+    whatsapp_added_at: request.whatsapp_added_at ?? null,
+    ...(includeWhatsAppAdminDetails
+      ? {
+          whatsapp_onboarding_notes: request.whatsapp_onboarding_notes ?? null,
+          whatsapp_phone_number: whatsappPhone,
+          whatsapp_chat_url: whatsappPhone
+            ? `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(message)}`
+            : null
+        }
+      : {}),
     student_type: request.student_type ?? null,
     join_reason: request.join_reason ?? null,
     created_at: request.created_at,
@@ -90,18 +140,9 @@ function formatMembershipRequest(request) {
 }
 
 function assertCanReviewRequest(actor, request) {
-  if (actor.role === "admin") {
-    return;
+  if (actor.role !== "admin") {
+    throw new ApiError(403, "Only Club Services admins can review membership requests", "FORBIDDEN");
   }
-
-  if (actor.role !== "president") {
-    throw new ApiError(403, "Only presidents or admins can review membership requests", "FORBIDDEN");
-  }
-
-  if (!actor.clubId || actor.clubId !== request.club_id) {
-    throw new ApiError(403, "Presidents can only review requests for their own club", "FORBIDDEN");
-  }
-
 }
 
 async function createMembershipRequest(options) {
@@ -235,22 +276,18 @@ async function listMyMembershipRequests(options) {
     profileId: actor.id
   });
 
-  return requests.map(formatMembershipRequest);
+  return requests.map((request) => formatMembershipRequest(request));
 }
 
 async function listMembershipRequests(options) {
   const { actor, filters = {}, pagination, database = db } = options;
   requireActor(actor);
 
-  if (!["admin", "president"].includes(actor.role)) {
-    throw new ApiError(403, "Only presidents or admins can view membership requests", "FORBIDDEN");
+  if (actor.role !== "admin") {
+    throw new ApiError(403, "Only Club Services admins can view membership requests", "FORBIDDEN");
   }
 
-  const clubId = actor.role === "admin" ? filters.club_id : actor.clubId;
-
-  if (actor.role === "president" && !clubId) {
-    throw new ApiError(409, "President profile is not linked to a club", "PROFILE_NOT_LINKED_TO_CLUB");
-  }
+  const clubId = filters.club_id;
 
   const requests = ensurePaginatedResult(await database.listMembershipRequests({
     clubId,
@@ -261,7 +298,11 @@ async function listMembershipRequests(options) {
     order: pagination?.order
   }), pagination);
 
-  return pagination ? mapPaginatedResult(requests, formatMembershipRequest) : requests.map(formatMembershipRequest);
+  const formatter = (request) => formatMembershipRequest(request, {
+    includeFinancialDetails: true,
+    includeWhatsAppAdminDetails: true
+  });
+  return pagination ? mapPaginatedResult(requests, formatter) : requests.map(formatter);
 }
 
 async function approveMembershipRequest({ actor, request, decisionPayload, database }) {
@@ -296,9 +337,10 @@ async function approveMembershipRequest({ actor, request, decisionPayload, datab
     status: "active",
     decision_remarks: decisionPayload.decision_remarks,
     reviewed_by: actor.id,
-    reviewed_at: now,
-    member_id: activeMember.id,
-    due_payment_id: payment?.id || request.due_payment_id
+      reviewed_at: now,
+      member_id: activeMember.id,
+      due_payment_id: payment?.id || request.due_payment_id,
+      whatsapp_onboarding_status: "ready"
   });
 
   // Assign the approved club to the user's profile if they are not yet
@@ -312,7 +354,7 @@ async function approveMembershipRequest({ actor, request, decisionPayload, datab
   }
 
   return {
-    request: formatMembershipRequest(updatedRequest),
+    request: formatMembershipRequest(updatedRequest, { includeFinancialDetails: true, includeWhatsAppAdminDetails: true }),
     member: activeMember,
     due_payment: payment
   };
@@ -373,7 +415,7 @@ async function activateMembershipAfterPaidDues(options) {
     return null;
   }
 
-  const request = await database.getMembershipRequestByMemberId(payment.member_id);
+  const request = await database.getMembershipRequestByMemberId(payment.member_id, ["pending", "approved_pending_dues", "active"]);
 
   if (!request) {
     return null;
@@ -401,14 +443,60 @@ async function activateMembershipAfterPaidDues(options) {
 
   const updatedRequest = typeof database.updateMembershipRequest === "function"
     ? await database.updateMembershipRequest(request.id, {
-        status: "active"
+        status: "active",
+        whatsapp_onboarding_status: "ready"
       })
     : request;
 
   return {
-    request: formatMembershipRequest(updatedRequest),
+    request: formatMembershipRequest(updatedRequest, { includeFinancialDetails: true, includeWhatsAppAdminDetails: true }),
     member
   };
+}
+
+async function markWhatsAppOnboardingAdded(options) {
+  const { actor, requestId, payload = {}, database = db } = options;
+  requireActor(actor);
+
+  if (actor.role !== "admin") {
+    throw new ApiError(403, "Only Club Services admins can complete WhatsApp onboarding", "FORBIDDEN");
+  }
+
+  const request = await database.getMembershipRequestById(requestId);
+
+  if (!request) {
+    throw new ApiError(404, "Membership request not found", "MEMBERSHIP_REQUEST_NOT_FOUND");
+  }
+
+  if (request.status !== "active" || request.due_payment?.status !== "paid") {
+    throw new ApiError(409, "Verify the student's payment before WhatsApp onboarding", "WHATSAPP_ONBOARDING_NOT_READY");
+  }
+
+  const notes = typeof payload.notes === "string" ? payload.notes.trim() || null : null;
+  const now = new Date().toISOString();
+  const updatedRequest = await database.markMembershipRequestWhatsAppAdded(requestId, {
+    whatsapp_onboarding_status: "added",
+    whatsapp_added_by: actor.id,
+    whatsapp_added_at: now,
+    whatsapp_onboarding_notes: notes
+  });
+
+  await writeAuditLog(database, {
+    actor_id: actor.id,
+    entity_type: "membership_request",
+    action: "whatsapp_group_member_marked_added",
+    club_id: request.club_id,
+    remarks: notes,
+    metadata: {
+      membership_request_id: request.id,
+      profile_id: request.profile_id
+    }
+  });
+
+  return formatMembershipRequest(updatedRequest, {
+    includeFinancialDetails: true,
+    includeWhatsAppAdminDetails: true
+  });
 }
 
 module.exports = {
@@ -417,5 +505,6 @@ module.exports = {
   decideMembershipRequest,
   formatMembershipRequest,
   listMembershipRequests,
-  listMyMembershipRequests
+  listMyMembershipRequests,
+  markWhatsAppOnboardingAdded
 };

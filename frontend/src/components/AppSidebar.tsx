@@ -52,6 +52,7 @@ export function AppSidebar() {
   const adminItems: SidebarItem[] = [
     { title: "Dashboard", url: "/", icon: Home, onboardingTarget: "nav-dashboard" },
     { title: "User Management", url: "/user-management", icon: UserCog, onboardingTarget: "nav-user-management" },
+    { title: "Clubs", url: "/clubs", icon: School, onboardingTarget: "nav-clubs" },
     { title: "Final Review", url: "/proposals", icon: FileText, onboardingTarget: "nav-proposals" },
     { title: "Membership", url: "/membership", icon: UserPlus, onboardingTarget: "nav-membership" },
     { title: "Members", url: "/members", icon: Users, onboardingTarget: "nav-members" },
@@ -68,10 +69,8 @@ export function AppSidebar() {
     { title: "Dashboard", url: "/", icon: Home, onboardingTarget: "nav-dashboard" },
     { title: "Create Proposal", url: "/proposals/new", icon: Plus, onboardingTarget: "nav-create-proposal" },
     { title: "Club Proposals", url: "/proposals", icon: FileText, onboardingTarget: "nav-proposals" },
-    { title: "Membership Requests", url: "/membership", icon: UserPlus, onboardingTarget: "nav-membership" },
     { title: "Task Delegation", url: "/tasks", icon: ClipboardList, onboardingTarget: "nav-tasks" },
     { title: "Members", url: "/members", icon: Users, onboardingTarget: "nav-members" },
-    { title: "Dues", url: "/dues", icon: CreditCard, onboardingTarget: "nav-dues" },
     { title: "Announcements", url: "/communications", icon: MessageSquare, onboardingTarget: "nav-communications" },
     { title: "Events", url: "/events", icon: CalendarDays, onboardingTarget: "nav-events" },
     { title: "Reports Archive", url: "/archive", icon: FileText, onboardingTarget: "nav-archive" },

@@ -2,6 +2,12 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { createApp } = require("../src/app");
 
+function getRelativeDate(daysFromToday) {
+  const date = new Date();
+  date.setDate(date.getDate() + daysFromToday);
+  return date.toISOString().slice(0, 10);
+}
+
 function createProposal(overrides = {}) {
   return {
     id: "proposal-1",
@@ -9,7 +15,7 @@ function createProposal(overrides = {}) {
     submitted_by: "president-1",
     title: "Leadership Summit",
     description: "A leadership event.",
-    event_date: "2026-05-20",
+    event_date: getRelativeDate(7),
     event_time: "10:00:00",
     location: "Main Hall",
     proposed_activity: "Leadership Summit 2026",
@@ -54,7 +60,7 @@ function createFakeDatabase() {
       id: "proposal-2",
       title: "Approved Event",
       status: "approved",
-      event_date: "2026-05-20",
+      event_date: getRelativeDate(7),
       admin_decided_at: "2026-04-04T10:00:00.000Z",
       updated_at: "2026-04-04T10:00:00.000Z"
     }),
@@ -62,7 +68,7 @@ function createFakeDatabase() {
       id: "proposal-4",
       title: "Past Approved Event",
       status: "approved",
-      event_date: "2026-04-20",
+      event_date: getRelativeDate(-7),
       admin_decided_at: "2026-04-21T10:00:00.000Z",
       updated_at: "2026-04-21T10:00:00.000Z"
     }),

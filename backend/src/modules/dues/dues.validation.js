@@ -105,7 +105,7 @@ function validatePaymentSettingsPayload(payload = {}) {
       : 10000,
     returning_student_dues_amount: Object.prototype.hasOwnProperty.call(payload, "returning_student_dues_amount")
       ? readDuesAmount(payload, "returning_student_dues_amount")
-      : 5000
+      : 10000
   };
 }
 
@@ -126,7 +126,7 @@ function validateBulkPaymentSettingsPayload(payload = {}) {
       : 10000,
     returning_student_dues_amount: Object.prototype.hasOwnProperty.call(payload, "returning_student_dues_amount")
       ? readDuesAmount(payload, "returning_student_dues_amount")
-      : 5000
+      : 10000
   };
 }
 

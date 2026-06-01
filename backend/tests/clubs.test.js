@@ -1,6 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { createApp } = require("../src/app");
+const { createClub, updateClub } = require("../src/modules/clubs/clubs.service");
 
 function createFakeDatabase() {
   const profiles = {
@@ -224,4 +225,58 @@ test("missing-token access is blocked for clubs", async (t) => {
 
   assert.equal(response.status, 401);
   assert.equal(payload.error.code, "AUTH_REQUIRED");
+});
+
+test("admin creates a public club with 10000 naira dues and shared payment settings", async () => {
+  let createdClub;
+  let savedSettings;
+  const database = {
+    async listClubs() {
+      return [{ id: "existing-club" }];
+    },
+    async getClubPaymentSettings() {
+      return {
+        bank_name: "Providus Bank",
+        account_number: "1305861314",
+        account_name: "Club Services",
+        payment_instructions: "Submit your receipt."
+      };
+    },
+    async createClub(payload) {
+      createdClub = payload;
+      return { id: "club-new", created_at: "2026-06-01T10:00:00.000Z", ...payload };
+    },
+    async upsertClubPaymentSettings(payload) {
+      savedSettings = payload;
+      return payload;
+    }
+  };
+
+  const club = await createClub({
+    actor: { id: "admin-1", role: "admin" },
+    payload: {
+      name: "Robotics Club",
+      code: "rob",
+      description: "Build robots and learn together.",
+      is_public_signup: true
+    },
+    database
+  });
+
+  assert.equal(createdClub.dues_amount, 10000);
+  assert.equal(club.code, "ROB");
+  assert.equal(savedSettings.returning_student_dues_amount, 10000);
+});
+
+test("non-admin cannot edit clubs", async () => {
+  await assert.rejects(
+    () =>
+      updateClub({
+        actor: { id: "president-1", role: "president" },
+        clubId: "club-1",
+        payload: { name: "Changed" },
+        database: {}
+      }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
 });

@@ -40,7 +40,7 @@ function createProfileRecord(overrides = {}) {
   };
 }
 
-test("president can add a member to their club", async () => {
+test("admin can add an inactive member record", async () => {
   let createdMember;
   const fakeDatabase = {
     async createClubMember(member) {
@@ -51,11 +51,12 @@ test("president can add a member to their club", async () => {
 
   const member = await createMember({
     actor: {
-      id: "president-1",
-      role: "president",
-      clubId: "club-1"
+      id: "admin-1",
+      role: "admin",
+      clubId: null
     },
     payload: {
+      club_id: "club-1",
       full_name: "Amina Member",
       student_id: "020232255",
       email: "amina@nileuniversity.edu.ng",
@@ -71,7 +72,7 @@ test("president can add a member to their club", async () => {
   assert.equal(member.full_name, "Amina Member");
 });
 
-test("president cannot add members to another club", async () => {
+test("president cannot manually add member records", async () => {
   await assert.rejects(
     () =>
       createMember({
@@ -96,11 +97,12 @@ test("member creation rejects student IDs that are not exactly 9 digits", async 
     () =>
       createMember({
         actor: {
-          id: "president-1",
-          role: "president",
-          clubId: "club-1"
+          id: "admin-1",
+          role: "admin",
+          clubId: null
         },
         payload: {
+          club_id: "club-1",
           full_name: "Invalid ID Member",
           student_id: "NILE-001"
         },
@@ -182,8 +184,8 @@ test("president can list executive team members", async () => {
       assert.deepEqual(filters, {
         clubId: "club-1",
         clubRoles: ["executive", "president"],
-        membershipStatus: undefined,
-        excludeMembershipStatuses: ["alumni"]
+        membershipStatus: "active",
+        excludeMembershipStatuses: undefined
       });
       return [
         createMemberRecord({
@@ -209,7 +211,7 @@ test("president can list executive team members", async () => {
   assert.equal(members[0].club_role, "executive");
 });
 
-test("president can update member role and status", async () => {
+test("president can assign an executive role to an active member", async () => {
   const fakeDatabase = {
     async getClubMemberById(memberId) {
       assert.equal(memberId, "member-1");
@@ -218,22 +220,9 @@ test("president can update member role and status", async () => {
     async updateClubMember(memberId, update) {
       assert.equal(memberId, "member-1");
       assert.deepEqual(update, {
-        club_role: "executive",
-        membership_status: "active"
+        club_role: "executive"
       });
       return createMemberRecord(update);
-    },
-    async listDuePayments(filters) {
-      assert.deepEqual(filters, {
-        memberId: "member-1",
-        status: "paid"
-      });
-      return [
-        {
-          academic_session: "2025/2026",
-          status: "paid"
-        }
-      ];
     }
   };
 
@@ -245,8 +234,7 @@ test("president can update member role and status", async () => {
     },
     memberId: "member-1",
     payload: {
-      club_role: "executive",
-      membership_status: "active"
+      club_role: "executive"
     },
     database: fakeDatabase
   });
@@ -486,15 +474,12 @@ test("president still cannot assign another president from members flow", async 
   );
 });
 
-test("president cannot mark a member active without current-session paid dues", async () => {
+test("president cannot change membership activation status", async () => {
   const fakeDatabase = {
     async getClubMemberById() {
       return createMemberRecord({
         membership_status: "inactive"
       });
-    },
-    async listDuePayments() {
-      return [];
     }
   };
 
@@ -512,7 +497,7 @@ test("president cannot mark a member active without current-session paid dues", 
         },
         database: fakeDatabase
       }),
-    (error) => error.statusCode === 409 && error.code === "DUES_NOT_VERIFIED"
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
   );
 });
 

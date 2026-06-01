@@ -1,5 +1,5 @@
 const asyncHandler = require("../../shared/asyncHandler");
-const { listPublicClubs, listVisibleClubs } = require("./clubs.service");
+const { createClub, listPublicClubs, listVisibleClubs, updateClub } = require("./clubs.service");
 
 function createClubsController(options = {}) {
   const { database } = options;
@@ -18,6 +18,21 @@ function createClubsController(options = {}) {
       });
 
       res.status(200).json({ data: clubs });
+    }),
+
+    createClub: asyncHandler(async (req, res) => {
+      const club = await createClub({ actor: req.user, payload: req.body, database });
+      res.status(201).json({ data: club });
+    }),
+
+    updateClub: asyncHandler(async (req, res) => {
+      const club = await updateClub({
+        actor: req.user,
+        clubId: req.params.clubId,
+        payload: req.body,
+        database
+      });
+      res.status(200).json({ data: club });
     })
   };
 }

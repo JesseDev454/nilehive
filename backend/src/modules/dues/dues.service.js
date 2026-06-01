@@ -19,14 +19,14 @@ function requireActor(actor) {
 }
 
 function requireSupportedRole(actor) {
-  if (!["admin", "president"].includes(actor.role)) {
-    throw new ApiError(403, "This role cannot view dues tracking", "FORBIDDEN");
+  if (actor.role !== "admin") {
+    throw new ApiError(403, "Only Club Services admins can view dues tracking", "FORBIDDEN");
   }
 }
 
 function requireManagerRole(actor) {
-  if (!["admin", "president"].includes(actor.role)) {
-    throw new ApiError(403, "Only presidents or admins can manage dues records", "FORBIDDEN");
+  if (actor.role !== "admin") {
+    throw new ApiError(403, "Only Club Services admins can manage dues records", "FORBIDDEN");
   }
 }
 
@@ -85,7 +85,7 @@ function formatPaymentSettings(settings) {
         : Number(settings.fresher_dues_amount),
     returning_student_dues_amount:
       settings.returning_student_dues_amount === null || settings.returning_student_dues_amount === undefined
-        ? 5000
+        ? 10000
         : Number(settings.returning_student_dues_amount),
     created_at: settings.created_at,
     updated_at: settings.updated_at
@@ -112,6 +112,22 @@ function summarizeDues(payments) {
     expected_amount: expectedAmount,
     collected_amount: collectedAmount,
     collection_rate: total > 0 ? Math.round((paid / total) * 100) : 0
+  };
+}
+
+function formatStudentDuePayment(payment) {
+  return {
+    id: payment.id,
+    club_id: payment.club_id,
+    member_id: payment.member_id,
+    amount: Number(payment.amount),
+    academic_session: payment.academic_session,
+    status: payment.status,
+    has_proof: Boolean(payment.proof_url),
+    submitted_at: payment.submitted_at,
+    verified_at: payment.verified_at,
+    created_at: payment.created_at,
+    updated_at: payment.updated_at
   };
 }
 
@@ -155,10 +171,18 @@ async function listMyDuePayments(options) {
   }
 
   const payments = await database.listDuePaymentsForProfile(actor.id);
+  const latestByClub = new Map();
+
+  payments.forEach((payment) => {
+    if (!latestByClub.has(payment.club_id)) {
+      latestByClub.set(payment.club_id, payment);
+    }
+  });
+
+  const currentPayments = Array.from(latestByClub.values());
 
   return {
-    summary: summarizeDues(payments),
-    payments: payments.map(formatDuePayment)
+    payments: currentPayments.map(formatStudentDuePayment)
   };
 }
 
@@ -264,19 +288,21 @@ async function submitDuePaymentConfirmation(options) {
     verified_at: null
   });
 
-  return formatDuePayment(updatedPayment);
+  return formatStudentDuePayment(updatedPayment);
 }
 
 async function getPaymentSettings(options) {
   const { actor, clubId, database = db } = options;
   requireActor(actor);
 
+  if (!["student", "admin"].includes(actor.role)) {
+    throw new ApiError(403, "This role cannot view payment settings", "FORBIDDEN");
+  }
+
   let scopedClubId = clubId;
 
-  if (actor.role !== "student") {
-    scopedClubId = actor.role === "admin"
-      ? (clubId || null)
-      : getScopedClubId(actor, clubId);
+  if (actor.role === "admin") {
+    scopedClubId = clubId || null;
   }
 
   if (!scopedClubId) {
@@ -306,8 +332,8 @@ async function upsertPaymentSettings(options) {
     account_number: validatedPayload.account_number,
     account_name: validatedPayload.account_name,
     payment_instructions: validatedPayload.payment_instructions,
-    fresher_dues_amount: validatedPayload.fresher_dues_amount,
-    returning_student_dues_amount: validatedPayload.returning_student_dues_amount
+    fresher_dues_amount: 10000,
+    returning_student_dues_amount: 10000
   });
 
   return formatPaymentSettings(settings[0] || null);
@@ -327,10 +353,10 @@ async function applyDuesAmountToAllClubs(options) {
     throw new ApiError(500, "Bulk dues updates are not available", "DATABASE_UNAVAILABLE");
   }
 
-  const clubs = await database.updateAllClubDuesAmounts(validatedPayload.dues_amount);
+  const clubs = await database.updateAllClubDuesAmounts(10000);
 
   return {
-    dues_amount: validatedPayload.dues_amount,
+    dues_amount: 10000,
     clubs_updated: clubs.length
   };
 }
@@ -381,8 +407,8 @@ async function applyClubPaymentProfileToAllClubs(options) {
     account_number: validatedPayload.account_number,
     account_name: validatedPayload.account_name,
     payment_instructions: validatedPayload.payment_instructions,
-    fresher_dues_amount: validatedPayload.fresher_dues_amount,
-    returning_student_dues_amount: validatedPayload.returning_student_dues_amount
+    fresher_dues_amount: 10000,
+    returning_student_dues_amount: 10000
   });
 
   return {
@@ -390,8 +416,8 @@ async function applyClubPaymentProfileToAllClubs(options) {
     account_number: validatedPayload.account_number,
     account_name: validatedPayload.account_name,
     payment_instructions: validatedPayload.payment_instructions,
-    fresher_dues_amount: validatedPayload.fresher_dues_amount,
-    returning_student_dues_amount: validatedPayload.returning_student_dues_amount,
+    fresher_dues_amount: 10000,
+    returning_student_dues_amount: 10000,
     clubs_updated: settings.length
   };
 }

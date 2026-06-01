@@ -278,6 +278,60 @@ test("admin cannot review a proposal they submitted themselves", async () => {
   );
 });
 
+test("admin can approve an advisor-rejected proposal with override remarks", async () => {
+  let decisionInput;
+  const fakeDatabase = {
+    async getProposalById() {
+      return createPendingAdminProposal({ status: "advisor_rejected" });
+    },
+    async applyAdminDecision(input) {
+      decisionInput = input;
+      return createPendingAdminProposal({ status: input.nextStatus });
+    },
+    async getAdvisorProfileIdsByClubId() {
+      return [];
+    },
+    async getPresidentProfileIdsByClubId() {
+      return [];
+    },
+    async createNotifications(notifications) {
+      return notifications;
+    },
+    async createEventReminders(reminders) {
+      return reminders;
+    }
+  };
+
+  const proposal = await submitAdminDecision({
+    actor: { id: "admin-1", role: "admin" },
+    proposalId: "proposal-1",
+    payload: { decision: "approve", remarks: "Approved after Club Services review." },
+    database: fakeDatabase
+  });
+
+  assert.equal(decisionInput.nextStatus, "approved");
+  assert.equal(proposal.status, "approved");
+});
+
+test("admin override of a rejected proposal requires remarks", async () => {
+  const fakeDatabase = {
+    async getProposalById() {
+      return createPendingAdminProposal({ status: "admin_rejected" });
+    }
+  };
+
+  await assert.rejects(
+    () =>
+      submitAdminDecision({
+        actor: { id: "admin-1", role: "admin" },
+        proposalId: "proposal-1",
+        payload: { decision: "approve" },
+        database: fakeDatabase
+      }),
+    (error) => error.statusCode === 400 && error.code === "PROPOSAL_OVERRIDE_REMARKS_REQUIRED"
+  );
+});
+
 function createRouteTestDatabase() {
   const profiles = {
     "admin-1": {

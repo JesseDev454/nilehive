@@ -29,7 +29,7 @@ function createPayment(overrides = {}) {
     id: "payment-1",
     club_id: "club-1",
     member_id: "member-1",
-    amount: 5000,
+    amount: 10000,
     academic_session: "2025/2026",
     payment_reference: null,
     proof_url: null,
@@ -112,9 +112,9 @@ test("paginated dues listing keeps full summary totals", async () => {
 
   const result = await listDuePayments({
     actor: {
-      id: "president-1",
-      role: "president",
-      clubId: "club-1"
+      id: "admin-1",
+      role: "admin",
+      clubId: null
     },
     filters: {},
     pagination: {
@@ -142,7 +142,7 @@ test("paginated dues listing keeps full summary totals", async () => {
   assert.equal(result.payments.has_next, true);
 });
 
-test("president can verify a submitted payment as paid", async () => {
+test("admin can verify a submitted payment as paid", async () => {
   let updatePayload;
   const fakeDatabase = {
     async getDuePaymentById(paymentId) {
@@ -162,9 +162,9 @@ test("president can verify a submitted payment as paid", async () => {
 
   const payment = await updateDuePayment({
     actor: {
-      id: "president-1",
-      role: "president",
-      clubId: "club-1"
+      id: "admin-1",
+      role: "admin",
+      clubId: null
     },
     paymentId: "payment-1",
     payload: {
@@ -175,7 +175,7 @@ test("president can verify a submitted payment as paid", async () => {
   });
 
   assert.equal(updatePayload.status, "paid");
-  assert.equal(updatePayload.verified_by, "president-1");
+  assert.equal(updatePayload.verified_by, "admin-1");
   assert.ok(updatePayload.verified_at);
   assert.equal(payment.status, "paid");
 });
@@ -219,9 +219,9 @@ test("paid current-session dues activate an inactive member", async () => {
 
   await updateDuePayment({
     actor: {
-      id: "president-1",
-      role: "president",
-      clubId: "club-1"
+      id: "admin-1",
+      role: "admin",
+      clubId: null
     },
     paymentId: "payment-1",
     payload: {
@@ -361,7 +361,10 @@ test("student can list own dues payments", async () => {
   });
 
   assert.equal(result.payments.length, 1);
-  assert.equal(result.summary.unpaid, 1);
+  assert.equal(result.payments[0].status, "unpaid");
+  assert.equal(result.payments[0].has_proof, false);
+  assert.equal("proof_url" in result.payments[0], false);
+  assert.equal("payment_reference" in result.payments[0], false);
 });
 
 test("student can submit payment confirmation for own unpaid dues", async () => {
@@ -521,7 +524,7 @@ test("admin can apply one dues amount to all clubs", async () => {
     database: fakeDatabase
   });
 
-  assert.equal(appliedAmount, 5000);
+  assert.equal(appliedAmount, 10000);
   assert.equal(result.clubs_updated, 2);
 });
 
@@ -582,7 +585,7 @@ test("admin can apply one dues amount and payment account profile to all clubs",
 
   assert.equal(savedSettings.account_name, "Club Services Account");
   assert.equal(savedSettings.fresher_dues_amount, 10000);
-  assert.equal(savedSettings.returning_student_dues_amount, 5000);
+  assert.equal(savedSettings.returning_student_dues_amount, 10000);
   assert.equal(result.clubs_updated, 2);
 });
 

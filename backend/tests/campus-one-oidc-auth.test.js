@@ -2,7 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { createApp } = require("../src/app");
 const { clearEnvCache } = require("../src/config/env");
-const { resolveCampusOneProfile } = require("../src/modules/auth/campusOneOidc");
+const { resolveCampusOneProfile, resolveCampusOnePortalRole } = require("../src/modules/auth/campusOneOidc");
 const { CAMPUS_ONE_SESSION_COOKIE, createCampusOneSessionToken } = require("../src/shared/campusOneSession");
 
 function createFakeDatabase(profileOverrides = {}) {
@@ -306,6 +306,12 @@ test("CampusOne admin session receives effective admin role", async (t) => {
   assert.equal(payload.data.profile.app_role, "student");
   assert.equal(payload.data.profile.effective_role, "admin");
   assert.equal(payload.data.profile.portal_role, "admin");
+});
+
+test("CampusOne role normalization prefers admin and staff claims from the roles array", () => {
+  assert.equal(resolveCampusOnePortalRole({ role: "student", roles: ["student", "admin"] }), "admin");
+  assert.equal(resolveCampusOnePortalRole({ role: "student", roles: ["student", "staff"] }), "staff");
+  assert.equal(resolveCampusOnePortalRole({ role: "student", roles: ["student", "mentor"] }), "student");
 });
 
 test("CampusOne cancelled consent redirects to friendly login page", async (t) => {

@@ -249,7 +249,7 @@ export default function Members() {
                   )}
                 </td>
                 <td>
-                  {canManageMembers ? (
+                  {role === "admin" ? (
                     <Select
                       value={member.membership_status}
                       disabled={updateMutation.isPending}

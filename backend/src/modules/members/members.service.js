@@ -46,6 +46,12 @@ function requirePresidentOrAdmin(actor) {
   }
 }
 
+function requireAdmin(actor, message) {
+  if (actor.role !== "admin") {
+    throw new ApiError(403, message, "FORBIDDEN");
+  }
+}
+
 function ensureAllowedClubRoleChange(actor, requestedClubRole) {
   if (actor.role === "president" && requestedClubRole === "president") {
     throw new ApiError(403, "Only Club Services admins can assign president access", "FORBIDDEN");
@@ -304,8 +310,8 @@ async function listMembers(options) {
   const members = ensurePaginatedResult(await database.listClubMembers({
     clubId,
     clubRoles: filters.team === "executive" ? ["executive", "president"] : undefined,
-    membershipStatus: filters.membership_status,
-    excludeMembershipStatuses: filters.membership_status ? undefined : ["alumni"],
+    membershipStatus: actor.role === "president" ? "active" : filters.membership_status,
+    excludeMembershipStatuses: actor.role === "president" || filters.membership_status ? undefined : ["alumni"],
     ...(pagination
       ? {
           pagination,
@@ -322,7 +328,7 @@ async function createMember(options) {
   const { actor, payload, database = db } = options;
   requireActor(actor);
   requireSupportedMemberRole(actor);
-  requirePresidentOrAdmin(actor);
+  requireAdmin(actor, "Only Club Services admins can add member records");
 
   const validatedPayload = validateCreateMemberPayload(payload);
   const clubId = getScopedClubId(actor, validatedPayload.club_id);
@@ -430,6 +436,10 @@ async function updateMember(options) {
 
   if (requestedStatus === "alumni" && actor.role !== "admin") {
     throw new ApiError(403, "Only Club Services admins can mark members as alumni", "FORBIDDEN");
+  }
+
+  if (requestedStatus && actor.role !== "admin") {
+    throw new ApiError(403, "Only Club Services admins can change membership status", "FORBIDDEN");
   }
 
   if (requestedStatus === "active") {

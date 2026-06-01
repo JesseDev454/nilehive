@@ -2,6 +2,12 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { createApp } = require("../src/app");
 
+function getRelativeDate(daysFromToday) {
+  const date = new Date();
+  date.setDate(date.getDate() + daysFromToday);
+  return date.toISOString().slice(0, 10);
+}
+
 function createApprovedProposal(overrides = {}) {
   return {
     id: "proposal-1",
@@ -9,7 +15,7 @@ function createApprovedProposal(overrides = {}) {
     submitted_by: "executive-1",
     title: "Leadership Summit",
     description: "A planning summit for executive handover.",
-    event_date: "2026-05-20",
+    event_date: getRelativeDate(7),
     event_time: "10:00:00",
     location: "Main Hall",
     proposed_activity: "Leadership Summit 2026",
@@ -509,7 +515,7 @@ test("student can self check in on the event date", async (t) => {
   const server = await createTestServer(createFakeDatabase({
     proposals: [
       createApprovedProposal({
-        event_date: "2026-05-07"
+        event_date: getRelativeDate(0)
       })
     ],
     attendanceByProposalId: {
@@ -545,7 +551,7 @@ test("student self check in is idempotent when already attended", async (t) => {
   const server = await createTestServer(createFakeDatabase({
     proposals: [
       createApprovedProposal({
-        event_date: "2026-05-07"
+        event_date: getRelativeDate(0)
       })
     ],
     attendanceByProposalId: {
@@ -579,7 +585,7 @@ test("student cannot self check in before the event date", async (t) => {
   const server = await createTestServer(createFakeDatabase({
     proposals: [
       createApprovedProposal({
-        event_date: "2026-05-20"
+        event_date: getRelativeDate(7)
       })
     ],
     attendanceByProposalId: {
@@ -604,7 +610,7 @@ test("student without event access cannot self check in", async (t) => {
   const server = await createTestServer(createFakeDatabase({
     proposals: [
       createApprovedProposal({
-        event_date: "2026-05-06"
+        event_date: getRelativeDate(-1)
       })
     ],
     attendanceByProposalId: {
@@ -629,7 +635,7 @@ test("non-student cannot self check in", async (t) => {
   const server = await createTestServer(createFakeDatabase({
     proposals: [
       createApprovedProposal({
-        event_date: "2026-05-06"
+        event_date: getRelativeDate(-1)
       })
     ]
   }));

@@ -94,7 +94,7 @@ const stepsByRole: Record<AppRole, OnboardingStep[]> = {
       route: "/",
       target: "nav-dashboard",
       title: "Run your club from the dashboard",
-      body: "Your dashboard points you to membership, dues, proposals, reports, and upcoming event work."
+      body: "Your dashboard points you to active members, proposals, reports, tasks, and upcoming event work."
     },
     {
       id: "president-proposal",
@@ -102,20 +102,6 @@ const stepsByRole: Record<AppRole, OnboardingStep[]> = {
       target: "nav-create-proposal",
       title: "Create proposals",
       body: "Start event proposals here. They move through advisor review and then Club Services final review."
-    },
-    {
-      id: "president-membership",
-      route: "/membership",
-      target: "nav-membership",
-      title: "Review membership requests",
-      body: "Check students who want to join your club and keep their membership status up to date."
-    },
-    {
-      id: "president-dues",
-      route: "/dues",
-      target: "nav-dues",
-      title: "Manage dues records",
-      body: "Use Dues to review payment records for your current club and keep verification organized."
     },
     {
       id: "president-events",

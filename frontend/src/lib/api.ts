@@ -44,6 +44,9 @@ export interface ClubRecord {
   code: string | null;
   dues_amount: number;
   advisor_id?: string | null;
+  is_public_signup?: boolean;
+  whatsapp_group_name?: string | null;
+  whatsapp_onboarding_notes?: string | null;
   advisors?: Array<{
     id: string;
     full_name: string | null;
@@ -510,6 +513,7 @@ export interface MembershipRequestRecord {
     id: string;
     full_name: string | null;
     student_id: string | null;
+    phone_number?: string | null;
     role: ProfileRecord["role"];
   } | null;
   club?: {
@@ -518,6 +522,12 @@ export interface MembershipRequestRecord {
     code: string | null;
   } | null;
   due_payment?: DuePaymentRecord | null;
+  whatsapp_onboarding_status?: "not_ready" | "ready" | "added";
+  whatsapp_added_by?: string | null;
+  whatsapp_added_at?: string | null;
+  whatsapp_onboarding_notes?: string | null;
+  whatsapp_phone_number?: string | null;
+  whatsapp_chat_url?: string | null;
   student_type?: "fresher" | "returning" | null;
   join_reason?: string | null;
   created_at: string;
@@ -580,15 +590,16 @@ export interface DuePaymentRecord {
   member_id: string;
   amount: number;
   academic_session: string;
-  payment_reference: string | null;
+  payment_reference?: string | null;
   payment_account_name?: string | null;
   payment_paid_at?: string | null;
   payer_note?: string | null;
-  proof_url: string | null;
+  proof_url?: string | null;
+  has_proof?: boolean;
   submitted_at?: string | null;
   status: "unpaid" | "submitted" | "paid" | "rejected";
-  verified_by: string | null;
-  verified_at: string | null;
+  verified_by?: string | null;
+  verified_at?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -642,7 +653,6 @@ export interface DuesSummary {
 }
 
 export interface DuesResponse {
-  summary: DuesSummary;
   payments: DuePaymentRecord[];
 }
 
@@ -1220,6 +1230,47 @@ export async function getPublicClubs() {
 export async function completeProfileOnboarding(payload: ProfileOnboardingPayload, token?: string) {
   const response = await request<ApiEnvelope<ProfileRecord>>("/api/v1/profile/onboarding", {
     method: "POST",
+    token,
+    body: payload
+  });
+
+  return response.data;
+}
+
+export async function createClub(
+  payload: {
+    name: string;
+    code?: string | null;
+    description: string;
+    is_public_signup?: boolean;
+    whatsapp_group_name?: string | null;
+    whatsapp_onboarding_notes?: string | null;
+  },
+  token?: string
+) {
+  const response = await request<ApiEnvelope<ClubRecord>>("/api/v1/clubs", {
+    method: "POST",
+    token,
+    body: payload
+  });
+
+  return response.data;
+}
+
+export async function updateClub(
+  clubId: string,
+  payload: Partial<{
+    name: string;
+    code: string | null;
+    description: string;
+    is_public_signup: boolean;
+    whatsapp_group_name: string | null;
+    whatsapp_onboarding_notes: string | null;
+  }>,
+  token?: string
+) {
+  const response = await request<ApiEnvelope<ClubRecord>>(`/api/v1/clubs/${clubId}`, {
+    method: "PATCH",
     token,
     body: payload
   });
@@ -1941,6 +1992,19 @@ export async function saveClubPaymentSettings(payload: PaymentSettingsPayload, t
     token,
     body: payload
   });
+
+  return response.data;
+}
+
+export async function markMembershipWhatsAppAdded(requestId: string, notes?: string | null, token?: string) {
+  const response = await request<ApiEnvelope<MembershipRequestRecord>>(
+    `/api/v1/membership-requests/${requestId}/whatsapp-added`,
+    {
+      method: "POST",
+      token,
+      body: { notes: notes || null }
+    }
+  );
 
   return response.data;
 }
