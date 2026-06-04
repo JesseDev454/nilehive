@@ -13,6 +13,7 @@ function formatProfile(profile, authUser = null, user = null) {
     app_role: user?.appRole ?? profile.role,
     effective_role: user?.role ?? profile.role,
     portal_role: user?.portalRole ?? authUser?.metadata?.portal_role ?? "student",
+    custom_roles: user?.customRoles ?? authUser?.metadata?.custom_roles ?? [],
     access_pending: Boolean(user?.accessPending),
     role_sync_state: user?.roleSyncState ?? "active",
     club_id: profile.club_id,

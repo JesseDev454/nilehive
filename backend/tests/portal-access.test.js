@@ -21,6 +21,31 @@ test("Campus One admin always resolves to Club Services admin", () => {
   assert.equal(isPortalAdmin({ portalRole: "admin" }), true);
 });
 
+test("club_services_admin custom role grants Club Services admin access", () => {
+  const result = resolveEffectiveRole({
+    portalRole: "staff",
+    appRole: "student",
+    customRoles: ["club_services_admin"]
+  });
+
+  assert.equal(result.portalRole, "staff");
+  assert.equal(result.appRole, "student");
+  assert.deepEqual(result.customRoles, ["club_services_admin"]);
+  assert.equal(result.effectiveRole, "admin");
+  assert.equal(isPortalAdmin({ portalRole: "staff", customRoles: ["club_services_admin"] }), true);
+});
+
+test("other Campus One custom roles do not grant Club Services admin access", () => {
+  const result = resolveEffectiveRole({
+    portalRole: "staff",
+    appRole: "student",
+    customRoles: ["admin", "president", "advisor"]
+  });
+
+  assert.equal(result.effectiveRole, "student");
+  assert.equal(isPortalAdmin({ portalRole: "staff", customRoles: ["admin"] }), false);
+});
+
 test("Campus One staff keeps normal local Club Services access", () => {
   const result = resolveEffectiveRole({
     portalRole: "staff",

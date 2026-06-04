@@ -561,12 +561,14 @@ function createCampusOneAuthRouter(options = {}) {
 
       const roleContext = resolveEffectiveRole({
         portalRole,
-        appRole: profile.role
+        appRole: profile.role,
+        customRoles
       });
       const sessionToken = createCampusOneSessionToken({
         profileId: profile.id,
         portalUserId: profile.portal_user_id,
         portalRole: roleContext.portalRole,
+        customRoles: roleContext.customRoles,
         email: profile.email
       });
       const returnTo = typeof statePayload.returnTo === "string" && statePayload.returnTo.startsWith("/")

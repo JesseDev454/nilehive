@@ -312,6 +312,56 @@ test("CampusOne admin session receives effective admin role", async (t) => {
   assert.equal(payload.data.profile.portal_role, "admin");
 });
 
+test("CampusOne club_services_admin custom role receives effective admin access", async (t) => {
+  withCampusOneOidcEnv(t);
+  const server = await createTestServer(createFakeDatabase({ role: "student" }));
+  t.after(() => server.close());
+  const token = createCampusOneSessionToken({
+    profileId: "profile-1",
+    portalUserId: "campus-club-services-admin-1",
+    portalRole: "staff",
+    customRoles: ["club_services_admin"],
+    email: "club-services-admin@nileuniversity.edu.ng"
+  });
+
+  const response = await fetch(`${server.baseUrl}/api/v1/profile/me`, {
+    headers: {
+      Cookie: `${CAMPUS_ONE_SESSION_COOKIE}=${encodeURIComponent(token)}`
+    }
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.profile.app_role, "student");
+  assert.equal(payload.data.profile.effective_role, "admin");
+  assert.equal(payload.data.profile.portal_role, "staff");
+  assert.deepEqual(payload.data.profile.custom_roles, ["club_services_admin"]);
+});
+
+test("CampusOne custom admin-like roles remain ignored unless explicitly whitelisted", async (t) => {
+  withCampusOneOidcEnv(t);
+  const server = await createTestServer(createFakeDatabase({ role: "student" }));
+  t.after(() => server.close());
+  const token = createCampusOneSessionToken({
+    profileId: "profile-1",
+    portalUserId: "campus-custom-admin-1",
+    portalRole: "staff",
+    customRoles: ["admin", "president"],
+    email: "custom-admin@nileuniversity.edu.ng"
+  });
+
+  const response = await fetch(`${server.baseUrl}/api/v1/profile/me`, {
+    headers: {
+      Cookie: `${CAMPUS_ONE_SESSION_COOKIE}=${encodeURIComponent(token)}`
+    }
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.profile.effective_role, "student");
+  assert.equal(payload.data.profile.portal_role, "staff");
+});
+
 test("CampusOne global role normalization trusts only the top-level academic role", () => {
   assert.equal(resolveCampusOnePortalRole({ role: "admin", roles: ["admin", "president"] }), "admin");
   assert.equal(resolveCampusOnePortalRole({ role: "staff", roles: ["staff", "advisor"] }), "staff");

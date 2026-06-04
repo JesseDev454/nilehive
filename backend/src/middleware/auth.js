@@ -125,7 +125,8 @@ async function getPortalAuthContext(req, database) {
   assertProfileIsAllowed(profile);
   const roleContext = resolveEffectiveRole({
     portalRole: portalUser.role,
-    appRole: profile.role
+    appRole: profile.role,
+    customRoles: portalUser.custom_roles
   });
 
   const authUser = {
@@ -135,6 +136,7 @@ async function getPortalAuthContext(req, database) {
       portal_user_id: portalUser.id,
       portal_role: roleContext.portalRole,
       app_role: roleContext.appRole,
+      custom_roles: roleContext.customRoles,
       effective_role: roleContext.effectiveRole,
       role_sync_state: roleContext.roleSyncState
     }
@@ -147,6 +149,7 @@ async function getPortalAuthContext(req, database) {
     role: roleContext.effectiveRole,
     portalRole: roleContext.portalRole,
     appRole: roleContext.appRole,
+    customRoles: roleContext.customRoles,
     clubId: profile.club_id,
     studentId: profile.student_id ?? null,
     requestedRole: profile.requested_role ?? null,
@@ -169,7 +172,8 @@ async function getCampusOneOidcAuthContext(req, database) {
   assertProfileIsAllowed(profile);
   const roleContext = resolveEffectiveRole({
     portalRole: session.portalRole,
-    appRole: profile.role
+    appRole: profile.role,
+    customRoles: session.customRoles
   });
 
   const authUser = {
@@ -179,6 +183,7 @@ async function getCampusOneOidcAuthContext(req, database) {
       portal_user_id: session.portalUserId,
       portal_role: roleContext.portalRole,
       app_role: roleContext.appRole,
+      custom_roles: roleContext.customRoles,
       effective_role: roleContext.effectiveRole,
       role_sync_state: roleContext.roleSyncState
     }
@@ -191,6 +196,7 @@ async function getCampusOneOidcAuthContext(req, database) {
     role: roleContext.effectiveRole,
     portalRole: roleContext.portalRole,
     appRole: roleContext.appRole,
+    customRoles: roleContext.customRoles,
     clubId: profile.club_id,
     studentId: profile.student_id ?? null,
     requestedRole: profile.requested_role ?? null,
