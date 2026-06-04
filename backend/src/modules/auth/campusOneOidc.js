@@ -8,6 +8,7 @@ const {
 } = require("../../shared/campusOneSession");
 const { getEnv } = require("../../config/env");
 const { isAllowedEmail } = require("../../config/emailPolicy");
+const { logger: baseLogger } = require("../../config/logger");
 const { resolveEffectiveRole } = require("../../shared/portalAccess");
 const { isValidStudentId, normalizeStudentId } = require("../../shared/studentId");
 
@@ -299,20 +300,20 @@ async function exchangeCodeForTokens({ code, codeVerifier }) {
 }
 
 function resolveCampusOnePortalRole(claims = {}) {
-  const candidates = [
-    claims.role,
-    ...(Array.isArray(claims.roles) ? claims.roles : [])
-  ].map((role) => String(role || "").trim().toLowerCase());
+  const role = String(claims.role || "").trim().toLowerCase();
+  return ["student", "staff", "admin"].includes(role) ? role : "student";
+}
 
-  if (candidates.includes("admin")) {
-    return "admin";
+function getCampusOneCustomRoles(claims = {}) {
+  if (!Array.isArray(claims.custom_roles)) {
+    return [];
   }
 
-  if (candidates.includes("staff")) {
-    return "staff";
-  }
-
-  return "student";
+  return [...new Set(
+    claims.custom_roles
+      .map((role) => String(role || "").trim().toLowerCase())
+      .filter(Boolean)
+  )];
 }
 
 function getProfileDefaultsFromClaims(claims) {
@@ -338,22 +339,73 @@ function getProfileDefaultsFromClaims(claims) {
     email,
     fullName,
     studentId,
-    portalRole: resolveCampusOnePortalRole(claims)
+    portalRole: resolveCampusOnePortalRole(claims),
+    customRoles: getCampusOneCustomRoles(claims)
   };
+}
+
+function getUniqueProfileMatches(matches) {
+  const matchesById = new Map();
+
+  for (const match of matches) {
+    if (match?.profile?.id) {
+      const existing = matchesById.get(match.profile.id) || {
+        profile: match.profile,
+        matchedBy: []
+      };
+      existing.matchedBy.push(match.matchedBy);
+      matchesById.set(match.profile.id, existing);
+    }
+  }
+
+  return [...matchesById.values()];
 }
 
 async function resolveCampusOneProfile(database, claims) {
   const profileDefaults = getProfileDefaultsFromClaims(claims);
-  let profile = database.getProfileByPortalUserId
-    ? await database.getProfileByPortalUserId(profileDefaults.portalUserId)
-    : null;
+  const [portalProfile, emailProfile, studentIdProfile] = await Promise.all([
+    database.getProfileByPortalUserId
+      ? database.getProfileByPortalUserId(profileDefaults.portalUserId)
+      : null,
+    database.getProfileByEmail
+      ? database.getProfileByEmail(profileDefaults.email)
+      : null,
+    profileDefaults.studentId && database.getProfileByStudentId
+      ? database.getProfileByStudentId(profileDefaults.studentId)
+      : null
+  ]);
+  const uniqueMatches = getUniqueProfileMatches([
+    { profile: portalProfile, matchedBy: "portal_user_id" },
+    { profile: emailProfile, matchedBy: "email" },
+    { profile: studentIdProfile, matchedBy: "student_id" }
+  ]);
 
-  if (!profile && database.getProfileByEmail) {
-    profile = await database.getProfileByEmail(profileDefaults.email);
+  if (uniqueMatches.length > 1) {
+    throw new ApiError(
+      409,
+      "Your Campus One account matches more than one Club Services profile. Please contact Club Services to link your account safely.",
+      "CAMPUS_ONE_PROFILE_LINK_CONFLICT",
+      {
+        matched_by: uniqueMatches.flatMap((match) => match.matchedBy)
+      }
+    );
   }
+
+  let profile = uniqueMatches[0]?.profile ?? null;
 
   if (profile) {
     const updates = {};
+
+    if (profile.portal_user_id && profile.portal_user_id !== profileDefaults.portalUserId) {
+      throw new ApiError(
+        409,
+        "This Club Services profile is already linked to another Campus One account. Please contact Club Services.",
+        "CAMPUS_ONE_PROFILE_LINK_CONFLICT",
+        {
+          matched_by: uniqueMatches[0].matchedBy
+        }
+      );
+    }
 
     if (!profile.portal_user_id) {
       updates.portal_user_id = profileDefaults.portalUserId;
@@ -377,7 +429,8 @@ async function resolveCampusOneProfile(database, claims) {
 
     return {
       profile,
-      portalRole: profileDefaults.portalRole
+      portalRole: profileDefaults.portalRole,
+      customRoles: profileDefaults.customRoles
     };
   }
 
@@ -396,12 +449,13 @@ async function resolveCampusOneProfile(database, claims) {
 
   return {
     profile,
-    portalRole: profileDefaults.portalRole
+    portalRole: profileDefaults.portalRole,
+    customRoles: profileDefaults.customRoles
   };
 }
 
 function createCampusOneAuthRouter(options = {}) {
-  const { database } = options;
+  const { database, logger = baseLogger } = options;
   const router = require("express").Router();
 
   router.get("/campus-one/login", (req, res) => {
@@ -478,16 +532,32 @@ function createCampusOneAuthRouter(options = {}) {
       const claims = await verifyCampusOneIdToken(tokens.id_token, nonce);
       let profile;
       let portalRole;
+      let customRoles;
 
       try {
         const resolvedProfile = await resolveCampusOneProfile(database, claims);
         profile = resolvedProfile.profile;
         portalRole = resolvedProfile.portalRole;
+        customRoles = resolvedProfile.customRoles;
       } catch (error) {
+        logger.warn("campus_one.profile_link.failed", {
+          code: error?.code ?? "UNKNOWN",
+          portal_user_id: claims.sub ?? null,
+          email: claims.email ?? null
+        });
         clearCampusOneOidcCookies(res);
-        res.redirect(getFrontendLoginUrl({ auth_error: "failed" }));
+        res.redirect(getFrontendLoginUrl({
+          auth_error: error?.code === "CAMPUS_ONE_PROFILE_LINK_CONFLICT" ? "account_link_conflict" : "failed"
+        }));
         return;
       }
+
+      logger.info("campus_one.profile_link.succeeded", {
+        profile_id: profile.id,
+        portal_user_id: profile.portal_user_id,
+        portal_role: portalRole,
+        custom_roles: customRoles
+      });
 
       const roleContext = resolveEffectiveRole({
         portalRole,
@@ -529,5 +599,6 @@ module.exports = {
   createCampusOneAuthRouter,
   resolveCampusOneProfile,
   resolveCampusOnePortalRole,
+  getCampusOneCustomRoles,
   verifyCampusOneIdToken
 };

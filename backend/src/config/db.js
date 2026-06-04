@@ -650,6 +650,26 @@ function createDatabase(options = {}) {
       return normalizeProfile(data);
     },
 
+    async getProfileByStudentId(studentId) {
+      const normalizedStudentId = studentId?.trim();
+
+      if (!normalizedStudentId) {
+        return null;
+      }
+
+      const { data, error } = await getClient()
+        .from("profiles")
+        .select(profileSelect)
+        .eq("student_id", normalizedStudentId)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return normalizeProfile(data);
+    },
+
     async updateProfile(profileId, update) {
       let { data, error } = await getClient()
         .from("profiles")

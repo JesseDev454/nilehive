@@ -2,7 +2,11 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const { createApp } = require("../src/app");
 const { clearEnvCache } = require("../src/config/env");
-const { resolveCampusOneProfile, resolveCampusOnePortalRole } = require("../src/modules/auth/campusOneOidc");
+const {
+  getCampusOneCustomRoles,
+  resolveCampusOneProfile,
+  resolveCampusOnePortalRole
+} = require("../src/modules/auth/campusOneOidc");
 const { CAMPUS_ONE_SESSION_COOKIE, createCampusOneSessionToken } = require("../src/shared/campusOneSession");
 
 function createFakeDatabase(profileOverrides = {}) {
@@ -308,10 +312,146 @@ test("CampusOne admin session receives effective admin role", async (t) => {
   assert.equal(payload.data.profile.portal_role, "admin");
 });
 
-test("CampusOne role normalization prefers admin and staff claims from the roles array", () => {
-  assert.equal(resolveCampusOnePortalRole({ role: "student", roles: ["student", "admin"] }), "admin");
-  assert.equal(resolveCampusOnePortalRole({ role: "student", roles: ["student", "staff"] }), "staff");
-  assert.equal(resolveCampusOnePortalRole({ role: "student", roles: ["student", "mentor"] }), "student");
+test("CampusOne global role normalization trusts only the top-level academic role", () => {
+  assert.equal(resolveCampusOnePortalRole({ role: "admin", roles: ["admin", "president"] }), "admin");
+  assert.equal(resolveCampusOnePortalRole({ role: "staff", roles: ["staff", "advisor"] }), "staff");
+  assert.equal(resolveCampusOnePortalRole({ role: "student", roles: ["student", "admin"] }), "student");
+  assert.equal(resolveCampusOnePortalRole({ role: "student", custom_roles: ["admin"] }), "student");
+  assert.equal(resolveCampusOnePortalRole({ role: "external", roles: ["external", "admin"] }), "student");
+});
+
+test("CampusOne custom roles are normalized for diagnostics without granting access", () => {
+  assert.deepEqual(
+    getCampusOneCustomRoles({ custom_roles: [" President ", "advisor", "PRESIDENT", null] }),
+    ["president", "advisor"]
+  );
+  assert.deepEqual(getCampusOneCustomRoles({ roles: ["student", "president"] }), []);
+});
+
+test("CampusOne OIDC links an existing local role by valid student ID without overwriting it", async (t) => {
+  withCampusOneOidcEnv(t);
+  let updatePayload = null;
+  const existingProfile = {
+    id: "profile-president",
+    portal_user_id: null,
+    email: "old-president@nileuniversity.edu.ng",
+    full_name: "Existing President",
+    role: "president",
+    club_id: "club-1",
+    student_id: "020232255",
+    requested_role: "student",
+    onboarding_status: "complete",
+    account_status: "active"
+  };
+  const database = {
+    async getProfileByPortalUserId() {
+      return null;
+    },
+    async getProfileByEmail() {
+      return null;
+    },
+    async getProfileByStudentId(studentId) {
+      return studentId === "020232255" ? existingProfile : null;
+    },
+    async updateProfile(profileId, update) {
+      updatePayload = update;
+      return { ...existingProfile, id: profileId, ...update };
+    }
+  };
+
+  const result = await resolveCampusOneProfile(database, {
+    sub: "campus-president-1",
+    email: "new-president@nileuniversity.edu.ng",
+    name: "Existing President",
+    role: "staff",
+    student_id: "020232255",
+    custom_roles: ["president"]
+  });
+
+  assert.equal(result.profile.role, "president");
+  assert.equal(result.profile.club_id, "club-1");
+  assert.equal(result.portalRole, "staff");
+  assert.deepEqual(result.customRoles, ["president"]);
+  assert.deepEqual(updatePayload, {
+    portal_user_id: "campus-president-1"
+  });
+});
+
+test("CampusOne OIDC rejects identity claims that match different local profiles", async (t) => {
+  withCampusOneOidcEnv(t);
+  const portalProfile = {
+    id: "profile-by-portal",
+    portal_user_id: "campus-user-conflict",
+    email: "portal@nileuniversity.edu.ng",
+    role: "student",
+    club_id: null,
+    student_id: null
+  };
+  const emailProfile = {
+    id: "profile-by-email",
+    portal_user_id: null,
+    email: "conflict@nileuniversity.edu.ng",
+    role: "advisor",
+    club_id: "club-1",
+    student_id: null
+  };
+  const database = {
+    async getProfileByPortalUserId() {
+      return portalProfile;
+    },
+    async getProfileByEmail() {
+      return emailProfile;
+    },
+    async getProfileByStudentId() {
+      return null;
+    }
+  };
+
+  await assert.rejects(
+    resolveCampusOneProfile(database, {
+      sub: "campus-user-conflict",
+      email: "conflict@nileuniversity.edu.ng",
+      name: "Conflicting User",
+      role: "staff"
+    }),
+    (error) => {
+      assert.equal(error.code, "CAMPUS_ONE_PROFILE_LINK_CONFLICT");
+      assert.equal(error.statusCode, 409);
+      return true;
+    }
+  );
+});
+
+test("new CampusOne staff users remain local students until assigned", async (t) => {
+  withCampusOneOidcEnv(t);
+  let createdProfile = null;
+  const database = {
+    async getProfileByPortalUserId() {
+      return null;
+    },
+    async getProfileByEmail() {
+      return null;
+    },
+    async getProfileByStudentId() {
+      return null;
+    },
+    async createProfile(profile) {
+      createdProfile = profile;
+      return profile;
+    }
+  };
+
+  const result = await resolveCampusOneProfile(database, {
+    sub: "campus-staff-new",
+    email: "staff@nileuniversity.edu.ng",
+    name: "New Staff",
+    role: "staff",
+    custom_roles: ["advisor"]
+  });
+
+  assert.equal(result.portalRole, "staff");
+  assert.equal(result.profile.role, "student");
+  assert.equal(createdProfile.role, "student");
 });
 
 test("CampusOne cancelled consent redirects to friendly login page", async (t) => {

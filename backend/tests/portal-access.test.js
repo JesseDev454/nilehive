@@ -67,3 +67,14 @@ test("president and executive remain local Club Services roles for Campus One st
   assert.equal(president.accessPending, false);
   assert.equal(executive.accessPending, false);
 });
+
+test("feedback manager remains a local Club Services role for Campus One staff", () => {
+  const result = resolveEffectiveRole({
+    portalRole: "staff",
+    appRole: "feedback_manager"
+  });
+
+  assert.equal(result.portalRole, "staff");
+  assert.equal(result.appRole, "feedback_manager");
+  assert.equal(result.effectiveRole, "feedback_manager");
+});

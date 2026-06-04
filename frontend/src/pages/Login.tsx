@@ -61,6 +61,10 @@ export default function Login() {
       toast.error("Campus One sign-in could not be completed", {
         description: "Please try again. If it keeps happening, contact Club Services."
       });
+    } else if (authError === "account_link_conflict") {
+      toast.error("Your account needs to be linked safely", {
+        description: "Please contact Club Services so they can connect your Campus One account to the correct profile."
+      });
     }
   }, [authError]);
 
@@ -73,6 +77,8 @@ export default function Login() {
       ? "Sign-in was cancelled. Click Sign in with Campus One when you are ready to continue."
       : authError === "failed"
         ? "Campus One sign-in could not be completed. Please try again or contact Club Services."
+        : authError === "account_link_conflict"
+          ? "Your Campus One identity matches another Club Services profile. Contact Club Services so your account can be linked safely."
         : isSignedOutView
           ? "You have signed out of Club Services. Your CampusOne session may still be active."
           : "Use your Nile University Campus One account. No separate password needed.";
@@ -120,9 +126,9 @@ export default function Login() {
               </p>
             </div>
 
-            {(isSignedOutView || authError === "cancelled" || authError === "failed") ? (
+            {(isSignedOutView || authError === "cancelled" || authError === "failed" || authError === "account_link_conflict") ? (
               <div className={`mt-6 rounded-[18px] border-3 p-4 text-left text-sm font-bold ${
-                authError === "cancelled" || authError === "failed"
+                authError === "cancelled" || authError === "failed" || authError === "account_link_conflict"
                   ? "border-destructive bg-destructive/10 text-destructive"
                   : "border-success bg-success/15 text-foreground"
               }`}>
