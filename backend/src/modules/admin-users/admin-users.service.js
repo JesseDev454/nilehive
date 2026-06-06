@@ -3,6 +3,7 @@ const { logger: baseLogger } = require("../../config/logger");
 const ApiError = require("../../shared/ApiError");
 const { writeAuditLog } = require("../../shared/auditLog");
 const { ensurePaginatedResult, mapPaginatedResult } = require("../../shared/pagination");
+const { isValidStudentId } = require("../../shared/studentId");
 const {
   validateAdvisorAssignmentPayload,
   validateRoleUpdatePayload
@@ -180,14 +181,18 @@ async function upsertActiveClubMember({
   const existingMember = database.getClubMemberByProfileAndClub
     ? await database.getClubMemberByProfileAndClub(profile.id, clubId)
     : null;
+  const hasValidStudentId = isValidStudentId(profile.student_id);
   const nextMemberPayload = {
     full_name: profile.full_name,
-    student_id: profile.student_id,
     email: existingMember?.email ?? profile.email ?? null,
     phone_number: profile.phone_number ?? existingMember?.phone_number ?? null,
     club_role: desiredClubRole,
     membership_status: "active"
   };
+
+  if (hasValidStudentId) {
+    nextMemberPayload.student_id = profile.student_id;
+  }
 
   if (existingMember) {
     const updatedMember = await database.updateClubMember(existingMember.id, nextMemberPayload);
@@ -208,6 +213,10 @@ async function upsertActiveClubMember({
     }
 
     return updatedMember;
+  }
+
+  if (!hasValidStudentId) {
+    return null;
   }
 
   return database.createClubMember({

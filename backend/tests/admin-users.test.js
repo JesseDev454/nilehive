@@ -306,16 +306,7 @@ for (const role of ["student", "executive", "president"]) {
     });
 
     assert.equal(listProfilesCalled, role === "president");
-    assert.deepEqual(createdMember, {
-      club_id: "club-1",
-      profile_id: "student-1",
-      full_name: "Ada Student",
-      student_id: null,
-      email: null,
-      phone_number: null,
-      club_role: role === "student" ? "member" : role,
-      membership_status: "active"
-    });
+    assert.equal(createdMember, null);
     assert.deepEqual(profileUpdate, {
       profileId: "student-1",
       update: {
