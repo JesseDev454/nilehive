@@ -117,14 +117,6 @@ export default function Clubs() {
               <Label htmlFor="club_description">Description</Label>
               <Textarea id="club_description" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} required />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="club_whatsapp_name">WhatsApp Group Name</Label>
-              <Input id="club_whatsapp_name" value={form.whatsapp_group_name} onChange={(event) => setForm({ ...form, whatsapp_group_name: event.target.value })} placeholder="Admin-only reference" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="club_whatsapp_notes">WhatsApp Onboarding Notes</Label>
-              <Textarea id="club_whatsapp_notes" value={form.whatsapp_onboarding_notes} onChange={(event) => setForm({ ...form, whatsapp_onboarding_notes: event.target.value })} placeholder="Admin-only instructions. Do not paste a group invite link." />
-            </div>
             <div className="flex items-center gap-3">
               <Switch id="club_public" checked={form.is_public_signup} onCheckedChange={(checked) => setForm({ ...form, is_public_signup: checked })} />
               <Label htmlFor="club_public">Show in Discover Clubs</Label>

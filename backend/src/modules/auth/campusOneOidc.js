@@ -305,12 +305,18 @@ function resolveCampusOnePortalRole(claims = {}) {
 }
 
 function getCampusOneCustomRoles(claims = {}) {
-  if (!Array.isArray(claims.custom_roles)) {
-    return [];
-  }
+  const customRoleClaims = [
+    ...(Array.isArray(claims.custom_roles) ? claims.custom_roles : []),
+    ...(Array.isArray(claims.customRoles) ? claims.customRoles : []),
+    // Campus One documents custom_roles, but some tokens may only merge
+    // app roles into roles. Only trust our exact admin custom role here.
+    ...(Array.isArray(claims.roles) && claims.roles.includes("club_services_admin")
+      ? ["club_services_admin"]
+      : [])
+  ];
 
   return [...new Set(
-    claims.custom_roles
+    customRoleClaims
       .map((role) => String(role || "").trim().toLowerCase())
       .filter(Boolean)
   )];

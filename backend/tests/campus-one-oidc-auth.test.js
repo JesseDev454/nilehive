@@ -376,6 +376,8 @@ test("CampusOne custom roles are normalized for diagnostics without granting acc
     ["president", "advisor"]
   );
   assert.deepEqual(getCampusOneCustomRoles({ roles: ["student", "president"] }), []);
+  assert.deepEqual(getCampusOneCustomRoles({ roles: ["staff", "club_services_admin"] }), ["club_services_admin"]);
+  assert.deepEqual(getCampusOneCustomRoles({ customRoles: ["club_services_admin"] }), ["club_services_admin"]);
 });
 
 test("CampusOne OIDC links an existing local role by valid student ID without overwriting it", async (t) => {
