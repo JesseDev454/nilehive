@@ -35,6 +35,106 @@ function calculateAttendanceRate(attendedCount, goingCount) {
   return Math.min(100, Math.round((attendedCount / goingCount) * 100));
 }
 
+function clampScore(value) {
+  const numericValue = Number(value);
+
+  if (!Number.isFinite(numericValue)) {
+    return 50;
+  }
+
+  return Math.max(0, Math.min(100, Math.round(numericValue)));
+}
+
+function scoreRatio(part, total, fallback = 50) {
+  if (total <= 0) {
+    return fallback;
+  }
+
+  return clampScore((part / total) * 100);
+}
+
+function getClubHealthLabel(score) {
+  if (score >= 90) {
+    return "Excellent";
+  }
+
+  if (score >= 75) {
+    return "Healthy";
+  }
+
+  if (score >= 60) {
+    return "Needs Attention";
+  }
+
+  if (score >= 40) {
+    return "Getting Started";
+  }
+
+  return "At Risk";
+}
+
+function calculateClubHealthScore({
+  proposals = [],
+  members = [],
+  duePayments = [],
+  reports = [],
+  approvedEvents = [],
+  feedback = [],
+  tasks = [],
+  now = new Date()
+} = {}) {
+  const activeMembers = members.filter((member) => member.membership_status === "active").length;
+  const paidDues = duePayments.filter((payment) => payment.status === "paid").length;
+  const approvedProposalCount = proposals.filter((proposal) => proposal.status === "approved").length;
+  const rejectedProposalCount = proposals.filter((proposal) => isRejectedStatus(proposal.status)).length;
+  const nonRejectedProposalCount = Math.max(0, proposals.length - rejectedProposalCount);
+  const pastApprovedEvents = approvedEvents.filter((event) => isPastEvent(event, now));
+  const reportedPastEventIds = new Set(reports.map((report) => report.proposal_id));
+  const reportedPastEvents = pastApprovedEvents.filter((event) => reportedPastEventIds.has(event.id)).length;
+  const completedTasks = tasks.filter((task) => task.status === "completed").length;
+  const nonBlockedTasks = tasks.filter((task) => task.status !== "blocked").length;
+  const ratedFeedback = feedback.filter((item) => Number.isFinite(Number(item.rating)));
+  const averageRatingScore = ratedFeedback.length > 0
+    ? clampScore((ratedFeedback.reduce((sum, item) => sum + Number(item.rating), 0) / ratedFeedback.length / 5) * 100)
+    : 50;
+  const closedFeedback = feedback.filter((item) => item.status && item.status !== "open").length;
+
+  const dues = scoreRatio(paidDues, duePayments.length);
+  const membership = scoreRatio(activeMembers, members.length);
+  const events = proposals.length > 0
+    ? clampScore((scoreRatio(approvedProposalCount, proposals.length, 50) * 0.7) + (scoreRatio(nonRejectedProposalCount, proposals.length, 50) * 0.3))
+    : 50;
+  const reportsScore = scoreRatio(reportedPastEvents, pastApprovedEvents.length);
+  const tasksScore = tasks.length > 0
+    ? clampScore((scoreRatio(completedTasks, tasks.length, 50) * 0.8) + (scoreRatio(nonBlockedTasks, tasks.length, 50) * 0.2))
+    : 50;
+  const feedbackScore = feedback.length > 0
+    ? clampScore((averageRatingScore * 0.8) + (scoreRatio(closedFeedback, feedback.length, 50) * 0.2))
+    : 50;
+  const breakdown = {
+    dues,
+    membership,
+    events,
+    reports: reportsScore,
+    tasks: tasksScore,
+    feedback: feedbackScore
+  };
+  const score = clampScore(
+    (breakdown.dues * 0.3) +
+      (breakdown.membership * 0.2) +
+      (breakdown.events * 0.2) +
+      (breakdown.reports * 0.15) +
+      (breakdown.tasks * 0.1) +
+      (breakdown.feedback * 0.05)
+  );
+
+  return {
+    score,
+    label: getClubHealthLabel(score),
+    breakdown
+  };
+}
+
 function formatProposalSummary(proposal) {
   return {
     id: proposal.id,
@@ -268,6 +368,15 @@ function buildClubPerformance({
     const paidDues = clubDues.filter((payment) => payment.status === "paid");
     const approvedEvents = clubProposals.filter((proposal) => proposal.status === "approved");
     const supportableApprovedEvents = approvedEvents.filter((proposal) => isSupportableEvent(proposal));
+    const health = calculateClubHealthScore({
+      proposals: clubProposals,
+      members: clubMembers,
+      duePayments: clubDues,
+      reports: clubReports,
+      approvedEvents,
+      feedback: clubFeedback,
+      tasks: clubTasks
+    });
     const currentSessionDuesCollected = sumPaidDuesForSession(clubDues, currentAcademicSession);
     const previousSessionDuesCollected = sumPaidDuesForSession(clubDues, previousAcademicSession);
 
@@ -292,6 +401,9 @@ function buildClubPerformance({
       reports_submitted: clubReports.length,
       feedback_count: clubFeedback.length,
       open_tasks: clubTasks.filter((task) => task.status !== "completed").length,
+      club_health_score: health.score,
+      club_health_label: health.label,
+      club_health_breakdown: health.breakdown,
       last_activity_at: getLatestTimestamp(
         [
           ...clubProposals,
@@ -404,8 +516,8 @@ function summarizeFeedback(feedback) {
   const ratedFeedback = feedback.filter((item) => Number.isFinite(Number(item.rating)));
 
   return {
-    feedback_count: feedback.length,
-    average_rating: ratedFeedback.length > 0
+      feedback_count: feedback.length,
+      average_rating: ratedFeedback.length > 0
       ? Math.round((ratedFeedback.reduce((sum, item) => sum + Number(item.rating), 0) / ratedFeedback.length) * 10) / 10
       : null
   };
@@ -478,6 +590,28 @@ async function getPresidentDashboard(options) {
   const proposals = await database.listProposalsByClubId(actor.clubId);
   const approvedEvents = await database.listApprovedProposals({ clubIds: [actor.clubId] });
   const supportableApprovedEvents = approvedEvents.filter((proposal) => isSupportableEvent(proposal));
+  const [
+    members,
+    duePayments,
+    reports,
+    feedback,
+    tasks
+  ] = await Promise.all([
+    database.listClubMembers ? database.listClubMembers({ clubId: actor.clubId }) : [],
+    database.listDuePayments ? database.listDuePayments({ clubId: actor.clubId }) : [],
+    database.listEventReports ? database.listEventReports({ clubId: actor.clubId }) : [],
+    database.listFeedback ? database.listFeedback({ clubId: actor.clubId }) : [],
+    database.listTasks ? database.listTasks({ clubId: actor.clubId }) : []
+  ]);
+  const health = calculateClubHealthScore({
+    proposals,
+    members,
+    duePayments,
+    reports,
+    approvedEvents,
+    feedback,
+    tasks
+  });
   const executiveTeam = database.listProfilesByClubId
     ? await database.listProfilesByClubId(actor.clubId, { role: "executive" })
     : [];
@@ -492,7 +626,10 @@ async function getPresidentDashboard(options) {
     summary: {
       ...summarizeProposals(proposals),
       upcoming_events: supportableApprovedEvents.length,
-      executive_count: executiveTeam.length
+      executive_count: executiveTeam.length,
+      club_health_score: health.score,
+      club_health_label: health.label,
+      club_health_breakdown: health.breakdown
     },
     recent_activity: proposals.slice(0, 6).map(formatActivity),
     pending_proposals: proposals.filter((proposal) => isPendingStatus(proposal.status)).slice(0, 5).map(formatProposalSummary),
@@ -745,7 +882,10 @@ async function getAdminClubDashboard(options) {
       event_rsvp_count: rsvps.length,
       attendance_rate: calculateAttendanceRate(attendedCount, goingCount),
       ...summarizeTasks(tasks),
-      ...summarizeFeedback(feedback)
+      ...summarizeFeedback(feedback),
+      club_health_score: performance.club_health_score,
+      club_health_label: performance.club_health_label,
+      club_health_breakdown: performance.club_health_breakdown
     },
     tasks: tasks.slice(0, 10).map(formatTaskSummary),
     recent_proposals: proposals.slice(0, 8).map(formatProposalSummary),
@@ -784,6 +924,8 @@ async function getAdminClubDashboard(options) {
 }
 
 module.exports = {
+  calculateClubHealthScore,
+  clampScore,
   getAdminClubDashboard,
   getAdminOperationsDashboard,
   getExecutiveDashboard,

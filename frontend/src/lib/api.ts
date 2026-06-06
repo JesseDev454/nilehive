@@ -263,6 +263,21 @@ export interface EventReminderRecord {
   created_at: string;
 }
 
+export interface ClubHealthBreakdown {
+  dues: number;
+  membership: number;
+  events: number;
+  reports: number;
+  tasks: number;
+  feedback: number;
+}
+
+export interface ClubHealthFields {
+  club_health_score: number;
+  club_health_label: "Excellent" | "Healthy" | "Needs Attention" | "Getting Started" | "At Risk";
+  club_health_breakdown: ClubHealthBreakdown;
+}
+
 export interface DashboardSummary {
   total_proposals: number;
   pending_proposals: number;
@@ -272,6 +287,9 @@ export interface DashboardSummary {
   upcoming_events?: number;
   reminders?: number;
   executive_count?: number;
+  club_health_score?: number;
+  club_health_label?: ClubHealthFields["club_health_label"];
+  club_health_breakdown?: ClubHealthBreakdown;
 }
 
 export interface DashboardActionItem {
@@ -397,6 +415,9 @@ export interface AdminOperationsDashboardRecord {
     reports_submitted: number;
     feedback_count: number;
     open_tasks: number;
+    club_health_score: number;
+    club_health_label: ClubHealthFields["club_health_label"];
+    club_health_breakdown: ClubHealthBreakdown;
     last_activity_at: string | null;
   }[];
   missing_reports: {
@@ -742,6 +763,9 @@ export interface AdminClubDashboardRecord {
     blocked_tasks: number;
     open_tasks: number;
     average_rating: number | null;
+    club_health_score: number;
+    club_health_label: ClubHealthFields["club_health_label"];
+    club_health_breakdown: ClubHealthBreakdown;
   };
   tasks: TaskRecord[];
   recent_proposals: DashboardProposalSummary[];

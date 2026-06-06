@@ -191,6 +191,15 @@ export default function AdminClubDashboard() {
             <CardTitle className="text-lg">Club Health</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="nh-list-card bg-primary text-primary-foreground">
+              <p className="text-xs font-black uppercase tracking-[0.12em] opacity-80">Overall health score</p>
+              <div className="mt-2 flex items-end justify-between gap-4">
+                <p className="text-5xl font-black tracking-[-0.06em]">{summary.club_health_score}</p>
+                <p className="rounded-full border-2 border-primary-foreground px-3 py-1 text-xs font-black uppercase tracking-[0.08em]">
+                  {summary.club_health_label}
+                </p>
+              </div>
+            </div>
             <div className="nh-list-card">
               <p className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Dues collection</p>
               <p className="mt-1 text-2xl font-black">{summary.dues_collection_rate}%</p>

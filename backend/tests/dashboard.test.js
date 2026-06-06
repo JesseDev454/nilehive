@@ -1,6 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { createApp } = require("../src/app");
+const { calculateClubHealthScore, clampScore } = require("../src/modules/dashboard/dashboard.service");
 
 function getRelativeDate(daysFromToday) {
   const date = new Date();
@@ -26,6 +27,90 @@ function createProposal(overrides = {}) {
     ...overrides
   };
 }
+
+test("club health score starts new clubs at a neutral baseline", () => {
+  const health = calculateClubHealthScore();
+
+  assert.equal(health.score, 50);
+  assert.equal(health.label, "Getting Started");
+  assert.deepEqual(health.breakdown, {
+    dues: 50,
+    membership: 50,
+    events: 50,
+    reports: 50,
+    tasks: 50,
+    feedback: 50
+  });
+});
+
+test("club health score rewards excellent clubs without exceeding 100", () => {
+  const health = calculateClubHealthScore({
+    members: [
+      { membership_status: "active" },
+      { membership_status: "active" }
+    ],
+    duePayments: [
+      { status: "paid" },
+      { status: "paid" }
+    ],
+    proposals: [
+      createProposal({ id: "proposal-excellent-1", status: "approved", event_date: getRelativeDate(-3) }),
+      createProposal({ id: "proposal-excellent-2", status: "approved", event_date: getRelativeDate(4) })
+    ],
+    approvedEvents: [
+      createProposal({ id: "proposal-excellent-1", status: "approved", event_date: getRelativeDate(-3) }),
+      createProposal({ id: "proposal-excellent-2", status: "approved", event_date: getRelativeDate(4) })
+    ],
+    reports: [
+      { proposal_id: "proposal-excellent-1" }
+    ],
+    tasks: [
+      { status: "completed" },
+      { status: "completed" }
+    ],
+    feedback: [
+      { rating: 5, status: "resolved" },
+      { rating: 5, status: "closed" }
+    ]
+  });
+
+  assert.equal(health.score, 100);
+  assert.equal(health.label, "Excellent");
+});
+
+test("club health score handles weak clubs without dropping below zero", () => {
+  const health = calculateClubHealthScore({
+    members: [
+      { membership_status: "inactive" }
+    ],
+    duePayments: [
+      { status: "submitted" }
+    ],
+    proposals: [
+      createProposal({ id: "proposal-weak-1", status: "admin_rejected", event_date: getRelativeDate(-10) })
+    ],
+    approvedEvents: [
+      createProposal({ id: "proposal-weak-2", status: "approved", event_date: getRelativeDate(-10) })
+    ],
+    reports: [],
+    tasks: [
+      { status: "blocked" }
+    ],
+    feedback: [
+      { rating: 1, status: "open" }
+    ]
+  });
+
+  assert.ok(health.score >= 0);
+  assert.ok(health.score < 40);
+  assert.equal(health.label, "At Risk");
+});
+
+test("club health score utilities clamp extreme values", () => {
+  assert.equal(clampScore(200), 100);
+  assert.equal(clampScore(-20), 0);
+  assert.equal(clampScore(Number.NaN), 50);
+});
 
 function createFakeDatabase() {
   const profiles = {
@@ -408,6 +493,11 @@ test("president can fetch live club dashboard data", async (t) => {
   assert.equal(payload.data.club.name, "Nile Innovators Club");
   assert.equal(payload.data.summary.executive_count, 1);
   assert.equal(payload.data.summary.upcoming_events, 1);
+  assert.equal(typeof payload.data.summary.club_health_score, "number");
+  assert.ok(payload.data.summary.club_health_score >= 0);
+  assert.ok(payload.data.summary.club_health_score <= 100);
+  assert.equal(typeof payload.data.summary.club_health_label, "string");
+  assert.equal(typeof payload.data.summary.club_health_breakdown.dues, "number");
   assert.equal(payload.data.recent_activity.length, 4);
   assert.equal(payload.data.pending_proposals.length, 1);
   assert.equal(payload.data.upcoming_events.length, 1);
@@ -455,6 +545,10 @@ test("admin can fetch operations dashboard data", async (t) => {
   assert.equal(payload.data.club_performance.length, 2);
   assert.equal(payload.data.club_performance[0].club_name, "Nile Innovators Club");
   assert.equal(payload.data.club_performance[0].approved_events, 1);
+  assert.equal(typeof payload.data.club_performance[0].club_health_score, "number");
+  assert.ok(payload.data.club_performance.every((club) => club.club_health_score >= 0 && club.club_health_score <= 100));
+  assert.equal(typeof payload.data.club_performance[0].club_health_label, "string");
+  assert.equal(typeof payload.data.club_performance[0].club_health_breakdown.membership, "number");
   assert.equal(payload.data.club_performance[0].current_session_dues_collected, 5000);
   assert.equal(payload.data.club_performance[0].previous_session_dues_collected, 3000);
   assert.equal(payload.data.club_performance[0].dues_change_amount, 2000);
@@ -485,6 +579,11 @@ test("admin can fetch one club operations dashboard", async (t) => {
   assert.equal(payload.data.summary.total_members, 2);
   assert.equal(payload.data.summary.open_tasks, 1);
   assert.equal(payload.data.summary.approved_events, 1);
+  assert.equal(typeof payload.data.summary.club_health_score, "number");
+  assert.ok(payload.data.summary.club_health_score >= 0);
+  assert.ok(payload.data.summary.club_health_score <= 100);
+  assert.equal(payload.data.summary.club_health_score, payload.data.performance.club_health_score);
+  assert.equal(payload.data.summary.club_health_label, payload.data.performance.club_health_label);
   assert.equal(payload.data.summary.current_session_dues_collected, 5000);
   assert.equal(payload.data.summary.previous_session_dues_collected, 3000);
   assert.equal(payload.data.summary.dues_change_amount, 2000);

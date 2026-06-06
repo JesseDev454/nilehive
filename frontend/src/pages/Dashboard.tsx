@@ -360,6 +360,41 @@ function getClubInitials(name: string) {
 }
 
 function getClubPulse(club: AdminOperationsDashboardRecord["club_performance"][number]) {
+  if (club.club_health_score >= 90) {
+    return {
+      label: club.club_health_label,
+      className: "bg-success/15 text-success"
+    };
+  }
+
+  if (club.club_health_score >= 75) {
+    return {
+      label: club.club_health_label,
+      className: "bg-secondary/15 text-secondary"
+    };
+  }
+
+  if (club.club_health_score >= 60) {
+    return {
+      label: club.club_health_label,
+      className: "bg-primary/15 text-primary"
+    };
+  }
+
+  if (club.club_health_score >= 40) {
+    return {
+      label: club.club_health_label,
+      className: "bg-warning/15 text-warning"
+    };
+  }
+
+  if (Number.isFinite(club.club_health_score)) {
+    return {
+      label: club.club_health_label,
+      className: "bg-destructive/15 text-destructive"
+    };
+  }
+
   if (club.pending_proposals > 0 || club.open_tasks > 0) {
     return {
       label: "Needs attention",
@@ -1400,9 +1435,17 @@ function PolishedAdminDashboard() {
                                 <p className="text-xs text-muted-foreground">{club.feedback_count} feedback</p>
                               </td>
                               <td>
-                                <span className={`nh-status ${pulse.className}`}>
-                                  {pulse.label}
-                                </span>
+                                <div className="flex flex-col gap-1">
+                                  <span className={`nh-status ${pulse.className}`}>
+                                    {club.club_health_score} - {pulse.label}
+                                  </span>
+                                  <div className="h-2 overflow-hidden border border-foreground bg-muted">
+                                    <div
+                                      className="h-full bg-secondary"
+                                      style={{ width: `${Math.min(100, Math.max(0, club.club_health_score))}%` }}
+                                    />
+                                  </div>
+                                </div>
                               </td>
                             </tr>
                           );
@@ -2026,11 +2069,8 @@ function PresidentDashboard() {
   const summary = dashboard?.summary;
   const pendingCount = summary?.pending_proposals ?? 0;
   const upcomingCount = summary?.upcoming_events ?? 0;
-  const totalProposals = summary?.total_proposals ?? 0;
-  const approvedShare = totalProposals > 0
-    ? Math.round(((totalProposals - pendingCount) / totalProposals) * 100)
-    : 92;
-  const clubHealthScore = Math.max(0, Math.min(99, approvedShare));
+  const clubHealthScore = Math.max(0, Math.min(100, summary?.club_health_score ?? 50));
+  const clubHealthLabel = summary?.club_health_label ?? "Getting Started";
 
   return (
     <div className="space-y-8 animate-slide-up">
@@ -2073,8 +2113,8 @@ function PresidentDashboard() {
                 </div>
                 <div>
                   <div className="mb-3 flex items-center justify-between text-xs font-black uppercase tracking-[0.14em]">
-                    <span>Engagement</span>
-                    <span>Outstanding</span>
+                    <span>Overall health</span>
+                    <span>{clubHealthLabel}</span>
                   </div>
                   <QuestProgressBar value={clubHealthScore} />
                 </div>

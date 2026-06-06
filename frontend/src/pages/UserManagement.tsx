@@ -171,7 +171,6 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
 
   const currentPresidentLabel = presidentConflict?.full_name || presidentConflict?.student_id || "the current president";
   const replacementUserLabel = user.full_name || "this user";
-  const effectiveRole = user.effective_role ?? user.role;
 
   return (
     <>
@@ -194,13 +193,8 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
             <div className="nh-card-soft p-4 lg:col-span-2">
               <p className="font-semibold">{user.full_name || "Unnamed user"}</p>
               <p className="text-sm text-muted-foreground">
-                {user.student_id || "University ID not set"} - Local role: <span className="capitalize">{user.role}</span>
+                {user.student_id || "University ID not set"} - Current role: <span className="capitalize">{user.effective_role ?? user.role}</span>
               </p>
-              {effectiveRole !== user.role ? (
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Effective access: <span className="capitalize">{effectiveRole}</span>
-                </p>
-              ) : null}
               <p className="mt-2 text-sm text-muted-foreground">
                 Requested role: <span className="capitalize">{user.requested_role || "student"}</span>
               </p>
@@ -548,11 +542,6 @@ export default function UserManagement() {
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-semibold">{user.full_name || "Unnamed user"}</p>
                         <RoleBadge role={user.effective_role ?? user.role} />
-                        {user.effective_role && user.effective_role !== user.role ? (
-                          <Badge className="bg-secondary/15 text-secondary hover:bg-secondary/15">
-                            Local role: {user.role}
-                          </Badge>
-                        ) : null}
                         {user.requested_role === "advisor" && user.role === "student" ? (
                           <Badge className="bg-primary/15 text-primary hover:bg-primary/15">
                             Requests advisor access

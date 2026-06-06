@@ -354,6 +354,8 @@ export function downloadAdminPerformanceMatrixCsv(dashboard: AdminOperationsDash
   const headers = [
     "Club Name",
     "Club Code",
+    "Club Health Score",
+    "Club Health Label",
     "Total Members",
     "Active Members",
     "Pending Proposals",
@@ -374,6 +376,8 @@ export function downloadAdminPerformanceMatrixCsv(dashboard: AdminOperationsDash
   const rows = dashboard.club_performance.map((club) => [
     club.club_name,
     club.club_code || "",
+    club.club_health_score,
+    club.club_health_label,
     club.total_members,
     club.active_members,
     club.pending_proposals,
@@ -507,6 +511,10 @@ export async function downloadAdminClubPerformancePdf(dashboard: AdminClubDashbo
     size: 16
   });
   builder.drawTextLine(`Generated: ${formatDateTime(new Date().toISOString())}`);
+
+  builder.drawSectionTitle("Club Health Score");
+  builder.drawTextLine(`Overall Score: ${dashboard.summary.club_health_score}`);
+  builder.drawTextLine(`Health Label: ${dashboard.summary.club_health_label}`);
 
   builder.drawSectionTitle("Membership Snapshot");
   builder.drawTextLine(`Total Members: ${dashboard.summary.total_members}`);
