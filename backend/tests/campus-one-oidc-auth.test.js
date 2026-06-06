@@ -474,6 +474,105 @@ test("CampusOne OIDC rejects identity claims that match different local profiles
   );
 });
 
+test("CampusOne OIDC refreshes a stale portal link when the verified email matches", async (t) => {
+  withCampusOneOidcEnv(t);
+  let updatePayload = null;
+  const database = {
+    async getProfileByPortalUserId() {
+      return null;
+    },
+    async getProfileByEmail() {
+      return {
+        id: "profile-by-email",
+        portal_user_id: "old-campus-user-id",
+        email: "20232286@nileuniversity.edu.ng",
+        full_name: "Goodluck Kassa",
+        role: "student",
+        club_id: null,
+        student_id: null,
+        requested_role: "student",
+        onboarding_status: "complete",
+        account_status: "active",
+        created_at: "2026-05-24T10:00:00.000Z",
+        updated_at: "2026-05-24T10:00:00.000Z"
+      };
+    },
+    async getProfileByStudentId() {
+      return null;
+    },
+    async updateProfile(profileId, update) {
+      updatePayload = { profileId, update };
+      return {
+        id: profileId,
+        portal_user_id: update.portal_user_id,
+        email: "20232286@nileuniversity.edu.ng",
+        full_name: "Goodluck Kassa",
+        role: "student",
+        club_id: null,
+        student_id: null,
+        requested_role: "student",
+        onboarding_status: "complete",
+        account_status: "active",
+        created_at: "2026-05-24T10:00:00.000Z",
+        updated_at: "2026-05-24T10:00:00.000Z"
+      };
+    }
+  };
+
+  const result = await resolveCampusOneProfile(database, {
+    sub: "new-campus-user-id",
+    email: "20232286@nileuniversity.edu.ng",
+    email_verified: true,
+    name: "Goodluck Kassa",
+    role: "student"
+  });
+
+  assert.equal(result.profile.portal_user_id, "new-campus-user-id");
+  assert.deepEqual(updatePayload, {
+    profileId: "profile-by-email",
+    update: {
+      portal_user_id: "new-campus-user-id"
+    }
+  });
+});
+
+test("CampusOne OIDC keeps rejecting stale portal links when email is unverified", async (t) => {
+  withCampusOneOidcEnv(t);
+  const database = {
+    async getProfileByPortalUserId() {
+      return null;
+    },
+    async getProfileByEmail() {
+      return {
+        id: "profile-by-email",
+        portal_user_id: "old-campus-user-id",
+        email: "20232286@nileuniversity.edu.ng",
+        role: "student",
+        club_id: null,
+        student_id: null
+      };
+    },
+    async getProfileByStudentId() {
+      return null;
+    }
+  };
+
+  await assert.rejects(
+    resolveCampusOneProfile(database, {
+      sub: "new-campus-user-id",
+      email: "20232286@nileuniversity.edu.ng",
+      email_verified: false,
+      name: "Goodluck Kassa",
+      role: "student"
+    }),
+    (error) => {
+      assert.equal(error.code, "CAMPUS_ONE_PROFILE_LINK_CONFLICT");
+      assert.equal(error.statusCode, 409);
+      return true;
+    }
+  );
+});
+
 test("new CampusOne staff users remain local students until assigned", async (t) => {
   withCampusOneOidcEnv(t);
   let createdProfile = null;

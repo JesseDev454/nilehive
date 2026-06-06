@@ -345,6 +345,7 @@ function getProfileDefaultsFromClaims(claims) {
     email,
     fullName,
     studentId,
+    emailVerified: claims.email_verified !== false,
     portalRole: resolveCampusOnePortalRole(claims),
     customRoles: getCampusOneCustomRoles(claims)
   };
@@ -401,19 +402,29 @@ async function resolveCampusOneProfile(database, claims) {
 
   if (profile) {
     const updates = {};
+    const matchedBy = uniqueMatches[0].matchedBy;
+    const profileEmail = String(profile.email || "").trim().toLowerCase();
+    const canRefreshPortalLinkByVerifiedEmail =
+      profileDefaults.emailVerified &&
+      matchedBy.includes("email") &&
+      profileEmail === profileDefaults.email;
 
-    if (profile.portal_user_id && profile.portal_user_id !== profileDefaults.portalUserId) {
+    if (
+      profile.portal_user_id &&
+      profile.portal_user_id !== profileDefaults.portalUserId &&
+      !canRefreshPortalLinkByVerifiedEmail
+    ) {
       throw new ApiError(
         409,
         "This Club Services profile is already linked to another Campus One account. Please contact Club Services.",
         "CAMPUS_ONE_PROFILE_LINK_CONFLICT",
         {
-          matched_by: uniqueMatches[0].matchedBy
+          matched_by: matchedBy
         }
       );
     }
 
-    if (!profile.portal_user_id) {
+    if (!profile.portal_user_id || profile.portal_user_id !== profileDefaults.portalUserId) {
       updates.portal_user_id = profileDefaults.portalUserId;
     }
 
