@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const { createApp } = require("../src/app");
 const {
   assignAdvisorToClub,
+  listAdminUsers,
   updateAdminUserRole
 } = require("../src/modules/admin-users/admin-users.service");
 
@@ -231,11 +232,41 @@ test("admin role reassignment keeps old club history and creates a new active cl
   });
 });
 
+test("admin user list shows the signed-in user's effective Campus One admin access", async () => {
+  const actor = {
+    id: "student-1",
+    role: "admin",
+    appRole: "student",
+    portalRole: "staff",
+    customRoles: ["club_services_admin"]
+  };
+  const fakeDatabase = {
+    async listProfiles() {
+      return [createProfile({
+        id: "student-1",
+        role: "student",
+        club_id: null
+      })];
+    }
+  };
+
+  const users = await listAdminUsers({
+    actor,
+    database: fakeDatabase
+  });
+
+  assert.equal(users[0].role, "student");
+  assert.equal(users[0].app_role, "student");
+  assert.equal(users[0].portal_role, "staff");
+  assert.deepEqual(users[0].custom_roles, ["club_services_admin"]);
+  assert.equal(users[0].effective_role, "admin");
+});
+
 for (const role of ["student", "executive", "president"]) {
-  test(`admin cannot assign ${role} club access when the user has no University ID`, async () => {
+  test(`admin can assign ${role} club access when the user has no University ID`, async () => {
     let listProfilesCalled = false;
-    let listClubMembersCalled = false;
-    let updateProfileCalled = false;
+    let createdMember = null;
+    let profileUpdate = null;
 
     const fakeDatabase = {
       async getProfileById(profileId) {
@@ -254,37 +285,44 @@ for (const role of ["student", "executive", "president"]) {
         listProfilesCalled = true;
         return [];
       },
-      async listClubMembers() {
-        listClubMembersCalled = true;
-        return [];
+      async createClubMember(payload) {
+        createdMember = payload;
+        return { id: "member-1", ...payload };
       },
-      async updateProfile() {
-        updateProfileCalled = true;
-        return createProfile({ role });
+      async updateProfile(profileId, update) {
+        profileUpdate = { profileId, update };
+        return createProfile({ role, club_id: update.club_id });
       }
     };
 
-    await assert.rejects(
-      () =>
-        updateAdminUserRole({
-          actor: { id: "admin-1", role: "admin" },
-          profileId: "student-1",
-          payload: {
-            role,
-            club_id: "club-1"
-          },
-          database: fakeDatabase
-        }),
-      (error) =>
-        error.statusCode === 400 &&
-        error.code === "VALIDATION_ERROR" &&
-        error.details?.field === "student_id" &&
-        error.message.includes("University ID")
-    );
+    await updateAdminUserRole({
+      actor: { id: "admin-1", role: "admin" },
+      profileId: "student-1",
+      payload: {
+        role,
+        club_id: "club-1"
+      },
+      database: fakeDatabase
+    });
 
-    assert.equal(listProfilesCalled, false);
-    assert.equal(listClubMembersCalled, false);
-    assert.equal(updateProfileCalled, false);
+    assert.equal(listProfilesCalled, role === "president");
+    assert.deepEqual(createdMember, {
+      club_id: "club-1",
+      profile_id: "student-1",
+      full_name: "Ada Student",
+      student_id: null,
+      email: null,
+      phone_number: null,
+      club_role: role === "student" ? "member" : role,
+      membership_status: "active"
+    });
+    assert.deepEqual(profileUpdate, {
+      profileId: "student-1",
+      update: {
+        role,
+        club_id: "club-1"
+      }
+    });
   });
 }
 

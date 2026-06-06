@@ -67,6 +67,7 @@ export interface ProfileRecord {
   app_role?: LocalAppRole | null;
   effective_role?: EffectiveRole | null;
   portal_role?: PortalRole | null;
+  custom_roles?: string[];
   access_pending?: boolean;
   role_sync_state?: string | null;
   club_id: string | null;

@@ -3,7 +3,6 @@ const { logger: baseLogger } = require("../../config/logger");
 const ApiError = require("../../shared/ApiError");
 const { writeAuditLog } = require("../../shared/auditLog");
 const { ensurePaginatedResult, mapPaginatedResult } = require("../../shared/pagination");
-const { isValidStudentId } = require("../../shared/studentId");
 const {
   validateAdvisorAssignmentPayload,
   validateRoleUpdatePayload
@@ -36,11 +35,18 @@ function formatAdvisorAssignments(assignments = []) {
     }));
 }
 
-function formatProfile(profile) {
+function formatProfile(profile, actor = null) {
+  const isCurrentActor = Boolean(actor?.id && profile.id === actor.id);
+  const effectiveRole = isCurrentActor ? actor.role : profile.role;
+
   return {
     id: profile.id,
     full_name: profile.full_name,
     role: profile.role,
+    app_role: profile.role,
+    effective_role: effectiveRole,
+    portal_role: isCurrentActor ? actor.portalRole ?? null : null,
+    custom_roles: isCurrentActor ? actor.customRoles ?? [] : [],
     club_id: profile.club_id,
     student_id: profile.student_id ?? null,
     requested_role: profile.requested_role ?? null,
@@ -119,22 +125,6 @@ function getDesiredClubMemberRole(role) {
   }
 
   return null;
-}
-
-function ensureProfileCanBecomeClubMember(profile, role, clubId) {
-  if (!getDesiredClubMemberRole(role) || !clubId || isValidStudentId(profile.student_id)) {
-    return;
-  }
-
-  throw new ApiError(
-    400,
-    "This user needs a University ID before they can be assigned to a club member, executive, or president role.",
-    "VALIDATION_ERROR",
-    {
-      field: "student_id",
-      message: "Add the user's University ID before assigning this club role."
-    }
-  );
 }
 
 async function archiveHistoricalMemberships({
@@ -299,11 +289,11 @@ async function listAdminUsers(options) {
   if (pagination) {
     return mapPaginatedResult(
       { ...profilesResult, items: enrichedItems },
-      formatProfile
+      (profile) => formatProfile(profile, actor)
     );
   }
 
-  return enrichedItems.map(formatProfile);
+  return enrichedItems.map((profile) => formatProfile(profile, actor));
 }
 
 async function getAdminUser(options) {
@@ -317,7 +307,7 @@ async function getAdminUser(options) {
   }
 
   const [enrichedProfile] = await enrichProfilesWithAdvisorAssignments(database, [profile]);
-  return formatProfile(enrichedProfile);
+  return formatProfile(enrichedProfile, actor);
 }
 
 async function updateAdminUserRole(options) {
@@ -364,8 +354,6 @@ async function updateAdminUserRole(options) {
       });
     }
   }
-
-  ensureProfileCanBecomeClubMember(profile, update.role, update.club_id);
 
   if (update.role === "president") {
     requestLogger.info("admin_users.president_replacement.requested", {
@@ -444,7 +432,7 @@ async function updateAdminUserRole(options) {
     });
 
   const [enrichedProfile] = await enrichProfilesWithAdvisorAssignments(database, [updatedProfile]);
-  return { profile: formatProfile(enrichedProfile), history };
+  return { profile: formatProfile(enrichedProfile, actor), history };
 }
 
 async function assignAdvisorToClub(options) {
@@ -516,7 +504,7 @@ async function assignAdvisorToClub(options) {
   const [enrichedProfile] = await enrichProfilesWithAdvisorAssignments(database, [updatedProfile]);
 
   return {
-    profile: formatProfile(enrichedProfile),
+    profile: formatProfile(enrichedProfile, actor),
     club: assignment?.club ?? formatClub(club),
     history
   };

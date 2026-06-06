@@ -92,6 +92,10 @@ function ProtectedRoutes() {
   return <Outlet />;
 }
 
+function FrontendApiRouteFallback() {
+  return <Navigate to="/" replace />;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -106,6 +110,7 @@ const App = () => (
               <Route path="/signup/confirm" element={<SignupConfirmation />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/api/v1/*" element={<FrontendApiRouteFallback />} />
               <Route element={<ProtectedRoutes />}>
                 <Route path="/events/:proposalId/check-in" element={<EventCheckIn />} />
                 <Route element={<AppLayout />}>
