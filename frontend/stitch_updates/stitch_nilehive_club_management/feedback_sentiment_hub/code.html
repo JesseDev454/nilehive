@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NileHive | Feedback &amp; Sentiment Analysis</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "outline-variant": "#c4c6cf",
+                      "on-error": "#ffffff",
+                      "on-primary-fixed": "#011b3f",
+                      "on-tertiary-container": "#299e5c",
+                      "tertiary": "#001105",
+                      "surface-container-lowest": "#ffffff",
+                      "primary-fixed-dim": "#b2c7f4",
+                      "surface-container": "#ebeef1",
+                      "error-container": "#ffdad6",
+                      "on-secondary": "#ffffff",
+                      "on-tertiary-fixed": "#00210e",
+                      "on-primary-container": "#778bb5",
+                      "surface-variant": "#e0e3e6",
+                      "secondary-fixed": "#d8e2ff",
+                      "secondary-container": "#629afe",
+                      "surface-dim": "#d7dadd",
+                      "secondary-fixed-dim": "#adc7ff",
+                      "background": "#f7fafd",
+                      "tertiary-fixed": "#8af9ae",
+                      "tertiary-fixed-dim": "#6edc94",
+                      "on-primary-fixed-variant": "#32476c",
+                      "on-secondary-fixed": "#001a41",
+                      "error": "#ba1a1a",
+                      "on-primary": "#ffffff",
+                      "on-background": "#181c1e",
+                      "on-tertiary": "#ffffff",
+                      "surface-container-low": "#f1f4f7",
+                      "surface-container-highest": "#e0e3e6",
+                      "inverse-primary": "#b2c7f4",
+                      "surface": "#f7fafd",
+                      "on-surface": "#181c1e",
+                      "on-secondary-fixed-variant": "#004493",
+                      "inverse-surface": "#2d3133",
+                      "surface-tint": "#4a5e86",
+                      "surface-container-high": "#e5e8eb",
+                      "primary": "#000d27",
+                      "primary-fixed": "#d7e2ff",
+                      "on-tertiary-fixed-variant": "#00522a",
+                      "outline": "#75777f",
+                      "surface-bright": "#f7fafd",
+                      "secondary": "#0d5bbc",
+                      "inverse-on-surface": "#eef1f4",
+                      "on-error-container": "#93000a",
+                      "tertiary-container": "#002a13",
+                      "on-surface-variant": "#44474e",
+                      "primary-container": "#0b2347",
+                      "on-secondary-container": "#00316d"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "fontFamily": {
+                      "headline": ["Manrope"],
+                      "body": ["Inter"],
+                      "label": ["Inter"]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bg-sunrise-glow {
+            background: radial-gradient(circle at top right, rgba(245, 185, 66, 0.08) 0%, transparent 70%);
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-background font-body text-on-background selection:bg-secondary-fixed selection:text-on-secondary-fixed">
+<div class="flex min-h-screen relative">
+<!-- SideNavBar Component -->
+<aside class="h-screen w-64 hidden md:flex flex-col sticky top-0 left-0 bg-slate-50 dark:bg-slate-900 border-none shadow-none z-50">
+<div class="flex flex-col h-full p-6">
+<div class="mb-10">
+<span class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white font-headline">NileHive</span>
+<p class="text-xs font-medium text-on-primary-container font-label uppercase tracking-widest mt-1">Executive Academic</p>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors duration-200 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-sm font-medium font-label">Dashboard</span>
+</a>
+<!-- ACTIVE STATE: Operations (Feedback management usually falls under Ops) -->
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-blue-700 dark:text-blue-400 font-bold border-r-4 border-amber-400 bg-slate-100 dark:bg-slate-800" href="#">
+<span class="material-symbols-outlined" data-icon="sensors">sensors</span>
+<span class="text-sm font-medium font-label">Club Pulse</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors duration-200 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined" data-icon="settings_applications">settings_applications</span>
+<span class="text-sm font-medium font-label">Operations</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors duration-200 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined" data-icon="campaign">campaign</span>
+<span class="text-sm font-medium font-label">Announcements</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-xl transition-colors duration-200 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="text-sm font-medium font-label">Directory</span>
+</a>
+</nav>
+<div class="mt-auto space-y-4 pt-6 border-t border-slate-200 dark:border-slate-800">
+<button class="w-full bg-secondary text-on-secondary py-3 px-4 rounded-xl font-bold text-sm transition-transform active:scale-95">
+                        Create Request
+                    </button>
+<div class="space-y-1">
+<a class="flex items-center gap-3 px-4 py-2 text-slate-500 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="help">help</span>
+<span class="text-sm font-medium">Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-slate-500 hover:text-error transition-colors" href="#">
+<span class="material-symbols-outlined text-xl" data-icon="logout">logout</span>
+<span class="text-sm font-medium">Log Out</span>
+</a>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0 bg-sunrise-glow">
+<!-- TopNavBar Component -->
+<header class="docked full-width top-0 sticky z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-slate-100 dark:border-slate-800 shadow-sm px-6 py-3">
+<div class="flex justify-between items-center w-full">
+<div class="flex items-center gap-8">
+<span class="text-xl font-black text-slate-900 dark:text-white md:hidden">NileHive</span>
+<div class="hidden lg:flex items-center bg-surface-container-low rounded-full px-4 py-2 w-80">
+<span class="material-symbols-outlined text-on-surface-variant text-xl mr-2" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full placeholder:text-on-surface-variant" placeholder="Search sentiment data..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex gap-6 items-center">
+<a class="text-slate-500 hover:text-slate-900 font-manrope font-semibold text-sm transition-all duration-300" href="#">My Clubs</a>
+<a class="text-slate-500 hover:text-slate-900 font-manrope font-semibold text-sm transition-all duration-300" href="#">Events</a>
+<a class="text-slate-500 hover:text-slate-900 font-manrope font-semibold text-sm transition-all duration-300" href="#">Finance</a>
+</nav>
+<div class="h-6 w-px bg-slate-200"></div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 hover:text-amber-500 transition-all active:opacity-80">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-slate-500 hover:text-amber-500 transition-all active:opacity-80">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+</button>
+<img alt="User Profile Image" class="w-10 h-10 rounded-full object-cover ring-2 ring-primary-container/10" data-alt="professional portrait of a young male academic in a modern suit, studio lighting, neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCq6pHw5TZGpqDTeRQJmrOz5Hc7rKvR_MPaxlS5Qb8-NmxH78SbjpGlT1ElLGYYmXSk56vZZxIcGXKzJB1wxTpy0llWRzMyHfsVrCKCm-v4TprajFq78h-yoDoCOvWh-Zk1snNlACHzs6U7bTZaOBPc9kuDygOx5XIXwbBQr_4DggINi1ybxM532BDKS8h6sMTrzhhw8ZF_4yGd3ToZf8bR-iJzqr2G7wTQT-N9cf_KbjXnGgU5XvDHFE5yMOygNVkUdtu-zPVApabz"/>
+</div>
+</div>
+</div>
+</header>
+<div class="p-6 md:p-10 max-w-7xl mx-auto w-full">
+<!-- Page Title & Editorial Header -->
+<div class="mb-10">
+<h1 class="font-headline text-4xl font-extrabold tracking-tight text-primary mb-2">Sentiment Ledger</h1>
+<p class="text-on-surface-variant max-w-2xl font-body">An authoritative summary of the collective voice across Nile University's academic clubs and scheduled events.</p>
+</div>
+<!-- Bento Grid: Sentiment Summary -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6 mb-12">
+<!-- Average Rating -->
+<div class="md:col-span-4 bg-surface-container-lowest rounded-3xl p-8 shadow-[0_4px_20px_rgba(11,35,71,0.04)] flex flex-col justify-between">
+<div>
+<span class="text-label-sm font-semibold uppercase tracking-widest text-on-surface-variant">Average Satisfaction</span>
+<div class="flex items-baseline gap-2 mt-4">
+<span class="text-6xl font-headline font-black text-primary">4.8</span>
+<span class="text-on-surface-variant font-medium">/ 5.0</span>
+</div>
+</div>
+<div class="mt-8 flex items-center gap-2 text-tertiary-fixed-dim bg-tertiary-container/10 px-3 py-1 rounded-full w-fit">
+<span class="material-symbols-outlined text-sm" data-icon="trending_up">trending_up</span>
+<span class="text-xs font-bold">+12% from last term</span>
+</div>
+</div>
+<!-- Total Feedback Split -->
+<div class="md:col-span-8 bg-surface-container-lowest rounded-3xl p-8 shadow-[0_4px_20px_rgba(11,35,71,0.04)]">
+<div class="flex justify-between items-start mb-8">
+<div>
+<span class="text-label-sm font-semibold uppercase tracking-widest text-on-surface-variant">Sentiment Distribution</span>
+<h3 class="text-2xl font-headline font-bold text-primary mt-1">1,248 Submissions</h3>
+</div>
+<div class="flex gap-2">
+<span class="bg-tertiary-fixed px-3 py-1 rounded-full text-[10px] font-bold text-on-tertiary-fixed">POSITIVE</span>
+<span class="bg-surface-container-highest px-3 py-1 rounded-full text-[10px] font-bold text-on-surface-variant">NEUTRAL</span>
+<span class="bg-error-container px-3 py-1 rounded-full text-[10px] font-bold text-on-error-container">NEGATIVE</span>
+</div>
+</div>
+<div class="space-y-6">
+<div class="h-4 w-full bg-surface-container rounded-full overflow-hidden flex">
+<div class="h-full bg-secondary w-[82%]" title="Positive"></div>
+<div class="h-full bg-surface-container-highest w-[12%]" title="Neutral"></div>
+<div class="h-full bg-error w-[6%]" title="Negative"></div>
+</div>
+<div class="grid grid-cols-3 gap-4">
+<div>
+<p class="text-xs font-medium text-on-surface-variant">Delighted</p>
+<p class="text-lg font-bold text-primary">1,023</p>
+</div>
+<div>
+<p class="text-xs font-medium text-on-surface-variant">Steady</p>
+<p class="text-lg font-bold text-primary">150</p>
+</div>
+<div>
+<p class="text-xs font-medium text-on-surface-variant">Concerned</p>
+<p class="text-lg font-bold text-primary">75</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Filter Bar & Control Panel -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+<div class="flex flex-wrap items-center gap-3">
+<div class="bg-white border border-outline-variant/20 rounded-xl px-4 py-2 flex items-center gap-2 cursor-pointer hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="filter_list">filter_list</span>
+<span class="text-sm font-semibold">Filter by Entity</span>
+</div>
+<div class="bg-white border border-outline-variant/20 rounded-xl px-4 py-2 flex items-center gap-2 cursor-pointer hover:bg-surface-container-low transition-colors">
+<span class="text-sm font-semibold">Engineering Society</span>
+<span class="material-symbols-outlined text-xs" data-icon="close">close</span>
+</div>
+<div class="bg-secondary/10 border border-secondary/20 rounded-xl px-4 py-2 flex items-center gap-2 cursor-pointer text-secondary">
+<span class="text-sm font-bold">Annual Gala 2024</span>
+<span class="material-symbols-outlined text-xs" data-icon="close">close</span>
+</div>
+</div>
+<button class="flex items-center gap-2 text-secondary font-bold text-sm hover:underline">
+<span class="material-symbols-outlined" data-icon="download">download</span>
+                        Export Detailed Ledger
+                    </button>
+</div>
+<!-- Main Detailed Content -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Feedback Feed -->
+<div class="lg:col-span-8 space-y-6">
+<div class="flex items-center justify-between">
+<h2 class="font-headline text-xl font-bold text-primary">Detailed Feedback List</h2>
+<span class="text-sm text-on-surface-variant">Showing 24 of 1,248 results</span>
+</div>
+<!-- Card 1 -->
+<div class="group bg-surface-container-lowest p-6 rounded-3xl border border-transparent hover:border-secondary-fixed hover:shadow-md transition-all duration-300">
+<div class="flex gap-4">
+<div class="h-12 w-12 rounded-full bg-surface-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-secondary" data-icon="person_search">person_search</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h4 class="font-bold text-primary leading-tight">Anonymous Senior Scholar</h4>
+<p class="text-xs text-on-surface-variant font-medium">2 hours ago • <span class="text-secondary">Engineering Society</span></p>
+</div>
+<div class="flex gap-0.5 text-sunrise-gold">
+<span class="material-symbols-outlined text-lg" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+</div>
+<p class="text-on-surface text-sm leading-relaxed mb-4">"The Annual Gala was exceptionally well-organized this year. The guest speaker from the Silicon Nile incubator provided invaluable insights for graduating seniors. Kudos to the organizers."</p>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-surface-container rounded-full text-[10px] font-bold text-on-surface-variant">#Organization</span>
+<span class="px-3 py-1 bg-surface-container rounded-full text-[10px] font-bold text-on-surface-variant">#Networking</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="group bg-surface-container-lowest p-6 rounded-3xl border border-transparent hover:border-secondary-fixed hover:shadow-md transition-all duration-300">
+<div class="flex gap-4">
+<div class="h-12 w-12 rounded-full bg-surface-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-error" data-icon="person_alert">person_alert</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h4 class="font-bold text-primary leading-tight">Undergraduate Researcher</h4>
+<p class="text-xs text-on-surface-variant font-medium">5 hours ago • <span class="text-secondary">Debate Club</span></p>
+</div>
+<div class="flex gap-0.5 text-sunrise-gold">
+<span class="material-symbols-outlined text-lg" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" data-icon="star">star</span>
+<span class="material-symbols-outlined text-lg" data-icon="star">star</span>
+<span class="material-symbols-outlined text-lg" data-icon="star">star</span>
+</div>
+</div>
+<p class="text-on-surface text-sm leading-relaxed mb-4">"Difficulty in booking practice rooms remains a persistent issue. The current portal doesn't accurately reflect room availability, leading to scheduling conflicts."</p>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-error-container text-on-error-container rounded-full text-[10px] font-bold">#FacilityIssue</span>
+<span class="px-3 py-1 bg-surface-container rounded-full text-[10px] font-bold text-on-surface-variant">#Logistics</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="group bg-surface-container-lowest p-6 rounded-3xl border border-transparent hover:border-secondary-fixed hover:shadow-md transition-all duration-300">
+<div class="flex gap-4">
+<div class="h-12 w-12 rounded-full bg-surface-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-secondary" data-icon="person_check">person_check</span>
+</div>
+<div class="flex-1">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h4 class="font-bold text-primary leading-tight">Club Secretary</h4>
+<p class="text-xs text-on-surface-variant font-medium">8 hours ago • <span class="text-secondary">Nile Arts Collective</span></p>
+</div>
+<div class="flex gap-0.5 text-sunrise-gold">
+<span class="material-symbols-outlined text-lg" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-lg" data-icon="star">star</span>
+</div>
+</div>
+<p class="text-on-surface text-sm leading-relaxed mb-4">"The recent funding workshop was helpful. However, more clarity on the reimbursement timeline would be appreciated by our smaller sub-committees."</p>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1 bg-surface-container rounded-full text-[10px] font-bold text-on-surface-variant">#Finance</span>
+<span class="px-3 py-1 bg-surface-container rounded-full text-[10px] font-bold text-on-surface-variant">#Administrative</span>
+</div>
+</div>
+</div>
+</div>
+<button class="w-full py-4 border-2 border-dashed border-outline-variant/30 rounded-3xl text-on-surface-variant font-bold text-sm hover:bg-white hover:border-secondary/30 transition-all">
+                            Load More Records
+                        </button>
+</div>
+<!-- Side Rail: Real-time Comments & Pulse -->
+<div class="lg:col-span-4 space-y-8">
+<!-- Club Pulse Bespoke Chip Group -->
+<div class="bg-surface-container-low rounded-3xl p-6">
+<h3 class="font-headline font-bold text-lg mb-6 flex items-center justify-between">
+                                Active Live Pulse
+                                <span class="material-symbols-outlined text-secondary" data-icon="bolt">bolt</span>
+</h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-3 bg-white rounded-2xl shadow-sm">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-tertiary-fixed animate-pulse"></div>
+<span class="text-sm font-bold text-primary">Cybersecurity Forum</span>
+</div>
+<span class="bg-tertiary-fixed px-2 py-0.5 rounded text-[10px] font-black text-on-tertiary-fixed">HIGH ENGAGEMENT</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-white rounded-2xl shadow-sm opacity-60">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-on-surface-variant"></div>
+<span class="text-sm font-bold text-primary">Classical Literature Club</span>
+</div>
+<span class="bg-surface-container-highest px-2 py-0.5 rounded text-[10px] font-black text-on-surface-variant">STABLE</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-white rounded-2xl shadow-sm">
+<div class="flex items-center gap-3">
+<div class="w-2 h-2 rounded-full bg-error animate-pulse"></div>
+<span class="text-sm font-bold text-primary">Student Council Board</span>
+</div>
+<span class="bg-error-container px-2 py-0.5 rounded text-[10px] font-black text-on-error-container">LOW SENTIMENT</span>
+</div>
+</div>
+</div>
+<!-- Recent Buzz Editorial -->
+<div>
+<h3 class="font-headline font-bold text-lg mb-4">Latest Tidbits</h3>
+<div class="space-y-6">
+<div class="relative pl-6 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-secondary-fixed before:rounded-full">
+<p class="text-sm text-on-surface italic mb-2">"Is there a way to request more vegan options for the catered event lunches?"</p>
+<p class="text-[10px] font-bold text-secondary uppercase tracking-tighter">Dining Committee • 12m ago</p>
+</div>
+<div class="relative pl-6 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-tertiary-fixed-dim before:rounded-full">
+<p class="text-sm text-on-surface italic mb-2">"The hackathon mentorship pairings were brilliant. Really helped our group!"</p>
+<p class="text-[10px] font-bold text-secondary uppercase tracking-tighter">Coding Guild • 45m ago</p>
+</div>
+<div class="relative pl-6 before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-outline-variant before:rounded-full">
+<p class="text-sm text-on-surface italic mb-2">"The acoustics in the Hall C are still quite muddy for speaker panels."</p>
+<p class="text-[10px] font-bold text-secondary uppercase tracking-tighter">Debate Club • 1h ago</p>
+</div>
+</div>
+</div>
+<!-- Promotion Card -->
+<div class="relative overflow-hidden bg-primary-container rounded-3xl p-6 text-on-primary">
+<div class="relative z-10">
+<h4 class="font-headline font-bold text-lg mb-2">Annual Sentiment Report</h4>
+<p class="text-on-primary-container text-xs mb-4">The comprehensive year-over-year analysis for academic club growth is now ready.</p>
+<button class="bg-sunrise-gold text-primary px-4 py-2 rounded-xl text-xs font-black uppercase">Download PDF</button>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-20">
+<span class="material-symbols-outlined text-9xl" data-icon="monitoring">monitoring</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<footer class="mt-auto py-10 px-6 border-t border-slate-100 bg-white">
+<div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+<p class="text-xs text-on-surface-variant">© 2024 Nile University - NileHive Executive Academic Portal. All Rights Reserved.</p>
+<div class="flex gap-6">
+<a class="text-xs font-bold text-primary hover:text-secondary" href="#">Privacy Policy</a>
+<a class="text-xs font-bold text-primary hover:text-secondary" href="#">Institutional Standards</a>
+<a class="text-xs font-bold text-primary hover:text-secondary" href="#">Data Integrity</a>
+</div>
+</div>
+</footer>
+</main>
+<!-- BottomNavBar Component (Mobile Only) -->
+<nav class="fixed bottom-0 w-full md:hidden z-50 rounded-t-3xl bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shadow-[0_-4px_20px_rgba(11,35,71,0.06)] flex justify-around items-center px-4 py-3 pb-safe">
+<a class="flex flex-col items-center justify-center text-slate-400 active:bg-slate-50 transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="text-[10px] font-medium font-label">Home</span>
+</a>
+<!-- ACTIVE: Pulse -->
+<a class="flex flex-col items-center justify-center text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-xl px-3 py-1 transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="sensors">sensors</span>
+<span class="text-[10px] font-medium font-label">Pulse</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 active:bg-slate-50 transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="assignment">assignment</span>
+<span class="text-[10px] font-medium font-label">Tasks</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 active:bg-slate-50 transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="article">article</span>
+<span class="text-[10px] font-medium font-label">News</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 active:bg-slate-50 transition-all active:scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="text-[10px] font-medium font-label">Profile</span>
+</a>
+</nav>
+</div>
+</body></html>

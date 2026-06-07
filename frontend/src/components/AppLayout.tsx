@@ -1,31 +1,116 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import { BrandLogo } from "@/components/BrandLogo";
+import { GuidedOnboarding } from "@/components/GuidedOnboarding";
+import { SiteFooter } from "@/components/SiteFooter";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { RoleToggle } from "@/components/RoleToggle";
-import { Outlet } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
+import { Outlet, useLocation } from "react-router-dom";
+import { useSidebar } from "@/components/ui/sidebar";
+
+function AppShellEffects() {
+  const location = useLocation();
+  const { openMobile, setOpenMobile } = useSidebar();
+  const lastRouteKeyRef = useRef<string | null>(null);
+  const routeKey = `${location.pathname}${location.search}${location.hash}`;
+
+  const clearStaleScrollLock = useCallback(() => {
+    if (typeof document === "undefined") {
+      return;
+    }
+
+    const hasOpenDialog = Boolean(document.querySelector("[role='dialog'][data-state='open']"));
+
+    if (hasOpenDialog) {
+      return;
+    }
+
+    document.body.style.removeProperty("overflow");
+    document.body.style.removeProperty("padding-right");
+    document.body.style.removeProperty("pointer-events");
+    document.body.removeAttribute("data-scroll-locked");
+    document.documentElement.style.removeProperty("overflow");
+  }, []);
+
+  useEffect(() => {
+    const previousRouteKey = lastRouteKeyRef.current;
+    lastRouteKeyRef.current = routeKey;
+
+    if (previousRouteKey && previousRouteKey !== routeKey && openMobile) {
+      setOpenMobile(false);
+    }
+
+    const timer = window.setTimeout(() => {
+      clearStaleScrollLock();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [clearStaleScrollLock, openMobile, routeKey, setOpenMobile]);
+
+  useEffect(() => {
+    clearStaleScrollLock();
+
+    return () => {
+      clearStaleScrollLock();
+    };
+  }, [clearStaleScrollLock]);
+
+  return null;
+}
 
 export function AppLayout() {
+  const { profile, role, signOut } = useAuth();
+  const [guideRestartSignal, setGuideRestartSignal] = useState(0);
+
+  async function handleSignOut() {
+    await signOut();
+  }
+
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full">
+      <div className="flex min-h-screen w-full">
+        <AppShellEffects />
         <AppSidebar />
+        <GuidedOnboarding restartSignal={guideRestartSignal} />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-14 flex items-center justify-between border-b bg-card px-4">
-            <div className="flex items-center gap-2">
-              <SidebarTrigger />
-              <span className="text-sm font-medium text-muted-foreground hidden sm:inline">
-                NileHive
-              </span>
-            </div>
+          <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-3 border-b-3 border-foreground bg-card/95 px-3 py-3 backdrop-blur md:absolute md:right-8 md:top-8 md:min-h-0 md:rounded-[24px] md:border-3 md:bg-card/95 md:p-2 md:shadow-neo-sm">
             <div className="flex items-center gap-3">
-              <span className="text-xs text-muted-foreground bg-warning/10 text-warning px-2 py-1 rounded-md hidden sm:inline">
-                Prototype Mode
+              <SidebarTrigger className="md:hidden" />
+              <div className="hidden items-center sm:flex">
+                <BrandLogo
+                  size="md"
+                  variant="plain"
+                  className="h-10 w-[13rem] shrink-0 md:hidden lg:h-11 lg:w-[14rem]"
+                />
+              </div>
+            </div>
+            <div className="flex min-w-0 items-center justify-end gap-2 sm:gap-3">
+              <span className="hidden rounded-full border-2 border-foreground bg-accent px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.12em] text-accent-foreground shadow-[3px_3px_0_hsl(var(--neo-shadow))] sm:inline">
+                {role === "admin"
+                  ? "Admin Access"
+                  : role
+                    ? `${role} Mode`
+                    : profile?.role ?? "Loading"}
               </span>
-              <RoleToggle />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="hidden sm:inline-flex"
+                onClick={() => setGuideRestartSignal((value) => value + 1)}
+              >
+                Help / Guide
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleSignOut}>
+                Logout
+              </Button>
             </div>
           </header>
-          <main className="flex-1 p-4 md:p-6 overflow-auto">
+          <main className="flex-1 p-4 md:p-8 md:pt-28">
             <Outlet />
           </main>
+          <SiteFooter />
         </div>
       </div>
     </SidebarProvider>

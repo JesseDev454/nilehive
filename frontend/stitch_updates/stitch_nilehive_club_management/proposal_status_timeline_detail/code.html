@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Proposal Status Timeline - NileHive</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline-variant": "#c4c6cf",
+                    "on-error": "#ffffff",
+                    "on-primary-fixed": "#011b3f",
+                    "on-tertiary-container": "#299e5c",
+                    "tertiary": "#001105",
+                    "surface-container-lowest": "#ffffff",
+                    "primary-fixed-dim": "#b2c7f4",
+                    "surface-container": "#ebeef1",
+                    "error-container": "#ffdad6",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-fixed": "#00210e",
+                    "on-primary-container": "#778bb5",
+                    "surface-variant": "#e0e3e6",
+                    "secondary-fixed": "#d8e2ff",
+                    "secondary-container": "#629afe",
+                    "surface-dim": "#d7dadd",
+                    "secondary-fixed-dim": "#adc7ff",
+                    "background": "#f7fafd",
+                    "tertiary-fixed": "#8af9ae",
+                    "tertiary-fixed-dim": "#6edc94",
+                    "on-primary-fixed-variant": "#32476c",
+                    "on-secondary-fixed": "#001a41",
+                    "error": "#ba1a1a",
+                    "on-primary": "#ffffff",
+                    "on-background": "#181c1e",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-low": "#f1f4f7",
+                    "surface-container-highest": "#e0e3e6",
+                    "inverse-primary": "#b2c7f4",
+                    "surface": "#f7fafd",
+                    "on-surface": "#181c1e",
+                    "on-secondary-fixed-variant": "#004493",
+                    "inverse-surface": "#2d3133",
+                    "surface-tint": "#4a5e86",
+                    "surface-container-high": "#e5e8eb",
+                    "primary": "#000d27",
+                    "primary-fixed": "#d7e2ff",
+                    "on-tertiary-fixed-variant": "#00522a",
+                    "outline": "#75777f",
+                    "surface-bright": "#f7fafd",
+                    "secondary": "#0d5bbc",
+                    "inverse-on-surface": "#eef1f4",
+                    "on-error-container": "#93000a",
+                    "tertiary-container": "#002a13",
+                    "on-surface-variant": "#44474e",
+                    "primary-container": "#0b2347",
+                    "on-secondary-container": "#00316d"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bg-sunrise-glow {
+            background: radial-gradient(circle at top right, rgba(245, 185, 66, 0.08) 0%, transparent 70%);
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body selection:bg-secondary-fixed">
+<div class="flex min-h-screen">
+<!-- SideNavBar - Identity Anchor -->
+<aside class="h-screen w-64 hidden md:flex flex-col sticky top-0 left-0 bg-slate-50 dark:bg-slate-900 border-none z-50">
+<div class="flex flex-col h-full p-6">
+<div class="mb-10">
+<h1 class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white font-headline">NileHive</h1>
+<p class="text-xs font-medium Inter text-on-primary-container">Executive Academic</p>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-sm font-medium Inter">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-blue-700 dark:text-blue-400 font-bold border-r-4 border-amber-400 bg-slate-100 dark:bg-slate-800 transition-colors duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="sensors">sensors</span>
+<span class="text-sm font-medium Inter">Club Pulse</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="settings_applications">settings_applications</span>
+<span class="text-sm font-medium Inter">Operations</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="campaign">campaign</span>
+<span class="text-sm font-medium Inter">Announcements</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200 rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="text-sm font-medium Inter">Directory</span>
+</a>
+</nav>
+<div class="pt-6 border-t border-slate-200 dark:border-slate-800 space-y-2">
+<a class="flex items-center gap-3 px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-blue-600 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="text-sm font-medium Inter">Support</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-blue-600 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span class="text-sm font-medium Inter">Log Out</span>
+</a>
+</div>
+</div>
+</aside>
+<main class="flex-1 min-w-0 bg-sunrise-glow relative">
+<!-- TopNavBar -->
+<header class="docked full-width top-0 sticky z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl shadow-sm border-b border-slate-100 dark:border-slate-800">
+<div class="flex justify-between items-center w-full px-6 py-3">
+<div class="flex items-center gap-8">
+<span class="text-xl font-black text-slate-900 dark:text-white font-headline md:hidden">NileHive</span>
+<nav class="hidden lg:flex items-center gap-6">
+<a class="text-slate-500 hover:text-slate-900 font-manrope font-semibold transition-all duration-300" href="#">My Clubs</a>
+<a class="text-slate-500 hover:text-slate-900 font-manrope font-semibold transition-all duration-300" href="#">Events</a>
+<a class="text-slate-500 hover:text-slate-900 font-manrope font-semibold transition-all duration-300" href="#">Finance</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined p-2 text-slate-500 hover:text-amber-500 transition-all" data-icon="notifications">notifications</button>
+<div class="h-8 w-8 rounded-full overflow-hidden border-2 border-primary-fixed">
+<img alt="User Profile Image" class="h-full w-full object-cover" data-alt="close-up portrait of a professional young man with short hair smiling against a blurred university background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBS0i4vGqa-fSD9APMlF23mJvu9xe-gjr7cDesPzze13gsJMfvyanjea3weFZ4XglMcP1KDXjbsfdtlqa8hNC0N2b2cAfplg7v_IynLxJW3h5BKyyH_dQQ-V0Csmabr-OvcRjvEMQHnpL3kLeN9if90hHrI5j2w2LFnMJLeHe5HeW1Bw9nHBSobaE06ZBJaKZfXjvlRgWxCsE9K-ycQ80wNBbKyEqVglYWgfmpU3rAMLkHvWj4STroWrFvmFkDkOllwpzT2gE-AepBY"/>
+</div>
+</div>
+</div>
+</header>
+<div class="max-w-6xl mx-auto p-6 md:p-10 space-y-10">
+<!-- Proposal Header -->
+<section class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div class="space-y-2">
+<nav class="flex items-center gap-2 text-sm text-on-surface-variant font-medium">
+<span class="hover:text-secondary cursor-pointer">Proposals</span>
+<span class="material-symbols-outlined text-xs" data-icon="chevron_right">chevron_right</span>
+<span>EV-2024-082</span>
+</nav>
+<h2 class="text-3xl font-extrabold text-primary font-headline tracking-tight">Annual Entrepreneurship Summit</h2>
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2 px-3 py-1 bg-surface-container rounded-full">
+<span class="material-symbols-outlined text-sm text-secondary" data-icon="hub">hub</span>
+<span class="text-sm font-semibold text-on-surface">Innovation &amp; Startup Club</span>
+</div>
+<span class="px-3 py-1 bg-amber-100 text-amber-800 text-xs font-bold rounded-full uppercase tracking-wider">Pending Admin Review</span>
+</div>
+</div>
+<div class="flex gap-3">
+<button class="px-5 py-2.5 rounded-xl border border-outline-variant text-on-surface font-semibold text-sm hover:bg-surface-container transition-all">Download PDF</button>
+<button class="px-5 py-2.5 rounded-xl bg-secondary text-on-secondary font-semibold text-sm shadow-md hover:opacity-90 transition-all">Approve Proposal</button>
+</div>
+</section>
+<!-- Bento Content Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Main Details Column -->
+<div class="lg:col-span-8 space-y-8">
+<!-- Details & Venue -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="bg-surface-container-lowest p-6 rounded-[2rem] shadow-sm border border-white/50 backdrop-blur-sm relative overflow-hidden group">
+<div class="relative z-10">
+<div class="flex items-center gap-3 mb-4">
+<div class="p-2 bg-primary-fixed rounded-lg text-primary">
+<span class="material-symbols-outlined" data-icon="calendar_today">calendar_today</span>
+</div>
+<h3 class="font-headline font-bold text-lg">Event Schedule</h3>
+</div>
+<div class="space-y-3">
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant text-sm">Date</span>
+<span class="text-on-surface font-semibold">Oct 24, 2024</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant text-sm">Time</span>
+<span class="text-on-surface font-semibold">09:00 AM - 05:00 PM</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant text-sm">Venue</span>
+<span class="text-on-surface font-semibold">Grand Assembly Hall</span>
+</div>
+</div>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-110 transition-transform duration-500">
+<span class="material-symbols-outlined text-8xl" data-icon="event_note">event_note</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-[2rem] shadow-sm border border-white/50 backdrop-blur-sm relative overflow-hidden group">
+<div class="relative z-10">
+<div class="flex items-center gap-3 mb-4">
+<div class="p-2 bg-tertiary-fixed rounded-lg text-on-tertiary-fixed">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+</div>
+<h3 class="font-headline font-bold text-lg">Participation</h3>
+</div>
+<div class="space-y-3">
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant text-sm">Expected Attendance</span>
+<span class="text-on-surface font-semibold">450+ Students</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant text-sm">Target Audience</span>
+<span class="text-on-surface font-semibold">All Faculties</span>
+</div>
+<div class="flex justify-between items-center">
+<span class="text-on-surface-variant text-sm">Registration Fee</span>
+<span class="text-on-surface font-semibold">Free Entry</span>
+</div>
+</div>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-110 transition-transform duration-500">
+<span class="material-symbols-outlined text-8xl" data-icon="groups_3">groups_3</span>
+</div>
+</div>
+</div>
+<!-- Budget Summary -->
+<div class="bg-surface-container-lowest p-8 rounded-[2rem] shadow-sm border border-white/50">
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-3">
+<div class="p-2 bg-secondary-fixed rounded-lg text-secondary">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+</div>
+<h3 class="font-headline font-bold text-xl">Budget Breakdown</h3>
+</div>
+<span class="text-2xl font-black text-primary">$2,450.00</span>
+</div>
+<div class="space-y-4">
+<div class="flex items-center gap-4 p-4 bg-surface-container-low rounded-2xl">
+<div class="h-10 w-10 flex items-center justify-center bg-white rounded-full text-secondary shadow-sm">
+<span class="material-symbols-outlined" data-icon="campaign">campaign</span>
+</div>
+<div class="flex-1">
+<p class="text-sm font-bold text-on-surface">Marketing &amp; Promotion</p>
+<p class="text-xs text-on-surface-variant">Social media ads, posters, merchandise</p>
+</div>
+<p class="font-bold text-on-surface">$850.00</p>
+</div>
+<div class="flex items-center gap-4 p-4 bg-surface-container-low rounded-2xl">
+<div class="h-10 w-10 flex items-center justify-center bg-white rounded-full text-secondary shadow-sm">
+<span class="material-symbols-outlined" data-icon="restaurant">restaurant</span>
+</div>
+<div class="flex-1">
+<p class="text-sm font-bold text-on-surface">Catering</p>
+<p class="text-xs text-on-surface-variant">Lunch boxes and refreshments for speakers</p>
+</div>
+<p class="font-bold text-on-surface">$1,200.00</p>
+</div>
+<div class="flex items-center gap-4 p-4 bg-surface-container-low rounded-2xl">
+<div class="h-10 w-10 flex items-center justify-center bg-white rounded-full text-secondary shadow-sm">
+<span class="material-symbols-outlined" data-icon="verified">verified</span>
+</div>
+<div class="flex-1">
+<p class="text-sm font-bold text-on-surface">Certificates &amp; Awards</p>
+<p class="text-xs text-on-surface-variant">Printed certificates and glass trophies</p>
+</div>
+<p class="font-bold text-on-surface">$400.00</p>
+</div>
+</div>
+</div>
+<!-- Rejection (Mock Example) -->
+<div class="bg-error-container/20 p-8 rounded-[2rem] border border-error/10">
+<div class="flex items-start gap-4">
+<div class="p-3 bg-error/10 text-error rounded-2xl">
+<span class="material-symbols-outlined" data-icon="report">report</span>
+</div>
+<div class="space-y-3 flex-1">
+<h4 class="font-headline font-bold text-error">Note on Financial Compliance</h4>
+<p class="text-sm text-on-surface-variant leading-relaxed italic">
+                                        "The catering quote exceeds the standard university per-head allocation for student-led events. Please provide a breakdown of the vendor selection process or adjust the catering budget to match the $15/person limit."
+                                    </p>
+<div class="pt-2 flex gap-3">
+<button class="text-sm font-bold text-secondary hover:underline">Edit and resubmit</button>
+<button class="text-sm font-bold text-on-surface-variant hover:underline">Download Guidelines</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Approval Timeline Column -->
+<div class="lg:col-span-4">
+<div class="bg-white p-8 rounded-[2rem] shadow-sm sticky top-24 border border-slate-100">
+<h3 class="font-headline font-bold text-xl mb-8 flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary" data-icon="timeline">timeline</span>
+                                Approval Timeline
+                            </h3>
+<div class="relative space-y-8 before:content-[''] before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-surface-container-highest">
+<!-- Step 1: Completed -->
+<div class="relative pl-10 group">
+<div class="absolute left-0 top-1 w-7 h-7 bg-tertiary-fixed rounded-full flex items-center justify-center z-10 shadow-sm">
+<span class="material-symbols-outlined text-xs text-on-tertiary-fixed font-bold" data-icon="check">check</span>
+</div>
+<div class="space-y-1">
+<p class="text-sm font-bold text-primary">Proposal Drafted</p>
+<p class="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Aug 12, 10:45 AM</p>
+<div class="flex items-center gap-2 mt-2">
+<div class="w-5 h-5 rounded-full overflow-hidden">
+<img alt="Executive" class="w-full h-full object-cover" data-alt="professional woman in corporate attire smiling in an office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDexxMO_r8kK34HJ8cMH2kpU8nyHDPb5LZHcqtlv2_KsP6wCynff0tDdaYLFGPm-FVojP6o6QfDMQJA2kdVkzPd4kVYyLmxomLwHRS4kT2HOPb7fF5-FfzU4PFZKRpuKSCe9jVFTJwBCFRpHfJzss68HK_acFmB5Tv50EDxOlKXlWh-PrRg_0OrruZQtr26fKRz25oYT4JfYnkRebot4WsNBCpMEQboQhTbYc_wTvSEFmkCkF23ixJdE_euo4RKqOBPk8WGxhayCFmr"/>
+</div>
+<span class="text-xs font-medium text-on-surface">Sarah Johnson (VP)</span>
+</div>
+</div>
+</div>
+<!-- Step 2: Completed -->
+<div class="relative pl-10 group">
+<div class="absolute left-0 top-1 w-7 h-7 bg-tertiary-fixed rounded-full flex items-center justify-center z-10 shadow-sm">
+<span class="material-symbols-outlined text-xs text-on-tertiary-fixed font-bold" data-icon="check">check</span>
+</div>
+<div class="space-y-1">
+<p class="text-sm font-bold text-primary">Formally Submitted</p>
+<p class="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Aug 14, 02:15 PM</p>
+<p class="text-xs text-on-surface-variant italic">"All required documents attached."</p>
+</div>
+</div>
+<!-- Step 3: Completed -->
+<div class="relative pl-10 group">
+<div class="absolute left-0 top-1 w-7 h-7 bg-tertiary-fixed rounded-full flex items-center justify-center z-10 shadow-sm">
+<span class="material-symbols-outlined text-xs text-on-tertiary-fixed font-bold" data-icon="check">check</span>
+</div>
+<div class="space-y-1">
+<p class="text-sm font-bold text-primary">Advisor Review</p>
+<p class="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Aug 16, 09:30 AM</p>
+<div class="flex items-center gap-2 mt-2">
+<div class="w-5 h-5 rounded-full overflow-hidden">
+<img alt="Advisor" class="w-full h-full object-cover" data-alt="academic professional woman with glasses and a friendly smile" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrz0_Fwk1PHYHb-3ZZunSOgXm5bgraP1Rc7LLZzMDOxvY_xpt672iAx4xQQAOJgpFY2RoZavF2xk8GOYLOtKujnqvLWIrPWuKwEXWGXvT5F66q1pbzjiyBRBadFHozeMqQ1pynwHJ08FE_VgDj1ywbTik7IDNPOkMrJ-C3vRYVTef5ppPfdrMjMHZ9yIZbzPcLPUecNCkM3EWdWtU0EGMoypdUYHolDopRZIcoQ3pCGHsmUTGJY78bHr8kkGlQPmPIfj_-r8Fy5_hh"/>
+</div>
+<span class="text-xs font-medium text-on-surface">Prof. Dr. Ahmed Ali</span>
+</div>
+<p class="text-xs text-on-surface-variant mt-1 leading-snug">"Proposal aligned with club mission. Recommended for approval."</p>
+</div>
+</div>
+<!-- Step 4: Active -->
+<div class="relative pl-10 group">
+<div class="absolute left-0 top-1 w-7 h-7 bg-amber-400 rounded-full flex items-center justify-center z-10 shadow-[0_0_0_4px_rgba(245,185,66,0.2)] animate-pulse">
+<span class="material-symbols-outlined text-xs text-white font-bold" data-icon="hourglass_empty">hourglass_empty</span>
+</div>
+<div class="space-y-1">
+<p class="text-sm font-bold text-primary">Pending Admin Review</p>
+<p class="text-[10px] uppercase font-bold text-amber-600 tracking-wider">Current Stage</p>
+<p class="text-xs text-on-surface-variant">Awaiting University Administration final signature.</p>
+</div>
+</div>
+<!-- Step 5: Future -->
+<div class="relative pl-10 opacity-50">
+<div class="absolute left-0 top-1 w-7 h-7 bg-surface-container rounded-full flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-xs text-outline" data-icon="lock">lock</span>
+</div>
+<div class="space-y-1">
+<p class="text-sm font-bold text-on-surface-variant">Approved</p>
+<p class="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Estimated: Aug 20</p>
+</div>
+</div>
+<!-- Step 6: Future -->
+<div class="relative pl-10 opacity-50">
+<div class="absolute left-0 top-1 w-7 h-7 bg-surface-container rounded-full flex items-center justify-center z-10">
+<span class="material-symbols-outlined text-xs text-outline" data-icon="description">description</span>
+</div>
+<div class="space-y-1">
+<p class="text-sm font-bold text-on-surface-variant">Report Submitted</p>
+<p class="text-[10px] uppercase font-bold text-on-surface-variant tracking-wider">Post-Event Requirement</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- BottomNavBar - Mobile Only -->
+<nav class="fixed bottom-0 w-full md:hidden z-50 rounded-t-3xl bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 shadow-[0_-4px_20px_rgba(11,35,71,0.06)]">
+<div class="flex justify-around items-center px-4 py-3 pb-safe">
+<a class="flex flex-col items-center justify-center text-slate-400" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="text-[10px] font-medium Inter">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 rounded-xl px-3 py-1" href="#">
+<span class="material-symbols-outlined" data-icon="sensors">sensors</span>
+<span class="text-[10px] font-medium Inter">Pulse</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400" href="#">
+<span class="material-symbols-outlined" data-icon="assignment">assignment</span>
+<span class="text-[10px] font-medium Inter">Tasks</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400" href="#">
+<span class="material-symbols-outlined" data-icon="article">article</span>
+<span class="text-[10px] font-medium Inter">News</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="text-[10px] font-medium Inter">Profile</span>
+</a>
+</div>
+</nav>
+</main>
+</div>
+</body></html>
