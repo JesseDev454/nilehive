@@ -26,7 +26,8 @@ function isRoleSensitivePath(pathname: string) {
     pathname === "/approvals" ||
     pathname === "/dues" ||
     pathname === "/archive" ||
-    pathname === "/user-management"
+    pathname === "/user-management" ||
+    pathname === "/feedback"
   );
 }
 

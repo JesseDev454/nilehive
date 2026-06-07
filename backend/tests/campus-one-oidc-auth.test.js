@@ -33,6 +33,12 @@ function createFakeDatabase(profileOverrides = {}) {
   };
 }
 
+function decodeBase64UrlJson(value) {
+  const normalized = String(value).replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
+  return JSON.parse(Buffer.from(padded, "base64").toString("utf8"));
+}
+
 async function createTestServer(database) {
   const app = createApp({ database });
   const server = await new Promise((resolve) => {
@@ -52,6 +58,7 @@ async function createTestServer(database) {
 function withCampusOneOidcEnv(t) {
   const previousEnv = {
     AUTH_PROVIDER: process.env.AUTH_PROVIDER,
+    CAMPUS_ONE_CLIENT_ID: process.env.CAMPUS_ONE_CLIENT_ID,
     CAMPUS_ONE_CLIENT_SECRET: process.env.CAMPUS_ONE_CLIENT_SECRET,
     CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN: process.env.CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN,
     FRONTEND_APP_URL: process.env.FRONTEND_APP_URL,
@@ -61,6 +68,7 @@ function withCampusOneOidcEnv(t) {
   };
 
   process.env.AUTH_PROVIDER = "campus_one_oidc";
+  process.env.CAMPUS_ONE_CLIENT_ID = "test-campus-one-client";
   process.env.CAMPUS_ONE_CLIENT_SECRET = "test-campus-one-secret";
   process.env.CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN = "false";
   process.env.FRONTEND_APP_URL = "https://clubs.campusone.com.ng";
@@ -616,4 +624,20 @@ test("CampusOne cancelled consent redirects to friendly login page", async (t) =
 
   assert.equal(response.status, 302);
   assert.equal(response.headers.get("location"), "https://clubs.campusone.com.ng/login?auth_error=cancelled");
+});
+
+test("CampusOne login normalizes feedback return path to dashboard", async (t) => {
+  withCampusOneOidcEnv(t);
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/auth/campus-one/login?return_to=/feedback`, {
+    redirect: "manual"
+  });
+  const location = response.headers.get("location");
+  const state = location ? new URL(location).searchParams.get("state") : null;
+  const statePayload = decodeBase64UrlJson(state);
+
+  assert.equal(response.status, 302);
+  assert.equal(statePayload.returnTo, "/");
 });

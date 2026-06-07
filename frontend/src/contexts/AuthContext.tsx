@@ -101,6 +101,16 @@ function getCurrentUrl() {
   return typeof window === "undefined" ? undefined : window.location.href;
 }
 
+function normalizeCampusOneReturnTo(returnTo = "/") {
+  const nextReturnTo = returnTo.startsWith("/") ? returnTo : "/";
+
+  if (nextReturnTo === "/feedback" || nextReturnTo.startsWith("/feedback?") || nextReturnTo.startsWith("/feedback#")) {
+    return "/";
+  }
+
+  return nextReturnTo;
+}
+
 function isSignedOutLoginRoute() {
   if (typeof window === "undefined") {
     return false;
@@ -133,8 +143,7 @@ function redirectToCampusOneOidc(returnTo = "/") {
     return;
   }
 
-  const nextReturnTo = returnTo.startsWith("/") ? returnTo : "/";
-  window.location.assign(getCampusOneOidcAuthUrl("login", nextReturnTo));
+  window.location.assign(getCampusOneOidcAuthUrl("login", normalizeCampusOneReturnTo(returnTo)));
 }
 
 function redirectToCookieAuth(path: "sign-in" | "sign-up" | "forgot-password" | "sign-out", callbackUrl = getCurrentUrl()) {
@@ -213,12 +222,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [requiresProfileRecovery, setRequiresProfileRecovery] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const currentUserIdRef = useRef<string | null>(null);
+  const authLoadVersionRef = useRef(0);
 
   async function waitForProfileProvisioning() {
     await new Promise((resolve) => window.setTimeout(resolve, PROFILE_FETCH_RETRY_DELAY_MS));
   }
 
+  function beginAuthLoad() {
+    authLoadVersionRef.current += 1;
+    return authLoadVersionRef.current;
+  }
+
+  function isCurrentAuthLoad(loadVersion: number) {
+    return authLoadVersionRef.current === loadVersion;
+  }
+
   function clearAuthState() {
+    beginAuthLoad();
     clearLastActivityAt();
     currentUserIdRef.current = null;
     queryClient.clear();
@@ -257,9 +277,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  async function loadPortalProfile() {
+  async function loadPortalProfile(loadVersion = authLoadVersionRef.current) {
     const data = await getMyProfile();
     const nextProfile = data.profile as AppProfile | null;
+
+    if (!isCurrentAuthLoad(loadVersion)) {
+      return null;
+    }
 
     prepareForSession(createPortalSession({ user: data.user, profile: nextProfile }));
     setProfile(nextProfile);
@@ -325,16 +349,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsLoading(true);
 
       if (usesCookieAuthProvider()) {
+        const loadVersion = beginAuthLoad();
+        queryClient.clear();
+        setSession(null);
+        setProfile(null);
+        setProfileError(null);
+        setRequiresProfileRecovery(false);
+
         if (isSignedOutLoginRoute() || isCampusOnePublicAuthRoute()) {
           clearAuthState();
           return;
         }
 
         try {
-          await loadPortalProfile();
+          await loadPortalProfile(loadVersion);
+
+          if (!isMounted || !isCurrentAuthLoad(loadVersion)) {
+            return;
+          }
+
           writeLastActivityAt();
           setIsLoading(false);
         } catch (error) {
+          if (!isCurrentAuthLoad(loadVersion)) {
+            return;
+          }
+
           clearAuthState();
 
           if (isMounted) {

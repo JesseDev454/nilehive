@@ -100,6 +100,18 @@ function getFrontendLoginUrl(searchParams = {}) {
   return loginUrl.toString();
 }
 
+function normalizeReturnTo(returnTo) {
+  const nextReturnTo = typeof returnTo === "string" && returnTo.startsWith("/")
+    ? returnTo
+    : "/";
+
+  if (nextReturnTo === "/feedback" || nextReturnTo.startsWith("/feedback?") || nextReturnTo.startsWith("/feedback#")) {
+    return "/";
+  }
+
+  return nextReturnTo;
+}
+
 async function fetchJwks() {
   if (Date.now() - jwksCache.fetchedAt < JWKS_CACHE_TTL_MS && jwksCache.keys.length > 0) {
     return jwksCache.keys;
@@ -486,9 +498,7 @@ function createCampusOneAuthRouter(options = {}) {
     const nonce = randomToken();
     const codeVerifier = randomToken(48);
     const codeChallenge = base64UrlEncode(crypto.createHash("sha256").update(codeVerifier).digest());
-    const returnTo = typeof req.query.return_to === "string" && req.query.return_to.startsWith("/")
-      ? req.query.return_to
-      : "/";
+    const returnTo = normalizeReturnTo(req.query.return_to);
     const stateValue = base64UrlEncode(JSON.stringify({ state, returnTo }));
     const authorizationUrl = new URL(getAuthorizationEndpoint());
 
@@ -588,9 +598,7 @@ function createCampusOneAuthRouter(options = {}) {
         customRoles: roleContext.customRoles,
         email: profile.email
       });
-      const returnTo = typeof statePayload.returnTo === "string" && statePayload.returnTo.startsWith("/")
-        ? statePayload.returnTo
-        : "/";
+      const returnTo = normalizeReturnTo(statePayload.returnTo);
 
       clearCampusOneOidcCookies(res);
       appendSetCookie(res, buildCookie(CAMPUS_ONE_SESSION_COOKIE, sessionToken, getSessionCookieOptions()));
