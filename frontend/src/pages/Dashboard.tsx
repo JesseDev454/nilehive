@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { NeoEmptyState, NeoErrorState, NeoLoadingState } from "@/components/NeoBrutal";
 import {
   getAdminOperationsDashboard,
+  getAnnouncements,
   getApprovedEvents,
   getEventEngagement,
   getEventReminders,
@@ -22,6 +23,7 @@ import {
   getPresidentDashboard,
   getTasks,
   type AdminOperationsDashboardRecord,
+  type AnnouncementRecord,
   type ApprovedEventRecord,
   type DashboardActivity,
   type DashboardProposalSummary,
@@ -39,6 +41,7 @@ import {
   ArrowRight,
   Banknote,
   BarChart3,
+  Bell,
   CalendarDays,
   CheckCircle,
   ClipboardList,
@@ -50,6 +53,7 @@ import {
   MapPin,
   MessageSquare,
   Plus,
+  QrCode,
   RefreshCw,
   ShieldCheck,
   TrendingUp,
@@ -65,6 +69,7 @@ import { isAttendableEvent } from "@/lib/eventLifecycle";
 import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 import { canViewProposalDetails } from "@/lib/roleAccess";
 import { downloadAdminPerformanceMatrixCsv } from "@/lib/exports";
+import { getStudentNextAction, type StudentNextActionKind } from "@/lib/studentActivation";
 
 function StatCard({
   title,
@@ -1246,7 +1251,7 @@ function PolishedAdminDashboard() {
               </CardHeader>
               <CardContent>
                 {dashboard?.recent_activity.length ? (
-                  <RecentActivityList activity={dashboard.recent_activity} />
+                  <AdminActivityList activity={dashboard.recent_activity} />
                 ) : (
                   <AdminEmptyState icon={Activity} title="No recent activity yet" message="Club updates will appear here once operations start moving." />
                 )}
@@ -1677,6 +1682,104 @@ function MembershipStatusPill({
   return <Badge className={className}>{getMembershipStatusLabel(status)}</Badge>;
 }
 
+function isStudentProfileComplete(profile: {
+  full_name?: string | null;
+  student_id?: string | null;
+  phone_number?: string | null;
+  department?: string | null;
+} | null | undefined) {
+  return Boolean(profile?.full_name?.trim() && profile?.student_id?.trim() && profile?.phone_number?.trim() && profile?.department?.trim());
+}
+
+function isEventThisWeek(event: ApprovedEventRecord) {
+  const eventDate = new Date(`${event.event_date}T00:00:00`);
+
+  if (Number.isNaN(eventDate.getTime())) {
+    return false;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const weekEnd = new Date(today);
+  weekEnd.setDate(today.getDate() + 7);
+
+  return eventDate >= today && eventDate <= weekEnd;
+}
+
+function getEventTimingLabel(event: ApprovedEventRecord) {
+  if (event.event_lifecycle === "happening_today") {
+    return "Today";
+  }
+
+  return isEventThisWeek(event) ? "This week" : "Upcoming";
+}
+
+function getStudentEventActionLabel({
+  event,
+  rsvpStatus,
+  attended
+}: {
+  event: ApprovedEventRecord;
+  rsvpStatus?: string | null;
+  attended?: boolean;
+}) {
+  if (event.event_lifecycle === "happening_today" && !attended) {
+    return "Check in";
+  }
+
+  if (attended) {
+    return "Checked in";
+  }
+
+  if (rsvpStatus) {
+    return `RSVP: ${rsvpStatus.replace("_", " ")}`;
+  }
+
+  if (event.can_rsvp) {
+    return "RSVP needed";
+  }
+
+  if (event.can_submit_feedback) {
+    return "Feedback open";
+  }
+
+  return "View event";
+}
+
+function getStudentMembershipPendingAction(status: StudentMembershipStatus) {
+  return {
+    under_review: "Wait for club review",
+    payment_under_review: "Wait for verification",
+    pending_payment: "Upload dues proof",
+    active: "You are active",
+    needs_new_payment_details: "Update dues proof",
+    rejected: "Review decision",
+    cancelled: "Request cancelled"
+  }[status];
+}
+
+function getStudentDueStateLabel(payment?: DuePaymentRecord) {
+  if (!payment) {
+    return "Not started";
+  }
+
+  return {
+    unpaid: "Unpaid",
+    submitted: "Submitted",
+    paid: "Paid",
+    rejected: "Needs update"
+  }[payment.status];
+}
+
+function getAnnouncementPriorityClass(priority: AnnouncementRecord["priority"]) {
+  return {
+    low: "bg-muted text-muted-foreground",
+    normal: "bg-accent text-foreground",
+    high: "bg-warning/15 text-warning",
+    urgent: "bg-destructive/15 text-destructive"
+  }[priority];
+}
+
 function StudentQuickLink({
   title,
   description,
@@ -1710,11 +1813,19 @@ function StudentQuickLink({
 
 function StudentEventCard({
   event,
-  rsvp
+  rsvp,
+  attended
 }: {
   event: ApprovedEventRecord;
   rsvp?: EventRsvpRecord | null;
+  attended?: boolean;
 }) {
+  const actionLabel = getStudentEventActionLabel({
+    event,
+    rsvpStatus: rsvp?.status,
+    attended
+  });
+
   return (
     <Link to="/events" className="block">
       <div className="nh-card overflow-hidden transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-[2px_2px_0_hsl(var(--neo-shadow))]">
@@ -1723,7 +1834,7 @@ function StudentEventCard({
             {getDateLabel(event.event_date).slice(5)}
           </div>
           <div className="absolute bottom-4 right-4 rounded-full border-3 border-foreground bg-secondary px-3 py-1 text-xs font-black uppercase shadow-neo-sm">
-            Approved
+            {getEventTimingLabel(event)}
           </div>
         </div>
         <div className="p-6">
@@ -1745,9 +1856,9 @@ function StudentEventCard({
             </span>
           </div>
           <div className="mt-5 flex items-center justify-between gap-3 rounded-[18px] border-3 border-foreground bg-muted/70 p-3">
-            <p className="text-xs text-muted-foreground">Your RSVP</p>
-            <Badge variant={rsvp?.status ? "default" : "outline"} className={rsvp?.status ? "capitalize" : ""}>
-              {rsvp?.status ? rsvp.status.replace("_", " ") : "Not selected"}
+            <p className="text-xs text-muted-foreground">Your event step</p>
+            <Badge variant={rsvp?.status || attended ? "default" : "outline"} className="capitalize">
+              {actionLabel}
             </Badge>
           </div>
         </div>
@@ -1755,6 +1866,82 @@ function StudentEventCard({
     </Link>
   );
 }
+
+function StudentStarterChecklist({
+  hasJoined,
+  hasPaymentProof,
+  hasActiveMembership,
+  hasUpcomingEvents,
+  hasRsvp
+}: {
+  hasJoined: boolean;
+  hasPaymentProof: boolean;
+  hasActiveMembership: boolean;
+  hasUpcomingEvents: boolean;
+  hasRsvp: boolean;
+}) {
+  const items = [
+    { label: "Choose a club", done: hasJoined, to: "/membership" },
+    { label: "Upload dues proof", done: hasPaymentProof, to: "/membership" },
+    { label: "Get activated", done: hasActiveMembership, to: "/membership" },
+    { label: "RSVP to an event", done: hasRsvp, to: "/events", disabled: !hasUpcomingEvents }
+  ];
+  const completedCount = items.filter((item) => item.done).length;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">First 5 minutes checklist</CardTitle>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Complete these steps to make Club Services useful every time you come back.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="rounded-[18px] border-3 border-foreground bg-muted p-3">
+          <div className="mb-2 flex items-center justify-between text-xs font-black uppercase tracking-[0.14em]">
+            <span>Activation</span>
+            <span>{completedCount}/{items.length}</span>
+          </div>
+          <QuestProgressBar value={Math.round((completedCount / items.length) * 100)} />
+        </div>
+        {items.map((item) => (
+          <Link
+            key={item.label}
+            to={item.to}
+            className={`flex items-center gap-3 rounded-[18px] border-2 border-foreground p-3 text-sm font-bold transition-colors ${
+              item.done
+                ? "bg-success/15 text-foreground"
+                : item.disabled
+                  ? "pointer-events-none bg-muted text-muted-foreground"
+                  : "bg-card hover:bg-accent/20"
+            }`}
+          >
+            <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-foreground ${
+              item.done ? "bg-success text-success-foreground" : "bg-background"
+            }`}>
+              {item.done ? <CheckCircle className="h-4 w-4" /> : <span className="h-2 w-2 rounded-full bg-foreground" />}
+            </span>
+            <span>{item.label}</span>
+            {item.disabled ? <span className="ml-auto text-xs font-black uppercase">No events yet</span> : null}
+          </Link>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+const STUDENT_NEXT_ACTION_ICONS: Record<StudentNextActionKind, ElementType> = {
+  complete_profile: UserPlus,
+  discover_clubs: UserPlus,
+  update_payment: CreditCard,
+  payment_review: ShieldCheck,
+  check_in: QrCode,
+  rsvp_event: CalendarDays,
+  read_announcement: Bell,
+  submit_feedback: MessageSquare,
+  see_updates: MessageSquare,
+  track_request: ListChecks
+};
 
 function StudentDashboard() {
   const { profile } = useAuth();
@@ -1788,14 +1975,36 @@ function StudentDashboard() {
     queryFn: () => getApprovedEvents({ page: 1, page_size: 100 }),
     retry: false
   });
+  const {
+    data: announcementsPage = emptyPaginatedResponse<AnnouncementRecord>(),
+    isLoading: announcementsLoading,
+    isError: announcementsFailed,
+    error: announcementsError
+  } = useQuery({
+    queryKey: ["student-dashboard-announcements"],
+    queryFn: () => getAnnouncements({ page: 1, page_size: 8 }),
+    retry: false
+  });
   const events = eventsPage.items;
   const { data: reminders = [] } = useQuery({
     queryKey: ["event-reminders"],
     queryFn: () => getEventReminders(),
     retry: false
   });
+  const duePayments = useMemo(() => duesData?.payments ?? [], [duesData?.payments]);
+  const activeMemberships = useMemo(
+    () => membershipRequests.filter((request) => request.status === "active"),
+    [membershipRequests]
+  );
+  const joinedClubIds = useMemo(
+    () => new Set(activeMemberships.map((request) => request.club_id)),
+    [activeMemberships]
+  );
   const upcomingApprovedEvents = events.filter(isAttendableEvent);
-  const upcomingEvents = upcomingApprovedEvents.slice(0, 3);
+  const joinedClubEvents = upcomingApprovedEvents.filter((event) => joinedClubIds.has(event.club_id));
+  const todayEvents = joinedClubEvents.filter((event) => event.event_lifecycle === "happening_today");
+  const thisWeekEvents = joinedClubEvents.filter((event) => event.event_lifecycle !== "happening_today" && isEventThisWeek(event));
+  const upcomingEvents = [...todayEvents, ...thisWeekEvents, ...joinedClubEvents.filter((event) => event.event_lifecycle !== "happening_today" && !isEventThisWeek(event))].slice(0, 6);
   const engagementQueries = useQueries({
     queries: upcomingEvents.map((event) => ({
       queryKey: ["event-engagement", event.proposal_id],
@@ -1813,17 +2022,64 @@ function StudentDashboard() {
       ),
     [engagementQueries]
   );
-  const duePayments = duesData?.payments || [];
-  const activeMemberships = membershipRequests.filter((request) => request.status === "active");
   const duesById = useMemo(
     () => new Map(duePayments.map((payment) => [payment.id, payment] as const)),
     [duePayments]
   );
+  const announcementPreview = announcementsPage.items
+    .filter((announcement) => {
+      if (announcement.audience === "all_users" || announcement.audience === "all_clubs") {
+        return true;
+      }
+
+      if (announcement.audience === "role" && announcement.target_role === "student") {
+        return true;
+      }
+
+      return Boolean(announcement.club_id && joinedClubIds.has(announcement.club_id));
+    })
+    .slice(0, 5);
   const firstName = profile?.full_name?.trim().split(/\s+/).filter(Boolean)[0] || "student";
   const paidDuesCount = duePayments.filter((payment) => payment.status === "paid").length;
   const duesProgress = duePayments.length > 0 ? Math.round((paidDuesCount / duePayments.length) * 100) : 0;
   const featuredMembership = activeMemberships[0] || membershipRequests[0];
-  const featuredPayment = featuredMembership?.due_payment_id ? duesById.get(featuredMembership.due_payment_id) : duePayments[0];
+  const featuredPayment = featuredMembership?.due_payment ?? (featuredMembership?.due_payment_id ? duesById.get(featuredMembership.due_payment_id) : duePayments[0]);
+  const hasPaymentProof = duePayments.some((payment) => ["submitted", "paid"].includes(payment.status));
+  const hasRsvp = Array.from(engagementByProposalId.values()).some((engagement) => Boolean(engagement.current_user_rsvp?.status));
+  const hasTodayCheckIn = todayEvents.some((event) => {
+    const engagement = engagementByProposalId.get(event.proposal_id);
+
+    return !engagement?.current_user_attendance?.attended;
+  });
+  const hasUnreadAnnouncement = announcementPreview.some((announcement) => !announcement.is_read);
+  const hasFeedbackOpportunity = joinedClubEvents.some((event) => event.can_submit_feedback);
+  const isProfileComplete = isStudentProfileComplete(profile);
+  const nextAction = getStudentNextAction({
+    membershipRequests,
+    duePayments,
+    upcomingEvents,
+    hasRsvp,
+    isProfileComplete,
+    hasTodayCheckIn,
+    hasUnreadAnnouncement,
+    hasFeedbackOpportunity
+  });
+  const NextActionIcon = STUDENT_NEXT_ACTION_ICONS[nextAction.kind];
+
+  async function handleCopyInviteLink() {
+    const inviteUrl = `${window.location.origin}/membership`;
+
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      toast.success("Invite link copied", {
+        description: "Share it with a friend so they can discover clubs too."
+      });
+    } catch {
+      toast.error("Couldn't copy link", {
+        description: inviteUrl
+      });
+    }
+  }
 
   return (
     <div className="space-y-8 animate-slide-up">
@@ -1877,6 +2133,23 @@ function StudentDashboard() {
         </div>
 
         <aside className="space-y-5 xl:pt-24">
+          <Card className="bg-primary text-primary-foreground">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="rounded-full border-3 border-foreground bg-secondary p-3 text-secondary-foreground shadow-neo-sm">
+                  <NextActionIcon className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-primary-foreground/70">Next best action</p>
+                  <h2 className="mt-2 text-2xl font-black tracking-[-0.04em]">{nextAction.title}</h2>
+                  <p className="mt-2 text-sm leading-6 text-primary-foreground/75">{nextAction.description}</p>
+                  <Button asChild variant="secondary" className="mt-4 w-full">
+                    <Link to={nextAction.to}>{nextAction.label}</Link>
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           <div className="rounded-[24px] border-3 border-foreground bg-primary p-5 text-primary-foreground shadow-neo">
             <div className="flex items-center justify-between gap-4">
               <h2 className="text-2xl font-black tracking-[-0.04em]">Discover Clubs</h2>
@@ -1888,6 +2161,10 @@ function StudentDashboard() {
           <StudentQuickLink featured title="Join a Club" description="Find your next community." to="/membership" icon={UserPlus} />
           <StudentQuickLink title="Pay Dues" description="Upload proof and track status." to="/membership" icon={CreditCard} />
           <StudentQuickLink title="Announcements" description="Catch updates from clubs and admins." to="/communications" icon={MessageSquare} />
+          <Button type="button" variant="outline" className="h-auto w-full justify-start rounded-[24px] p-5 text-left" onClick={handleCopyInviteLink}>
+            <Users className="mr-3 h-5 w-5" />
+            Invite a friend to discover clubs
+          </Button>
           <Link to="/feedback" className="block">
             <div className="rounded-[28px] border-3 border-foreground bg-primary p-8 text-center text-primary-foreground shadow-neo transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-[2px_2px_0_hsl(var(--neo-shadow))]">
               <MessageSquare className="mx-auto h-9 w-9" />
@@ -1898,12 +2175,12 @@ function StudentDashboard() {
         </aside>
       </section>
 
-      {(membershipsFailed || duesFailed || eventsFailed) ? (
+      {(membershipsFailed || duesFailed || eventsFailed || announcementsFailed) ? (
         <Card>
           <CardContent className="p-8">
             <p className="font-medium">Some student dashboard data could not load</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              {getErrorMessage(membershipsError || duesError || eventsError)}
+              {getErrorMessage(membershipsError || duesError || eventsError || announcementsError)}
             </p>
           </CardContent>
         </Card>
@@ -1914,9 +2191,9 @@ function StudentDashboard() {
           <Card>
             <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle className="text-lg">Membership journey</CardTitle>
+                <CardTitle className="text-lg">My Clubs / Membership Status</CardTitle>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  You become an official club member after approval and verified dues payment.
+                  See each club, your membership state, dues state, and the next pending step.
                 </p>
               </div>
               <Button asChild variant="outline" size="sm">
@@ -1936,7 +2213,7 @@ function StudentDashboard() {
               ) : (
                 <div className="grid gap-4 lg:grid-cols-2">
                   {membershipRequests.slice(0, 4).map((request) => {
-                    const payment = request.due_payment_id ? duesById.get(request.due_payment_id) : undefined;
+                    const payment = request.due_payment ?? (request.due_payment_id ? duesById.get(request.due_payment_id) : undefined);
                     const membershipStatus = resolveStudentMembershipStatus(request, payment);
                     const membershipActive = membershipStatus === "active";
                     const reviewStateLabel = {
@@ -1980,6 +2257,16 @@ function StudentDashboard() {
                           </div>
                         </div>
                         <p className="mt-4 text-sm text-muted-foreground">{getMembershipStatusSummary(request, payment)}</p>
+                        <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                          <div className="rounded-[16px] border-2 border-foreground bg-card p-3">
+                            <p className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Dues state</p>
+                            <p className="mt-1 font-semibold">{getStudentDueStateLabel(payment)}</p>
+                          </div>
+                          <div className="rounded-[16px] border-2 border-foreground bg-card p-3">
+                            <p className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Pending action</p>
+                            <p className="mt-1 font-semibold">{getStudentMembershipPendingAction(membershipStatus)}</p>
+                          </div>
+                        </div>
                         {(membershipStatus === "pending_payment" || membershipStatus === "needs_new_payment_details") && !membershipActive ? (
                           <div className="mt-4 border-2 border-foreground bg-primary/5 p-3 text-sm">
                             <p className="font-medium text-primary">
@@ -1993,6 +2280,9 @@ function StudentDashboard() {
                             </Button>
                           </div>
                         ) : null}
+                        <Button asChild variant="outline" size="sm" className="mt-4 w-full">
+                          <Link to={`/membership/clubs/${request.club_id}`}>View club details</Link>
+                        </Button>
                       </div>
                     );
                   })}
@@ -2004,8 +2294,8 @@ function StudentDashboard() {
           <Card>
             <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle className="text-lg">Events for you</CardTitle>
-                <p className="mt-1 text-sm text-muted-foreground">See the approved events coming up for you.</p>
+                <CardTitle className="text-lg">Upcoming Events</CardTitle>
+                <p className="mt-1 text-sm text-muted-foreground">Today and this week from clubs where your membership is active.</p>
               </div>
               <Button asChild variant="outline" size="sm">
                 <Link to="/events">Open events</Link>
@@ -2014,19 +2304,37 @@ function StudentDashboard() {
             <CardContent>
               {eventsLoading ? (
                 <NeoLoadingState title="Loading events" message="We are preparing the student event feed." compact />
+              ) : activeMemberships.length === 0 ? (
+                <AdminEmptyState
+                  icon={CalendarDays}
+                  title="Join a club to unlock your event feed"
+                  message="Once your membership is active, today's events and this week's events from your clubs will appear here."
+                  action={{ label: "Discover clubs", to: "/membership" }}
+                />
               ) : upcomingEvents.length === 0 ? (
                 <AdminEmptyState
                   icon={CalendarDays}
-                  title="No events yet"
-                  message="Approved events will show up here once they are ready."
+                  title="No club events yet"
+                  message="Approved events from your active clubs will show up here once they are ready."
                 />
               ) : (
                 <div className="space-y-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-[18px] border-3 border-foreground bg-success/10 p-4">
+                      <p className="text-xs font-black uppercase tracking-[0.14em] text-muted-foreground">Today</p>
+                      <p className="mt-1 text-2xl font-black">{todayEvents.length}</p>
+                    </div>
+                    <div className="rounded-[18px] border-3 border-foreground bg-accent/30 p-4">
+                      <p className="text-xs font-black uppercase tracking-[0.14em] text-muted-foreground">This week</p>
+                      <p className="mt-1 text-2xl font-black">{thisWeekEvents.length}</p>
+                    </div>
+                  </div>
                   {upcomingEvents.map((event) => (
                     <StudentEventCard
                       key={event.id}
                       event={event}
                       rsvp={engagementByProposalId.get(event.proposal_id)?.current_user_rsvp}
+                      attended={engagementByProposalId.get(event.proposal_id)?.current_user_attendance?.attended}
                     />
                   ))}
                 </div>
@@ -2036,6 +2344,69 @@ function StudentDashboard() {
         </div>
 
         <div className="space-y-6">
+          <StudentStarterChecklist
+            hasJoined={membershipRequests.length > 0}
+            hasPaymentProof={hasPaymentProof}
+            hasActiveMembership={activeMemberships.length > 0}
+            hasUpcomingEvents={upcomingEvents.length > 0}
+            hasRsvp={hasRsvp}
+          />
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-3">
+              <div>
+                <CardTitle className="text-lg">Announcements Preview</CardTitle>
+                <p className="mt-1 text-sm text-muted-foreground">Recent updates from your clubs and Club Services.</p>
+              </div>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/communications">Open</Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {announcementsLoading ? (
+                <NeoLoadingState title="Loading announcements" message="Checking your latest club updates." compact />
+              ) : announcementsFailed ? (
+                <NeoErrorState title="Announcements unavailable" message={getErrorMessage(announcementsError)} />
+              ) : announcementPreview.length === 0 ? (
+                <NeoEmptyState
+                  icon={Bell}
+                  title="No announcements yet"
+                  message="Updates from your active clubs and public Club Services posts will appear here."
+                />
+              ) : (
+                announcementPreview.map((announcement) => (
+                  <Link key={announcement.id} to="/communications" className="block">
+                    <div className="nh-list-card transition-colors hover:bg-accent/15">
+                      <div className="flex items-start justify-between gap-3">
+                        <p className="font-semibold leading-5">{announcement.title}</p>
+                        <Badge className={getAnnouncementPriorityClass(announcement.priority)}>
+                          {announcement.priority}
+                        </Badge>
+                      </div>
+                      <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{announcement.message}</p>
+                      <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{getDateLabel(announcement.created_at)}</span>
+                        {!announcement.is_read ? <span className="font-black uppercase text-primary">Unread</span> : null}
+                      </div>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="bg-primary text-primary-foreground">
+            <CardContent className="flex items-center justify-between gap-4 p-5">
+              <div>
+                <p className="text-sm font-black uppercase tracking-[0.14em] text-primary-foreground/70">Feedback</p>
+                <p className="mt-1 text-lg font-black tracking-[-0.03em]">Help us improve Club Services.</p>
+              </div>
+              <Button asChild variant="secondary" size="sm" className="shrink-0">
+                <Link to="/feedback">Send</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Reminders</CardTitle>
