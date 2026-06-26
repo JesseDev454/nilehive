@@ -202,6 +202,7 @@ export default function Members() {
               <th>Club</th>
               <th>Role</th>
               <th>Status</th>
+              <th>Dues</th>
             </tr>
           </thead>
           <tbody>
@@ -211,6 +212,11 @@ export default function Members() {
                   <p className="font-medium">{member.full_name}</p>
                   <p className="text-xs text-muted-foreground md:hidden">{member.student_id}</p>
                   <p className="text-xs text-muted-foreground lg:hidden">{member.email || member.phone_number || "No contact"}</p>
+                </td>
+                <td>
+                  <Badge variant={member.dues_paid ? "default" : "outline"}>
+                    {member.dues_paid ? "Dues Paid" : member.dues_status === "submitted" ? "Under Review" : "Not Paid"}
+                  </Badge>
                 </td>
                 <td className="hidden md:table-cell text-muted-foreground">{member.student_id}</td>
                 <td className="hidden lg:table-cell text-muted-foreground">

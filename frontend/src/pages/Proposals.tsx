@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { FileText, Plus } from "lucide-react";
 import { DataPagination } from "@/components/DataPagination";
@@ -35,7 +35,9 @@ function getProposalClubLabel(proposal: ProposalRecord) {
 
 export default function Proposals() {
   const { role } = useRole();
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [searchParams] = useSearchParams();
+  const initialStatusFilter = searchParams.get("status") || "all";
+  const [statusFilter, setStatusFilter] = useState(initialStatusFilter);
   const [page, setPage] = useState(1);
   const isAdmin = role === "admin";
   const isPresident = role === "president";
@@ -43,6 +45,10 @@ export default function Proposals() {
   useEffect(() => {
     setPage(1);
   }, [statusFilter, role]);
+
+  useEffect(() => {
+    setStatusFilter(initialStatusFilter);
+  }, [initialStatusFilter]);
 
   const { data: proposalsPage = emptyPaginatedResponse<ProposalRecord>(), isLoading, isError, error } = useQuery({
     queryKey: ["proposals", role, statusFilter, page],

@@ -36,7 +36,7 @@ describe("getStudentNextAction", () => {
     });
 
     expect(action.kind).toBe("update_payment");
-    expect(action.label).toBe("Update payment");
+    expect(action.label).toBe("Upload Dues Proof");
   });
 
   it("moves active students with unrsvped events toward events", () => {

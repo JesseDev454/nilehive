@@ -69,6 +69,7 @@ const UNSUPPORTED_EMAIL_MESSAGE = `Please use your Nile University Microsoft acc
 const PROFILE_FETCH_RETRY_ATTEMPTS = 5;
 const PROFILE_FETCH_RETRY_DELAY_MS = 500;
 const LAST_ACTIVITY_STORAGE_KEY = `${SUPABASE_AUTH_STORAGE_KEY}:last-activity-at`;
+const E2E_AUTH_STORAGE_KEY = "club-services:e2e-auth";
 
 function readLastActivityAt() {
   if (typeof window === "undefined") {
@@ -95,6 +96,36 @@ function clearLastActivityAt() {
   }
 
   window.localStorage.removeItem(LAST_ACTIVITY_STORAGE_KEY);
+}
+
+function isE2EAuthEnabled() {
+  return import.meta.env.DEV && import.meta.env.VITE_ENABLE_E2E_AUTH === "true";
+}
+
+function readE2EProfile() {
+  if (typeof window === "undefined" || !isE2EAuthEnabled()) {
+    return null;
+  }
+
+  const rawValue = window.localStorage.getItem(E2E_AUTH_STORAGE_KEY);
+
+  if (!rawValue) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue) as { profile?: AppProfile; email?: string | null };
+
+    return parsed.profile
+      ? {
+          profile: parsed.profile,
+          email: parsed.email ?? `${parsed.profile.id}@nilehive.test`
+        }
+      : null;
+  } catch {
+    window.localStorage.removeItem(E2E_AUTH_STORAGE_KEY);
+    return null;
+  }
 }
 
 function getCurrentUrl() {
@@ -348,6 +379,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async function loadSession() {
       setIsLoading(true);
 
+      const e2eAuth = readE2EProfile();
+
+      if (e2eAuth) {
+        const loadVersion = beginAuthLoad();
+        queryClient.clear();
+        prepareForSession(createPortalSession({
+          user: {
+            id: e2eAuth.profile.id,
+            email: e2eAuth.email,
+            role: e2eAuth.profile.portal_role ?? "student"
+          },
+          profile: e2eAuth.profile
+        }));
+        setProfile(e2eAuth.profile);
+        setProfileError(null);
+        setRequiresProfileRecovery(false);
+        writeLastActivityAt();
+
+        if (isMounted && isCurrentAuthLoad(loadVersion)) {
+          setIsLoading(false);
+        }
+
+        return;
+      }
+
       if (usesCookieAuthProvider()) {
         const loadVersion = beginAuthLoad();
         queryClient.clear();
@@ -450,7 +506,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!usesCookieAuthProvider() || !session) {
+    if (!usesCookieAuthProvider() || !session || isE2EAuthEnabled()) {
       return;
     }
 
@@ -694,6 +750,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       },
       async signOut() {
+        if (isE2EAuthEnabled()) {
+          window.localStorage.removeItem(E2E_AUTH_STORAGE_KEY);
+        }
+
         if (usesCookieAuthProvider()) {
           clearAuthState();
           redirectToCookieAuth("sign-out", null);

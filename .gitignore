@@ -5,3 +5,13 @@ frontend/.env
 frontend/.env.local
 frontend/dist/
 coverage/
+
+# Playwright
+/test-results/
+/frontend/test-results/
+/playwright-report/
+/frontend/playwright-report/
+/blob-report/
+/frontend/blob-report/
+/playwright/.cache/
+/playwright/.auth/

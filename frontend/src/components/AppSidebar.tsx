@@ -1,4 +1,4 @@
-import { CalendarDays, ClipboardList, CreditCard, FileText, Home, Plus, Clock, Bell, Users, MessageSquare, UserPlus, UserCog, School, type LucideIcon } from "lucide-react";
+import { BarChart3, CalendarDays, ClipboardList, CreditCard, FileText, Home, Plus, Clock, Bell, Users, MessageSquare, UserPlus, UserCog, School, type LucideIcon } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -51,6 +51,7 @@ export function AppSidebar() {
 
   const adminItems: SidebarItem[] = [
     { title: "Dashboard", url: "/", icon: Home, onboardingTarget: "nav-dashboard" },
+    { title: "Analytics", url: "/analytics", icon: BarChart3, onboardingTarget: "nav-analytics" },
     { title: "User Management", url: "/user-management", icon: UserCog, onboardingTarget: "nav-user-management" },
     { title: "Clubs", url: "/clubs", icon: School, onboardingTarget: "nav-clubs" },
     { title: "Final Review", url: "/proposals", icon: FileText, onboardingTarget: "nav-proposals" },
@@ -67,6 +68,7 @@ export function AppSidebar() {
 
   const presidentItems: SidebarItem[] = [
     { title: "Dashboard", url: "/", icon: Home, onboardingTarget: "nav-dashboard" },
+    { title: "Club Profile", url: "/clubs", icon: School, onboardingTarget: "nav-clubs" },
     { title: "Create Proposal", url: "/proposals/new", icon: Plus, onboardingTarget: "nav-create-proposal" },
     { title: "Club Proposals", url: "/proposals", icon: FileText, onboardingTarget: "nav-proposals" },
     { title: "Task Delegation", url: "/tasks", icon: ClipboardList, onboardingTarget: "nav-tasks" },

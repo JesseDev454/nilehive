@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { CreditCard, Landmark, Loader2, Receipt, TrendingUp } from "lucide-react";
 import { CounterUp } from "@/components/CounterUp";
 import { DataPagination } from "@/components/DataPagination";
@@ -26,6 +27,7 @@ import { actionError, actionSuccess } from "@/lib/notify";
 import { resolveStorageFileUrl } from "@/lib/storage";
 
 const DUES_PAGE_SIZE = 10;
+const DUE_STATUS_FILTERS = ["all", "unpaid", "submitted", "paid", "rejected"] as const;
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -63,7 +65,12 @@ function getPaymentStatusClassName(status: DuePaymentRecord["status"]) {
 
 export default function Dues() {
   const { role } = useRole();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
+  const requestedStatus = searchParams.get("status");
+  const initialStatusFilter = DUE_STATUS_FILTERS.includes(requestedStatus as (typeof DUE_STATUS_FILTERS)[number])
+    ? (requestedStatus as (typeof DUE_STATUS_FILTERS)[number])
+    : "all";
   const [fresherAmount, setFresherAmount] = useState("10000");
   const [returningAmount, setReturningAmount] = useState("10000");
   const [bankName, setBankName] = useState("Providus Bank");
@@ -74,10 +81,12 @@ export default function Dues() {
   );
   const [duesPage, setDuesPage] = useState(1);
   const [selectedClubId, setSelectedClubId] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<(typeof DUE_STATUS_FILTERS)[number]>(initialStatusFilter);
   const [proofLinksByPaymentId, setProofLinksByPaymentId] = useState<Record<string, string>>({});
   const canViewDues = role === "admin";
   const canManageSharedProfile = role === "admin";
   const duesClubFilter = role === "admin" && selectedClubId !== "all" ? selectedClubId : undefined;
+  const duesStatusFilter = statusFilter === "all" ? undefined : statusFilter;
 
   const {
     data: duesData,
@@ -85,12 +94,13 @@ export default function Dues() {
     isError,
     error
   } = useQuery({
-    queryKey: ["dues", role, duesPage, duesClubFilter || "all"],
+    queryKey: ["dues", role, duesPage, duesClubFilter || "all", duesStatusFilter || "all"],
     queryFn: () =>
       getDuePayments({
         page: duesPage,
         page_size: DUES_PAGE_SIZE,
-        club_id: duesClubFilter
+        club_id: duesClubFilter,
+        status: duesStatusFilter
       }),
     enabled: canViewDues,
     retry: false
@@ -107,6 +117,14 @@ export default function Dues() {
     enabled: canViewDues,
     retry: false
   });
+
+  useEffect(() => {
+    setDuesPage(1);
+  }, [duesClubFilter, duesStatusFilter]);
+
+  useEffect(() => {
+    setStatusFilter(initialStatusFilter);
+  }, [initialStatusFilter]);
 
   useEffect(() => {
     if (!sharedPaymentSettings) {
@@ -388,7 +406,7 @@ export default function Dues() {
         </CardHeader>
         <CardContent>
           {role === "admin" ? (
-            <div className="mb-4 grid gap-3 sm:max-w-xs">
+            <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:max-w-2xl">
               <div className="space-y-2">
                 <Label htmlFor="dues_club_filter">Club</Label>
                 <Select value={selectedClubId} onValueChange={setSelectedClubId}>
@@ -402,6 +420,21 @@ export default function Dues() {
                         {club.name}
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dues_status_filter">Status</Label>
+                <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as (typeof DUE_STATUS_FILTERS)[number])}>
+                  <SelectTrigger id="dues_status_filter">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All statuses</SelectItem>
+                    <SelectItem value="submitted">Submitted proofs</SelectItem>
+                    <SelectItem value="rejected">Rejected proofs</SelectItem>
+                    <SelectItem value="unpaid">Unpaid</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

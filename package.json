@@ -1,0 +1,30 @@
+{
+  "name": "nilehive",
+  "version": "1.0.0",
+  "description": "[![Status](https://img.shields.io/badge/status-active%20development-1D4DA1)](#project-overview) [![Frontend](https://img.shields.io/badge/frontend-Vite%20%2B%20React-0ea5e9)](#technology-stack) [![Backend](https://img.shields.io/badge/backend-Express%20%2B%20Supabase-16a34a)](#technology-stack) [![Database](https://img.shields.io/badge/database-Supabase%20Postgres-059669)](#data-and-auth-model) [![License](https://img.shields.io/badge/license-private-52525b)](#repository-structure)",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.0",
+    "@types/node": "^26.0.0"
+  },
+  "scripts": {
+    "test:e2e": "npm --prefix frontend run test:e2e --",
+    "test:e2e:ui": "npm --prefix frontend run test:e2e:ui --",
+    "test:e2e:headed": "npm --prefix frontend run test:e2e:headed --",
+    "test:e2e:debug": "npm --prefix frontend run test:e2e:debug --"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JesseDev454/nilehive.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JesseDev454/nilehive/issues"
+  },
+  "homepage": "https://github.com/JesseDev454/nilehive#readme"
+}

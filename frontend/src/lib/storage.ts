@@ -2,7 +2,7 @@ import { createStorageSignedUrl, uploadStorageObject } from "@/lib/api";
 import { usesCookieAuthProvider } from "@/lib/env";
 import { supabase } from "@/lib/supabase";
 
-export type StorageBucket = "club-logos" | "event-media" | "dues-receipts" | "reports";
+export type StorageBucket = "club-logos" | "club-media" | "event-media" | "dues-receipts" | "reports";
 
 export interface UploadStorageFileOptions {
   folder?: string;
@@ -15,7 +15,7 @@ export interface UploadStorageFileResult {
   url: string;
 }
 
-const PUBLIC_BUCKETS = new Set<StorageBucket>(["club-logos", "event-media"]);
+const PUBLIC_BUCKETS = new Set<StorageBucket>(["club-logos", "club-media", "event-media"]);
 
 function fileToBase64(file: File) {
   return new Promise<string>((resolve, reject) => {

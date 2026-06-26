@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Download, Filter, Megaphone, MessageSquare, Send, Users } from "lucide-react";
 import { DataPagination } from "@/components/DataPagination";
@@ -11,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUsageTracking } from "@/hooks/useUsageTracking";
 import {
   AnnouncementRecord,
   ApiClientError,
@@ -37,27 +39,66 @@ type HubTab = "announcements" | "feedback";
 type TargetRole = "student" | "executive" | "president" | "advisor" | "admin";
 type FeedbackCategory = FeedbackRecord["category"];
 type FeedbackCompletion = "yes" | "no" | "partially";
+type FeedbackFormCategory =
+  | "bug"
+  | "suggestion"
+  | "confusing_experience"
+  | "missing_feature"
+  | "payment_dues"
+  | "event_check_in"
+  | "other";
+type FeedbackImpact = "low" | "medium" | "high" | "urgent";
+type FeedbackRoleFilter = "all" | "student" | "executive" | "president" | "advisor" | "admin" | "feedback_manager" | "unknown";
+type FeedbackDateFilter = "all" | "today" | "7d" | "30d";
 
 const priorityOptions: AnnouncementPriority[] = ["low", "normal", "high", "urgent"];
 const adminRoleOptions: TargetRole[] = ["student", "executive", "president", "advisor", "admin"];
 const presidentRoleOptions: TargetRole[] = ["student", "executive"];
 const feedbackCategoryOptions: Array<{ value: FeedbackCategory; label: string }> = [
-  { value: "onboarding", label: "Onboarding" },
+  { value: "onboarding", label: "Confusing experience" },
   { value: "club_joining", label: "Club joining" },
-  { value: "dues_payment", label: "Dues payment" },
+  { value: "dues_payment", label: "Payment/dues" },
   { value: "login_access", label: "Login/access" },
-  { value: "event", label: "Event" },
+  { value: "event", label: "Event/check-in" },
   { value: "club", label: "Club" },
-  { value: "general", label: "General" }
+  { value: "general", label: "General / other" }
+];
+const feedbackFormCategoryOptions: Array<{ value: FeedbackFormCategory; label: string }> = [
+  { value: "bug", label: "Bug" },
+  { value: "suggestion", label: "Suggestion" },
+  { value: "confusing_experience", label: "Confusing experience" },
+  { value: "missing_feature", label: "Missing feature" },
+  { value: "payment_dues", label: "Payment/dues issue" },
+  { value: "event_check_in", label: "Event/check-in issue" },
+  { value: "other", label: "Other" }
+];
+const feedbackImpactOptions: Array<{ value: FeedbackImpact; label: string }> = [
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+  { value: "urgent", label: "Urgent" }
 ];
 const feedbackCompletionOptions: Array<{ value: FeedbackCompletion; label: string }> = [
   { value: "yes", label: "Yes" },
   { value: "partially", label: "Partially" },
   { value: "no", label: "No" }
 ];
-const appFeedbackCategoryOptions = feedbackCategoryOptions.filter(
-  (option) => !["event", "club"].includes(option.value)
-);
+const feedbackRoleFilterOptions: Array<{ value: FeedbackRoleFilter; label: string }> = [
+  { value: "all", label: "All roles" },
+  { value: "student", label: "Students" },
+  { value: "executive", label: "Executives" },
+  { value: "president", label: "Presidents" },
+  { value: "advisor", label: "Advisors" },
+  { value: "admin", label: "Admins" },
+  { value: "feedback_manager", label: "Feedback managers" },
+  { value: "unknown", label: "Unknown role" }
+];
+const feedbackDateFilterOptions: Array<{ value: FeedbackDateFilter; label: string }> = [
+  { value: "all", label: "Any date" },
+  { value: "today", label: "Today" },
+  { value: "7d", label: "Last 7 days" },
+  { value: "30d", label: "Last 30 days" }
+];
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -154,8 +195,83 @@ function getFeedbackCategoryLabel(category: FeedbackCategory) {
   return feedbackCategoryOptions.find((option) => option.value === category)?.label ?? category;
 }
 
+function getFeedbackFormCategoryLabel(category: FeedbackFormCategory) {
+  return feedbackFormCategoryOptions.find((option) => option.value === category)?.label ?? category;
+}
+
+function mapFeedbackFormCategoryToApiCategory(category: FeedbackFormCategory): FeedbackCategory {
+  if (category === "confusing_experience") {
+    return "onboarding";
+  }
+
+  if (category === "payment_dues") {
+    return "dues_payment";
+  }
+
+  if (category === "event_check_in") {
+    return "event";
+  }
+
+  return "general";
+}
+
+function getStructuredFeedbackValue(comment: string, label: string) {
+  const line = comment
+    .split("\n")
+    .find((item) => item.toLowerCase().startsWith(`${label.toLowerCase()}:`));
+
+  return line ? line.slice(label.length + 1).trim() : "";
+}
+
+function getFeedbackSubmitterRole(comment: string): FeedbackRoleFilter {
+  const value = getStructuredFeedbackValue(comment, "Role").toLowerCase().replace(/\s+/g, "_");
+  const roles: FeedbackRoleFilter[] = [
+    "student",
+    "executive",
+    "president",
+    "advisor",
+    "admin",
+    "feedback_manager"
+  ];
+
+  return roles.includes(value as FeedbackRoleFilter) ? (value as FeedbackRoleFilter) : "unknown";
+}
+
+function getFeedbackRoleLabel(roleValue: FeedbackRoleFilter) {
+  return feedbackRoleFilterOptions.find((option) => option.value === roleValue)?.label ?? "Unknown role";
+}
+
+function getFeedbackImpactLabel(value: string) {
+  return feedbackImpactOptions.find((option) => option.value === value)?.label ?? value;
+}
+
+function matchesFeedbackDateFilter(createdAt: string, filter: FeedbackDateFilter) {
+  if (filter === "all") {
+    return true;
+  }
+
+  const createdDate = new Date(createdAt);
+  const now = new Date();
+
+  if (Number.isNaN(createdDate.getTime())) {
+    return false;
+  }
+
+  if (filter === "today") {
+    return createdDate.toDateString() === now.toDateString();
+  }
+
+  const days = filter === "7d" ? 7 : 30;
+  const earliestDate = new Date(now);
+  earliestDate.setDate(now.getDate() - days);
+
+  return createdDate >= earliestDate;
+}
+
 function buildStructuredFeedbackComment(input: {
   role: string | null;
+  category: FeedbackFormCategory;
+  impact: FeedbackImpact;
   tryingToDo: string;
   completion: FeedbackCompletion;
   issue: string;
@@ -164,6 +280,8 @@ function buildStructuredFeedbackComment(input: {
 }) {
   return [
     `Role: ${input.role ?? "unknown"}`,
+    `Issue type: ${getFeedbackFormCategoryLabel(input.category)}`,
+    `Impact: ${input.impact}`,
     `Trying to do: ${input.tryingToDo.trim()}`,
     `Completed task: ${input.completion}`,
     `Confusing or broken: ${input.issue.trim()}`,
@@ -173,13 +291,21 @@ function buildStructuredFeedbackComment(input: {
 }
 
 export default function Communications({ defaultTab = "announcements" }: { defaultTab?: HubTab }) {
+  useUsageTracking(defaultTab === "feedback" ? "feedback_view" : "announcements_view");
   const queryClient = useQueryClient();
   const { role } = useAuth();
+  const [searchParams] = useSearchParams();
   const isFeedbackManager = role === "feedback_manager";
   const canCreateAnnouncement = role === "admin" || role === "president";
-  const canSubmitFeedback = Boolean(role) && !isFeedbackManager;
-  const canViewFeedback = role === "admin" || role === "advisor" || role === "president" || role === "executive" || isFeedbackManager;
-  const [activeTab, setActiveTab] = useState<HubTab>(defaultTab);
+  const canSubmitFeedback = Boolean(role);
+  const canViewFeedback = role === "admin" || isFeedbackManager;
+  const requestedFeedbackStatus = searchParams.get("status");
+  const initialFeedbackStatus = ["all", "open", "reviewed", "archived"].includes(requestedFeedbackStatus || "")
+    ? requestedFeedbackStatus || "all"
+    : "all";
+  const [activeTab, setActiveTab] = useState<HubTab>(
+    isFeedbackManager || searchParams.get("tab") === "feedback" ? "feedback" : defaultTab
+  );
   const [announcementFilter, setAnnouncementFilter] = useState<AnnouncementFilter>("all");
   const [announcementPage, setAnnouncementPage] = useState(1);
   const [announcementTitle, setAnnouncementTitle] = useState("");
@@ -190,7 +316,8 @@ export default function Communications({ defaultTab = "announcements" }: { defau
   const [announcementPriority, setAnnouncementPriority] = useState<AnnouncementPriority>("normal");
   const [announcementClubId, setAnnouncementClubId] = useState("");
   const [announcementTargetRole, setAnnouncementTargetRole] = useState<TargetRole>("student");
-  const [feedbackCategory, setFeedbackCategory] = useState<FeedbackCategory>("onboarding");
+  const [feedbackCategory, setFeedbackCategory] = useState<FeedbackFormCategory>("confusing_experience");
+  const [feedbackImpact, setFeedbackImpact] = useState<FeedbackImpact>("medium");
   const [feedbackRating, setFeedbackRating] = useState("");
   const [feedbackTryingToDo, setFeedbackTryingToDo] = useState("");
   const [feedbackCompletion, setFeedbackCompletion] = useState<FeedbackCompletion>("partially");
@@ -200,10 +327,16 @@ export default function Communications({ defaultTab = "announcements" }: { defau
   const [feedbackClubFilter, setFeedbackClubFilter] = useState("all");
   const [feedbackProposalFilter, setFeedbackProposalFilter] = useState("all");
   const [feedbackCategoryFilter, setFeedbackCategoryFilter] = useState("all");
-  const [feedbackStatusFilter, setFeedbackStatusFilter] = useState("all");
+  const [feedbackStatusFilter, setFeedbackStatusFilter] = useState(initialFeedbackStatus);
+  const [feedbackRoleFilter, setFeedbackRoleFilter] = useState<FeedbackRoleFilter>("all");
+  const [feedbackDateFilter, setFeedbackDateFilter] = useState<FeedbackDateFilter>("all");
   useEffect(() => {
-    setActiveTab(defaultTab);
-  }, [defaultTab]);
+    setActiveTab(isFeedbackManager || searchParams.get("tab") === "feedback" ? "feedback" : defaultTab);
+  }, [defaultTab, isFeedbackManager, searchParams]);
+
+  useEffect(() => {
+    setFeedbackStatusFilter(initialFeedbackStatus);
+  }, [initialFeedbackStatus]);
 
   useEffect(() => {
     setAnnouncementPage(1);
@@ -228,6 +361,7 @@ export default function Communications({ defaultTab = "announcements" }: { defau
         page: announcementPage,
         page_size: DEFAULT_PAGE_SIZE
       }),
+    enabled: activeTab === "announcements" && !isFeedbackManager,
     retry: false
   });
   const announcements = announcementsPage.items;
@@ -282,6 +416,21 @@ export default function Communications({ defaultTab = "announcements" }: { defau
           : true
       ),
     [approvedEventsPage.items, feedbackClubFilter, role]
+  );
+  const visibleFeedback = useMemo(
+    () =>
+      feedback.filter((entry) => {
+        if (!matchesFeedbackDateFilter(entry.created_at, feedbackDateFilter)) {
+          return false;
+        }
+
+        if (feedbackRoleFilter !== "all" && getFeedbackSubmitterRole(entry.comment) !== feedbackRoleFilter) {
+          return false;
+        }
+
+        return true;
+      }),
+    [feedback, feedbackDateFilter, feedbackRoleFilter]
   );
 
   const unreadCount = announcements.filter((announcement) => !announcement.is_read).length;
@@ -348,20 +497,23 @@ export default function Communications({ defaultTab = "announcements" }: { defau
   const createFeedbackMutation = useMutation({
     mutationFn: () =>
       createFeedback({
-        category: feedbackCategory,
+        category: mapFeedbackFormCategoryToApiCategory(feedbackCategory),
         rating: feedbackRating ? Number(feedbackRating) : null,
         comment: buildStructuredFeedbackComment({
           role,
+          category: feedbackCategory,
+          impact: feedbackImpact,
           tryingToDo: feedbackTryingToDo,
           completion: feedbackCompletion,
           issue: feedbackIssue,
           suggestions: feedbackSuggestions,
           canContact: feedbackCanContact === "yes"
         })
-      }),
+    }),
     onSuccess: () => {
-      actionSuccess("Feedback submitted", "Club Services can now review it.");
-      setFeedbackCategory("onboarding");
+      actionSuccess("Feedback submitted", "Thanks. Club Services will review it privately.");
+      setFeedbackCategory("confusing_experience");
+      setFeedbackImpact("medium");
       setFeedbackRating("");
       setFeedbackTryingToDo("");
       setFeedbackCompletion("partially");
@@ -391,23 +543,36 @@ export default function Communications({ defaultTab = "announcements" }: { defau
     <div className="nh-page">
       <NeoCommandPanel
         eyebrow="Communication Hub"
-        title="Announcements and Feedback"
-        description="Publish official updates, track who has seen them, and keep club feedback in one place before Outlook delivery is added later."
-        stats={[
-          { label: "Unread", value: unreadCount },
-          { label: "High Priority", value: urgentCount }
-        ]}
+        title={isFeedbackManager ? "Feedback Inbox" : "Announcements and Feedback"}
+        description={
+          isFeedbackManager
+            ? "Review private app feedback from Club Services users without accessing admin-only operations."
+            : "Publish official updates, track who has seen them, and keep club feedback in one place before Outlook delivery is added later."
+        }
+        stats={
+          isFeedbackManager
+            ? [
+                { label: "Open Feedback", value: feedback.filter((entry) => entry.status === "open").length },
+                { label: "Filtered", value: visibleFeedback.length }
+              ]
+            : [
+                { label: "Unread", value: unreadCount },
+                { label: "High Priority", value: urgentCount }
+              ]
+        }
       />
 
       <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          variant={activeTab === "announcements" ? "default" : "outline"}
-          onClick={() => setActiveTab("announcements")}
-        >
-          <Megaphone className="mr-2 h-4 w-4" />
-          Announcements
-        </Button>
+        {!isFeedbackManager ? (
+          <Button
+            type="button"
+            variant={activeTab === "announcements" ? "default" : "outline"}
+            onClick={() => setActiveTab("announcements")}
+          >
+            <Megaphone className="mr-2 h-4 w-4" />
+            Announcements
+          </Button>
+        ) : null}
         <Button
           type="button"
           variant={activeTab === "feedback" ? "default" : "outline"}
@@ -720,18 +885,18 @@ export default function Communications({ defaultTab = "announcements" }: { defau
               </CardHeader>
               <CardContent>
                 <form className="space-y-4" onSubmit={handleFeedbackSubmit}>
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-4 lg:grid-cols-3">
                     <div className="space-y-2">
                       <Label>Category</Label>
                       <Select
                         value={feedbackCategory}
-                        onValueChange={(value) => setFeedbackCategory(value as FeedbackCategory)}
+                        onValueChange={(value) => setFeedbackCategory(value as FeedbackFormCategory)}
                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {feedbackCategoryOptions.map((option) => (
+                          {feedbackFormCategoryOptions.map((option) => (
                             <SelectItem key={option.value} value={option.value}>
                               {option.label}
                             </SelectItem>
@@ -740,7 +905,25 @@ export default function Communications({ defaultTab = "announcements" }: { defau
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="feedback-rating">Rating</Label>
+                      <Label>Impact</Label>
+                      <Select
+                        value={feedbackImpact}
+                        onValueChange={(value) => setFeedbackImpact(value as FeedbackImpact)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {feedbackImpactOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="feedback-rating">Experience rating</Label>
                       <Input
                         id="feedback-rating"
                         max="5"
@@ -845,7 +1028,7 @@ export default function Communications({ defaultTab = "announcements" }: { defau
                     type="button"
                     variant="outline"
                     onClick={() =>
-                      downloadFeedbackCsv(feedback, {
+                      downloadFeedbackCsv(visibleFeedback, {
                         clubNameById,
                         filenameSuffix: isFeedbackManager
                           ? "App-Feedback"
@@ -857,86 +1040,121 @@ export default function Communications({ defaultTab = "announcements" }: { defau
                               : "All"
                       })
                     }
-                    disabled={feedback.length === 0}
+                    disabled={visibleFeedback.length === 0}
                   >
                     <Download className="mr-2 h-4 w-4" />
                     Download CSV
                   </Button>
                 ) : null}
               </div>
-              {isFeedbackManager ? (
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Category</Label>
-                    <Select value={feedbackCategoryFilter} onValueChange={setFeedbackCategoryFilter}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All app feedback</SelectItem>
-                        {appFeedbackCategoryOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Status</Label>
-                    <Select value={feedbackStatusFilter} onValueChange={setFeedbackStatusFilter}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All statuses</SelectItem>
-                        <SelectItem value="open">Open</SelectItem>
-                        <SelectItem value="reviewed">Reviewed</SelectItem>
-                        <SelectItem value="archived">Archived</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              ) : (
-              <div className="grid gap-3 md:grid-cols-2">
-                {role === "admin" ? (
-                  <div className="space-y-2">
-                    <Label>Club</Label>
-                    <Select value={feedbackClubFilter} onValueChange={setFeedbackClubFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={isLoadingClubs ? "Loading clubs..." : "All clubs"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All clubs</SelectItem>
-                        {clubs.map((club) => (
-                          <SelectItem key={club.id} value={club.id}>
-                            {club.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                ) : null}
+              <div className="grid gap-3 md:grid-cols-4">
                 <div className="space-y-2">
-                  <Label>Event</Label>
-                  <Select value={feedbackProposalFilter} onValueChange={setFeedbackProposalFilter}>
+                  <Label>Category</Label>
+                  <Select value={feedbackCategoryFilter} onValueChange={setFeedbackCategoryFilter}>
                     <SelectTrigger>
-                      <SelectValue placeholder={isLoadingEvents ? "Loading events..." : "All events"} />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All events</SelectItem>
-                      {feedbackEventOptions.map((event) => (
-                        <SelectItem key={event.proposal_id} value={event.proposal_id}>
-                          {role === "admin" && feedbackClubFilter === "all"
-                            ? `${event.title} - ${clubNameById.get(event.club_id) || "Club"}`
-                            : event.title}
+                      <SelectItem value="all">All categories</SelectItem>
+                      {feedbackCategoryOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select value={feedbackStatusFilter} onValueChange={setFeedbackStatusFilter}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All statuses</SelectItem>
+                      <SelectItem value="open">Open</SelectItem>
+                      <SelectItem value="reviewed">Reviewed</SelectItem>
+                      <SelectItem value="archived">Archived</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Role</Label>
+                  <Select
+                    value={feedbackRoleFilter}
+                    onValueChange={(value) => setFeedbackRoleFilter(value as FeedbackRoleFilter)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {feedbackRoleFilterOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Date</Label>
+                  <Select
+                    value={feedbackDateFilter}
+                    onValueChange={(value) => setFeedbackDateFilter(value as FeedbackDateFilter)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {feedbackDateFilterOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              )}
+              {!isFeedbackManager ? (
+                <div className="grid gap-3 md:grid-cols-2">
+                  {role === "admin" ? (
+                    <div className="space-y-2">
+                      <Label>Club</Label>
+                      <Select value={feedbackClubFilter} onValueChange={setFeedbackClubFilter}>
+                        <SelectTrigger>
+                          <SelectValue placeholder={isLoadingClubs ? "Loading clubs..." : "All clubs"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All clubs</SelectItem>
+                          {clubs.map((club) => (
+                            <SelectItem key={club.id} value={club.id}>
+                              {club.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ) : null}
+                  <div className="space-y-2">
+                    <Label>Event</Label>
+                    <Select value={feedbackProposalFilter} onValueChange={setFeedbackProposalFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={isLoadingEvents ? "Loading events..." : "All events"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All events</SelectItem>
+                        {feedbackEventOptions.map((event) => (
+                          <SelectItem key={event.proposal_id} value={event.proposal_id}>
+                            {role === "admin" && feedbackClubFilter === "all"
+                              ? `${event.title} - ${clubNameById.get(event.club_id) || "Club"}`
+                              : event.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              ) : null}
             </CardHeader>
             <CardContent className="space-y-3">
               {isLoadingFeedback ? (
@@ -945,21 +1163,34 @@ export default function Communications({ defaultTab = "announcements" }: { defau
                 <p className="text-sm text-destructive">{getErrorMessage(feedbackError)}</p>
               ) : feedback.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No feedback yet.</p>
+              ) : visibleFeedback.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No feedback matches these filters.</p>
               ) : (
-                feedback.map((entry) => (
-                  <div key={entry.id} className="nh-list-card">
-                    {getFeedbackEventLabel(entry) ? (
-                      <p className="text-sm font-semibold">{getFeedbackEventLabel(entry)}</p>
-                    ) : (
-                      <p className="text-sm font-semibold">{getFeedbackCategoryLabel(entry.category)} feedback</p>
-                    )}
-                    {entry.rating && <p className="mt-1 text-xs text-muted-foreground">Rating: {entry.rating}/5</p>}
-                    <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">{entry.comment}</p>
-                    <p className="mt-3 text-xs text-muted-foreground">
-                      {getDateLabel(entry.created_at)}
-                    </p>
-                  </div>
-                ))
+                visibleFeedback.map((entry) => {
+                  const submitterRole = getFeedbackSubmitterRole(entry.comment);
+                  const impact = getStructuredFeedbackValue(entry.comment, "Impact");
+
+                  return (
+                    <div key={entry.id} className="nh-list-card">
+                      {getFeedbackEventLabel(entry) ? (
+                        <p className="text-sm font-semibold">{getFeedbackEventLabel(entry)}</p>
+                      ) : (
+                        <p className="text-sm font-semibold">{getFeedbackCategoryLabel(entry.category)} feedback</p>
+                      )}
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <Badge variant="secondary">{getFeedbackCategoryLabel(entry.category)}</Badge>
+                        <Badge variant="outline">{entry.status}</Badge>
+                        <Badge variant="outline">{getFeedbackRoleLabel(submitterRole)}</Badge>
+                        {impact ? <Badge variant="outline">Impact: {getFeedbackImpactLabel(impact)}</Badge> : null}
+                        {entry.rating ? <Badge variant="outline">Rating: {entry.rating}/5</Badge> : null}
+                      </div>
+                      <p className="mt-3 whitespace-pre-line text-sm text-muted-foreground">{entry.comment}</p>
+                      <p className="mt-3 text-xs text-muted-foreground">
+                        {getDateLabel(entry.created_at)}
+                      </p>
+                    </div>
+                  );
+                })
               )}
             </CardContent>
           </Card>

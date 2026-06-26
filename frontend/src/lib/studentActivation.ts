@@ -73,7 +73,7 @@ export function getStudentNextAction({
       kind: "update_payment",
       title: "Finish your dues step",
       description: "Upload or update your payment proof so Club Services can activate your membership.",
-      label: "Update payment",
+      label: "Upload Dues Proof",
       to: "/membership"
     };
   }
@@ -92,7 +92,7 @@ export function getStudentNextAction({
     return {
       kind: "check_in",
       title: "Check in to today's event",
-      description: "A club event is happening today. Open events and complete your attendance check-in.",
+      description: "A club event is happening today. View events and complete your attendance check-in.",
       label: "Check in",
       to: "/events"
     };
@@ -103,7 +103,7 @@ export function getStudentNextAction({
       kind: "rsvp_event",
       title: "Choose an event response",
       description: "RSVP to an approved club event so organizers know you are interested.",
-      label: "Open events",
+      label: "View Events",
       to: "/events"
     };
   }

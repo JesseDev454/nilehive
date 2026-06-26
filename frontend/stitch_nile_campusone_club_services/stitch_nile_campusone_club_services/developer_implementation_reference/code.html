@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nile Club Services - Developer Handoff</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-container": "#247114",
+                        "surface-dim": "#d8dadc",
+                        "secondary-fixed": "#a4f78a",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#a1cde3",
+                        "surface-variant": "#e0e3e5",
+                        "primary-container": "#002147",
+                        "tertiary": "#000d13",
+                        "inverse-primary": "#aec7f6",
+                        "surface-bright": "#f7f9fb",
+                        "on-secondary-fixed": "#022100",
+                        "surface-container": "#eceef0",
+                        "surface": "#f7f9fb",
+                        "secondary": "#1f6d0f",
+                        "primary-fixed-dim": "#aec7f6",
+                        "outline-variant": "#c4c6cf",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#eff1f3",
+                        "tertiary-fixed": "#bee9ff",
+                        "on-tertiary-fixed": "#001f2a",
+                        "on-primary-fixed-variant": "#2d476f",
+                        "on-error": "#ffffff",
+                        "error": "#ba1a1a",
+                        "tertiary-container": "#002532",
+                        "surface-container-low": "#f2f4f6",
+                        "inverse-surface": "#2d3133",
+                        "outline": "#74777f",
+                        "error-container": "#ffdad6",
+                        "background": "#f7f9fb",
+                        "on-surface-variant": "#44474e",
+                        "primary-fixed": "#d6e3ff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-high": "#e6e8ea",
+                        "on-surface": "#191c1e",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed-dim": "#89da71",
+                        "secondary-container": "#a1f487",
+                        "on-tertiary-container": "#648fa3",
+                        "on-tertiary-fixed-variant": "#1e4c5f",
+                        "on-primary-fixed": "#001b3d",
+                        "primary": "#000a1e",
+                        "on-secondary-fixed-variant": "#0b5300",
+                        "on-primary-container": "#708ab5",
+                        "on-primary": "#ffffff",
+                        "on-background": "#191c1e",
+                        "surface-tint": "#465f88",
+                        "surface-container-highest": "#e0e3e5"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-padding": "24px",
+                        "shadow-offset": "6px",
+                        "border-width": "3px",
+                        "base": "8px",
+                        "gutter": "20px"
+                    },
+                    "fontFamily": {
+                        "display": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"],
+                        "label-bold": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "display": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "500" }],
+                        "label-sm": ["12px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "label-bold": ["14px", { "lineHeight": "1.4", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .neo-shadow { box-shadow: 6px 6px 0px 0px rgba(0, 10, 30, 1); }
+        .neo-shadow-sm { box-shadow: 4px 4px 0px 0px rgba(0, 10, 30, 1); }
+        .neo-shadow-hover:hover { 
+            box-shadow: 2px 2px 0px 0px rgba(0, 10, 30, 1); 
+            transform: translate(4px, 4px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex flex-col md:flex-row">
+<!-- TopNavBar (Mobile Only) -->
+<header class="md:hidden sticky top-0 z-50 flex justify-between items-center px-gutter py-4 bg-background w-full border-b-3 border-primary shadow-[6px_6px_0px_0px_rgba(0,10,30,1)]">
+<div class="font-headline-lg font-black text-primary tracking-tighter">Nile Club Services</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary cursor-pointer hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,10,30,1)] transition-all">help</span>
+<span class="material-symbols-outlined text-primary cursor-pointer hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,10,30,1)] transition-all">notifications</span>
+<button class="font-label-bold text-on-surface-variant hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,10,30,1)] transition-all">Logout</button>
+</div>
+</header>
+<!-- SideNavBar (Desktop Only) -->
+<aside class="hidden md:flex fixed left-0 top-0 h-full flex-col pt-20 pb-8 bg-surface overflow-y-auto w-64 border-r-3 border-primary shadow-[6px_0px_0px_0px_rgba(0,10,30,1)] z-40">
+<div class="px-6 mb-8">
+<div class="font-display text-headline-md text-primary mb-1">Club Services</div>
+<div class="text-on-surface-variant font-label-sm">Academic Quest</div>
+</div>
+<nav class="flex-1 flex flex-col px-4 gap-2">
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold hover:border-3 hover:border-primary hover:shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] active:translate-y-1" href="#">
+<span class="material-symbols-outlined">person</span>
+                Student Hub
+            </a>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold hover:border-3 hover:border-primary hover:shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] active:translate-y-1" href="#">
+<span class="material-symbols-outlined">stars</span>
+                President Portal
+            </a>
+<a class="bg-secondary-container text-on-secondary-container border-3 border-primary shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] rounded-xl m-2 px-4 py-3 flex items-center gap-3 font-label-bold active:translate-y-1 transition-all" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">groups</span>
+                Exec Dashboard
+            </a>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold hover:border-3 hover:border-primary hover:shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] active:translate-y-1" href="#">
+<span class="material-symbols-outlined">school</span>
+                Advisor View
+            </a>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold hover:border-3 hover:border-primary hover:shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] active:translate-y-1" href="#">
+<span class="material-symbols-outlined">admin_panel_settings</span>
+                Admin Panel
+            </a>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold hover:border-3 hover:border-primary hover:shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] active:translate-y-1" href="#">
+<span class="material-symbols-outlined">chat_bubble</span>
+                Feedback
+            </a>
+</nav>
+<div class="px-6 mt-auto">
+<button class="w-full bg-surface-container-lowest border-3 border-primary text-primary font-label-bold py-3 rounded-xl neo-shadow neo-shadow-hover transition-all flex items-center justify-center gap-2 mb-6">
+<span class="material-symbols-outlined">add</span>
+                New Request
+            </button>
+<div class="flex flex-col gap-2">
+<a class="text-on-surface-variant px-4 py-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-sm" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+                    Settings
+                </a>
+<a class="text-on-surface-variant px-4 py-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-sm" href="#">
+<span class="material-symbols-outlined text-[20px]">contact_support</span>
+                    Support
+                </a>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 p-gutter md:p-8 lg:p-12 overflow-x-hidden">
+<div class="mb-12">
+<h1 class="font-display text-display text-primary mb-4">Developer Handoff</h1>
+<p class="font-body-lg text-on-surface-variant max-w-3xl">Comprehensive UI component library and design token reference for the Nile Club Services application. Follow these specs for implementation.</p>
+</div>
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+<!-- Tokens Section -->
+<section class="xl:col-span-12 flex flex-col gap-6">
+<h2 class="font-headline-md text-headline-md text-primary border-b-3 border-primary pb-2 inline-block self-start">Color Tokens</h2>
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+<!-- Primary -->
+<div class="bg-surface-container-lowest border-3 border-primary rounded-xl p-4 neo-shadow flex flex-col gap-3">
+<div class="h-16 rounded-lg bg-primary border-2 border-primary-fixed-dim"></div>
+<div>
+<div class="font-label-bold text-label-bold">Primary</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">bg-primary</div>
+<div class="font-label-sm text-label-sm text-outline font-mono mt-1">#000a1e</div>
+</div>
+</div>
+<!-- Secondary -->
+<div class="bg-surface-container-lowest border-3 border-primary rounded-xl p-4 neo-shadow flex flex-col gap-3">
+<div class="h-16 rounded-lg bg-secondary border-2 border-outline-variant"></div>
+<div>
+<div class="font-label-bold text-label-bold">Secondary</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">bg-secondary</div>
+<div class="font-label-sm text-label-sm text-outline font-mono mt-1">#1f6d0f</div>
+</div>
+</div>
+<!-- Secondary Container -->
+<div class="bg-surface-container-lowest border-3 border-primary rounded-xl p-4 neo-shadow flex flex-col gap-3">
+<div class="h-16 rounded-lg bg-secondary-container border-2 border-primary"></div>
+<div>
+<div class="font-label-bold text-label-bold">Sec. Container</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">bg-secondary-container</div>
+<div class="font-label-sm text-label-sm text-outline font-mono mt-1">#a1f487</div>
+</div>
+</div>
+<!-- Error -->
+<div class="bg-surface-container-lowest border-3 border-primary rounded-xl p-4 neo-shadow flex flex-col gap-3">
+<div class="h-16 rounded-lg bg-error border-2 border-error-container"></div>
+<div>
+<div class="font-label-bold text-label-bold">Error</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">bg-error</div>
+<div class="font-label-sm text-label-sm text-outline font-mono mt-1">#ba1a1a</div>
+</div>
+</div>
+<!-- Background -->
+<div class="bg-surface-container-lowest border-3 border-primary rounded-xl p-4 neo-shadow flex flex-col gap-3">
+<div class="h-16 rounded-lg bg-background border-2 border-outline-variant"></div>
+<div>
+<div class="font-label-bold text-label-bold">Background</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">bg-background</div>
+<div class="font-label-sm text-label-sm text-outline font-mono mt-1">#f7f9fb</div>
+</div>
+</div>
+<!-- Surface -->
+<div class="bg-surface-container-lowest border-3 border-primary rounded-xl p-4 neo-shadow flex flex-col gap-3">
+<div class="h-16 rounded-lg bg-surface border-2 border-outline-variant"></div>
+<div>
+<div class="font-label-bold text-label-bold">Surface</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">bg-surface</div>
+<div class="font-label-sm text-label-sm text-outline font-mono mt-1">#f7f9fb</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Components Bento Grid -->
+<section class="xl:col-span-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-8">
+<!-- Buttons & Actions -->
+<div class="bg-surface border-3 border-primary rounded-[28px] p-container-padding neo-shadow flex flex-col gap-6 relative">
+<div class="absolute -top-4 -left-2 bg-secondary-container border-3 border-primary px-4 py-1 rounded-xl neo-shadow-sm font-label-bold rotate-[-3deg]">Buttons</div>
+<div class="mt-4 flex flex-col gap-4">
+<button class="bg-surface-container-lowest border-3 border-primary text-primary font-label-bold py-3 px-6 rounded-xl neo-shadow hover:bg-surface-container-low transition-colors w-full text-center">Primary Default</button>
+<button class="bg-surface-container-lowest border-3 border-primary text-primary font-label-bold py-3 px-6 rounded-xl shadow-[2px_2px_0px_0px_rgba(0,10,30,1)] translate-x-[4px] translate-y-[4px] w-full text-center">Primary Hover/Active</button>
+<button class="bg-secondary-container border-3 border-primary text-on-secondary-container font-label-bold py-3 px-6 rounded-xl neo-shadow hover:bg-secondary-fixed-dim transition-colors w-full text-center flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">check_circle</span>
+                            Success Action
+                        </button>
+<button class="bg-surface-variant border-3 border-outline-variant text-outline font-label-bold py-3 px-6 rounded-xl w-full text-center opacity-70 cursor-not-allowed" disabled="">Disabled State</button>
+</div>
+</div>
+<!-- Status Badges -->
+<div class="bg-surface border-3 border-primary rounded-[28px] p-container-padding neo-shadow flex flex-col gap-6 relative">
+<div class="absolute -top-4 -left-2 bg-tertiary-fixed border-3 border-primary px-4 py-1 rounded-xl neo-shadow-sm font-label-bold rotate-[2deg]">Badges</div>
+<div class="mt-4 flex flex-wrap gap-4 items-start">
+<div class="flex items-center gap-2 bg-secondary-container border-3 border-primary px-3 py-1.5 rounded-full neo-shadow-sm">
+<span class="material-symbols-outlined text-[16px] text-on-secondary-container">verified</span>
+<span class="font-label-bold text-label-sm text-on-secondary-container">Approved</span>
+</div>
+<div class="flex items-center gap-2 bg-error-container border-3 border-primary px-3 py-1.5 rounded-full neo-shadow-sm">
+<span class="material-symbols-outlined text-[16px] text-on-error-container">warning</span>
+<span class="font-label-bold text-label-sm text-on-error-container">Overdue</span>
+</div>
+<div class="flex items-center gap-2 bg-surface-variant border-3 border-primary px-3 py-1.5 rounded-full neo-shadow-sm">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">block</span>
+<span class="font-label-bold text-label-sm text-on-surface-variant">Blocked</span>
+</div>
+<div class="flex items-center gap-2 bg-tertiary-fixed border-3 border-primary px-3 py-1.5 rounded-full neo-shadow-sm">
+<span class="material-symbols-outlined text-[16px] text-on-tertiary-fixed">pending_actions</span>
+<span class="font-label-bold text-label-sm text-on-tertiary-fixed">Pending Review</span>
+</div>
+</div>
+</div>
+<!-- Inputs & Forms -->
+<div class="bg-surface border-3 border-primary rounded-[28px] p-container-padding neo-shadow flex flex-col gap-6 relative">
+<div class="absolute -top-4 -left-2 bg-surface-bright border-3 border-primary px-4 py-1 rounded-xl neo-shadow-sm font-label-bold rotate-[-1deg]">Inputs</div>
+<div class="mt-4 flex flex-col gap-5">
+<div class="flex flex-col gap-1">
+<label class="font-label-bold text-label-sm text-primary">Standard Input</label>
+<input class="w-full bg-surface-container-lowest border-3 border-primary rounded-xl px-4 py-3 font-body-md text-on-surface neo-shadow-sm focus:outline-none focus:border-secondary focus:ring-0 transition-colors" placeholder="Enter club name" type="text"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-bold text-label-sm text-error">Error State</label>
+<input class="w-full bg-error-container border-3 border-error rounded-xl px-4 py-3 font-body-md text-on-error-container neo-shadow-sm focus:outline-none focus:ring-0" type="text" value="Invalid input data"/>
+<span class="font-label-sm text-error mt-1 flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">error</span> Please correct this field.</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Metrics & Toasts -->
+<section class="xl:col-span-12 grid grid-cols-1 lg:grid-cols-12 gap-8 mt-8">
+<!-- Metric Cards -->
+<div class="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
+<div class="bg-surface-container-lowest border-3 border-primary rounded-[28px] p-container-padding neo-shadow flex flex-col relative overflow-hidden">
+<div class="absolute -right-6 -top-6 bg-tertiary-fixed w-24 h-24 rounded-full border-3 border-primary flex items-center justify-center neo-shadow">
+<span class="material-symbols-outlined text-display text-primary mt-4 mr-4" style="font-variation-settings: 'FILL' 1;">groups</span>
+</div>
+<h3 class="font-label-bold text-on-surface-variant mb-2">Total Members</h3>
+<div class="font-display text-display text-primary">1,204</div>
+<div class="mt-4 flex items-center gap-2 text-secondary font-label-bold">
+<span class="material-symbols-outlined text-[18px]">trending_up</span>
+<span>+12% this month</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest border-3 border-primary rounded-[28px] p-container-padding neo-shadow flex flex-col relative overflow-hidden">
+<div class="absolute -right-6 -top-6 bg-secondary-container w-24 h-24 rounded-full border-3 border-primary flex items-center justify-center neo-shadow">
+<span class="material-symbols-outlined text-display text-primary mt-4 mr-4" style="font-variation-settings: 'FILL' 1;">event_available</span>
+</div>
+<h3 class="font-label-bold text-on-surface-variant mb-2">Active Events</h3>
+<div class="font-display text-display text-primary">34</div>
+<div class="mt-4 w-full bg-surface-variant border-3 border-primary rounded-full h-6 overflow-hidden flex">
+<div class="bg-secondary h-full border-r-3 border-primary" style="width: 70%;"></div>
+</div>
+</div>
+</div>
+<!-- Toasts -->
+<div class="lg:col-span-4 flex flex-col gap-4">
+<h2 class="font-headline-md text-headline-md text-primary mb-2">Toasts &amp; Alerts</h2>
+<div class="bg-secondary-container border-3 border-primary rounded-xl p-4 neo-shadow-sm flex items-start gap-3">
+<span class="material-symbols-outlined text-on-secondary-container mt-0.5" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<div class="flex-1">
+<div class="font-label-bold text-on-secondary-container">Success</div>
+<div class="font-body-md text-sm text-on-secondary-container">Feedback submitted successfully.</div>
+</div>
+<button class="text-on-secondary-container hover:opacity-70"><span class="material-symbols-outlined text-[20px]">close</span></button>
+</div>
+<div class="bg-error-container border-3 border-primary rounded-xl p-4 neo-shadow-sm flex items-start gap-3">
+<span class="material-symbols-outlined text-error mt-0.5" style="font-variation-settings: 'FILL' 1;">error</span>
+<div class="flex-1">
+<div class="font-label-bold text-error">Upload Failed</div>
+<div class="font-body-md text-sm text-error">The file size exceeds the 5MB limit.</div>
+</div>
+<button class="text-error hover:opacity-70"><span class="material-symbols-outlined text-[20px]">close</span></button>
+</div>
+</div>
+</section>
+<!-- Edge Cases -->
+<section class="xl:col-span-12 mt-8">
+<h2 class="font-headline-md text-headline-md text-primary border-b-3 border-primary pb-2 inline-block self-start mb-6">Edge Cases &amp; Empty States</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<!-- No Internet -->
+<div class="bg-surface-container-lowest border-3 border-primary rounded-[28px] p-8 neo-shadow flex flex-col items-center justify-center text-center min-h-[300px]">
+<div class="w-20 h-20 bg-surface-variant border-3 border-primary rounded-full flex items-center justify-center mb-6 neo-shadow-sm">
+<span class="material-symbols-outlined text-[40px] text-on-surface-variant">wifi_off</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-primary mb-2">Connection Lost</h3>
+<p class="font-body-md text-on-surface-variant max-w-xs mb-6">It seems you are offline. Please check your internet connection to continue your quest.</p>
+<button class="bg-surface border-3 border-primary text-primary font-label-bold py-2 px-6 rounded-xl neo-shadow neo-shadow-hover transition-all">Retry Connection</button>
+</div>
+<!-- 404 -->
+<div class="bg-surface-container-lowest border-3 border-primary rounded-[28px] p-8 neo-shadow flex flex-col items-center justify-center text-center min-h-[300px] relative overflow-hidden">
+<!-- Decorative background element -->
+<div class="absolute -right-10 -bottom-10 text-[150px] font-display font-black text-surface-variant opacity-50 select-none">404</div>
+<div class="w-20 h-20 bg-tertiary-fixed border-3 border-primary rounded-full flex items-center justify-center mb-6 neo-shadow-sm relative z-10">
+<span class="material-symbols-outlined text-[40px] text-primary">explore</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-primary mb-2 relative z-10">Page Not Found</h3>
+<p class="font-body-md text-on-surface-variant max-w-xs mb-6 relative z-10">You've wandered off the map. This area of the campus doesn't seem to exist.</p>
+<button class="bg-primary text-on-primary border-3 border-primary font-label-bold py-2 px-6 rounded-xl neo-shadow neo-shadow-hover transition-all relative z-10">Return to Hub</button>
+</div>
+</div>
+</section>
+</div>
+</main>
+</body></html>

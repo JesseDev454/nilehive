@@ -56,6 +56,14 @@ function createCsvValue(value: string | number | null | undefined) {
   return `"${String(text).replace(/"/g, "\"\"")}"`;
 }
 
+function getStructuredFeedbackValue(comment: string, label: string) {
+  const line = comment
+    .split("\n")
+    .find((item) => item.toLowerCase().startsWith(`${label.toLowerCase()}:`));
+
+  return line ? line.slice(label.length + 1).trim() : "";
+}
+
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
@@ -414,6 +422,11 @@ export function downloadFeedbackCsv(
     "Club",
     "Event",
     "Category",
+    "Issue Type",
+    "Impact",
+    "Submitter Role",
+    "Completed Task",
+    "Can Contact",
     "Rating",
     "Comment",
     "Status",
@@ -426,6 +439,11 @@ export function downloadFeedbackCsv(
       entry.club_id ? options.clubNameById?.get(entry.club_id) || entry.club_id : "No club",
       eventName,
       entry.category,
+      getStructuredFeedbackValue(entry.comment, "Issue type"),
+      getStructuredFeedbackValue(entry.comment, "Impact"),
+      getStructuredFeedbackValue(entry.comment, "Role"),
+      getStructuredFeedbackValue(entry.comment, "Completed task"),
+      getStructuredFeedbackValue(entry.comment, "Can contact for follow-up"),
       entry.rating ?? "",
       entry.comment,
       entry.status,

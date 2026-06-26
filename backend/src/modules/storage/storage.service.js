@@ -2,8 +2,8 @@ const path = require("path");
 const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
 
-const ALLOWED_BUCKETS = new Set(["club-logos", "event-media", "dues-receipts", "reports"]);
-const PUBLIC_BUCKETS = new Set(["club-logos", "event-media"]);
+const ALLOWED_BUCKETS = new Set(["club-logos", "club-media", "event-media", "dues-receipts", "reports"]);
+const PUBLIC_BUCKETS = new Set(["club-logos", "club-media", "event-media"]);
 const PRIVATE_BUCKETS_REQUIRING_SCOPED_FOLDER = new Set(["dues-receipts", "reports"]);
 
 function sanitizePath(value) {
@@ -58,6 +58,22 @@ async function uploadStorageObject(options) {
   const bucket = validateBucket(payload.bucket);
   const storagePath = sanitizePath(payload.path);
   validateScopedPath(bucket, storagePath);
+  const contentType = payload.content_type || "application/octet-stream";
+
+  if (bucket === "club-logos" || bucket === "club-media") {
+    const clubId = storagePath.split("/")[0];
+    const canManageClub = actor.role === "admin" || (actor.role === "president" && actor.clubId === clubId);
+
+    if (!canManageClub) {
+      throw new ApiError(403, "You can only upload media for your assigned club", "FORBIDDEN");
+    }
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(contentType)) {
+      throw new ApiError(400, "Club media must be a JPEG, PNG, or WebP image", "VALIDATION_ERROR", {
+        field: "content_type"
+      });
+    }
+  }
 
   const base64 = String(payload.base64 || "");
 
@@ -69,7 +85,11 @@ async function uploadStorageObject(options) {
 
   const fileBuffer = Buffer.from(base64, "base64");
 
-  if (fileBuffer.length > 10 * 1024 * 1024) {
+  const maxFileSize = bucket === "club-logos" || bucket === "club-media"
+    ? 5 * 1024 * 1024
+    : 10 * 1024 * 1024;
+
+  if (fileBuffer.length > maxFileSize) {
     throw new ApiError(400, "Upload file is too large", "VALIDATION_ERROR", {
       field: "base64"
     });
@@ -79,7 +99,7 @@ async function uploadStorageObject(options) {
     bucket,
     path: storagePath,
     fileBuffer,
-    contentType: payload.content_type || "application/octet-stream"
+    contentType
   });
 
   const uploadedPath = uploaded.path || storagePath;

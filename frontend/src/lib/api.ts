@@ -47,12 +47,28 @@ export interface ClubRecord {
   is_public_signup?: boolean;
   whatsapp_group_name?: string | null;
   whatsapp_onboarding_notes?: string | null;
+  categories?: string[];
+  logo_path?: string | null;
+  website_url?: string | null;
+  social_links?: Record<string, string>;
+  gallery?: ClubMediaRecord[];
   advisors?: Array<{
     id: string;
     full_name: string | null;
     role: ProfileRecord["role"];
   }> | null;
   created_at: string;
+}
+
+export interface ClubMediaRecord {
+  id: string;
+  club_id: string;
+  storage_path: string;
+  caption: string | null;
+  display_order: number;
+  uploaded_by: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export type LocalAppRole = "executive" | "advisor" | "admin" | "president" | "student" | "feedback_manager";
@@ -493,6 +509,8 @@ export interface ClubMemberRecord {
   phone_number: string | null;
   club_role: "member" | "executive" | "president";
   membership_status: "active" | "inactive" | "alumni";
+  dues_status: "unpaid" | "submitted" | "paid" | "rejected";
+  dues_paid: boolean;
   club?: {
     id: string;
     name: string;
@@ -1262,6 +1280,14 @@ export async function completeProfileOnboarding(payload: ProfileOnboardingPayloa
   return response.data;
 }
 
+export async function getClubDetail(clubId: string, token?: string) {
+  const response = await request<ApiEnvelope<ClubRecord>>(`/api/v1/clubs/${clubId}`, {
+    method: "GET",
+    token
+  });
+  return response.data;
+}
+
 export async function createClub(
   payload: {
     name: string;
@@ -1291,6 +1317,10 @@ export async function updateClub(
     is_public_signup: boolean;
     whatsapp_group_name: string | null;
     whatsapp_onboarding_notes: string | null;
+    categories: string[];
+    logo_path: string | null;
+    website_url: string | null;
+    social_links: Record<string, string>;
   }>,
   token?: string
 ) {
@@ -1301,6 +1331,53 @@ export async function updateClub(
   });
 
   return response.data;
+}
+
+export async function updateClubProfile(
+  clubId: string,
+  payload: Partial<Pick<ClubRecord, "description" | "categories" | "logo_path" | "website_url" | "social_links" | "whatsapp_group_name" | "whatsapp_onboarding_notes">>,
+  token?: string
+) {
+  const response = await request<ApiEnvelope<ClubRecord>>(`/api/v1/clubs/${clubId}/profile`, {
+    method: "PATCH",
+    token,
+    body: payload
+  });
+  return response.data;
+}
+
+export async function createClubMedia(clubId: string, payload: Pick<ClubMediaRecord, "storage_path"> & Partial<Pick<ClubMediaRecord, "caption" | "display_order">>, token?: string) {
+  const response = await request<ApiEnvelope<ClubMediaRecord>>(`/api/v1/clubs/${clubId}/media`, {
+    method: "POST",
+    token,
+    body: payload
+  });
+  return response.data;
+}
+
+export async function deleteClubMedia(clubId: string, mediaId: string, token?: string) {
+  await request(`/api/v1/clubs/${clubId}/media/${mediaId}`, { method: "DELETE", token });
+}
+
+export interface AnalyticsSummary {
+  range_days: number;
+  active_users: number;
+  daily_active_users: Array<{ date: string; active_users: number }>;
+  usage_by_role: Record<string, number>;
+  features: Record<string, number>;
+  operations: Record<string, number>;
+}
+
+export async function getAnalyticsSummary(days: 7 | 30 | 90, token?: string) {
+  const response = await request<ApiEnvelope<AnalyticsSummary>>(`/api/v1/analytics/admin?days=${days}`, {
+    method: "GET",
+    token
+  });
+  return response.data;
+}
+
+export async function recordUsage(feature: string, token?: string) {
+  await request("/api/v1/analytics/activity", { method: "POST", token, body: { feature } });
 }
 
 

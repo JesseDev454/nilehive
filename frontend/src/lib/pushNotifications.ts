@@ -10,9 +10,9 @@ const SERVICE_WORKER_PATH = "/nilehive-push-sw.js";
 export function isPushSupported() {
   return (
     typeof window !== "undefined" &&
-    "serviceWorker" in navigator &&
-    "PushManager" in window &&
-    "Notification" in window
+    typeof navigator.serviceWorker !== "undefined" &&
+    typeof window.PushManager !== "undefined" &&
+    typeof window.Notification !== "undefined"
   );
 }
 
