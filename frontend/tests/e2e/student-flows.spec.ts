@@ -49,3 +49,22 @@ test("student can RSVP for an upcoming event", async ({ page }) => {
   await page.getByRole("button", { name: "RSVP" }).first().click();
   await expect(page.getByRole("button", { name: "RSVP Saved" }).first()).toBeVisible();
 });
+
+test("student interest filter narrows discovery cards", async ({ page }) => {
+  await mockClubServicesApi(page);
+  await loginAs(page, "student");
+
+  await page.goto("/membership");
+
+  await expect(page.getByRole("heading", { name: "Nile Tech Club" }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Nile Business Club" }).first()).toBeVisible();
+
+  await page.getByRole("button", { name: "Tech" }).click();
+
+  await expect(page.getByText(/1 clubs match with 1 active filter/i)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Nile Tech Club" }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Nile Business Club" })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "All interests" }).click();
+  await expect(page.getByRole("heading", { name: "Nile Business Club" }).first()).toBeVisible();
+});

@@ -35,6 +35,22 @@ export function createE2EState() {
     ],
     created_at: "2026-01-01T00:00:00.000Z"
   };
+  const businessClub = {
+    id: "club-business",
+    name: "Nile Business Club",
+    code: "NBC",
+    description: "A club for entrepreneurship, finance, startups, and business leadership.",
+    dues_amount: 10000,
+    is_public_signup: true,
+    whatsapp_group_name: null,
+    whatsapp_onboarding_notes: null,
+    categories: ["Entrepreneurship"],
+    logo_path: null,
+    website_url: null,
+    social_links: {},
+    gallery: [],
+    created_at: "2026-01-02T00:00:00.000Z"
+  };
   const event = {
     id: "event-tech-demo",
     proposal_id: "proposal-tech-demo",
@@ -256,7 +272,7 @@ export function createE2EState() {
   };
 
   return {
-    clubs: [club],
+    clubs: [club, businessClub],
     events: [event],
     todayEvent,
     proposals: [proposal],

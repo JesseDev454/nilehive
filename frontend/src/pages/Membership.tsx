@@ -1628,10 +1628,11 @@ function StudentMembershipView() {
         return Number(secondRecommended) - Number(firstRecommended) || Number(Boolean(nextEventByClubId.get(second.id))) - Number(Boolean(nextEventByClubId.get(first.id))) || first.name.localeCompare(second.name);
       });
   }, [categoryFilter, clubCategoriesById, clubs, duesFilter, eventFilter, membershipOpenFilter, nextEventByClubId, recommendedCategories, search, sortFilter]);
+  const activeFilterCount = [categoryFilter !== "all", duesFilter !== "all", membershipOpenFilter !== "all", eventFilter !== "all", search.trim().length > 0].filter(Boolean).length;
   const recommendedClubs = useMemo(() => {
     const candidateCategories = recommendedCategories.length > 0 ? recommendedCategories : CLUB_INTEREST_CATEGORIES.filter((category) => category !== "Other");
 
-    return clubs
+    return filteredClubs
       .filter((club) => {
         const categories = clubCategoriesById.get(club.id) ?? ["Other"];
 
@@ -1639,8 +1640,12 @@ function StudentMembershipView() {
       })
       .sort((first, second) => Number(Boolean(nextEventByClubId.get(second.id))) - Number(Boolean(nextEventByClubId.get(first.id))) || first.name.localeCompare(second.name))
       .slice(0, 3);
-  }, [clubCategoriesById, clubs, nextEventByClubId, recommendedCategories]);
-  const activeFilterCount = [categoryFilter !== "all", duesFilter !== "all", membershipOpenFilter !== "all", eventFilter !== "all", search.trim().length > 0].filter(Boolean).length;
+  }, [clubCategoriesById, filteredClubs, nextEventByClubId, recommendedCategories]);
+  const recommendedClubIds = useMemo(() => new Set(recommendedClubs.map((club) => club.id)), [recommendedClubs]);
+  const directoryClubs = useMemo(
+    () => filteredClubs.filter((club) => !recommendedClubIds.has(club.id)),
+    [filteredClubs, recommendedClubIds]
+  );
 
   function clearDiscoveryFilters() {
     setSearch("");
@@ -1821,7 +1826,7 @@ function StudentMembershipView() {
               <CardHeader>
                 <div className="flex items-start justify-between gap-3"><CardTitle className="flex items-center gap-2 text-lg">
                   <Sparkles className="h-5 w-5 text-primary" />
-                  {recommendedCategories.length ? "Recommended Clubs" : "Explore by Interest"}
+                  {activeFilterCount ? "Top Matches" : recommendedCategories.length ? "Recommended Clubs" : "Explore by Interest"}
                 </CardTitle><Button type="button" size="sm" variant="ghost" onClick={() => { sessionStorage.setItem("club-recommendations-dismissed", "true"); setRecommendationsDismissed(true); }}>Dismiss</Button></div>
                 <p className="text-sm text-muted-foreground">
                   {recommendedCategories.length
@@ -1856,9 +1861,9 @@ function StudentMembershipView() {
                 </Button>
               </CardContent>
             </Card>
-          ) : (
+          ) : directoryClubs.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {filteredClubs.map((club) => {
+              {directoryClubs.map((club) => {
                 const existingRequest = requestByClubId.get(club.id);
 
                 return (
@@ -1872,7 +1877,7 @@ function StudentMembershipView() {
                 );
               })}
             </div>
-          )}
+          ) : null}
         </>
       )}
 
