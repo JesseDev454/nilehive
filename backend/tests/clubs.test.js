@@ -281,6 +281,48 @@ test("non-admin cannot edit clubs", async () => {
   );
 });
 
+test("admin can set and clear optional club links", async () => {
+  const updates = [];
+  const database = {
+    async getClubById() {
+      return { id: "club-1", name: "Robotics Club" };
+    },
+    async updateClub(clubId, update) {
+      updates.push(update);
+      return { id: clubId, name: "Robotics Club", ...update };
+    }
+  };
+
+  const linkedClub = await updateClub({
+    actor: { id: "admin-1", role: "admin" },
+    clubId: "club-1",
+    payload: {
+      website_url: "https://robotics.example.com",
+      social_links: {
+        instagram: "https://instagram.com/robotics"
+      }
+    },
+    database
+  });
+
+  assert.equal(linkedClub.website_url, "https://robotics.example.com/");
+  assert.deepEqual(linkedClub.social_links, { instagram: "https://instagram.com/robotics" });
+
+  const clearedClub = await updateClub({
+    actor: { id: "admin-1", role: "admin" },
+    clubId: "club-1",
+    payload: {
+      website_url: "",
+      social_links: {}
+    },
+    database
+  });
+
+  assert.equal(clearedClub.website_url, null);
+  assert.deepEqual(clearedClub.social_links, {});
+  assert.equal(updates.length, 2);
+});
+
 test("assigned president can update club content without changing operational fields", async () => {
   let savedUpdate;
   const database = {
@@ -307,6 +349,34 @@ test("assigned president can update club content without changing operational fi
 
   assert.deepEqual(savedUpdate.categories, ["Tech", "Academics"]);
   assert.equal(club.website_url, "https://robotics.example.com/");
+});
+
+test("assigned president can clear optional club links", async () => {
+  let savedUpdate;
+  const database = {
+    async getClubById() {
+      return { id: "club-1", name: "Robotics Club" };
+    },
+    async updateClub(clubId, update) {
+      savedUpdate = update;
+      return { id: clubId, name: "Robotics Club", ...update };
+    },
+    async createAuditLog() {}
+  };
+
+  const club = await updateClubProfile({
+    actor: { id: "president-1", role: "president", clubId: "club-1" },
+    clubId: "club-1",
+    payload: {
+      website_url: "",
+      social_links: {}
+    },
+    database
+  });
+
+  assert.equal(savedUpdate.website_url, null);
+  assert.deepEqual(savedUpdate.social_links, {});
+  assert.equal(club.website_url, null);
 });
 
 test("president cannot update another club profile", async () => {

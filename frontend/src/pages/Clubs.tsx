@@ -231,9 +231,21 @@ export default function Clubs() {
               <Label>Categories</Label>
               <div className="flex flex-wrap gap-2">{CLUB_INTEREST_CATEGORIES.map((category) => <Button key={category} type="button" size="sm" variant={form.categories.includes(category) ? "default" : "outline"} onClick={() => setForm({ ...form, categories: form.categories.includes(category) ? form.categories.filter((item) => item !== category) : [...form.categories, category].slice(0, 5) })}>{category}</Button>)}</div>
             </div>
-            <div className="space-y-2"><Label htmlFor="club_website">Website</Label><Input id="club_website" type="url" value={form.website_url} onChange={(event) => setForm({ ...form, website_url: event.target.value })} placeholder="https://" /></div>
-            <div className="space-y-2"><Label htmlFor="club_instagram">Instagram</Label><Input id="club_instagram" type="url" value={form.instagram} onChange={(event) => setForm({ ...form, instagram: event.target.value })} placeholder="https://" /></div>
-            <div className="space-y-2"><Label htmlFor="club_linkedin">LinkedIn</Label><Input id="club_linkedin" type="url" value={form.linkedin} onChange={(event) => setForm({ ...form, linkedin: event.target.value })} placeholder="https://" /></div>
+            <div className="space-y-2">
+              <Label htmlFor="club_website">Website</Label>
+              <Input id="club_website" type="url" value={form.website_url} onChange={(event) => setForm({ ...form, website_url: event.target.value })} placeholder="Optional website URL" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="club_instagram">Instagram</Label>
+              <Input id="club_instagram" type="url" value={form.instagram} onChange={(event) => setForm({ ...form, instagram: event.target.value })} placeholder="Optional Instagram URL" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="club_linkedin">LinkedIn</Label>
+              <Input id="club_linkedin" type="url" value={form.linkedin} onChange={(event) => setForm({ ...form, linkedin: event.target.value })} placeholder="Optional LinkedIn URL" />
+            </div>
+            <p className="text-xs font-semibold text-muted-foreground lg:col-span-2">
+              Leave website or social links blank to remove them from the public club profile.
+            </p>
             {editingClub ? <><div className="space-y-2"><Label htmlFor="club_logo">Club logo</Label><Input id="club_logo" type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setLogoFile(event.target.files?.[0] || null)} /></div><div className="space-y-2"><Label htmlFor="club_gallery">Add gallery image</Label><Input id="club_gallery" type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setGalleryFile(event.target.files?.[0] || null)} /></div></> : null}
             <div className="flex flex-wrap justify-end gap-2 lg:col-span-2">
               {editingClub && role === "admin" ? (

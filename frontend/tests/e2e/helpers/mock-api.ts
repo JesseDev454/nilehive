@@ -17,10 +17,8 @@ export function createE2EState() {
     whatsapp_onboarding_notes: "Approved members receive onboarding details from the club team.",
     categories: ["Tech", "Academics"],
     logo_path: null,
-    website_url: "https://clubs.campusone.com.ng/nile-tech",
-    social_links: {
-      instagram: "https://instagram.com/niletech"
-    },
+    website_url: null,
+    social_links: {},
     gallery: [
       {
         id: "media-tech-1",

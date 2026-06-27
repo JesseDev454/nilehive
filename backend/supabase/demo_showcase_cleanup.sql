@@ -123,10 +123,15 @@ where activity_date between current_date - 6 and current_date
 
 update public.clubs
 set website_url = null
-where website_url like 'https://clubs.campusone.com.ng/demo/%';
+where website_url like 'https://clubs.campusone.com.ng/demo/%'
+   or website_url like 'https://clubs.campusone.com.ng/%'
+   or website_url like 'https://example.com/demo/%';
 
 update public.clubs
 set social_links = '{}'::jsonb
-where social_links::text like '%example.com/demo/%';
+where social_links::text like '%example.com/demo/%'
+   or social_links::text like '%instagram.com/nile%'
+   or social_links::text like '%linkedin.com/company/nile%'
+   or social_links::text like '%clubs.campusone.com.ng/demo%';
 
 commit;

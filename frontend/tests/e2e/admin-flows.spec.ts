@@ -106,3 +106,32 @@ test("admin can delete a club from the focused club editor", async ({ page }) =>
   await expect(page).toHaveURL(/\/clubs$/);
   await expect(page.getByText("Nile Business Club")).toHaveCount(0);
 });
+
+test("admin can add and clear optional club website and social links", async ({ page }) => {
+  await mockClubServicesApi(page);
+  await loginAs(page, "admin");
+
+  await page.goto("/clubs/club-tech/edit");
+
+  await expect(page.getByRole("heading", { name: "Edit Nile Tech Club" })).toBeVisible();
+  await expect(page.getByText("Leave website or social links blank to remove them from the public club profile.")).toBeVisible();
+  await page.getByLabel("Website").fill("https://robotics.example.com");
+  await page.getByLabel("Instagram").fill("https://instagram.com/robotics");
+  await page.getByRole("button", { name: "Save Changes" }).click();
+
+  await expect(page.getByText("Club updated")).toBeVisible();
+  await expect(page).toHaveURL(/\/clubs$/);
+
+  await page.goto("/clubs/club-tech/edit");
+  await expect(page.getByLabel("Website")).toHaveValue("https://robotics.example.com");
+  await expect(page.getByLabel("Instagram")).toHaveValue("https://instagram.com/robotics");
+
+  await page.getByLabel("Website").fill("");
+  await page.getByLabel("Instagram").fill("");
+  await page.getByRole("button", { name: "Save Changes" }).click();
+
+  await expect(page.getByText("Club updated")).toBeVisible();
+  await page.goto("/clubs/club-tech/edit");
+  await expect(page.getByLabel("Website")).toHaveValue("");
+  await expect(page.getByLabel("Instagram")).toHaveValue("");
+});

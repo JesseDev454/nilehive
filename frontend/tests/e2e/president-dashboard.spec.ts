@@ -55,7 +55,12 @@ test("president can edit only their assigned club profile and cannot add clubs",
   await expect(page.getByRole("heading", { name: "Edit Club Profile" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Edit Nile Tech Club" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Delete Club" })).toHaveCount(0);
+  await expect(page.getByText("Leave website or social links blank to remove them from the public club profile.")).toBeVisible();
   await page.getByLabel("Description").fill("President-owned profile update for student discovery.");
+  await page.getByLabel("Website").fill("https://robotics.example.com");
+  await page.getByLabel("Instagram").fill("https://instagram.com/robotics");
+  await page.getByLabel("Website").fill("");
+  await page.getByLabel("Instagram").fill("");
   await page.getByLabel("Club logo").setInputFiles({
     name: "president-logo.png",
     mimeType: "image/png",
