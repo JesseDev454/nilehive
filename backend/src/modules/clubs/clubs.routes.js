@@ -26,6 +26,7 @@ function createClubsRouter(options = {}) {
   router.patch("/:clubId", auth, clubWriteLimit, controller.updateClub);
   router.patch("/:clubId/profile", auth, clubWriteLimit, controller.updateClubProfile);
   router.patch("/:clubId/media/:mediaId", auth, clubWriteLimit, controller.updateClubMedia);
+  router.delete("/:clubId", auth, clubWriteLimit, controller.deleteClub);
   router.delete("/:clubId/media/:mediaId", auth, clubWriteLimit, controller.deleteClubMedia);
 
   return router;

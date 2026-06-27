@@ -165,6 +165,32 @@ async function updateClub(options) {
   return database.updateClub(clubId, validateClubPayload(payload, { partial: true }));
 }
 
+async function deleteClub(options) {
+  const { actor, clubId, database = db } = options;
+  requireAdmin(actor);
+  const club = await database.getClubById(clubId);
+
+  if (!club) {
+    throw new ApiError(404, "Club not found", "CLUB_NOT_FOUND");
+  }
+
+  if (typeof database.deleteClub !== "function") {
+    throw new ApiError(500, "Club deletion is not available in this environment", "CLUB_DELETE_UNAVAILABLE");
+  }
+
+  await database.deleteClub(clubId);
+  await writeAuditLog(database, {
+    actor_id: actor.id,
+    entity_type: "club",
+    action: "club_deleted",
+    club_id: clubId,
+    remarks: club.name,
+    metadata: {
+      code: club.code ?? null
+    }
+  });
+}
+
 async function updateClubProfile(options) {
   const { actor, clubId, payload, database = db } = options;
   requireClubContentManager(actor, clubId);
@@ -282,6 +308,7 @@ async function deleteClubMedia(options) {
 module.exports = {
   createClubMedia,
   createClub,
+  deleteClub,
   deleteClubMedia,
   getClubDetail,
   listClubMedia,

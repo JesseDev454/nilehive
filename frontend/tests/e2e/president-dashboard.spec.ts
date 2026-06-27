@@ -54,6 +54,7 @@ test("president can edit only their assigned club profile and cannot add clubs",
   await expect(page).toHaveURL(/\/clubs\/club-tech\/edit$/);
   await expect(page.getByRole("heading", { name: "Edit Club Profile" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Edit Nile Tech Club" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Delete Club" })).toHaveCount(0);
   await page.getByLabel("Description").fill("President-owned profile update for student discovery.");
   await page.getByLabel("Club logo").setInputFiles({
     name: "president-logo.png",

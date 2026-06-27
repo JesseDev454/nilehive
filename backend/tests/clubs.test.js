@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { createApp } = require("../src/app");
-const { createClub, listVisibleClubs, updateClub, updateClubProfile } = require("../src/modules/clubs/clubs.service");
+const { createClub, deleteClub, listVisibleClubs, updateClub, updateClubProfile } = require("../src/modules/clubs/clubs.service");
 
 function createFakeDatabase() {
   const profiles = {
@@ -316,6 +316,53 @@ test("president cannot update another club profile", async () => {
       clubId: "club-2",
       payload: { description: "Not allowed" },
       database: {}
+    }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
+});
+
+test("admin can delete a club and audit the action", async () => {
+  let deletedClubId = null;
+  let auditEntry = null;
+
+  await deleteClub({
+    actor: { id: "admin-1", role: "admin", clubId: null },
+    clubId: "club-1",
+    database: {
+      async getClubById(clubId) {
+        assert.equal(clubId, "club-1");
+        return {
+          id: "club-1",
+          name: "Nile Tech Club",
+          code: "NTC"
+        };
+      },
+      async deleteClub(clubId) {
+        deletedClubId = clubId;
+      },
+      async createAuditLog(entry) {
+        auditEntry = entry;
+        return entry;
+      }
+    }
+  });
+
+  assert.equal(deletedClubId, "club-1");
+  assert.equal(auditEntry.action, "club_deleted");
+  assert.equal(auditEntry.club_id, "club-1");
+  assert.deepEqual(auditEntry.metadata, { code: "NTC" });
+});
+
+test("non-admin cannot delete a club", async () => {
+  await assert.rejects(
+    () => deleteClub({
+      actor: { id: "president-1", role: "president", clubId: "club-1" },
+      clubId: "club-1",
+      database: {
+        async getClubById() {
+          throw new Error("getClubById should not be called for non-admin deletion");
+        }
+      }
     }),
     (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
   );

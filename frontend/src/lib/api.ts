@@ -1346,6 +1346,13 @@ export async function updateClubProfile(
   return response.data;
 }
 
+export async function deleteClub(clubId: string, token?: string) {
+  await request(`/api/v1/clubs/${clubId}`, {
+    method: "DELETE",
+    token
+  });
+}
+
 export async function createClubMedia(clubId: string, payload: Pick<ClubMediaRecord, "storage_path"> & Partial<Pick<ClubMediaRecord, "caption" | "display_order">>, token?: string) {
   const response = await request<ApiEnvelope<ClubMediaRecord>>(`/api/v1/clubs/${clubId}/media`, {
     method: "POST",

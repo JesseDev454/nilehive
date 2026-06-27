@@ -1355,6 +1355,19 @@ function createDatabase(options = {}) {
       return normalizeClub(data);
     },
 
+    async deleteClub(clubId) {
+      const { error } = await getClient()
+        .from("clubs")
+        .delete()
+        .eq("id", clubId);
+
+      if (error) {
+        throw error;
+      }
+
+      clearCachedPublicClubs();
+    },
+
     async listClubMedia(clubId) {
       const { data, error } = await getClient()
         .from("club_media")

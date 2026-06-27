@@ -87,3 +87,22 @@ test("admin opens manage access in a focused page", async ({ page }) => {
   await expect(page.getByRole("button", { name: "Update Role" })).toBeVisible();
   await expect(page.getByRole("link", { name: /Back to users/i })).toHaveAttribute("href", "/user-management");
 });
+
+test("admin can delete a club from the focused club editor", async ({ page }) => {
+  await mockClubServicesApi(page);
+  await loginAs(page, "admin");
+
+  await page.goto("/clubs/club-business/edit");
+
+  await expect(page.getByRole("heading", { name: "Edit Club Profile" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Edit Nile Business Club" })).toBeVisible();
+  await page.getByRole("button", { name: "Delete Club" }).click();
+
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("heading", { name: "Delete Nile Business Club?" })).toBeVisible();
+  await dialog.getByRole("button", { name: "Delete Club" }).click();
+
+  await expect(page.getByText("Club deleted")).toBeVisible();
+  await expect(page).toHaveURL(/\/clubs$/);
+  await expect(page.getByText("Nile Business Club")).toHaveCount(0);
+});

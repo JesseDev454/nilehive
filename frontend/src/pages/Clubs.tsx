@@ -1,18 +1,26 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Loader2, Pencil, Plus, School } from "lucide-react";
+import { ArrowLeft, Loader2, Pencil, Plus, School, Trash2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useRole } from "@/contexts/RoleContext";
-import { ApiClientError, createClub, createClubMedia, getClubs, updateClub, updateClubProfile, type ClubRecord } from "@/lib/api";
+import { ApiClientError, createClub, createClubMedia, deleteClub, getClubs, updateClub, updateClubProfile, type ClubRecord } from "@/lib/api";
 import { CLUB_INTEREST_CATEGORIES } from "@/lib/clubDiscovery";
 import { actionError, actionSuccess } from "@/lib/notify";
 import { uploadStorageFile } from "@/lib/storage";
@@ -45,6 +53,7 @@ export default function Clubs() {
   const [form, setForm] = useState(emptyForm);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [galleryFile, setGalleryFile] = useState<File | null>(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const canManageClubs = role === "admin" || role === "president";
   const canCreateClubs = role === "admin";
   const isFocusedEdit = Boolean(editClubId);
@@ -138,6 +147,28 @@ export default function Clubs() {
     },
     onError: (mutationError) => actionError("Could not save club", mutationError, getErrorMessage(mutationError))
   });
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      if (!editingClub) {
+        throw new Error("Choose a club before deleting.");
+      }
+
+      await deleteClub(editingClub.id);
+    },
+    onSuccess: async () => {
+      actionSuccess("Club deleted", `${editingClub?.name || "Club"} has been removed from Club Services.`);
+      setDeleteConfirmOpen(false);
+      setEditingClub(null);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["clubs-management"] }),
+        queryClient.invalidateQueries({ queryKey: ["public-clubs"] }),
+        queryClient.invalidateQueries({ queryKey: ["dues-clubs"] }),
+        queryClient.invalidateQueries({ queryKey: ["membership-review-clubs"] })
+      ]);
+      navigate("/clubs");
+    },
+    onError: (mutationError) => actionError("Could not delete club", mutationError, getErrorMessage(mutationError))
+  });
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -205,6 +236,17 @@ export default function Clubs() {
             <div className="space-y-2"><Label htmlFor="club_linkedin">LinkedIn</Label><Input id="club_linkedin" type="url" value={form.linkedin} onChange={(event) => setForm({ ...form, linkedin: event.target.value })} placeholder="https://" /></div>
             {editingClub ? <><div className="space-y-2"><Label htmlFor="club_logo">Club logo</Label><Input id="club_logo" type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setLogoFile(event.target.files?.[0] || null)} /></div><div className="space-y-2"><Label htmlFor="club_gallery">Add gallery image</Label><Input id="club_gallery" type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setGalleryFile(event.target.files?.[0] || null)} /></div></> : null}
             <div className="flex flex-wrap justify-end gap-2 lg:col-span-2">
+              {editingClub && role === "admin" ? (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => setDeleteConfirmOpen(true)}
+                  disabled={saveMutation.isPending || deleteMutation.isPending}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete Club
+                </Button>
+              ) : null}
               {editingClub && role === "admin" ? <Button asChild type="button" variant="outline"><Link to="/clubs">Cancel</Link></Button> : null}
               <Button type="submit" disabled={saveMutation.isPending || (role === "president" && !editingClub)}>
                 {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : editingClub ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
@@ -215,6 +257,29 @@ export default function Clubs() {
           </CardContent>
         </Card>
       ) : null}
+
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete {editingClub?.name || "club"}?</DialogTitle>
+            <DialogDescription>
+              This removes the club and connected club records from Club Services. This action is only available to admins.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-xl border-2 border-destructive bg-destructive/5 p-4 text-sm">
+            <p className="font-semibold">You are about to delete {editingClub?.name || "this club"}.</p>
+            <p className="mt-1 text-muted-foreground">Use this only for duplicate or incorrect club records.</p>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setDeleteConfirmOpen(false)} disabled={deleteMutation.isPending}>
+              Cancel
+            </Button>
+            <Button type="button" variant="destructive" onClick={() => deleteMutation.mutate()} disabled={deleteMutation.isPending}>
+              {deleteMutation.isPending ? "Deleting..." : "Delete Club"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {!isFocusedEdit ? <Card>
         <CardHeader><CardTitle className="text-lg">Configured clubs</CardTitle></CardHeader>

@@ -607,6 +607,15 @@ export async function mockClubServicesApi(page: Page, state = createE2EState()) 
       return ok(route, state.clubs.find((club) => club.id === clubId) || state.clubs[0]);
     }
 
+    if (method === "DELETE" && path.match(/^\/clubs\/[^/]+$/)) {
+      if (getTestRole(page) !== "admin") {
+        return apiError(route, 403, "Only Club Services admins can manage clubs", "FORBIDDEN");
+      }
+      const clubId = path.split("/")[2];
+      state.clubs = state.clubs.filter((club) => club.id !== clubId);
+      return route.fulfill({ status: 204 });
+    }
+
     if (method === "POST" && path.match(/^\/clubs\/[^/]+\/media$/)) {
       const clubId = path.split("/")[2];
       const body = request.postDataJSON() as { storage_path?: string; caption?: string | null; display_order?: number };

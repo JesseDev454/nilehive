@@ -2,6 +2,7 @@ const asyncHandler = require("../../shared/asyncHandler");
 const {
   createClub,
   createClubMedia,
+  deleteClub,
   deleteClubMedia,
   getClubDetail,
   listClubMedia,
@@ -53,6 +54,15 @@ function createClubsController(options = {}) {
         database
       });
       res.status(200).json({ data: club });
+    }),
+
+    deleteClub: asyncHandler(async (req, res) => {
+      await deleteClub({
+        actor: req.user,
+        clubId: req.params.clubId,
+        database
+      });
+      res.status(204).end();
     }),
 
     updateClubProfile: asyncHandler(async (req, res) => {
