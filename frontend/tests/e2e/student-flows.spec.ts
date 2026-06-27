@@ -15,9 +15,11 @@ test("student discovers a club, uploads dues proof, and submits a join request",
   await page.getByRole("link", { name: "View Club" }).first().click();
   await expect(page.getByRole("heading", { name: /Join Nile Tech Club/i })).toBeVisible();
   await expect(page.getByText("Tech", { exact: true }).first()).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Approved events" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Events", exact: true })).toBeVisible();
   await expect(page.getByText("Build Night", { exact: true }).first()).toBeVisible();
-  await expect(page.getByRole("link", { name: "Website" })).toHaveAttribute("href", "https://clubs.campusone.com.ng/nile-tech");
+  await expect(page.getByRole("link", { name: "Website" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /instagram/i })).toHaveCount(0);
+  await expect(page.getByText("A club for coding, software projects, robotics, and technology learning.")).toHaveCount(1);
   await expect(page.getByText("Demo preview: students presenting projects at Build Night")).toBeVisible();
   await expect(page.getByRole("img", { name: "Demo preview: students presenting projects at Build Night" }))
     .toHaveAttribute("src", "/demo-club-gallery/nile-google-developers/coding-workshop.png");
@@ -52,14 +54,25 @@ test("student can RSVP for an upcoming event", async ({ page }) => {
   await expect(page.getByRole("button", { name: "RSVP Saved" }).first()).toBeVisible();
 });
 
-test("student home omits the standalone discover quick-link and keeps announcements contained", async ({ page }) => {
+test("student home shows discover quick access, dashboard share sheet, and contained announcements", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (text: string) => {
+          (window as Window & { __copiedDashboardInvite?: string }).__copiedDashboardInvite = text;
+        }
+      },
+      configurable: true
+    });
+  });
   await mockClubServicesApi(page);
   await loginAs(page, "student");
 
   await page.goto("/");
 
   await expect(page.getByRole("heading", { name: /Hello, E2E/i })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Discover Clubs" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /Discover Clubs/i }).first()).toHaveAttribute("href", "/membership");
   await expect(page.getByRole("link", { name: "View Announcements" })).toBeVisible();
   const announcementCard = page.getByText("Announcements Preview").locator("xpath=ancestor::div[contains(@class, 'rounded')][1]");
   const cardBox = await announcementCard.boundingBox();
@@ -68,6 +81,18 @@ test("student home omits the standalone discover quick-link and keeps announceme
   expect(cardBox).not.toBeNull();
   expect(buttonBox).not.toBeNull();
   expect(buttonBox!.x + buttonBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width + 1);
+
+  await page.getByRole("button", { name: "Invite a friend to discover clubs" }).click();
+  await expect(page.getByTestId("dashboard-share-sheet")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Share to apps/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /WhatsApp/i })).toHaveAttribute("href", /https:\/\/wa\.me\/\?text=/);
+  await expect(page.getByRole("button", { name: /Snapchat/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Instagram/i })).toBeVisible();
+  await page.getByRole("button", { name: /Copy Link/i }).click();
+  await expect(page.getByText("Invite link copied")).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => (window as Window & { __copiedDashboardInvite?: string }).__copiedDashboardInvite))
+    .toContain("/membership");
 });
 
 test("student can open the club invite share sheet and copy a link", async ({ page }) => {

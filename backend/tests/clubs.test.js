@@ -321,6 +321,43 @@ test("president cannot update another club profile", async () => {
   );
 });
 
+test("president club visibility is limited to their assigned club", async () => {
+  const clubs = await listVisibleClubs({
+    actor: { id: "president-1", role: "president", clubId: "club-1" },
+    database: {
+      async listClubs(filters = {}) {
+        assert.deepEqual(filters, { ids: ["club-1"] });
+        return [
+          {
+            id: "club-1",
+            name: "Nile Tech Club",
+            whatsapp_group_name: "Private group",
+            whatsapp_onboarding_notes: "Private onboarding note"
+          }
+        ];
+      }
+    }
+  });
+
+  assert.equal(clubs.length, 1);
+  assert.equal(clubs[0].id, "club-1");
+  assert.equal(Object.prototype.hasOwnProperty.call(clubs[0], "whatsapp_group_name"), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(clubs[0], "whatsapp_onboarding_notes"), false);
+});
+
+test("president without an assigned club sees no manageable clubs", async () => {
+  const clubs = await listVisibleClubs({
+    actor: { id: "president-1", role: "president", clubId: null },
+    database: {
+      async listClubs() {
+        throw new Error("listClubs should not be called without a president club id");
+      }
+    }
+  });
+
+  assert.deepEqual(clubs, []);
+});
+
 test("student club visibility excludes private WhatsApp onboarding settings", async () => {
   const clubs = await listVisibleClubs({
     actor: { id: "student-1", role: "student", clubId: null },

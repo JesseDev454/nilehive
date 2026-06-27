@@ -25,9 +25,17 @@ async function listVisibleClubs(options) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
   }
 
-  if (actor.role === "admin" || actor.role === "president" || actor.role === "student") {
+  if (actor.role === "admin" || actor.role === "student") {
     const clubs = await database.listClubs();
     return actor.role === "admin" ? clubs : clubs.map(stripPrivateClubSettings);
+  }
+
+  if (actor.role === "president") {
+    if (!actor.clubId) {
+      return [];
+    }
+
+    return (await database.listClubs({ ids: [actor.clubId] })).map(stripPrivateClubSettings);
   }
 
   if (actor.role === "advisor") {

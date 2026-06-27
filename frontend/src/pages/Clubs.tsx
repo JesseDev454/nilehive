@@ -43,6 +43,7 @@ export default function Clubs() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [galleryFile, setGalleryFile] = useState<File | null>(null);
   const canManageClubs = role === "admin" || role === "president";
+  const canCreateClubs = role === "admin";
   const { data: clubs = [], isLoading, isError, error } = useQuery({
     queryKey: ["clubs-management"],
     queryFn: () => getClubs(),
@@ -143,14 +144,19 @@ export default function Clubs() {
 
   return (
     <div className="nh-page">
-      <NeoPageHeader eyebrow="Club Services" title="Clubs" description="Create and maintain the clubs students discover in the app." />
+      <NeoPageHeader
+        eyebrow="Club Services"
+        title="Clubs"
+        description={role === "president" ? "Maintain the public profile for your assigned club." : "Create and maintain the clubs students discover in the app."}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{editingClub ? `Edit ${editingClub.name}` : "Add a new club"}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="nh-form-grid">
+      {(canCreateClubs || editingClub) ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">{editingClub ? `Edit ${editingClub.name}` : "Add a new club"}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="nh-form-grid">
             <div className="space-y-2">
               <Label htmlFor="club_name">Club Name</Label>
               <Input id="club_name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required disabled={role === "president"} />
@@ -182,15 +188,22 @@ export default function Clubs() {
                 {editingClub ? "Save Changes" : "Add Club"}
               </Button>
             </div>
-          </form>
-        </CardContent>
-      </Card>
+            </form>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader><CardTitle className="text-lg">Configured clubs</CardTitle></CardHeader>
         <CardContent>
           {isLoading ? <NeoLoadingState title="Loading clubs" message="We are gathering the current club directory." compact /> : isError ? (
             <NeoStateCard icon={School} title="Could not load clubs" message={getErrorMessage(error)} tone="danger" />
+          ) : !clubs.length ? (
+            <NeoStateCard
+              icon={School}
+              title={role === "president" ? "No assigned club found" : "No clubs configured yet"}
+              message={role === "president" ? "Ask a Club Services admin to assign your president profile to a club." : "Admins can add a club from the form above."}
+            />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {clubs.map((club) => (

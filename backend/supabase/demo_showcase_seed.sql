@@ -35,36 +35,31 @@ with demo_profiles (
   code,
   description,
   categories,
-  slug,
-  instagram_slug
+  slug
 ) as (
   values
-    ('NBC', 'Nile Book Club is a welcoming reading community for students who want to explore novels, African literature, personal development books, poetry, and thoughtful discussion. Members meet for reading circles, book swaps, author conversations, and relaxed debates about ideas that shape campus life.', array['Academics'], 'nile-book-club', 'nilebookclub-demo'),
-    ('NBUC', 'Nile Business Club helps students understand entrepreneurship, finance, marketing, leadership, and business strategy through practical workshops, networking sessions, case discussions, and founder talks. It is a starting point for students who want to build commercial confidence before graduation.', array['Entrepreneurship'], 'nile-business-club', 'nilebusinessclub-demo'),
-    ('NCC', 'Nile Charity Club brings students together for service, volunteering, donation drives, community outreach, and social impact projects. The club gives members a practical way to support people around them while learning teamwork, empathy, and responsible project coordination.', array['Volunteering','Academics','Arts'], 'nile-charity-club', 'nilecharityclub-demo'),
-    ('NCIC', 'Nile Climate Initiatives Club focuses on sustainability, recycling awareness, clean-campus campaigns, climate education, and practical environmental projects. Members collaborate on campus activities that make climate action visible, understandable, and achievable for students.', array['Tech','Volunteering','Arts'], 'nile-climate-initiatives-club', 'nileclimate-demo'),
-    ('NCAC', 'Nile Creative Arts Club gives artists, performers, designers, musicians, and curious beginners a place to create together. The club supports art workshops, performance rehearsals, creative showcases, open-mic style sessions, and collaborative projects across different forms of expression.', array['Music','Media','Arts'], 'nile-creative-arts-club', 'nilecreativearts-demo'),
-    ('NDC', 'Nile Debate Club helps students build confidence in public speaking, critical thinking, research, persuasion, and structured argument. Members prepare for debate nights, speaking drills, mock panels, and discussions on social, legal, political, and campus issues.', array['Academics','Leadership'], 'nile-debate-club', 'niledebateclub-demo'),
-    ('NGC', 'Nile Games Club is a social and competitive space for board games, digital games, friendly tournaments, and strategy-based recreation. It gives students a healthier way to unwind, meet people, and build teamwork through games and light competition.', array['Gaming','Sports'], 'nile-games-club', 'nilegamesclub-demo'),
-    ('NGD', 'Nile Google Developers is a student developer community for software, cloud, AI, mobile development, product thinking, and hands-on technical learning. Members attend coding workshops, project demos, study groups, and collaborative sessions designed to help them build real skills.', array['Tech','Volunteering','Academics'], 'nile-google-developers', 'nilegoogledev-demo'),
-    ('NMUN', 'Nile Model United Nations Club introduces students to diplomacy, international relations, negotiation, public policy, and global affairs. Members participate in simulations, position paper practice, caucus sessions, and workshops that make global problem-solving practical.', array['Academics','Media','Leadership'], 'nile-model-united-nations-club', 'nilemun-demo'),
-    ('NPC', 'Nile Photography Club helps students learn visual storytelling, camera basics, editing, campus photo walks, event coverage, and creative critique. Members practice photography in real campus settings while building portfolios and confidence behind the lens.', array['Media'], 'nile-photography-club', 'nilephotography-demo'),
-    ('NSC', 'Nile Startup Campus supports students interested in startups, innovation, product ideas, pitch practice, business models, and founder discipline. It gives aspiring builders a community for testing ideas, getting feedback, and learning how to move from concept to execution.', array['Entrepreneurship','Arts'], 'nile-startup-campus', 'nilestartup-demo'),
-    ('NTC', 'Nile Toastmaster''s Club helps students improve communication, presentation skills, confidence, meeting leadership, and prepared speaking. Members practice speeches, receive feedback, and learn how to communicate with clarity in academic, career, and social settings.', array['Academics','Leadership'], 'nile-toastmasters-club', 'niletoastmasters-demo'),
-    ('TEDX', 'TEDx Nile Club supports student-led ideas, speaker preparation, event production, storytelling, and campus conversations around innovation and impact. Members help curate talks, rehearse speakers, design experiences, and share meaningful ideas with the university community.', array['Media','Arts'], 'tedx-nile-club', 'tedxnile-demo'),
-    ('WIT', 'Women in Tech Club creates an inclusive space for women and allies interested in coding, product, design, mentorship, leadership, and technology careers. The club supports workshops, study sessions, peer mentoring, and confidence-building for students entering tech.', array['Tech','Entrepreneurship','Volunteering'], 'women-in-tech-club', 'womenintech-demo')
+    ('NBC', 'Nile Book Club is a welcoming reading community for students who want to explore novels, African literature, personal development books, poetry, and thoughtful discussion. Members meet for reading circles, book swaps, author conversations, and relaxed debates about ideas that shape campus life.', array['Academics'], 'nile-book-club'),
+    ('NBUC', 'Nile Business Club helps students understand entrepreneurship, finance, marketing, leadership, and business strategy through practical workshops, networking sessions, case discussions, and founder talks. It is a starting point for students who want to build commercial confidence before graduation.', array['Entrepreneurship'], 'nile-business-club'),
+    ('NCC', 'Nile Charity Club brings students together for service, volunteering, donation drives, community outreach, and social impact projects. The club gives members a practical way to support people around them while learning teamwork, empathy, and responsible project coordination.', array['Volunteering','Academics','Arts'], 'nile-charity-club'),
+    ('NCIC', 'Nile Climate Initiatives Club focuses on sustainability, recycling awareness, clean-campus campaigns, climate education, and practical environmental projects. Members collaborate on campus activities that make climate action visible, understandable, and achievable for students.', array['Tech','Volunteering','Arts'], 'nile-climate-initiatives-club'),
+    ('NCAC', 'Nile Creative Arts Club gives artists, performers, designers, musicians, and curious beginners a place to create together. The club supports art workshops, performance rehearsals, creative showcases, open-mic style sessions, and collaborative projects across different forms of expression.', array['Music','Media','Arts'], 'nile-creative-arts-club'),
+    ('NDC', 'Nile Debate Club helps students build confidence in public speaking, critical thinking, research, persuasion, and structured argument. Members prepare for debate nights, speaking drills, mock panels, and discussions on social, legal, political, and campus issues.', array['Academics','Leadership'], 'nile-debate-club'),
+    ('NGC', 'Nile Games Club is a social and competitive space for board games, digital games, friendly tournaments, and strategy-based recreation. It gives students a healthier way to unwind, meet people, and build teamwork through games and light competition.', array['Gaming','Sports'], 'nile-games-club'),
+    ('NGD', 'Nile Google Developers is a student developer community for software, cloud, AI, mobile development, product thinking, and hands-on technical learning. Members attend coding workshops, project demos, study groups, and collaborative sessions designed to help them build real skills.', array['Tech','Volunteering','Academics'], 'nile-google-developers'),
+    ('NMUN', 'Nile Model United Nations Club introduces students to diplomacy, international relations, negotiation, public policy, and global affairs. Members participate in simulations, position paper practice, caucus sessions, and workshops that make global problem-solving practical.', array['Academics','Media','Leadership'], 'nile-model-united-nations-club'),
+    ('NPC', 'Nile Photography Club helps students learn visual storytelling, camera basics, editing, campus photo walks, event coverage, and creative critique. Members practice photography in real campus settings while building portfolios and confidence behind the lens.', array['Media'], 'nile-photography-club'),
+    ('NSC', 'Nile Startup Campus supports students interested in startups, innovation, product ideas, pitch practice, business models, and founder discipline. It gives aspiring builders a community for testing ideas, getting feedback, and learning how to move from concept to execution.', array['Entrepreneurship','Arts'], 'nile-startup-campus'),
+    ('NTC', 'Nile Toastmaster''s Club helps students improve communication, presentation skills, confidence, meeting leadership, and prepared speaking. Members practice speeches, receive feedback, and learn how to communicate with clarity in academic, career, and social settings.', array['Academics','Leadership'], 'nile-toastmasters-club'),
+    ('TEDX', 'TEDx Nile Club supports student-led ideas, speaker preparation, event production, storytelling, and campus conversations around innovation and impact. Members help curate talks, rehearse speakers, design experiences, and share meaningful ideas with the university community.', array['Media','Arts'], 'tedx-nile-club'),
+    ('WIT', 'Women in Tech Club creates an inclusive space for women and allies interested in coding, product, design, mentorship, leadership, and technology careers. The club supports workshops, study sessions, peer mentoring, and confidence-building for students entering tech.', array['Tech','Entrepreneurship','Volunteering'], 'women-in-tech-club')
 )
 update public.clubs c
 set
   description = p.description,
   categories = p.categories,
   logo_path = concat(p.code, '.png'),
-  website_url = coalesce(nullif(c.website_url, ''), concat('https://clubs.campusone.com.ng/demo/', p.slug)),
-  social_links = case
-    when c.social_links = '{}'::jsonb
-      then jsonb_build_object('instagram', concat('https://example.com/demo/', p.instagram_slug))
-    else c.social_links
-  end,
+  website_url = null,
+  social_links = '{}'::jsonb,
   is_public_signup = true,
   dues_amount = 10000
 from demo_profiles p
@@ -124,7 +119,15 @@ with demo_events (id, code, title, description, offset_days, event_time, locatio
     ('dd030000-0000-0000-0000-000000000003'::uuid, 'NPC', 'Golden Hour Campus Photo Walk', 'Demo approved proposal for a guided campus photo walk and editing clinic.', 18, '17:00'::time, 'Senate Building Courtyard', 'Teach composition, visual storytelling, and editing basics.', 'Photo walk', 35, 60000::numeric),
     ('dd030000-0000-0000-0000-000000000004'::uuid, 'NDC', 'Debate Night: Ideas and Impact', 'Demo approved proposal for a structured debate night with prepared speakers.', 21, '17:30'::time, 'LT A', 'Build research, confidence, and respectful argument skills.', 'Debate night', 70, 90000::numeric),
     ('dd030000-0000-0000-0000-000000000005'::uuid, 'NGD', 'Build Your First Campus App Workshop', 'Demo approved proposal for a practical software workshop by Nile Google Developers.', 25, '11:00'::time, 'Computer Lab 2', 'Introduce students to app prototyping and developer collaboration.', 'Tech workshop', 60, 150000::numeric),
-    ('dd030000-0000-0000-0000-000000000006'::uuid, 'WIT', 'Women in Tech Mentorship Lab', 'Demo approved proposal for mentorship, career stories, and practical tech guidance.', 28, '13:00'::time, 'Engineering Seminar Room', 'Support women and allies entering technical careers.', 'Mentorship workshop', 55, 120000::numeric)
+    ('dd030000-0000-0000-0000-000000000006'::uuid, 'WIT', 'Women in Tech Mentorship Lab', 'Demo approved proposal for mentorship, career stories, and practical tech guidance.', 28, '13:00'::time, 'Engineering Seminar Room', 'Support women and allies entering technical careers.', 'Mentorship workshop', 55, 120000::numeric),
+    ('dd030000-0000-0000-0000-000000000007'::uuid, 'NBUC', 'Campus Business Case Clinic', 'Demo approved proposal for teams to solve a practical campus business case with mentor feedback.', 11, '14:00'::time, 'Business School Seminar Room', 'Help students practice commercial thinking, teamwork, and presentation skills.', 'Business case clinic', 50, 95000::numeric),
+    ('dd030000-0000-0000-0000-000000000008'::uuid, 'NCC', 'Community Care Planning Day', 'Demo approved proposal for planning a donation drive and assigning service teams.', 12, '12:00'::time, 'Student Affairs Lounge', 'Coordinate responsible student volunteering and community support.', 'Community service planning', 45, 70000::numeric),
+    ('dd030000-0000-0000-0000-000000000009'::uuid, 'NCIC', 'Clean Campus Climate Action', 'Demo approved proposal for a hands-on sustainability awareness and recycling activity.', 16, '09:30'::time, 'Main Campus Walkway', 'Make climate action practical through cleanup, recycling, and peer education.', 'Climate action activity', 65, 110000::numeric),
+    ('dd030000-0000-0000-0000-000000000010'::uuid, 'NCAC', 'Creative Showcase Rehearsal', 'Demo approved proposal for artists, performers, and designers to rehearse a student showcase.', 17, '15:30'::time, 'Arts Studio', 'Support creative confidence and collaborative campus performance.', 'Creative showcase rehearsal', 55, 100000::numeric),
+    ('dd030000-0000-0000-0000-000000000011'::uuid, 'NGC', 'Friendly Games Tournament', 'Demo approved proposal for a relaxed board and digital games tournament.', 19, '16:30'::time, 'Student Centre', 'Create a healthy social space for teamwork, strategy, and recreation.', 'Games tournament', 70, 85000::numeric),
+    ('dd030000-0000-0000-0000-000000000012'::uuid, 'NMUN', 'Diplomacy Simulation Workshop', 'Demo approved proposal for a guided Model United Nations simulation and caucus practice.', 23, '13:30'::time, 'International Relations Lab', 'Build negotiation, policy research, and diplomacy confidence.', 'Diplomacy simulation', 60, 120000::numeric),
+    ('dd030000-0000-0000-0000-000000000013'::uuid, 'NTC', 'Speak With Confidence Session', 'Demo approved proposal for prepared speeches, peer feedback, and meeting leadership practice.', 26, '17:00'::time, 'Lecture Theatre B', 'Improve public speaking, listening, and structured feedback skills.', 'Public speaking session', 50, 65000::numeric),
+    ('dd030000-0000-0000-0000-000000000014'::uuid, 'TEDX', 'Ideas Worth Sharing Rehearsal', 'Demo approved proposal for speaker coaching, stage rehearsal, and event planning.', 30, '15:00'::time, 'Main Auditorium', 'Help students shape clear, meaningful talks for a campus ideas event.', 'Speaker rehearsal', 75, 160000::numeric)
 ),
 actors as (
   select
@@ -219,7 +222,23 @@ with demo_approvals (id, proposal_id, reviewer_id, reviewer_role, decision, rema
     ('dd031000-0000-0000-0000-000000000005'::uuid, 'dd030000-0000-0000-0000-000000000005'::uuid, coalesce((select id from public.profiles where role = 'advisor' order by created_at limit 1), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid), 'advisor'::public.app_role, 'approve'::public.approval_decision, 'Demo showcase: advisor approval for developer workshop.', timezone('utc', now()) - interval '12 days'),
     ('dd032000-0000-0000-0000-000000000005'::uuid, 'dd030000-0000-0000-0000-000000000005'::uuid, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid, 'admin'::public.app_role, 'approve'::public.approval_decision, 'Demo showcase: admin final approval.', timezone('utc', now()) - interval '10 days'),
     ('dd031000-0000-0000-0000-000000000006'::uuid, 'dd030000-0000-0000-0000-000000000006'::uuid, coalesce((select id from public.profiles where role = 'advisor' order by created_at limit 1), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid), 'advisor'::public.app_role, 'approve'::public.approval_decision, 'Demo showcase: advisor approval for mentorship lab.', timezone('utc', now()) - interval '12 days'),
-    ('dd032000-0000-0000-0000-000000000006'::uuid, 'dd030000-0000-0000-0000-000000000006'::uuid, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid, 'admin'::public.app_role, 'approve'::public.approval_decision, 'Demo showcase: admin final approval.', timezone('utc', now()) - interval '10 days')
+    ('dd032000-0000-0000-0000-000000000006'::uuid, 'dd030000-0000-0000-0000-000000000006'::uuid, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid, 'admin'::public.app_role, 'approve'::public.approval_decision, 'Demo showcase: admin final approval.', timezone('utc', now()) - interval '10 days'),
+    ('dd031000-0000-0000-0000-000000000007'::uuid, 'dd030000-0000-0000-0000-000000000007'::uuid, coalesce((select id from public.profiles where role = 'advisor' order by created_at limit 1), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid), 'advisor'::public.app_role, 'approve'::public.approval_decision, 'Demo showcase: advisor approval for business case clinic.', timezone('utc', now()) - interval '12 days'),
+    ('dd032000-0000-0000-0000-000000000007'::uuid, 'dd030000-0000-0000-0000-000000000007'::uuid, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid, 'admin'::public.app_role, 'approve'::public.approval_decision, 'Demo showcase: admin final approval.', timezone('utc', now()) - interval '10 days'),
+    ('dd031000-0000-0000-0000-000000000008'::uuid, 'dd030000-0000-0000-0000-000000000008'::uuid, coalesce((select id from public.profiles where role = 'advisor' order by created_at limit 1), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid), 'advisor'::public.app_role, 'approve'::public.approval_decision, 'Demo showcase: advisor approval for community care planning.', timezone('utc', now()) - interval '12 days'),
+    ('dd032000-0000-0000-0000-000000000008'::uuid, 'dd030000-0000-0000-0000-000000000008'::uuid, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid, 'admin'::public.app_role, 'approve'::public.approval_decision, 'Demo showcase: admin final approval.', timezone('utc', now()) - interval '10 days'),
+    ('dd031000-0000-0000-0000-000000000009'::uuid, 'dd030000-0000-0000-0000-000000000009'::uuid, coalesce((select id from public.profiles where role = 'advisor' order by created_at limit 1), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid), 'advisor'::public.app_role, 'approve'::public.approval_decision, 'Demo showcase: advisor approval for climate action.', timezone('utc', now()) - interval '12 days'),
+    ('dd032000-0000-0000-0000-000000000009'::uuid, 'dd030000-0000-0000-0000-000000000009'::uuid, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid, 'admin'::public.app_role, 'approve'::public.approval_decision, 'Demo showcase: admin final approval.', timezone('utc', now()) - interval '10 days'),
+    ('dd031000-0000-0000-0000-000000000010'::uuid, 'dd030000-0000-0000-0000-000000000010'::uuid, coalesce((select id from public.profiles where role = 'advisor' order by created_at limit 1), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid), 'advisor'::public.app_role, 'approve'::public.approval_decision, 'Demo showcase: advisor approval for creative showcase rehearsal.', timezone('utc', now()) - interval '12 days'),
+    ('dd032000-0000-0000-0000-000000000010'::uuid, 'dd030000-0000-0000-0000-000000000010'::uuid, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid, 'admin'::public.app_role, 'approve'::public.approval_decision, 'Demo showcase: admin final approval.', timezone('utc', now()) - interval '10 days'),
+    ('dd031000-0000-0000-0000-000000000011'::uuid, 'dd030000-0000-0000-0000-000000000011'::uuid, coalesce((select id from public.profiles where role = 'advisor' order by created_at limit 1), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid), 'advisor'::public.app_role, 'approve'::public.approval_decision, 'Demo showcase: advisor approval for games tournament.', timezone('utc', now()) - interval '12 days'),
+    ('dd032000-0000-0000-0000-000000000011'::uuid, 'dd030000-0000-0000-0000-000000000011'::uuid, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid, 'admin'::public.app_role, 'approve'::public.approval_decision, 'Demo showcase: admin final approval.', timezone('utc', now()) - interval '10 days'),
+    ('dd031000-0000-0000-0000-000000000012'::uuid, 'dd030000-0000-0000-0000-000000000012'::uuid, coalesce((select id from public.profiles where role = 'advisor' order by created_at limit 1), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid), 'advisor'::public.app_role, 'approve'::public.approval_decision, 'Demo showcase: advisor approval for diplomacy simulation.', timezone('utc', now()) - interval '12 days'),
+    ('dd032000-0000-0000-0000-000000000012'::uuid, 'dd030000-0000-0000-0000-000000000012'::uuid, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid, 'admin'::public.app_role, 'approve'::public.approval_decision, 'Demo showcase: admin final approval.', timezone('utc', now()) - interval '10 days'),
+    ('dd031000-0000-0000-0000-000000000013'::uuid, 'dd030000-0000-0000-0000-000000000013'::uuid, coalesce((select id from public.profiles where role = 'advisor' order by created_at limit 1), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid), 'advisor'::public.app_role, 'approve'::public.approval_decision, 'Demo showcase: advisor approval for public speaking session.', timezone('utc', now()) - interval '12 days'),
+    ('dd032000-0000-0000-0000-000000000013'::uuid, 'dd030000-0000-0000-0000-000000000013'::uuid, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid, 'admin'::public.app_role, 'approve'::public.approval_decision, 'Demo showcase: admin final approval.', timezone('utc', now()) - interval '10 days'),
+    ('dd031000-0000-0000-0000-000000000014'::uuid, 'dd030000-0000-0000-0000-000000000014'::uuid, coalesce((select id from public.profiles where role = 'advisor' order by created_at limit 1), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid), 'advisor'::public.app_role, 'approve'::public.approval_decision, 'Demo showcase: advisor approval for ideas rehearsal.', timezone('utc', now()) - interval '12 days'),
+    ('dd032000-0000-0000-0000-000000000014'::uuid, 'dd030000-0000-0000-0000-000000000014'::uuid, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid, 'admin'::public.app_role, 'approve'::public.approval_decision, 'Demo showcase: admin final approval.', timezone('utc', now()) - interval '10 days')
 )
 insert into public.approvals (id, proposal_id, reviewer_id, reviewer_role, decision, remarks, decided_at)
 select id, proposal_id, reviewer_id, reviewer_role, decision, remarks, decided_at
@@ -234,7 +253,14 @@ with demo_announcements (id, code, title, message, priority) as (
     ('dd040000-0000-0000-0000-000000000004'::uuid, 'NDC', 'Demo preview: Debate night speakers', 'Debate Club speakers should confirm their talking points before the next practice session.', 'normal'),
     ('dd040000-0000-0000-0000-000000000005'::uuid, 'NGD', 'Demo preview: Tech workshop RSVP', 'Seats for the developer workshop are limited. RSVP from the event page to help planning.', 'high'),
     ('dd040000-0000-0000-0000-000000000006'::uuid, 'WIT', 'Demo preview: Mentorship onboarding', 'Approved members will see onboarding instructions in their membership status after verification.', 'normal'),
-    ('dd040000-0000-0000-0000-000000000007'::uuid, 'NCC', 'Demo preview: Dues verification reminder', 'Members with submitted proof should wait for Club Services verification before receiving the paid badge.', 'normal')
+    ('dd040000-0000-0000-0000-000000000007'::uuid, 'NCC', 'Demo preview: Dues verification reminder', 'Members with submitted proof should wait for Club Services verification before receiving the paid badge.', 'normal'),
+    ('dd040000-0000-0000-0000-000000000008'::uuid, 'NBUC', 'Demo preview: Case clinic teams', 'Business Club teams should bring one practical campus problem for the case clinic activity.', 'normal'),
+    ('dd040000-0000-0000-0000-000000000009'::uuid, 'NCIC', 'Demo preview: Climate action volunteers', 'Climate Initiatives members can sign up for recycling and awareness teams before the activity starts.', 'normal'),
+    ('dd040000-0000-0000-0000-000000000010'::uuid, 'NCAC', 'Demo preview: Creative showcase rehearsal', 'Creative Arts members should confirm rehearsal slots and bring any materials needed for the showcase.', 'normal'),
+    ('dd040000-0000-0000-0000-000000000011'::uuid, 'NGC', 'Demo preview: Tournament sign-up', 'Games Club members can RSVP early so brackets and game stations are ready before the tournament.', 'normal'),
+    ('dd040000-0000-0000-0000-000000000012'::uuid, 'NMUN', 'Demo preview: Simulation preparation', 'Model United Nations members should review their country notes before the diplomacy simulation.', 'normal'),
+    ('dd040000-0000-0000-0000-000000000013'::uuid, 'NTC', 'Demo preview: Speaking roles', 'Toastmasters members can choose speaking, evaluator, and meeting leadership roles for the next session.', 'normal'),
+    ('dd040000-0000-0000-0000-000000000014'::uuid, 'TEDX', 'Demo preview: Speaker rehearsal', 'TEDx Nile members should review speaker notes, stage timing, and rehearsal responsibilities.', 'high')
 )
 insert into public.announcements (id, club_id, created_by, title, message, audience, priority, target_role)
 select a.id, c.id, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid, a.title, a.message || ' Marker: demo_showcase_2026.', 'club', a.priority, null
@@ -252,7 +278,18 @@ with member_rows (id, code, profile_id, full_name, student_id, email, status) as
   values
     ('dd050000-0000-0000-0000-000000000001'::uuid, 'WIT', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'::uuid, 'Ada Student', '242124563', 'student@nilehive.test', 'active'::public.membership_status),
     ('dd050000-0000-0000-0000-000000000002'::uuid, 'NSC', '99999999-9999-9999-9999-999999999999'::uuid, 'Dues Student', '020303346', 'dues.student@nilehive.test', 'inactive'::public.membership_status),
-    ('dd050000-0000-0000-0000-000000000003'::uuid, 'NCC', '99999999-9999-9999-9999-999999999999'::uuid, 'Dues Student', '020303346', 'dues.student@nilehive.test', 'inactive'::public.membership_status)
+    ('dd050000-0000-0000-0000-000000000003'::uuid, 'NCC', '99999999-9999-9999-9999-999999999999'::uuid, 'Dues Student', '020303346', 'dues.student@nilehive.test', 'inactive'::public.membership_status),
+    ('dd050000-0000-0000-0000-000000000004'::uuid, 'NBC', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'::uuid, 'Ada Student', '242124563', 'student@nilehive.test', 'active'::public.membership_status),
+    ('dd050000-0000-0000-0000-000000000005'::uuid, 'NBUC', 'ffffffff-ffff-ffff-ffff-ffffffffffff'::uuid, 'Tomi Student', '020303345', 'second.student@nilehive.test', 'active'::public.membership_status),
+    ('dd050000-0000-0000-0000-000000000006'::uuid, 'NCIC', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'::uuid, 'Ada Student', '242124563', 'student@nilehive.test', 'active'::public.membership_status),
+    ('dd050000-0000-0000-0000-000000000007'::uuid, 'NCAC', 'ffffffff-ffff-ffff-ffff-ffffffffffff'::uuid, 'Tomi Student', '020303345', 'second.student@nilehive.test', 'active'::public.membership_status),
+    ('dd050000-0000-0000-0000-000000000008'::uuid, 'NDC', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'::uuid, 'Ada Student', '242124563', 'student@nilehive.test', 'active'::public.membership_status),
+    ('dd050000-0000-0000-0000-000000000009'::uuid, 'NGC', 'ffffffff-ffff-ffff-ffff-ffffffffffff'::uuid, 'Tomi Student', '020303345', 'second.student@nilehive.test', 'active'::public.membership_status),
+    ('dd050000-0000-0000-0000-000000000010'::uuid, 'NGD', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'::uuid, 'Ada Student', '242124563', 'student@nilehive.test', 'active'::public.membership_status),
+    ('dd050000-0000-0000-0000-000000000011'::uuid, 'NMUN', 'ffffffff-ffff-ffff-ffff-ffffffffffff'::uuid, 'Tomi Student', '020303345', 'second.student@nilehive.test', 'active'::public.membership_status),
+    ('dd050000-0000-0000-0000-000000000012'::uuid, 'NPC', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'::uuid, 'Ada Student', '242124563', 'student@nilehive.test', 'active'::public.membership_status),
+    ('dd050000-0000-0000-0000-000000000013'::uuid, 'NTC', 'ffffffff-ffff-ffff-ffff-ffffffffffff'::uuid, 'Tomi Student', '020303345', 'second.student@nilehive.test', 'active'::public.membership_status),
+    ('dd050000-0000-0000-0000-000000000014'::uuid, 'TEDX', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'::uuid, 'Ada Student', '242124563', 'student@nilehive.test', 'active'::public.membership_status)
 )
 insert into public.club_members (id, club_id, profile_id, full_name, student_id, email, phone_number, club_role, membership_status, created_at)
 select m.id, c.id, m.profile_id, m.full_name, m.student_id, m.email, '08000000003', 'member', m.status, timezone('utc', now()) - interval '9 days'
@@ -454,6 +491,54 @@ on conflict (id) do update set
   rating = excluded.rating,
   comment = excluded.comment,
   status = excluded.status,
+  updated_at = timezone('utc', now());
+
+with task_rows (id, code, title, description, priority, status, due_offset) as (
+  values
+    ('dd0b0000-0000-0000-0000-000000000001'::uuid, 'NBC', 'Prepare discussion guide', 'Demo showcase task: draft three conversation prompts for the book discussion.', 'medium'::public.task_priority, 'in_progress'::public.task_status, 5),
+    ('dd0b0000-0000-0000-0000-000000000002'::uuid, 'NBUC', 'Confirm case clinic mentors', 'Demo showcase task: confirm mentor availability and prepare feedback sheets.', 'high'::public.task_priority, 'pending'::public.task_status, 6),
+    ('dd0b0000-0000-0000-0000-000000000003'::uuid, 'NCC', 'Sort outreach materials', 'Demo showcase task: organize donated items and confirm volunteer teams.', 'medium'::public.task_priority, 'pending'::public.task_status, 4),
+    ('dd0b0000-0000-0000-0000-000000000004'::uuid, 'NCIC', 'Print recycling station labels', 'Demo showcase task: prepare simple labels for recycling awareness points.', 'low'::public.task_priority, 'completed'::public.task_status, 3),
+    ('dd0b0000-0000-0000-0000-000000000005'::uuid, 'NCAC', 'Build rehearsal schedule', 'Demo showcase task: collect performance slots and publish the rehearsal order.', 'medium'::public.task_priority, 'in_progress'::public.task_status, 7),
+    ('dd0b0000-0000-0000-0000-000000000006'::uuid, 'NDC', 'Assign speaker positions', 'Demo showcase task: confirm opening, rebuttal, and closing speaker roles.', 'high'::public.task_priority, 'pending'::public.task_status, 5),
+    ('dd0b0000-0000-0000-0000-000000000007'::uuid, 'NGC', 'Set up tournament brackets', 'Demo showcase task: prepare bracket sheets and station assignments.', 'medium'::public.task_priority, 'pending'::public.task_status, 6),
+    ('dd0b0000-0000-0000-0000-000000000008'::uuid, 'NGD', 'Prepare starter project repo', 'Demo showcase task: upload workshop starter files and setup notes.', 'high'::public.task_priority, 'in_progress'::public.task_status, 8),
+    ('dd0b0000-0000-0000-0000-000000000009'::uuid, 'NMUN', 'Share country brief template', 'Demo showcase task: send delegates a short research template before simulation.', 'medium'::public.task_priority, 'completed'::public.task_status, 4),
+    ('dd0b0000-0000-0000-0000-000000000010'::uuid, 'NPC', 'Confirm photo walk route', 'Demo showcase task: pick campus stops and safety notes for the photo walk.', 'medium'::public.task_priority, 'pending'::public.task_status, 7),
+    ('dd0b0000-0000-0000-0000-000000000011'::uuid, 'NSC', 'Collect pitch night slides', 'Demo showcase task: remind presenters to submit their pitch decks before review.', 'high'::public.task_priority, 'in_progress'::public.task_status, 6),
+    ('dd0b0000-0000-0000-0000-000000000012'::uuid, 'NTC', 'Assign meeting roles', 'Demo showcase task: assign speaker, evaluator, timer, and host roles.', 'medium'::public.task_priority, 'pending'::public.task_status, 5),
+    ('dd0b0000-0000-0000-0000-000000000013'::uuid, 'TEDX', 'Review speaker timing', 'Demo showcase task: time each talk and note coaching points for rehearsal.', 'high'::public.task_priority, 'pending'::public.task_status, 8),
+    ('dd0b0000-0000-0000-0000-000000000014'::uuid, 'WIT', 'Prepare mentorship sign-in', 'Demo showcase task: prepare sign-in sheet and mentor pairing notes.', 'medium'::public.task_priority, 'completed'::public.task_status, 3)
+),
+actors as (
+  select
+    coalesce((select id from public.profiles where role in ('president', 'admin') order by case role when 'president' then 0 else 1 end, created_at limit 1), 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid) as assigned_by,
+    coalesce((select id from public.profiles where role = 'executive' order by created_at limit 1), 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid) as assigned_to
+)
+insert into public.tasks (id, club_id, assigned_by, assigned_to, title, description, priority, status, due_date, created_at)
+select
+  t.id,
+  c.id,
+  actors.assigned_by,
+  actors.assigned_to,
+  t.title,
+  t.description,
+  t.priority,
+  t.status,
+  current_date + t.due_offset,
+  timezone('utc', now()) - interval '2 days'
+from task_rows t
+join public.clubs c on c.code = t.code
+cross join actors
+on conflict (id) do update set
+  club_id = excluded.club_id,
+  assigned_by = excluded.assigned_by,
+  assigned_to = excluded.assigned_to,
+  title = excluded.title,
+  description = excluded.description,
+  priority = excluded.priority,
+  status = excluded.status,
+  due_date = excluded.due_date,
   updated_at = timezone('utc', now());
 
 with daily_users(activity_date, user_id, role) as (
