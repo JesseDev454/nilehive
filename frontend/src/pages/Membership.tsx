@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Loader2, Search, ShieldCheck, Users } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { ArrowLeft, Camera, Copy, ExternalLink, Filter, ImageIcon, Instagram, Loader2, MessageCircle, Search, Share2, ShieldCheck, Smartphone, Sparkles, Users } from "lucide-react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { DataPagination } from "@/components/DataPagination";
 import { NhStudentId } from "@/components/NhStudentId";
@@ -10,27 +10,42 @@ import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBr
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/contexts/RoleContext";
+import { useUsageTracking } from "@/hooks/useUsageTracking";
 import {
   ApiClientError,
   createMembershipRequest,
+  getAnnouncements,
+  getApprovedEvents,
+  getClubDetail,
   getClubs,
   getClubPaymentSettings,
   getMembershipRequests,
   getMyMembershipRequests,
   submitDuePaymentConfirmation,
+  type AnnouncementRecord,
+  type ApprovedEventRecord,
+  type ClubPaymentSettingsRecord,
   type ClubRecord,
   type DuePaymentRecord,
   type MembershipRequestRecord
 } from "@/lib/api";
+import {
+  CLUB_INTEREST_CATEGORIES,
+  getClubInterestCategories,
+  getStudentInterestCategories,
+  type ClubInterestCategory
+} from "@/lib/clubDiscovery";
 import { clearJoinFormDraft, readJoinFormDraft, writeJoinFormDraft } from "@/lib/joinFormDraftStorage";
 import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 import { publicClubsQueryOptions } from "@/lib/publicClubsQuery";
+import { buildAppUrl, shareOrCopy } from "@/lib/share";
 import { isValidStudentId, normalizeStudentId, STUDENT_ID_ERROR_MESSAGE } from "@/lib/studentId";
 import { resolveStorageFileUrl, uploadStorageFile } from "@/lib/storage";
 
@@ -38,6 +53,10 @@ const REQUEST_STATUSES = ["all", "pending", "active", "rejected", "cancelled"] a
 const STUDENT_TYPES = [
   { value: "fresher", label: "Fresher" },
   { value: "returning", label: "Returning Student" }
+] as const;
+const EVENT_FILTERS = [
+  { value: "all", label: "Any event status" },
+  { value: "upcoming", label: "Upcoming event available" }
 ] as const;
 const CLUB_DESCRIPTION_OVERRIDES: Record<string, string> = {
   "Nile Book Club":
@@ -69,6 +88,73 @@ const CLUB_DESCRIPTION_OVERRIDES: Record<string, string> = {
   "Women in Tech Club":
     "Break boundaries and inspire innovation. Join a community of like-minded women who are shaping the future of technology and making strides in a traditionally male-dominated field."
 };
+
+const STATIC_CLUB_LOGO_CODES = new Set([
+  "NBC",
+  "NBUC",
+  "NCC",
+  "NCIC",
+  "NCAC",
+  "NDC",
+  "NGC",
+  "NGD",
+  "NMUN",
+  "NPC",
+  "NSC",
+  "NTC",
+  "TEDX",
+  "WIT"
+]);
+
+function getStaticClubLogoUrl(club: ClubRecord) {
+  const code = club.code?.trim().toUpperCase();
+
+  return code && STATIC_CLUB_LOGO_CODES.has(code) ? `/club-logos/${code}.png` : null;
+}
+
+function ClubLogo({ club, className = "h-14 w-14" }: { club: ClubRecord; className?: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const staticLogoUrl = getStaticClubLogoUrl(club);
+
+  useEffect(() => {
+    let active = true;
+
+    if (!club.logo_path) {
+      setUrl(staticLogoUrl);
+      return () => { active = false; };
+    }
+
+    void resolveStorageFileUrl("club-logos", club.logo_path).then((value) => {
+      if (active) setUrl(value || staticLogoUrl);
+    });
+    return () => { active = false; };
+  }, [club.logo_path, staticLogoUrl]);
+
+  return url ? (
+    <img
+      src={url}
+      alt={`${club.name} logo`}
+      className={`${className} shrink-0 rounded-lg border-2 border-foreground object-cover`}
+      onError={() => setUrl((currentUrl) => (currentUrl !== staticLogoUrl ? staticLogoUrl : null))}
+    />
+  ) : (
+    <div className={`${className} flex shrink-0 items-center justify-center rounded-lg border-2 border-foreground bg-muted`} aria-label={`${club.name} logo unavailable`}>
+      <ImageIcon className="h-6 w-6" />
+    </div>
+  );
+}
+
+function GalleryImage({ path, caption }: { path: string; caption: string | null }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    void resolveStorageFileUrl("club-media", path).then((value) => {
+      if (active) setUrl(value);
+    });
+    return () => { active = false; };
+  }, [path]);
+  return url ? <figure><img src={url} alt={caption || "Club activity"} className="aspect-square w-full rounded-lg border-2 border-foreground object-cover" />{caption ? <figcaption className="mt-1 text-xs text-muted-foreground">{caption}</figcaption> : null}</figure> : <div className="aspect-square animate-pulse rounded-lg bg-muted" />;
+}
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -173,6 +259,37 @@ function MembershipStatusBadge({
   return <Badge className={className}>{getStatusLabel(status)}</Badge>;
 }
 
+function ReviewRequestStatusBadge({ status }: { status: MembershipRequestRecord["status"] }) {
+  const statusConfig: Record<string, { label: string; className: string }> = {
+    pending: {
+      label: "Pending Review",
+      className: "bg-warning/15 text-warning hover:bg-warning/15"
+    },
+    approved_pending_dues: {
+      label: "Pending Payment",
+      className: "bg-primary/15 text-primary hover:bg-primary/15"
+    },
+    active: {
+      label: "Active Member",
+      className: "bg-success/15 text-success hover:bg-success/15"
+    },
+    rejected: {
+      label: "Rejected",
+      className: "bg-destructive/15 text-destructive hover:bg-destructive/15"
+    },
+    cancelled: {
+      label: "Cancelled",
+      className: "bg-muted text-muted-foreground hover:bg-muted"
+    }
+  };
+  const config = statusConfig[status] ?? {
+    label: status.replace(/_/g, " "),
+    className: "bg-muted text-muted-foreground hover:bg-muted"
+  };
+
+  return <Badge className={config.className}>{config.label}</Badge>;
+}
+
 function getStudentTypeLabel(value: "fresher" | "returning" | null | undefined) {
   return value === "fresher" ? "Fresher" : "Returning Student";
 }
@@ -189,6 +306,182 @@ function getClubDescriptionPreview(description: string, maxLength = 180) {
   return `${description.slice(0, maxLength).trimEnd()}...`;
 }
 
+function getClubInviteReason(club: ClubRecord, nextEvent?: ApprovedEventRecord) {
+  if (nextEvent) {
+    return `${nextEvent.title} is coming up on ${formatDate(nextEvent.event_date)}.`;
+  }
+
+  return getClubDescriptionPreview(getClubDescription(club), 120);
+}
+
+function getClubShareUrl(clubId: string) {
+  return buildAppUrl(`/membership/clubs/${clubId}`);
+}
+
+function getClubDuesLabel(club: ClubRecord) {
+  return club.dues_amount > 0 ? formatCurrency(club.dues_amount) : "No dues";
+}
+
+function isDuesRequired(club: ClubRecord, settings?: ClubPaymentSettingsRecord | null) {
+  return club.dues_amount > 0 || Boolean(settings && (settings.fresher_dues_amount > 0 || settings.returning_student_dues_amount > 0));
+}
+
+function getClubDuesRequirementLabel(club: ClubRecord, settings?: ClubPaymentSettingsRecord | null) {
+  if (!isDuesRequired(club, settings)) {
+    return "Not required";
+  }
+
+  if (settings) {
+    return `Required: ${formatCurrency(settings.returning_student_dues_amount)} returning / ${formatCurrency(settings.fresher_dues_amount)} freshers`;
+  }
+
+  return `Required: ${getClubDuesLabel(club)}`;
+}
+
+function getClubMemberCount(club: ClubRecord) {
+  const maybeClub = club as ClubRecord & {
+    member_count?: number;
+    members_count?: number;
+    active_members_count?: number;
+    total_members?: number;
+  };
+
+  return maybeClub.member_count ?? maybeClub.members_count ?? maybeClub.active_members_count ?? maybeClub.total_members;
+}
+
+function getNextClubEvent(clubId: string, events: ApprovedEventRecord[]) {
+  return events
+    .filter((event) => event.club_id === clubId)
+    .sort((first, second) => `${first.event_date} ${first.event_time || ""}`.localeCompare(`${second.event_date} ${second.event_time || ""}`))[0];
+}
+
+function getClubCtaLabel(existingRequest?: MembershipRequestRecord) {
+  if (!existingRequest) {
+    return "View Club";
+  }
+
+  const status = resolveMembershipStatus(existingRequest, existingRequest.due_payment || undefined);
+
+  if (status === "pending_payment" || status === "needs_new_payment_details") {
+    return "Continue Setup";
+  }
+
+  return "View Club";
+}
+
+function getClubSearchFields(club: ClubRecord, categories: ClubInterestCategory[]) {
+  return [club.name, club.code, getClubDescription(club), ...categories].filter(Boolean).join(" ").toLowerCase();
+}
+
+function getDuesStateLabel(club: ClubRecord, request?: MembershipRequestRecord, payment?: DuePaymentRecord, settings?: ClubPaymentSettingsRecord | null) {
+  if (!isDuesRequired(club, settings)) {
+    return "Not required";
+  }
+
+  if (!request || request.status === "pending") {
+    return "Required, proof not uploaded";
+  }
+
+  if (request.status === "active") {
+    return "Approved";
+  }
+
+  if (!payment || payment.status === "unpaid") {
+    return "Required, proof not uploaded";
+  }
+
+  if (payment.status === "submitted") {
+    return "Proof submitted, under review";
+  }
+
+  if (payment.status === "paid") {
+    return "Approved";
+  }
+
+  return "Rejected, upload again";
+}
+
+function getMembershipNextStep(status: ResolvedMembershipStatus, duesRequired: boolean) {
+  if (status === "active") {
+    return "Membership active. Check onboarding notes and club announcements.";
+  }
+
+  if (status === "payment_under_review") {
+    return "Wait for Club Services to verify your dues proof.";
+  }
+
+  if (status === "pending_payment" || status === "needs_new_payment_details") {
+    return duesRequired ? "Upload or update your dues proof so verification can continue." : "Wait for Club Services to finish activation.";
+  }
+
+  if (status === "rejected") {
+    return "Review the decision note, then choose another club or contact Club Services.";
+  }
+
+  if (status === "cancelled") {
+    return "This request is closed. You can return to Discover Clubs.";
+  }
+
+  return "Wait for Club Services to review your join request.";
+}
+
+function getJoinFlowSteps(status: ResolvedMembershipStatus | "not_started", duesRequired: boolean) {
+  const paymentDone = status === "payment_under_review" || status === "active";
+
+  return [
+    {
+      label: "Request to join",
+      done: status !== "not_started",
+      current: status === "not_started" || status === "under_review"
+    },
+    {
+      label: duesRequired ? "Upload dues proof" : "Dues not required",
+      done: !duesRequired || paymentDone,
+      current: duesRequired && (status === "pending_payment" || status === "needs_new_payment_details")
+    },
+    {
+      label: "Club Services verification",
+      done: status === "active",
+      current: status === "payment_under_review"
+    },
+    {
+      label: "Membership active",
+      done: status === "active",
+      current: false
+    },
+    {
+      label: "Onboarding instructions",
+      done: status === "active",
+      current: status === "active"
+    }
+  ];
+}
+
+function getWhatsAppStatusLabel(request?: MembershipRequestRecord) {
+  if (!request) {
+    return "Available after approval";
+  }
+
+  if (request.whatsapp_onboarding_status === "added") {
+    return "Added to onboarding group";
+  }
+
+  if (request.whatsapp_onboarding_status === "ready") {
+    return "Ready for onboarding";
+  }
+
+  return "Waiting for approval";
+}
+
+function getAnnouncementPriorityClass(priority: AnnouncementRecord["priority"]) {
+  return {
+    low: "bg-muted text-muted-foreground",
+    normal: "bg-accent text-foreground",
+    high: "bg-warning/15 text-warning",
+    urgent: "bg-destructive/15 text-destructive"
+  }[priority];
+}
+
 function resolveJoinAmount(
   studentType: "fresher" | "returning",
   settings?: { fresher_dues_amount: number; returning_student_dues_amount: number } | null
@@ -202,12 +495,17 @@ function resolveJoinAmount(
 
 function DuesConfirmationCard({
   request,
-  payment
+  payment,
+  club,
+  settings
 }: {
   request: MembershipRequestRecord;
   payment?: DuePaymentRecord;
+  club: ClubRecord;
+  settings?: ClubPaymentSettingsRecord | null;
 }) {
   const resolvedStatus = resolveMembershipStatus(request, payment);
+  const duesRequired = isDuesRequired(club, settings);
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [accountName, setAccountName] = useState(payment?.payment_account_name || "");
@@ -217,11 +515,6 @@ function DuesConfirmationCard({
   const proofInputRef = useRef<HTMLInputElement | null>(null);
   const [isUploadingProof, setIsUploadingProof] = useState(false);
   const [paymentProofLink, setPaymentProofLink] = useState<string | null>(null);
-  const { data: settings, isLoading: isLoadingSettings } = useQuery({
-    queryKey: ["club-payment-settings", request.club_id],
-    queryFn: () => getClubPaymentSettings(request.club_id),
-    retry: false
-  });
   const submitMutation = useMutation({
     mutationFn: () =>
       submitDuePaymentConfirmation(request.due_payment_id || "", {
@@ -294,7 +587,7 @@ function DuesConfirmationCard({
 
       if (!user?.id) {
         toast.error("You are not signed in", {
-          description: "Please sign in again and retry uploading your receipt."
+          description: "Please sign in again and retry uploading your dues proof."
         });
         return;
       }
@@ -309,7 +602,7 @@ function DuesConfirmationCard({
         description: "The upload is ready to attach to your payment update."
       });
     } catch (uploadError) {
-      toast.error("Could not upload receipt", {
+      toast.error("Could not upload dues proof", {
         description: getErrorMessage(uploadError)
       });
     } finally {
@@ -319,7 +612,16 @@ function DuesConfirmationCard({
   }
 
   if (!request.due_payment_id) {
-    return null;
+    return (
+      <div className="mt-4 rounded-xl border border-warning/20 bg-warning/10 p-4 text-sm">
+        <p className="font-semibold text-warning">{duesRequired ? "Dues proof not uploaded yet" : "Dues are not required"}</p>
+        <p className="mt-1 text-muted-foreground">
+          {duesRequired
+            ? "Club Services will show the upload step once this request is ready for payment confirmation."
+            : "Your request can move through verification without dues proof."}
+        </p>
+      </div>
+    );
   }
 
   if (resolvedStatus === "payment_under_review") {
@@ -331,7 +633,7 @@ function DuesConfirmationCard({
         </p>
         {paymentProofLink ? (
           <a className="mt-2 inline-block text-primary underline" href={paymentProofLink} target="_blank" rel="noreferrer">
-            View submitted receipt
+            View submitted dues proof
           </a>
         ) : null}
       </div>
@@ -365,7 +667,7 @@ function DuesConfirmationCard({
       <div className="mt-4 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm">
         <p className="font-semibold text-destructive">This join request was not approved.</p>
         <p className="mt-1 text-muted-foreground">
-          Check the discover clubs page if you would like to try another club.
+          {request.decision_remarks || "Check the discover clubs page if you would like to try another club."}
         </p>
       </div>
     );
@@ -390,12 +692,15 @@ function DuesConfirmationCard({
             ? "Your earlier payment details were rejected. Correct them below and resend for review."
             : "Pay your club dues, then send the payment details below so your membership can move forward."}
         </p>
+        {resolvedStatus === "needs_new_payment_details" ? (
+          <p className="mt-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-destructive">
+            {request.decision_remarks || "Club Services rejected the previous proof. No detailed rejection note was provided."}
+          </p>
+        ) : null}
       </div>
 
       <div className="nh-card-soft p-4">
-        {isLoadingSettings ? (
-          <NeoLoadingState title="Loading payment details" message="We are checking the Club Services bank instructions." compact />
-        ) : settings ? (
+        {settings ? (
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Bank</p>
@@ -434,7 +739,7 @@ function DuesConfirmationCard({
           event.preventDefault();
           if (!proofUrl) {
             toast.error("Receipt required", {
-              description: "Please upload your receipt before resending payment details."
+              description: "Please upload your dues proof before resending payment details."
             });
             return;
           }
@@ -442,15 +747,15 @@ function DuesConfirmationCard({
         }}
       >
         <div className="space-y-2">
-          <Label>Name on account used</Label>
-          <Input value={accountName} onChange={(event) => setAccountName(event.target.value)} required />
+          <Label htmlFor={`membership_account_name_${request.id}`}>Name on account used</Label>
+          <Input id={`membership_account_name_${request.id}`} value={accountName} onChange={(event) => setAccountName(event.target.value)} required />
         </div>
         <div className="space-y-2">
-          <Label>Payment date</Label>
-          <Input type="date" value={paidAt} onChange={(event) => setPaidAt(event.target.value)} />
+          <Label htmlFor={`membership_payment_date_${request.id}`}>Payment date</Label>
+          <Input id={`membership_payment_date_${request.id}`} type="date" value={paidAt} onChange={(event) => setPaidAt(event.target.value)} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor={`membership_proof_upload_${request.id}`}>Upload receipt</Label>
+          <Label htmlFor={`membership_proof_upload_${request.id}`}>Upload dues proof</Label>
           <Input
             ref={proofInputRef}
             id={`membership_proof_upload_${request.id}`}
@@ -462,9 +767,9 @@ function DuesConfirmationCard({
           {proofFileName ? <p className="text-xs text-muted-foreground">Uploaded: {proofFileName}</p> : null}
           {proofUrl ? (
             <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">Receipt ready to submit.</p>
+              <p className="text-xs text-muted-foreground">Dues proof ready to submit.</p>
               <Button type="button" variant="outline" size="sm" onClick={clearReceiptSelection}>
-                Remove receipt
+                Remove dues proof
               </Button>
             </div>
           ) : null}
@@ -477,7 +782,7 @@ function DuesConfirmationCard({
                 Sending...
               </>
             ) : (
-              "Resend Payment Details"
+              "Submit Dues Proof"
             )}
           </Button>
         </div>
@@ -486,15 +791,323 @@ function DuesConfirmationCard({
   );
 }
 
+function JoinFlowStepper({
+  status,
+  duesRequired
+}: {
+  status: ResolvedMembershipStatus | "not_started";
+  duesRequired: boolean;
+}) {
+  const steps = getJoinFlowSteps(status, duesRequired);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Join Progress</CardTitle>
+        <p className="text-sm text-muted-foreground">Every club membership moves through Club Services verification before activation.</p>
+      </CardHeader>
+      <CardContent className="grid gap-3 md:grid-cols-5">
+        {steps.map((step, index) => (
+          <div
+            key={step.label}
+            className={`rounded-xl border-2 p-3 text-sm ${
+              step.done
+                ? "border-success bg-success/10 text-success"
+                : step.current
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-muted/40 text-muted-foreground"
+            }`}
+          >
+            <p className="text-xs font-semibold uppercase tracking-wide">Step {index + 1}</p>
+            <p className="mt-1 font-semibold">{step.label}</p>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
+
+function ClubDetailOverview({
+  club,
+  categories,
+  existingRequest,
+  settings,
+  nextEvent,
+  clubEvents,
+  announcements,
+  announcementsLoading,
+  announcementsFailed,
+  announcementsError
+}: {
+  club: ClubRecord;
+  categories: ClubInterestCategory[];
+  existingRequest?: MembershipRequestRecord;
+  settings?: ClubPaymentSettingsRecord | null;
+  nextEvent?: ApprovedEventRecord;
+  clubEvents: ApprovedEventRecord[];
+  announcements: AnnouncementRecord[];
+  announcementsLoading: boolean;
+  announcementsFailed: boolean;
+  announcementsError: unknown;
+}) {
+  const [shareOpen, setShareOpen] = useState(false);
+  const payment = existingRequest?.due_payment || undefined;
+  const membershipStatus = existingRequest ? resolveMembershipStatus(existingRequest, payment) : "not_started";
+  const duesRequired = isDuesRequired(club, settings);
+  const active = membershipStatus === "active";
+  const canInvite = club.is_public_signup !== false;
+  const inviteReason = getClubInviteReason(club, nextEvent);
+  const inviteUrl = getClubShareUrl(club.id);
+  const inviteText = `Hey, join ${club.name} on Campus One. ${inviteReason}`;
+  const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(`${inviteText}\n${inviteUrl}`)}`;
+
+  async function handleNativeShare(successTitle = "Club invite ready", fallbackTitle = "Club invite copied") {
+    await shareOrCopy({
+      title: `Join ${club.name}`,
+      text: inviteText,
+      url: inviteUrl,
+      successTitle,
+      fallbackTitle
+    });
+    setShareOpen(false);
+  }
+
+  async function handleCopyClubLink() {
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      toast.success("Club link copied", {
+        description: "Paste it into any chat or social app."
+      });
+      setShareOpen(false);
+    } catch (copyError) {
+      toast.error("Could not copy club link", {
+        description: getErrorMessage(copyError)
+      });
+    }
+  }
+
+  return (
+    <div className="grid gap-4 xl:grid-cols-[1.4fr_0.8fr]">
+      <Card>
+        <CardHeader className="space-y-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <div className="flex items-center gap-3"><ClubLogo club={club} /><div><CardTitle className="text-2xl">{club.name}</CardTitle><p className="text-sm text-muted-foreground">{club.code || "Nile University club"}</p></div></div>
+            </div>
+            {existingRequest ? (
+              <MembershipStatusBadge request={existingRequest} payment={payment} />
+            ) : (
+              <Badge variant="outline">Not joined</Badge>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {canInvite ? (
+              <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+                <DialogTrigger asChild>
+                  <Button type="button" variant="outline" className="w-full sm:w-auto">
+                    <Share2 className="mr-2 h-4 w-4" />
+                    Invite Friend
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md" data-testid="club-share-sheet">
+                  <DialogHeader>
+                    <DialogTitle>Share {club.name}</DialogTitle>
+                    <DialogDescription>
+                      Send this club to a friend or copy the link for any chat app.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left"
+                      onClick={() => void handleNativeShare()}
+                    >
+                      <Smartphone className="h-5 w-5 shrink-0" />
+                      <span>
+                        <span className="block font-black">Share to apps</span>
+                        <span className="block text-xs normal-case tracking-normal text-muted-foreground">Open your device share sheet</span>
+                      </span>
+                    </Button>
+                    <Button
+                      asChild
+                      type="button"
+                      variant="outline"
+                      className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left"
+                    >
+                      <a
+                        href={whatsappShareUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={() => {
+                          toast.success("WhatsApp invite ready", {
+                            description: "Choose the friend or group you want to send it to."
+                          });
+                          setShareOpen(false);
+                        }}
+                      >
+                        <MessageCircle className="h-5 w-5 shrink-0" />
+                        <span>
+                          <span className="block font-black">WhatsApp</span>
+                          <span className="block text-xs normal-case tracking-normal text-muted-foreground">Send as a chat invite</span>
+                        </span>
+                      </a>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left"
+                      onClick={() => void handleNativeShare("Snapchat invite ready", "Snapchat invite copied")}
+                    >
+                      <Camera className="h-5 w-5 shrink-0" />
+                      <span>
+                        <span className="block font-black">Snapchat</span>
+                        <span className="block text-xs normal-case tracking-normal text-muted-foreground">Share or copy for Snap</span>
+                      </span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left"
+                      onClick={() => void handleNativeShare("Instagram invite ready", "Instagram invite copied")}
+                    >
+                      <Instagram className="h-5 w-5 shrink-0" />
+                      <span>
+                        <span className="block font-black">Instagram</span>
+                        <span className="block text-xs normal-case tracking-normal text-muted-foreground">Use share sheet or copy</span>
+                      </span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left sm:col-span-2"
+                      onClick={() => void handleCopyClubLink()}
+                    >
+                      <Copy className="h-5 w-5 shrink-0" />
+                      <span>
+                        <span className="block font-black">Copy Link</span>
+                        <span className="block text-xs normal-case tracking-normal text-muted-foreground">Paste anywhere</span>
+                      </span>
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            ) : (
+              <Badge variant="outline">Invites open when membership opens</Badge>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {categories.map((category) => (
+              <Badge key={category} variant="outline" className="bg-accent/25">
+                {category}
+              </Badge>
+            ))}
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <p className="text-sm leading-6 text-muted-foreground">{getClubDescription(club)}</p>
+          {(club.website_url || Object.keys(club.social_links || {}).length > 0) ? (
+            <div className="flex flex-wrap gap-2">
+              {club.website_url ? <Button asChild size="sm" variant="outline"><a href={club.website_url} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" /> Website</a></Button> : null}
+              {Object.entries(club.social_links || {}).map(([network, url]) => <Button key={network} asChild size="sm" variant="outline"><a href={url} target="_blank" rel="noreferrer">{network}</a></Button>)}
+            </div>
+          ) : null}
+          {club.gallery?.length ? (
+            <div><h3 className="mb-3 font-black">Club gallery</h3><div className="grid grid-cols-2 gap-3 md:grid-cols-3">{club.gallery.map((media) => <GalleryImage key={media.id} path={media.storage_path} caption={media.caption} />)}</div></div>
+          ) : null}
+          <div>
+            <h3 className="mb-3 font-black">Approved events</h3>
+            {clubEvents.length ? <div className="space-y-2">{clubEvents.slice(0, 6).map((event) => <div key={event.proposal_id} className="rounded-lg border p-3"><p className="font-semibold">{event.title}</p><p className="text-sm text-muted-foreground">{formatDate(event.event_date)} · {event.event_lifecycle === "past" ? "Past event" : "Upcoming"}</p></div>)}</div> : <p className="text-sm text-muted-foreground">No approved events have been published for this club yet.</p>}
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="rounded-xl border border-border bg-muted/40 p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Dues requirement</p>
+              <p className="mt-1 font-semibold">{getClubDuesRequirementLabel(club, settings)}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{getDuesStateLabel(club, existingRequest, payment, settings)}</p>
+            </div>
+            <div className="rounded-xl border border-border bg-muted/40 p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Next event / meeting</p>
+              <p className="mt-1 font-semibold">
+                {nextEvent ? `${nextEvent.title} - ${formatDate(nextEvent.event_date)}` : "No upcoming event yet"}
+              </p>
+              {nextEvent?.event_time || nextEvent?.location ? (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {[nextEvent.event_time?.slice(0, 5), nextEvent.location].filter(Boolean).join(" - ")}
+                </p>
+              ) : null}
+            </div>
+            <div className="rounded-xl border border-border bg-muted/40 p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Next step</p>
+              <p className="mt-1 font-semibold">
+                {membershipStatus === "not_started" ? "Submit your join request." : getMembershipNextStep(membershipStatus, duesRequired)}
+              </p>
+            </div>
+            <div className="rounded-xl border border-border bg-muted/40 p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">WhatsApp / onboarding</p>
+              <p className="mt-1 font-semibold">{getWhatsAppStatusLabel(existingRequest)}</p>
+              {active && existingRequest?.whatsapp_chat_url ? (
+                <a className="mt-2 inline-block text-sm text-primary underline" href={existingRequest.whatsapp_chat_url} target="_blank" rel="noreferrer">
+                  Open onboarding chat
+                </a>
+              ) : null}
+            </div>
+          </div>
+          {(club.whatsapp_group_name || club.whatsapp_onboarding_notes || existingRequest?.whatsapp_onboarding_notes) ? (
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">
+              <p className="font-semibold text-primary">Contact / onboarding note</p>
+              {club.whatsapp_group_name ? <p className="mt-1 text-muted-foreground">Group: {club.whatsapp_group_name}</p> : null}
+              <p className="mt-1 text-muted-foreground">
+                {existingRequest?.whatsapp_onboarding_notes || club.whatsapp_onboarding_notes || "Instructions will appear here after approval."}
+              </p>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Announcements Preview</CardTitle>
+          <p className="text-sm text-muted-foreground">Recent updates visible to you for this club.</p>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {announcementsLoading ? (
+            <NeoLoadingState title="Loading announcements" message="Checking recent club updates." compact />
+          ) : announcementsFailed ? (
+            <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
+              {getErrorMessage(announcementsError)}
+            </div>
+          ) : announcements.length === 0 ? (
+            <p className="rounded-xl border border-border bg-muted/40 p-4 text-sm text-muted-foreground">No announcements for this club yet.</p>
+          ) : (
+            announcements.slice(0, 3).map((announcement) => (
+              <Link key={announcement.id} to="/communications" className="block">
+                <div className="nh-list-card transition-colors hover:bg-accent/15">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="font-semibold leading-5">{announcement.title}</p>
+                    <Badge className={getAnnouncementPriorityClass(announcement.priority)}>{announcement.priority}</Badge>
+                  </div>
+                  <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{announcement.message}</p>
+                </div>
+              </Link>
+            ))
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function JoinClubPanel({
   club,
   existingRequest,
+  settings,
   defaultStudentType,
   defaultPhoneNumber,
   defaultDepartment
 }: {
   club: ClubRecord;
   existingRequest?: MembershipRequestRecord;
+  settings?: ClubPaymentSettingsRecord | null;
   defaultStudentType?: "fresher" | "returning" | null;
   defaultPhoneNumber?: string | null;
   defaultDepartment?: string | null;
@@ -559,13 +1172,8 @@ function JoinClubPanel({
   }, [persistDraft]);
   // ── End draft persistence ────────────────────────────────────────────────
 
-  const { data: settings } = useQuery({
-    queryKey: ["club-payment-settings", club.id],
-    queryFn: () => getClubPaymentSettings(club.id),
-    retry: false
-  });
-
-  const joinAmount = resolveJoinAmount(studentType, settings);
+  const duesRequired = isDuesRequired(club, settings);
+  const joinAmount = duesRequired ? resolveJoinAmount(studentType, settings) : 0;
   const normalizedStudentId = normalizeStudentId(studentId);
 
   const createRequestMutation = useMutation({
@@ -578,7 +1186,7 @@ function JoinClubPanel({
         department: department || null,
         student_type: studentType,
         join_reason: joinReason || null,
-        payment_account_name: accountName,
+            payment_account_name: accountName,
         payment_reference: null,
         payment_paid_at: paidAt || null,
         proof_url: proofUrl || null,
@@ -631,7 +1239,7 @@ function JoinClubPanel({
 
       if (!user?.id) {
         toast.error("You are not signed in", {
-          description: "Please sign in again and retry uploading your receipt."
+          description: "Please sign in again and retry uploading your dues proof."
         });
         return;
       }
@@ -646,7 +1254,7 @@ function JoinClubPanel({
         description: "The upload will be attached to your join request."
       });
     } catch (uploadError) {
-      toast.error("Could not upload receipt", {
+      toast.error("Could not upload dues proof", {
         description: getErrorMessage(uploadError)
       });
     } finally {
@@ -698,14 +1306,16 @@ function JoinClubPanel({
           </div>
           <div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Join dues</p>
-            <p className="mt-1 text-lg font-bold">{formatCurrency(joinAmount)}</p>
+            <p className="mt-1 text-lg font-bold">{duesRequired ? formatCurrency(joinAmount) : "Not required"}</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Pay first, then upload your receipt with your join request.
+              {duesRequired
+                ? "Pay first, then upload your dues proof with your join request."
+                : "Submit your join request first. Club Services will review and activate it if approved."}
             </p>
           </div>
         </div>
 
-        {settings ? (
+        {duesRequired && settings ? (
           <div className="nh-card-soft space-y-2 p-4 text-sm">
             <p className="font-semibold">Club Services Account</p>
             <p><span className="text-muted-foreground">Bank:</span> {settings.bank_name}</p>
@@ -715,11 +1325,11 @@ function JoinClubPanel({
               <p className="text-muted-foreground">{settings.payment_instructions}</p>
             ) : null}
           </div>
-        ) : (
+        ) : duesRequired ? (
           <div className="rounded-xl border border-dashed p-3 text-sm text-muted-foreground">
             Shared payment account details have not been published yet. Please contact Club Services before paying.
           </div>
-        )}
+        ) : null}
 
         {!existingRequest ? (
           <form
@@ -738,9 +1348,9 @@ function JoinClubPanel({
                 });
                 return;
               }
-              if (!proofUrl) {
+              if (duesRequired && !proofUrl) {
                 toast.error("Receipt required", {
-                  description: "Please upload your receipt before sending this join request."
+                  description: "Please upload your dues proof before sending this join request."
                 });
                 return;
               }
@@ -783,34 +1393,38 @@ function JoinClubPanel({
               <Label>Why did you join this club? (Optional)</Label>
               <Textarea value={joinReason} onChange={(event) => setJoinReason(event.target.value)} rows={3} />
             </div>
-            <div className="space-y-2">
-              <Label>Name on account used</Label>
-              <Input value={accountName} onChange={(event) => setAccountName(event.target.value)} required />
-            </div>
-            <div className="space-y-2">
-              <Label>Payment date</Label>
-              <Input type="date" value={paidAt} onChange={(event) => setPaidAt(event.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor={`join-proof-${club.id}`}>Upload proof</Label>
-              <Input
-                ref={proofInputRef}
-                id={`join-proof-${club.id}`}
-                type="file"
-                accept="image/*,.pdf"
-                onChange={handleReceiptUpload}
-                disabled={isUploadingProof}
-              />
-              {proofFileName ? <p className="text-xs text-muted-foreground">Uploaded: {proofFileName}</p> : null}
-              {proofUrl ? (
+            {duesRequired ? (
+              <>
                 <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground">Receipt ready to submit.</p>
-                  <Button type="button" variant="outline" size="sm" onClick={clearReceiptSelection}>
-                    Remove receipt
-                  </Button>
+                  <Label htmlFor={`join-account-name-${club.id}`}>Name on account used</Label>
+                  <Input id={`join-account-name-${club.id}`} value={accountName} onChange={(event) => setAccountName(event.target.value)} required />
                 </div>
-              ) : null}
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`join-payment-date-${club.id}`}>Payment date</Label>
+                  <Input id={`join-payment-date-${club.id}`} type="date" value={paidAt} onChange={(event) => setPaidAt(event.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor={`join-proof-${club.id}`}>Upload dues proof</Label>
+                  <Input
+                    ref={proofInputRef}
+                    id={`join-proof-${club.id}`}
+                    type="file"
+                    accept="image/*,.pdf"
+                    onChange={handleReceiptUpload}
+                    disabled={isUploadingProof}
+                  />
+                  {proofFileName ? <p className="text-xs text-muted-foreground">Uploaded: {proofFileName}</p> : null}
+                  {proofUrl ? (
+                    <div className="space-y-2">
+                      <p className="text-xs text-muted-foreground">Dues proof ready to submit.</p>
+                      <Button type="button" variant="outline" size="sm" onClick={clearReceiptSelection}>
+                        Remove dues proof
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+              </>
+            ) : null}
             <Button className="w-full" type="submit" disabled={createRequestMutation.isPending || isUploadingProof}>
               {createRequestMutation.isPending ? (
                 <>
@@ -818,7 +1432,7 @@ function JoinClubPanel({
                   Sending request...
                 </>
               ) : (
-                "Submit Paid Join Request"
+                "Join Club"
               )}
             </Button>
           </form>
@@ -827,7 +1441,12 @@ function JoinClubPanel({
             <p className="text-sm text-muted-foreground">
               Current request: {getStatusLabel(resolveMembershipStatus(existingRequest, existingRequest.due_payment || undefined))}.
             </p>
-            <DuesConfirmationCard request={existingRequest} payment={existingRequest.due_payment || undefined} />
+            <DuesConfirmationCard
+              request={existingRequest}
+              payment={existingRequest.due_payment || undefined}
+              club={club}
+              settings={settings}
+            />
           </div>
         )}
       </CardContent>
@@ -837,30 +1456,61 @@ function JoinClubPanel({
 
 function DiscoverClubCard({
   club,
-  existingRequest
+  existingRequest,
+  categories,
+  nextEvent
 }: {
   club: ClubRecord;
   existingRequest?: MembershipRequestRecord;
+  categories: ClubInterestCategory[];
+  nextEvent?: ApprovedEventRecord;
 }) {
   const description = getClubDescription(club);
-  const buttonLabel = existingRequest ? "Open request" : "Open join form";
+  const buttonLabel = getClubCtaLabel(existingRequest);
+  const memberCount = getClubMemberCount(club);
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="flex h-full flex-col overflow-hidden">
       <CardHeader className="border-b-2 border-foreground bg-primary/10">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <CardTitle className="text-lg">{club.name}</CardTitle>
-            <p className="text-sm text-muted-foreground">{club.code || "Nile University club"}</p>
+            <div className="flex items-center gap-3"><ClubLogo club={club} className="h-12 w-12" /><div><CardTitle className="text-lg">{club.name}</CardTitle><p className="text-sm text-muted-foreground">{club.code || "Nile University club"}</p></div></div>
           </div>
           {existingRequest ? <MembershipStatusBadge request={existingRequest} payment={existingRequest.due_payment || undefined} /> : null}
         </div>
       </CardHeader>
-      <CardContent className="space-y-4 p-5">
+      <CardContent className="flex flex-1 flex-col space-y-4 p-5">
+        <div className="flex flex-wrap gap-2">
+          {categories.slice(0, 3).map((category) => (
+            <Badge key={category} variant="outline" className="bg-accent/25">
+              {category}
+            </Badge>
+          ))}
+        </div>
         <p className="text-sm leading-6 text-muted-foreground">
           {getClubDescriptionPreview(description)}
         </p>
-        <Button asChild className="w-full sm:w-auto">
+        <div className="grid gap-2 text-sm sm:grid-cols-2">
+          <div className="rounded-xl border border-border bg-muted/40 p-3">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Dues</p>
+            <p className="font-semibold">{getClubDuesLabel(club)}</p>
+          </div>
+          <div className="rounded-xl border border-border bg-muted/40 p-3">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Membership</p>
+            <p className="font-semibold">{club.is_public_signup === false ? "Not open yet" : "Open"}</p>
+          </div>
+          {typeof memberCount === "number" ? (
+            <div className="rounded-xl border border-border bg-muted/40 p-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Members</p>
+              <p className="font-semibold">{memberCount}</p>
+            </div>
+          ) : null}
+          <div className="rounded-xl border border-border bg-muted/40 p-3">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Next event</p>
+            <p className="font-semibold">{nextEvent ? `${formatDate(nextEvent.event_date)}${nextEvent.event_time ? `, ${nextEvent.event_time.slice(0, 5)}` : ""}` : "No event yet"}</p>
+          </div>
+        </div>
+        <Button asChild className="mt-auto w-full sm:w-auto">
           <Link to={`/membership/clubs/${club.id}`}>{buttonLabel}</Link>
         </Button>
       </CardContent>
@@ -870,6 +1520,7 @@ function DiscoverClubCard({
 
 function StudentClubJoinPage({
   clubs,
+  events,
   myRequests,
   isLoadingClubs,
   isLoadingRequests,
@@ -882,6 +1533,7 @@ function StudentClubJoinPage({
   defaultDepartment
 }: {
   clubs: ClubRecord[];
+  events: ApprovedEventRecord[];
   myRequests: MembershipRequestRecord[];
   isLoadingClubs: boolean;
   isLoadingRequests: boolean;
@@ -894,8 +1546,37 @@ function StudentClubJoinPage({
   defaultDepartment?: string | null;
 }) {
   const { clubId } = useParams();
-  const club = clubs.find((item) => item.id === clubId);
+  const listedClub = clubs.find((item) => item.id === clubId);
+  const { data: detailedClub } = useQuery({
+    queryKey: ["club-detail", clubId],
+    queryFn: () => getClubDetail(clubId as string),
+    enabled: Boolean(clubId),
+    retry: false
+  });
+  const club = detailedClub || listedClub;
   const existingRequest = myRequests.find((request) => request.club_id === clubId);
+  const { data: settings } = useQuery({
+    queryKey: ["club-payment-settings", club?.id],
+    queryFn: () => getClubPaymentSettings(club?.id),
+    enabled: Boolean(club?.id),
+    retry: false
+  });
+  const {
+    data: announcementsPage = emptyPaginatedResponse<AnnouncementRecord>(),
+    isLoading: announcementsLoading,
+    isError: announcementsFailed,
+    error: announcementsError
+  } = useQuery({
+    queryKey: ["club-detail-announcements", club?.id],
+    queryFn: () => getAnnouncements({ club_id: club?.id, page: 1, page_size: 5 }),
+    enabled: Boolean(club?.id),
+    retry: false
+  });
+  const categories = club ? getClubInterestCategories(club) : [];
+  const nextEvent = club ? getNextClubEvent(club.id, events) : undefined;
+  const clubEvents = club ? events.filter((event) => event.club_id === club.id) : [];
+  const membershipStatus = existingRequest ? resolveMembershipStatus(existingRequest, existingRequest.due_payment || undefined) : "not_started";
+  const duesRequired = club ? isDuesRequired(club, settings) : false;
 
   return (
     <div className="nh-page">
@@ -903,7 +1584,7 @@ function StudentClubJoinPage({
         <Button asChild variant="outline" className="gap-2">
           <Link to="/membership">
             <ArrowLeft className="h-4 w-4" />
-            Back to clubs
+            Discover Clubs
           </Link>
         </Button>
       </div>
@@ -937,9 +1618,23 @@ function StudentClubJoinPage({
             title={`Join ${club.name}`}
             description={getClubDescription(club)}
           />
+          <ClubDetailOverview
+            club={club}
+            categories={categories}
+            existingRequest={existingRequest}
+            settings={settings}
+            nextEvent={nextEvent}
+            clubEvents={clubEvents}
+            announcements={announcementsPage.items}
+            announcementsLoading={announcementsLoading}
+            announcementsFailed={announcementsFailed}
+            announcementsError={announcementsError}
+          />
+          <JoinFlowStepper status={membershipStatus} duesRequired={duesRequired} />
           <JoinClubPanel
             club={club}
             existingRequest={existingRequest}
+            settings={settings}
             defaultStudentType={defaultStudentType}
             defaultPhoneNumber={defaultPhoneNumber}
             defaultDepartment={defaultDepartment}
@@ -953,13 +1648,26 @@ function StudentClubJoinPage({
 function StudentMembershipView() {
   const { profile } = useAuth();
   const { clubId } = useParams();
+  useUsageTracking(clubId ? "club_detail_view" : "club_discovery_view");
   const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<ClubInterestCategory | "all">("all");
+  const [eventFilter, setEventFilter] = useState<(typeof EVENT_FILTERS)[number]["value"]>("all");
+  const [recommendationsDismissed, setRecommendationsDismissed] = useState(() => sessionStorage.getItem("club-recommendations-dismissed") === "true");
   const {
     data: clubs = [],
     isLoading: isLoadingClubs,
     isError: clubsFailed,
     error: clubsError
   } = useQuery(publicClubsQueryOptions);
+  const {
+    data: eventsPage = emptyPaginatedResponse<ApprovedEventRecord>(),
+    isError: eventsFailed,
+    error: eventsError
+  } = useQuery({
+    queryKey: ["membership-discovery-events"],
+    queryFn: () => getApprovedEvents({ page: 1, page_size: 100 }),
+    retry: false
+  });
   const {
     data: myRequests = [],
     isLoading: isLoadingRequests,
@@ -974,22 +1682,79 @@ function StudentMembershipView() {
     () => new Map(myRequests.map((request) => [request.club_id, request])),
     [myRequests]
   );
+  const clubCategoriesById = useMemo(
+    () => new Map(clubs.map((club) => [club.id, getClubInterestCategories(club)] as const)),
+    [clubs]
+  );
+  const upcomingEvents = useMemo(
+    () => eventsPage.items.filter((event) => event.event_lifecycle === "upcoming" || event.event_lifecycle === "happening_today"),
+    [eventsPage.items]
+  );
+  const nextEventByClubId = useMemo(
+    () => new Map(clubs.map((club) => [club.id, getNextClubEvent(club.id, upcomingEvents)] as const)),
+    [clubs, upcomingEvents]
+  );
+  const recommendedCategories = useMemo(() => getStudentInterestCategories(profile), [profile]);
   const filteredClubs = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
 
-    if (!normalizedSearch) {
-      return clubs;
-    }
+    return clubs
+      .filter((club) => {
+        const categories = clubCategoriesById.get(club.id) ?? [];
+        const hasUpcomingEvent = Boolean(nextEventByClubId.get(club.id));
 
-    return clubs.filter((club) =>
-      [club.name, club.code, getClubDescription(club)].filter(Boolean).some((value) => value?.toLowerCase().includes(normalizedSearch))
-    );
-  }, [clubs, search]);
+        if (normalizedSearch && !getClubSearchFields(club, categories).includes(normalizedSearch)) {
+          return false;
+        }
+
+        if (categoryFilter !== "all" && !categories.includes(categoryFilter)) {
+          return false;
+        }
+
+        if (eventFilter === "upcoming" && !hasUpcomingEvent) {
+          return false;
+        }
+
+        return true;
+      })
+      .sort((first, second) => {
+        const firstRecommended = recommendedCategories.some((category) => clubCategoriesById.get(first.id)?.includes(category));
+        const secondRecommended = recommendedCategories.some((category) => clubCategoriesById.get(second.id)?.includes(category));
+
+        return Number(secondRecommended) - Number(firstRecommended) || Number(Boolean(nextEventByClubId.get(second.id))) - Number(Boolean(nextEventByClubId.get(first.id))) || first.name.localeCompare(second.name);
+      });
+  }, [categoryFilter, clubCategoriesById, clubs, eventFilter, nextEventByClubId, recommendedCategories, search]);
+  const activeFilterCount = [categoryFilter !== "all", eventFilter !== "all", search.trim().length > 0].filter(Boolean).length;
+  const recommendedClubs = useMemo(() => {
+    const candidateCategories = recommendedCategories.length > 0 ? recommendedCategories : CLUB_INTEREST_CATEGORIES;
+
+    return filteredClubs
+      .filter((club) => {
+        const categories = clubCategoriesById.get(club.id) ?? [];
+
+        return candidateCategories.some((category) => categories.includes(category)) || Boolean(nextEventByClubId.get(club.id));
+      })
+      .sort((first, second) => Number(Boolean(nextEventByClubId.get(second.id))) - Number(Boolean(nextEventByClubId.get(first.id))) || first.name.localeCompare(second.name))
+      .slice(0, 3);
+  }, [clubCategoriesById, filteredClubs, nextEventByClubId, recommendedCategories]);
+  const showRecommendations = activeFilterCount === 0 && recommendedClubs.length > 0 && !recommendationsDismissed;
+  const recommendedClubIds = useMemo(() => new Set(recommendedClubs.map((club) => club.id)), [recommendedClubs]);
+  const directoryClubs = useMemo(
+    () => showRecommendations ? filteredClubs.filter((club) => !recommendedClubIds.has(club.id)) : filteredClubs,
+    [filteredClubs, recommendedClubIds, showRecommendations]
+  );
+
+  function clearDiscoveryFilters() {
+    setSearch("");
+    setCategoryFilter("all");
+    setEventFilter("all");
+  }
 
   if (clubId) {
     return (
       <StudentClubJoinPage
         clubs={clubs}
+        events={eventsPage.items}
         myRequests={myRequests}
         isLoadingClubs={isLoadingClubs}
         isLoadingRequests={isLoadingRequests}
@@ -1009,27 +1774,77 @@ function StudentMembershipView() {
       <NeoPageHeader
         eyebrow="Membership"
         title="Discover Clubs"
-        description="Explore each club first, then open its join form when you are ready to submit your payment details."
+        description="Find clubs that fit your interests and next campus activity."
       />
 
       <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <CardHeader className="space-y-5">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <CardTitle className="text-lg">Clubs</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <Sparkles className="h-5 w-5 text-primary" />
+                What clubs fit me?
+              </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Tap any club to read more and continue to its dedicated join form.
+                Search by name or choose interests to narrow the club directory.
               </p>
             </div>
-            <div className="relative sm:w-80">
+            <div className="relative lg:w-96">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search clubs..."
+                placeholder="Search clubs, categories, or descriptions..."
                 className="pl-9"
               />
             </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant={categoryFilter === "all" ? "default" : "outline"}
+              size="sm"
+              onClick={() => setCategoryFilter("all")}
+            >
+              All interests
+            </Button>
+            {CLUB_INTEREST_CATEGORIES.map((category) => (
+              <Button
+                key={category}
+                type="button"
+                variant={categoryFilter === category ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCategoryFilter(category)}
+              >
+                {category}
+              </Button>
+            ))}
+          </div>
+          <div className="grid gap-3 md:max-w-sm">
+            <div className="space-y-2">
+              <Label>Events</Label>
+              <Select value={eventFilter} onValueChange={(value) => setEventFilter(value as typeof eventFilter)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {EVENT_FILTERS.map((filter) => (
+                    <SelectItem key={filter.value} value={filter.value}>{filter.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="flex flex-col gap-3 rounded-2xl border border-border bg-muted/40 p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Filter className="h-4 w-4" />
+              <span>{filteredClubs.length} clubs match{activeFilterCount ? ` with ${activeFilterCount} active filter${activeFilterCount === 1 ? "" : "s"}` : ""}.</span>
+            </div>
+            {activeFilterCount ? (
+              <Button type="button" variant="outline" size="sm" onClick={clearDiscoveryFilters}>
+                Clear filters
+              </Button>
+            ) : null}
           </div>
         </CardHeader>
       </Card>
@@ -1050,28 +1865,75 @@ function StudentMembershipView() {
             <p className="mt-1 text-sm text-muted-foreground">{getErrorMessage(requestsError)}</p>
           </CardContent>
         </Card>
-      ) : filteredClubs.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Users className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-            <p className="font-medium">No clubs found</p>
-            <p className="mt-1 text-sm text-muted-foreground">Try another search term.</p>
-          </CardContent>
-        </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filteredClubs.map((club) => {
-            const existingRequest = requestByClubId.get(club.id);
+        <>
+          {eventsFailed ? (
+            <Card>
+              <CardContent className="p-5">
+                <p className="font-medium">Club event hints could not load</p>
+                <p className="mt-1 text-sm text-muted-foreground">{getErrorMessage(eventsError)}</p>
+              </CardContent>
+            </Card>
+          ) : null}
 
-            return (
-              <DiscoverClubCard
-                key={club.id}
-                club={club}
-                existingRequest={existingRequest}
-              />
-            );
-          })}
-        </div>
+          {showRecommendations ? (
+            <Card>
+              <CardHeader>
+                <div className="flex items-start justify-between gap-3"><CardTitle className="flex items-center gap-2 text-lg">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  {recommendedCategories.length ? "Recommended Clubs" : "Explore by Interest"}
+                </CardTitle><Button type="button" size="sm" variant="ghost" onClick={() => { sessionStorage.setItem("club-recommendations-dismissed", "true"); setRecommendationsDismissed(true); }}>Dismiss</Button></div>
+                <p className="text-sm text-muted-foreground">
+                  {recommendedCategories.length
+                    ? `Based on your profile signals: ${recommendedCategories.slice(0, 3).join(", ")}.`
+                    : "A quick starting point using active clubs and inferred interest areas."}
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {recommendedClubs.map((club) => (
+                    <DiscoverClubCard
+                      key={club.id}
+                      club={club}
+                      existingRequest={requestByClubId.get(club.id)}
+                      categories={clubCategoriesById.get(club.id) ?? []}
+                      nextEvent={nextEventByClubId.get(club.id)}
+                    />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
+
+          {filteredClubs.length === 0 ? (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Users className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+                <p className="font-medium">No clubs match those filters</p>
+                <p className="mt-1 text-sm text-muted-foreground">Try another interest, clear filters, or search by club name.</p>
+                <Button type="button" variant="outline" className="mt-4" onClick={clearDiscoveryFilters}>
+                  Clear filters
+                </Button>
+              </CardContent>
+            </Card>
+          ) : directoryClubs.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {directoryClubs.map((club) => {
+                const existingRequest = requestByClubId.get(club.id);
+
+                return (
+                  <DiscoverClubCard
+                    key={club.id}
+                    club={club}
+                    existingRequest={existingRequest}
+                    categories={clubCategoriesById.get(club.id) ?? []}
+                    nextEvent={nextEventByClubId.get(club.id)}
+                  />
+                );
+              })}
+            </div>
+          ) : null}
+        </>
       )}
 
       {myRequests.length ? (
@@ -1106,7 +1968,12 @@ function StudentMembershipView() {
 
 function ReviewerMembershipView() {
   const { role } = useRole();
-  const [statusFilter, setStatusFilter] = useState<(typeof REQUEST_STATUSES)[number]>("all");
+  const [searchParams] = useSearchParams();
+  const requestedStatus = searchParams.get("status");
+  const initialStatusFilter = REQUEST_STATUSES.includes(requestedStatus as (typeof REQUEST_STATUSES)[number])
+    ? (requestedStatus as (typeof REQUEST_STATUSES)[number])
+    : "all";
+  const [statusFilter, setStatusFilter] = useState<(typeof REQUEST_STATUSES)[number]>(initialStatusFilter);
   const [clubFilter, setClubFilter] = useState("all");
   const [page, setPage] = useState(1);
 
@@ -1114,13 +1981,16 @@ function ReviewerMembershipView() {
     setPage(1);
   }, [clubFilter, statusFilter]);
 
+  useEffect(() => {
+    setStatusFilter(initialStatusFilter);
+  }, [initialStatusFilter]);
+
   const { data: clubs = [] } = useQuery({
     queryKey: ["membership-review-clubs"],
     queryFn: () => getClubs(),
     enabled: role === "admin",
     retry: false
   });
-
   const {
     data: requestsPage = emptyPaginatedResponse<MembershipRequestRecord>(),
     isLoading,
@@ -1137,6 +2007,12 @@ function ReviewerMembershipView() {
       }),
     enabled: role === "admin",
     retry: false
+  });
+  const visibleRequests = requestsPage.items.filter((request) => {
+    const matchesStatus = statusFilter === "all" || request.status === statusFilter;
+    const matchesClub = clubFilter === "all" || request.club_id === clubFilter;
+
+    return matchesStatus && matchesClub;
   });
 
   return (
@@ -1196,7 +2072,7 @@ function ReviewerMembershipView() {
               <p className="font-medium">Unable to load membership requests</p>
               <p className="mt-1 text-sm text-muted-foreground">{getErrorMessage(error)}</p>
             </div>
-          ) : requestsPage.items.length === 0 ? (
+          ) : visibleRequests.length === 0 ? (
             <div className="nh-empty">
               <ShieldCheck className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
               <p className="font-medium">No join requests match this view</p>
@@ -1207,13 +2083,13 @@ function ReviewerMembershipView() {
           ) : (
             <div>
               <div className="space-y-3">
-                {requestsPage.items.map((request) => (
+                {visibleRequests.map((request) => (
                   <div key={request.id} className="nh-list-card">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="font-semibold">{request.profile?.full_name || "Student"}</p>
-                          <MembershipStatusBadge request={request} payment={request.due_payment || undefined} />
+                          <ReviewRequestStatusBadge status={request.status} />
                         </div>
                         <p className="text-sm text-muted-foreground">
                           {request.club?.name || "Selected club"} - {getStudentTypeLabel(request.student_type)} - {formatCurrency(request.dues_amount)}

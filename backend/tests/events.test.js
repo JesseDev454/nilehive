@@ -3,8 +3,17 @@ const assert = require("node:assert/strict");
 const { createApp } = require("../src/app");
 
 function getRelativeDate(daysFromToday) {
-  const date = new Date();
-  date.setDate(date.getDate() + daysFromToday);
+  const parts = new Intl.DateTimeFormat("en", {
+    timeZone: "Africa/Lagos",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(new Date());
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const year = Number(values.year);
+  const month = Number(values.month);
+  const day = Number(values.day);
+  const date = new Date(Date.UTC(year, month - 1, day + daysFromToday));
   return date.toISOString().slice(0, 10);
 }
 

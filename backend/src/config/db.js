@@ -12,10 +12,11 @@ const pushSubscriptionSelect =
   "id, user_id, endpoint, p256dh, auth, user_agent, created_at, updated_at, last_used_at";
 const eventReminderSelect =
   "id, user_id, proposal_id, message, remind_at, delivery_status, created_at";
-const clubSelect = "id, name, code, description, advisor_id, dues_amount, is_public_signup, whatsapp_group_name, whatsapp_onboarding_notes, created_at";
+const clubSelect = "id, name, code, description, advisor_id, dues_amount, is_public_signup, whatsapp_group_name, whatsapp_onboarding_notes, categories, logo_path, website_url, social_links, created_at";
 const clubAdvisorAssignmentSelect =
   "id, club_id, advisor_profile_id, assigned_by, remarks, created_at, club:clubs!club_advisors_club_id_fkey(id, name, code), advisor:profiles!club_advisors_advisor_profile_id_fkey(id, full_name, role, club_id, student_id)";
-const publicClubSelect = "id, name, code, description, dues_amount, created_at, is_public_signup";
+const publicClubSelect = "id, name, code, description, dues_amount, created_at, is_public_signup, categories, logo_path, website_url, social_links";
+const clubMediaSelect = "id, club_id, storage_path, caption, display_order, uploaded_by, created_at, updated_at";
 const taskSelect =
   "id, club_id, assigned_by, assigned_to, title, description, priority, status, due_date, created_at, updated_at, assigned_by_profile:profiles!tasks_assigned_by_fkey(id, full_name, student_id, role), assigned_to_profile:profiles!tasks_assigned_to_fkey(id, full_name, student_id, role)";
 const taskStatusHistorySelect =
@@ -151,6 +152,10 @@ function createDatabase(options = {}) {
       is_public_signup: club.is_public_signup ?? true,
       whatsapp_group_name: club.whatsapp_group_name ?? null,
       whatsapp_onboarding_notes: club.whatsapp_onboarding_notes ?? null,
+      categories: Array.isArray(club.categories) ? club.categories : [],
+      logo_path: club.logo_path ?? null,
+      website_url: club.website_url ?? null,
+      social_links: club.social_links && typeof club.social_links === "object" ? club.social_links : {},
       created_at: club.created_at ?? null
     };
   }
@@ -1350,6 +1355,106 @@ function createDatabase(options = {}) {
       return normalizeClub(data);
     },
 
+    async listClubMedia(clubId) {
+      const { data, error } = await getClient()
+        .from("club_media")
+        .select(clubMediaSelect)
+        .eq("club_id", clubId)
+        .order("display_order", { ascending: true })
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+      return data ?? [];
+    },
+
+    async createClubMedia(media) {
+      const { data, error } = await getClient()
+        .from("club_media")
+        .insert(media)
+        .select(clubMediaSelect)
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+
+    async updateClubMedia(mediaId, update) {
+      const { data, error } = await getClient()
+        .from("club_media")
+        .update(update)
+        .eq("id", mediaId)
+        .select(clubMediaSelect)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data ?? null;
+    },
+
+    async deleteClubMedia(mediaId) {
+      const { data, error } = await getClient()
+        .from("club_media")
+        .delete()
+        .eq("id", mediaId)
+        .select(clubMediaSelect)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data ?? null;
+    },
+
+    async getClubMediaById(mediaId) {
+      const { data, error } = await getClient()
+        .from("club_media")
+        .select(clubMediaSelect)
+        .eq("id", mediaId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data ?? null;
+    },
+
+    async recordDailyUsage({ userId, role, feature, activityDate }) {
+      const client = getClient();
+      const { error: activeError } = await client
+        .from("usage_daily_active_users")
+        .upsert({
+          activity_date: activityDate,
+          user_id: userId,
+          role
+        }, { onConflict: "activity_date,user_id" });
+
+      if (activeError) throw activeError;
+
+      const { error: metricError } = await client.rpc("increment_usage_daily_metric", {
+        p_activity_date: activityDate,
+        p_feature: feature
+      });
+
+      if (metricError) throw metricError;
+    },
+
+    async listDailyActiveUsers(dateFrom) {
+      const { data, error } = await getClient()
+        .from("usage_daily_active_users")
+        .select("activity_date, user_id, role")
+        .gte("activity_date", dateFrom)
+        .order("activity_date", { ascending: true });
+
+      if (error) throw error;
+      return data ?? [];
+    },
+
+    async listDailyUsageMetrics(dateFrom) {
+      const { data, error } = await getClient()
+        .from("usage_daily_metrics")
+        .select("activity_date, feature, event_count")
+        .gte("activity_date", dateFrom)
+        .order("activity_date", { ascending: true });
+
+      if (error) throw error;
+      return data ?? [];
+    },
+
     async createEventReminders(reminders) {
       if (!reminders.length) {
         return [];
@@ -1842,6 +1947,10 @@ function createDatabase(options = {}) {
 
       if (filters.memberId) {
         query = query.eq("member_id", filters.memberId);
+      }
+
+      if (filters.academicSession) {
+        query = query.eq("academic_session", filters.academicSession);
       }
 
       query = applyPagination(query, filters.pagination);

@@ -97,10 +97,10 @@ export function AppLayout() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="hidden sm:inline-flex"
                 onClick={() => setGuideRestartSignal((value) => value + 1)}
               >
-                Help / Guide
+                <span className="sm:hidden">Guide</span>
+                <span className="hidden sm:inline">Help / Guide</span>
               </Button>
               <Button variant="outline" size="sm" onClick={handleSignOut}>
                 Logout

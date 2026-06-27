@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nile Club Services - Admin Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#a1cde3",
+                        "on-secondary-fixed-variant": "#0b5300",
+                        "surface-tint": "#465f88",
+                        "on-tertiary-fixed": "#001f2a",
+                        "background": "#f7f9fb",
+                        "secondary-container": "#a1f487",
+                        "on-primary-container": "#708ab5",
+                        "on-secondary-fixed": "#022100",
+                        "primary-fixed-dim": "#aec7f6",
+                        "tertiary": "#000d13",
+                        "on-primary-fixed": "#001b3d",
+                        "on-surface": "#191c1e",
+                        "surface-container-low": "#f2f4f6",
+                        "on-primary-fixed-variant": "#2d476f",
+                        "on-error": "#ffffff",
+                        "surface-dim": "#d8dadc",
+                        "primary": "#000a1e",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#e0e3e5",
+                        "surface-bright": "#f7f9fb",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-container": "#002532",
+                        "primary-container": "#002147",
+                        "primary-fixed": "#d6e3ff",
+                        "on-tertiary-container": "#648fa3",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-background": "#191c1e",
+                        "inverse-primary": "#aec7f6",
+                        "inverse-surface": "#2d3133",
+                        "on-secondary-container": "#247114",
+                        "error-container": "#ffdad6",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed-dim": "#89da71",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#1e4c5f",
+                        "on-surface-variant": "#44474e",
+                        "surface": "#f7f9fb",
+                        "secondary-fixed": "#a4f78a",
+                        "outline": "#74777f",
+                        "surface-container-highest": "#e0e3e5",
+                        "outline-variant": "#c4c6cf",
+                        "secondary": "#1f6d0f",
+                        "tertiary-fixed": "#bee9ff",
+                        "inverse-on-surface": "#eff1f3",
+                        "surface-container": "#eceef0",
+                        "surface-container-high": "#e6e8ea"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "8px",
+                        "gutter": "20px",
+                        "border-width": "3px",
+                        "shadow-offset": "6px",
+                        "container-padding": "24px"
+                    },
+                    "fontFamily": {
+                        "display": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "label-bold": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "display": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "label-bold": ["14px", { "lineHeight": "1.4", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "500" }],
+                        "label-sm": ["12px", { "lineHeight": "1.4", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Neobrutalist specific styles */
+        .neo-shadow {
+            box-shadow: 6px 6px 0px 0px theme('colors.primary');
+        }
+        .neo-shadow-hover:hover {
+            box-shadow: 2px 2px 0px 0px theme('colors.primary');
+            transform: translate(4px, 4px);
+            transition: all 0.2s ease;
+        }
+        .neo-shadow-sm {
+            box-shadow: 3px 3px 0px 0px theme('colors.primary');
+        }
+        
+        /* Hide scrollbar for clean matrix view */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md min-h-screen flex">
+<!-- SideNavBar (Shared Component) -->
+<nav class="hidden md:flex flex-col h-screen w-64 border-r-3 border-primary dark:border-primary-fixed shadow-[6px_0px_0px_0px_rgba(0,10,30,1)] bg-surface dark:bg-surface pt-20 pb-8 overflow-y-auto fixed left-0 top-0 z-40">
+<div class="px-gutter mb-8">
+<h1 class="font-display text-headline-md text-primary">Club Services</h1>
+<p class="font-label-bold text-label-bold text-on-surface-variant">Academic Quest</p>
+</div>
+<div class="px-gutter mb-6">
+<button class="w-full bg-secondary-fixed text-on-secondary-fixed font-label-bold border-3 border-primary rounded-xl py-3 px-4 neo-shadow neo-shadow-hover flex justify-center items-center gap-2">
+<span class="material-symbols-outlined">add</span>
+                New Request
+            </button>
+</div>
+<ul class="flex-1 px-2 space-y-2">
+<li>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined">person</span>
+                    Student Hub
+                </a>
+</li>
+<li>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined">stars</span>
+                    President Portal
+                </a>
+</li>
+<li>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined">groups</span>
+                    Exec Dashboard
+                </a>
+</li>
+<li>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined">school</span>
+                    Advisor View
+                </a>
+</li>
+<li>
+<a class="bg-secondary-container text-on-secondary-container border-3 border-primary shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] rounded-xl m-2 px-4 py-3 flex items-center gap-3 font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined icon-fill">admin_panel_settings</span>
+                    Admin Panel
+                </a>
+</li>
+<li>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined">chat_bubble</span>
+                    Feedback
+                </a>
+</li>
+</ul>
+<ul class="px-2 mt-auto pt-6 border-t-3 border-primary border-opacity-10 space-y-2">
+<li>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined">settings</span>
+                    Settings
+                </a>
+</li>
+<li>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+                    Support
+                </a>
+</li>
+</ul>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 w-full min-h-screen">
+<!-- TopNavBar (Shared Component) -->
+<header class="sticky top-0 z-50 flex justify-between items-center px-gutter py-4 bg-background w-full border-b-3 border-primary dark:border-primary-fixed shadow-[6px_6px_0px_0px_rgba(0,10,30,1)]">
+<div class="flex items-center gap-4">
+<button class="md:hidden p-2 text-primary hover:bg-surface-container rounded-lg">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<span class="text-headline-md font-headline-lg font-black text-primary dark:text-inverse-primary tracking-tighter hidden md:block">Nile Club Services</span>
+</div>
+<div class="hidden md:flex gap-6">
+<a class="text-on-surface-variant dark:text-on-surface-variant font-label-bold font-body-md text-body-md hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,10,30,1)] transition-all" href="#">Restart Guide</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-primary hover:bg-surface-container rounded-full transition-colors relative">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="p-2 text-primary hover:bg-surface-container rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1 right-1 w-3 h-3 bg-error rounded-full border-2 border-background"></span>
+</button>
+<div class="h-10 w-10 rounded-full border-3 border-primary overflow-hidden neo-shadow bg-surface-variant flex items-center justify-center">
+<span class="font-label-bold text-primary">NU</span>
+</div>
+<button class="hidden md:flex items-center gap-2 bg-primary text-on-primary px-4 py-2 rounded-lg font-label-bold hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">logout</span>
+                    Logout
+                </button>
+</div>
+</header>
+<div class="p-gutter md:p-8 space-y-12">
+<!-- Page Header & Actions -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+<div>
+<h2 class="font-display text-display text-primary mb-2">Admin Analytics</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">High-level overview of club performance and metrics.</p>
+</div>
+<div class="flex flex-wrap gap-4">
+<button class="bg-surface text-primary font-label-bold border-3 border-primary rounded-xl py-2 px-4 neo-shadow neo-shadow-hover flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                        Download Matrix CSV
+                    </button>
+<button class="bg-secondary-fixed text-on-secondary-fixed font-label-bold border-3 border-primary rounded-xl py-2 px-4 neo-shadow neo-shadow-hover flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">picture_as_pdf</span>
+                        Download Performance PDF
+                    </button>
+</div>
+</div>
+<!-- Filter Bar -->
+<div class="bg-surface border-3 border-primary rounded-2xl p-container-padding neo-shadow flex flex-wrap gap-4 items-end">
+<div class="flex-1 min-w-[200px]">
+<label class="block font-label-bold text-label-bold text-on-surface mb-2">Semester</label>
+<div class="relative">
+<select class="w-full appearance-none bg-background border-3 border-primary rounded-xl py-3 px-4 font-body-md text-on-surface focus:outline-none focus:border-secondary focus:ring-0 neo-shadow-sm">
+<option>Fall 2023</option>
+<option>Spring 2024</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">expand_more</span>
+</div>
+</div>
+<div class="flex-1 min-w-[200px]">
+<label class="block font-label-bold text-label-bold text-on-surface mb-2">Club Name</label>
+<input class="w-full bg-background border-3 border-primary rounded-xl py-3 px-4 font-body-md text-on-surface focus:outline-none focus:border-secondary focus:ring-0 neo-shadow-sm" placeholder="Search clubs..." type="text"/>
+</div>
+<div class="flex-1 min-w-[200px]">
+<label class="block font-label-bold text-label-bold text-on-surface mb-2">Status</label>
+<div class="relative">
+<select class="w-full appearance-none bg-background border-3 border-primary rounded-xl py-3 px-4 font-body-md text-on-surface focus:outline-none focus:border-secondary focus:ring-0 neo-shadow-sm">
+<option>All Statuses</option>
+<option>Active</option>
+<option>Warning</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">expand_more</span>
+</div>
+</div>
+<button class="bg-primary text-on-primary p-3 rounded-xl border-3 border-primary neo-shadow neo-shadow-hover hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined">filter_list</span>
+</button>
+</div>
+<!-- KPI Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- KPI Card 1 -->
+<div class="bg-surface-container-lowest border-3 border-primary rounded-2xl p-container-padding neo-shadow relative overflow-hidden group">
+<div class="absolute -right-4 -top-4 w-24 h-24 bg-secondary-container rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
+<div class="flex justify-between items-start mb-4 relative z-10">
+<span class="font-label-bold text-label-bold text-on-surface bg-surface-variant px-3 py-1 rounded-full border-2 border-primary">Clubs</span>
+<span class="material-symbols-outlined text-primary text-headline-md">diversity_3</span>
+</div>
+<div class="relative z-10">
+<h3 class="font-display text-display text-primary leading-none mb-1">42</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Active Clubs</p>
+</div>
+</div>
+<!-- KPI Card 2 -->
+<div class="bg-surface-container-lowest border-3 border-primary rounded-2xl p-container-padding neo-shadow relative overflow-hidden group">
+<div class="absolute -right-4 -top-4 w-24 h-24 bg-tertiary-fixed rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
+<div class="flex justify-between items-start mb-4 relative z-10">
+<span class="font-label-bold text-label-bold text-on-surface bg-surface-variant px-3 py-1 rounded-full border-2 border-primary">Members</span>
+<span class="material-symbols-outlined text-primary text-headline-md">groups</span>
+</div>
+<div class="relative z-10">
+<h3 class="font-display text-display text-primary leading-none mb-1">1,240</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Active Members</p>
+</div>
+</div>
+<!-- KPI Card 3 -->
+<div class="bg-surface-container-lowest border-3 border-primary rounded-2xl p-container-padding neo-shadow relative overflow-hidden group">
+<div class="absolute -right-4 -top-4 w-24 h-24 bg-secondary-fixed-dim rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
+<div class="flex justify-between items-start mb-4 relative z-10">
+<span class="font-label-bold text-label-bold text-on-surface bg-surface-variant px-3 py-1 rounded-full border-2 border-primary">Finances</span>
+<span class="material-symbols-outlined text-primary text-headline-md">account_balance_wallet</span>
+</div>
+<div class="relative z-10">
+<h3 class="font-display text-display text-secondary leading-none mb-1">85%</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Dues Collected (15% Pending)</p>
+</div>
+</div>
+<!-- KPI Card 4 -->
+<div class="bg-surface-container-lowest border-3 border-primary rounded-2xl p-container-padding neo-shadow relative overflow-hidden group">
+<div class="absolute -right-4 -top-4 w-24 h-24 bg-primary-fixed rounded-full opacity-50 group-hover:scale-110 transition-transform"></div>
+<div class="flex justify-between items-start mb-4 relative z-10">
+<span class="font-label-bold text-label-bold text-on-surface bg-surface-variant px-3 py-1 rounded-full border-2 border-primary">Proposals</span>
+<span class="material-symbols-outlined text-primary text-headline-md">assignment_turned_in</span>
+</div>
+<div class="relative z-10">
+<h3 class="font-display text-display text-primary leading-none mb-1">92%</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">Approval Rate</p>
+</div>
+</div>
+</div>
+<!-- Club Performance Matrix -->
+<div class="bg-surface border-3 border-primary rounded-2xl overflow-hidden neo-shadow">
+<div class="p-container-padding border-b-3 border-primary bg-surface-bright flex justify-between items-center">
+<h3 class="font-headline-lg text-headline-lg text-primary">Club Performance Matrix</h3>
+<span class="bg-secondary-container text-on-secondary-container font-label-bold px-3 py-1 border-2 border-primary rounded-full">Top Performers Highlighted</span>
+</div>
+<div class="overflow-x-auto no-scrollbar">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-variant border-b-3 border-primary font-label-bold text-label-bold text-primary">
+<th class="p-4 border-r-3 border-primary whitespace-nowrap">Club Name</th>
+<th class="p-4 border-r-3 border-primary whitespace-nowrap">President</th>
+<th class="p-4 border-r-3 border-primary whitespace-nowrap">Members</th>
+<th class="p-4 border-r-3 border-primary whitespace-nowrap">Dues %</th>
+<th class="p-4 border-r-3 border-primary whitespace-nowrap">Events</th>
+<th class="p-4 whitespace-nowrap">Status</th>
+</tr>
+</thead>
+<tbody class="font-body-md bg-background">
+<!-- Row 1 -->
+<tr class="border-b-2 border-primary hover:bg-surface-container transition-colors">
+<td class="p-4 border-r-3 border-primary font-label-bold flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-secondary-fixed flex items-center justify-center border-2 border-primary"><span class="material-symbols-outlined text-[16px]">smart_toy</span></div>
+                                    Nile Robotics
+                                </td>
+<td class="p-4 border-r-3 border-primary">Sarah J.</td>
+<td class="p-4 border-r-3 border-primary">120</td>
+<td class="p-4 border-r-3 border-primary text-secondary font-bold">98%</td>
+<td class="p-4 border-r-3 border-primary">12/12</td>
+<td class="p-4">
+<span class="inline-flex items-center gap-1 bg-secondary-container text-on-secondary-container px-2 py-1 rounded-full border-2 border-primary text-label-sm font-label-bold"><span class="material-symbols-outlined text-[14px]">check_circle</span> Active</span>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="border-b-2 border-primary hover:bg-surface-container transition-colors">
+<td class="p-4 border-r-3 border-primary font-label-bold flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-tertiary-fixed flex items-center justify-center border-2 border-primary"><span class="material-symbols-outlined text-[16px]">computer</span></div>
+                                    Nile Tech Society
+                                </td>
+<td class="p-4 border-r-3 border-primary">Marcus T.</td>
+<td class="p-4 border-r-3 border-primary">85</td>
+<td class="p-4 border-r-3 border-primary">82%</td>
+<td class="p-4 border-r-3 border-primary">8/10</td>
+<td class="p-4">
+<span class="inline-flex items-center gap-1 bg-secondary-container text-on-secondary-container px-2 py-1 rounded-full border-2 border-primary text-label-sm font-label-bold"><span class="material-symbols-outlined text-[14px]">check_circle</span> Active</span>
+</td>
+</tr>
+<!-- Row 3 (Warning) -->
+<tr class="border-b-2 border-primary hover:bg-surface-container transition-colors bg-error-container/20">
+<td class="p-4 border-r-3 border-primary font-label-bold flex items-center gap-2">
+<div class="w-8 h-8 rounded-full bg-surface-variant flex items-center justify-center border-2 border-primary"><span class="material-symbols-outlined text-[16px]">sports_esports</span></div>
+                                    Chess Club
+                                </td>
+<td class="p-4 border-r-3 border-primary">David W.</td>
+<td class="p-4 border-r-3 border-primary">24</td>
+<td class="p-4 border-r-3 border-primary text-error font-bold">45%</td>
+<td class="p-4 border-r-3 border-primary">2/5</td>
+<td class="p-4">
+<span class="inline-flex items-center gap-1 bg-error-container text-on-error-container px-2 py-1 rounded-full border-2 border-primary text-label-sm font-label-bold"><span class="material-symbols-outlined text-[14px]">warning</span> Warning</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Visual Charts Grid (Bento Style) -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+<!-- Chart Placeholder 1 -->
+<div class="lg:col-span-2 bg-surface-container-lowest border-3 border-primary rounded-2xl p-container-padding neo-shadow flex flex-col h-80">
+<div class="flex justify-between items-center mb-6">
+<h4 class="font-headline-md text-headline-md text-primary">Event Activity (Fall 2023)</h4>
+<button class="p-2 border-2 border-primary rounded-lg hover:bg-surface-variant"><span class="material-symbols-outlined">more_horiz</span></button>
+</div>
+<div class="flex-1 w-full bg-surface-variant rounded-xl border-3 border-primary flex items-center justify-center relative overflow-hidden">
+<!-- Abstract CSS Bar Chart Representation -->
+<div class="flex items-end gap-2 h-3/4 w-3/4 pb-4 border-b-2 border-primary">
+<div class="w-1/6 bg-secondary-fixed border-2 border-primary h-1/4 rounded-t-sm"></div>
+<div class="w-1/6 bg-primary-fixed border-2 border-primary h-2/4 rounded-t-sm"></div>
+<div class="w-1/6 bg-tertiary-fixed border-2 border-primary h-3/4 rounded-t-sm"></div>
+<div class="w-1/6 bg-secondary-fixed border-2 border-primary h-full rounded-t-sm"></div>
+<div class="w-1/6 bg-primary-fixed border-2 border-primary h-2/3 rounded-t-sm"></div>
+</div>
+</div>
+</div>
+<!-- Chart Placeholder 2 -->
+<div class="bg-surface-container-lowest border-3 border-primary rounded-2xl p-container-padding neo-shadow flex flex-col h-80">
+<div class="flex justify-between items-center mb-6">
+<h4 class="font-headline-md text-headline-md text-primary">Dues Status</h4>
+</div>
+<div class="flex-1 w-full flex items-center justify-center relative">
+<!-- Abstract CSS Donut Chart Representation -->
+<div class="w-40 h-40 rounded-full border-8 border-secondary-fixed relative flex items-center justify-center">
+<div class="absolute inset-0 rounded-full border-8 border-error-container" style="clip-path: polygon(50% 50%, 100% 0, 100% 30%, 50% 50%);"></div>
+<span class="font-display text-headline-md text-primary font-bold">85%</span>
+</div>
+</div>
+<div class="mt-4 flex justify-center gap-4">
+<div class="flex items-center gap-2"><span class="w-3 h-3 bg-secondary-fixed border-2 border-primary rounded-full"></span><span class="font-label-sm">Collected</span></div>
+<div class="flex items-center gap-2"><span class="w-3 h-3 bg-error-container border-2 border-primary rounded-full"></span><span class="font-label-sm">Pending</span></div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

@@ -178,6 +178,32 @@ test("admin can list all members with club details", async () => {
   assert.equal(members[1].club.name, "Nile Business Club");
 });
 
+test("member results show dues paid only for a verified current-session payment", async () => {
+  const fakeDatabase = {
+    async listClubMembers() {
+      return [createMemberRecord()];
+    },
+    async listDuePayments(filters) {
+      assert.equal(filters.academicSession, "2025/2026");
+      return [{
+        member_id: "member-1",
+        academic_session: "2025/2026",
+        status: "paid",
+        created_at: "2026-06-20T10:00:00.000Z",
+        updated_at: "2026-06-20T10:00:00.000Z"
+      }];
+    }
+  };
+
+  const members = await listMembers({
+    actor: { id: "admin-1", role: "admin", clubId: null },
+    database: fakeDatabase
+  });
+
+  assert.equal(members[0].dues_paid, true);
+  assert.equal(members[0].dues_status, "paid");
+});
+
 test("president can list executive team members", async () => {
   const fakeDatabase = {
     async listClubMembers(filters) {

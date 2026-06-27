@@ -7,6 +7,7 @@ const { createRequestContextMiddleware } = require("./middleware/requestContext"
 const { createRequestTimeoutMiddleware } = require("./middleware/requestTimeout");
 const { createCampusOneAuthRouter } = require("./modules/auth/campusOneOidc");
 const { createAdminUsersRouter } = require("./modules/admin-users/admin-users.routes");
+const { createAnalyticsRouter } = require("./modules/analytics/analytics.routes");
 const { createHealthRouter, createReadyRouter } = require("./modules/health/health.routes");
 const { createClubsRouter } = require("./modules/clubs/clubs.routes");
 const { createCommunicationsRouter } = require("./modules/communications/communications.routes");
@@ -107,6 +108,7 @@ function createApp(options = {}) {
   app.use("/api/v1/ready", createReadyRouter({ database }));
   app.use("/api/v1/auth", createCampusOneAuthRouter({ database }));
   app.use("/api/v1/admin/users", createAdminUsersRouter({ database }));
+  app.use("/api/v1/analytics", createAnalyticsRouter({ database }));
   app.use("/api/v1/clubs", createClubsRouter({ database }));
   app.use("/api/v1/communications", createCommunicationsRouter({ database }));
   app.use("/api/v1/dashboard", createDashboardRouter({ database }));

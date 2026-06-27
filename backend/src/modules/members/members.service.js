@@ -278,7 +278,7 @@ async function syncLinkedProfileRole({
   return null;
 }
 
-function formatMember(member) {
+function formatMember(member, duePayment = null) {
   return {
     id: member.id,
     club_id: member.club_id,
@@ -289,6 +289,8 @@ function formatMember(member) {
     phone_number: member.phone_number,
     club_role: member.club_role,
     membership_status: member.membership_status,
+    dues_status: duePayment?.status || "unpaid",
+    dues_paid: duePayment?.status === "paid",
     club: member.club
       ? {
           id: member.club.id,
@@ -321,7 +323,24 @@ async function listMembers(options) {
       : {})
   }), pagination);
 
-  return pagination ? mapPaginatedResult(members, formatMember) : members.map(formatMember);
+  const memberItems = pagination ? members.items : members;
+  const currentSession = process.env.CURRENT_ACADEMIC_SESSION || "2025/2026";
+  const payments = database.listDuePayments
+    ? await database.listDuePayments({ academicSession: currentSession })
+    : [];
+  const latestPayments = new Map();
+
+  payments
+    .filter((payment) => payment.academic_session === currentSession)
+    .forEach((payment) => {
+      const existing = latestPayments.get(payment.member_id);
+      if (!existing || new Date(payment.updated_at || payment.created_at) > new Date(existing.updated_at || existing.created_at)) {
+        latestPayments.set(payment.member_id, payment);
+      }
+    });
+
+  const format = (member) => formatMember(member, latestPayments.get(member.id));
+  return pagination ? mapPaginatedResult(members, format) : memberItems.map(format);
 }
 
 async function createMember(options) {

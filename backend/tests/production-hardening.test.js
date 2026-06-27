@@ -77,3 +77,15 @@ test("signup provisioning migration creates profiles from auth metadata without 
   assert.match(sql, /Created during signup\./i);
   assert.doesNotMatch(sql, /insert into public\.club_advisors/i);
 });
+
+test("club profile migration adds nullable metadata, gallery ownership, and privacy-safe analytics", () => {
+  const sql = readRepoFile("backend", "supabase", "migrations", "0048_club_profiles_and_usage_analytics.sql");
+
+  assert.match(sql, /add column if not exists categories text\[\] not null default/);
+  assert.match(sql, /create table if not exists public\.club_media/);
+  assert.match(sql, /uploaded_by uuid not null references public\.profiles/);
+  assert.match(sql, /bucket_id in \('club-logos', 'club-media', 'event-media'\)/);
+  assert.match(sql, /create table if not exists public\.usage_daily_active_users/);
+  assert.match(sql, /create table if not exists public\.usage_daily_metrics/);
+  assert.doesNotMatch(sql, /search_text|raw_url|browsing_history/);
+});

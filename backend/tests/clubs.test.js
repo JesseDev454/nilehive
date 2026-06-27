@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { createApp } = require("../src/app");
-const { createClub, updateClub } = require("../src/modules/clubs/clubs.service");
+const { createClub, updateClub, updateClubProfile } = require("../src/modules/clubs/clubs.service");
 
 function createFakeDatabase() {
   const profiles = {
@@ -277,6 +277,46 @@ test("non-admin cannot edit clubs", async () => {
         payload: { name: "Changed" },
         database: {}
       }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
+});
+
+test("assigned president can update club content without changing operational fields", async () => {
+  let savedUpdate;
+  const database = {
+    async getClubById() {
+      return { id: "club-1", name: "Robotics Club" };
+    },
+    async updateClub(clubId, update) {
+      savedUpdate = update;
+      return { id: clubId, name: "Robotics Club", ...update };
+    },
+    async createAuditLog() {}
+  };
+
+  const club = await updateClubProfile({
+    actor: { id: "president-1", role: "president", clubId: "club-1" },
+    clubId: "club-1",
+    payload: {
+      description: "Build practical robotics projects.",
+      categories: ["Tech", "Academics"],
+      website_url: "https://robotics.example.com"
+    },
+    database
+  });
+
+  assert.deepEqual(savedUpdate.categories, ["Tech", "Academics"]);
+  assert.equal(club.website_url, "https://robotics.example.com/");
+});
+
+test("president cannot update another club profile", async () => {
+  await assert.rejects(
+    () => updateClubProfile({
+      actor: { id: "president-1", role: "president", clubId: "club-1" },
+      clubId: "club-2",
+      payload: { description: "Not allowed" },
+      database: {}
+    }),
     (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
   );
 });

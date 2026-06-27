@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>President Dashboard - Nile Robotics</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-variant": "#e0e3e5",
+                      "tertiary-container": "#002532",
+                      "surface-container-low": "#f2f4f6",
+                      "secondary": "#1f6d0f",
+                      "on-tertiary-fixed-variant": "#1e4c5f",
+                      "surface": "#f7f9fb",
+                      "surface-container-high": "#e6e8ea",
+                      "surface-bright": "#f7f9fb",
+                      "outline-variant": "#c4c6cf",
+                      "secondary-fixed": "#a4f78a",
+                      "on-background": "#191c1e",
+                      "background": "#f7f9fb",
+                      "primary-fixed": "#d6e3ff",
+                      "primary-container": "#002147",
+                      "on-primary-container": "#708ab5",
+                      "tertiary-fixed-dim": "#a1cde3",
+                      "on-tertiary-fixed": "#001f2a",
+                      "secondary-fixed-dim": "#89da71",
+                      "on-primary": "#ffffff",
+                      "tertiary": "#000d13",
+                      "primary-fixed-dim": "#aec7f6",
+                      "surface-dim": "#d8dadc",
+                      "inverse-on-surface": "#eff1f3",
+                      "error-container": "#ffdad6",
+                      "on-error-container": "#93000a",
+                      "on-secondary-container": "#247114",
+                      "inverse-primary": "#aec7f6",
+                      "on-error": "#ffffff",
+                      "on-secondary-fixed-variant": "#0b5300",
+                      "surface-container-lowest": "#ffffff",
+                      "on-surface": "#191c1e",
+                      "inverse-surface": "#2d3133",
+                      "on-tertiary": "#ffffff",
+                      "on-surface-variant": "#44474e",
+                      "tertiary-fixed": "#bee9ff",
+                      "outline": "#74777f",
+                      "on-tertiary-container": "#648fa3",
+                      "on-primary-fixed-variant": "#2d476f",
+                      "surface-container": "#eceef0",
+                      "error": "#ba1a1a",
+                      "surface-tint": "#465f88",
+                      "on-primary-fixed": "#001b3d",
+                      "secondary-container": "#a1f487",
+                      "on-secondary": "#ffffff",
+                      "surface-container-highest": "#e0e3e5",
+                      "on-secondary-fixed": "#022100",
+                      "primary": "#000a1e"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "gutter": "20px",
+                      "shadow-offset": "6px",
+                      "border-width": "3px",
+                      "container-padding": "24px",
+                      "base": "8px"
+              },
+              "fontFamily": {
+                      "headline-md": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "label-bold": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "headline-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "display": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "body-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "label-sm": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "body-md": [
+                              "Plus Jakarta Sans"
+                      ]
+              },
+              "fontSize": {
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "1.3",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-bold": [
+                              "14px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "display": [
+                              "48px",
+                              {
+                                      "lineHeight": "1.1",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "800"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+            }
+          }
+        }
+      </script>
+<style>
+          .neo-shadow {
+              box-shadow: 6px 6px 0px 0px rgba(0,10,30,1);
+          }
+          .neo-shadow-sm {
+              box-shadow: 4px 4px 0px 0px rgba(0,10,30,1);
+          }
+          .neo-shadow-hover:hover {
+              box-shadow: 2px 2px 0px 0px rgba(0,10,30,1);
+              transform: translate(4px, 4px);
+          }
+          .neo-shadow-sm-hover:hover {
+              box-shadow: 2px 2px 0px 0px rgba(0,10,30,1);
+              transform: translate(2px, 2px);
+          }
+          .card-radius {
+              border-radius: 28px;
+          }
+      </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex flex-col md:flex-row">
+<!-- TopNavBar for Mobile -->
+<nav class="md:hidden sticky top-0 z-50 flex justify-between items-center px-gutter py-4 bg-background w-full border-b-3 border-primary shadow-[6px_6px_0px_0px_rgba(0,10,30,1)]">
+<div class="flex items-center gap-2">
+<span class="text-headline-md font-headline-lg font-black text-primary tracking-tighter">Nile Club Services</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-primary hover:text-secondary transition-colors" data-icon="notifications">notifications</button>
+<button class="material-symbols-outlined text-primary hover:text-secondary transition-colors" data-icon="help">help</button>
+<img alt="User Initials Avatar" class="w-10 h-10 rounded-full border-3 border-primary object-cover" data-alt="A close up, high quality headshot portrait of a confident young male university student smiling subtly. The lighting is bright and even, highlighting a modern, approachable aesthetic suitable for an academic platform profile picture. The background is slightly blurred and neutral." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnls8siHYLv2WeArEMQPZ8owJw93nWUO_RkrpROCp2jqZopAsSd81as6J7JBaLTXYgFJ1M6xghWa2wZYtf3YhA1jB-L3JWvfx-7LHaEDeJTOeVHKQ-GQVywxjRn9MhxbUrYf6iqgz64905E-Uong4h5v50pV-fzo5h3QZbCibWp0RWSwQaxj8yiSzcipscELSoDZcu6dFQwTwLRjlLR7CGAZzndvnM0gM3-n7kYoK9A3INjgRVEmid-AbuSzphWawaZkTkEGhapLF2"/>
+</div>
+</nav>
+<!-- SideNavBar for Desktop -->
+<aside class="hidden md:flex flex-col fixed left-0 top-0 h-screen w-64 border-r-3 border-primary shadow-[6px_0px_0px_0px_rgba(0,10,30,1)] bg-surface pt-8 pb-8 z-40">
+<div class="px-6 mb-8 flex flex-col gap-2">
+<div class="w-16 h-16 rounded-xl border-3 border-primary overflow-hidden mb-2 neo-shadow-sm bg-surface-container-lowest">
+<img alt="Nile University Logo" class="w-full h-full object-cover" data-alt="A stylized, modern geometric logo design representing a university, featuring a combination of a book and an open archway motif. The colors are predominantly deep navy blue and crisp white, set against a solid background, conveying academic prestige and contemporary design." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBKTfqbxsgO8zbR-d1hsbHV1JzxQ0WLmPegm57Ccy4kxS84p-aFg-lFHPUuGtmI1EIG-cqTLPr5j7zzWRRfcXfjs0Jj6KM__mPfrv9r8CNk8mnCUy8ZujNim_zEpCslzD-Byyo57wHW9l8ftrxTjc5J43G-UnCQwBD_RWqKcm9cteF1_UTlz_rkGWOW3HVutZJSU4cuoR9xIB6G1B5D_8Hv0tZKeMGZ3Ad03rfHmdrGfHZ8Lk1JSsWkKLBRWx4cP1O3lxryoRGsK8By"/>
+</div>
+<h1 class="font-display text-headline-md text-primary leading-tight">Club Services</h1>
+<p class="font-body-md text-body-md text-on-surface-variant font-medium">Academic Quest</p>
+</div>
+<div class="px-4 mb-6">
+<button class="w-full bg-surface-container-lowest text-primary font-label-bold text-label-bold border-3 border-primary rounded-xl py-3 px-4 flex items-center justify-center gap-2 neo-shadow-sm neo-shadow-sm-hover transition-all">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+                New Request
+            </button>
+</div>
+<nav class="flex-1 px-2 flex flex-col gap-1 overflow-y-auto">
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+                Student Hub
+            </a>
+<!-- Active State -->
+<a class="bg-secondary-container text-on-secondary-container border-3 border-primary shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] rounded-xl m-2 px-4 py-3 flex items-center gap-3 font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined" data-icon="stars" data-weight="fill" style="font-variation-settings: 'FILL' 1;">stars</span>
+                President Portal
+            </a>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+                Exec Dashboard
+            </a>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined" data-icon="school">school</span>
+                Advisor View
+            </a>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined" data-icon="admin_panel_settings">admin_panel_settings</span>
+                Admin Panel
+            </a>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined" data-icon="chat_bubble">chat_bubble</span>
+                Feedback
+            </a>
+</nav>
+<div class="px-2 mt-auto flex flex-col gap-1 pt-4 border-t-3 border-primary mx-4">
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+                Settings
+            </a>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined" data-icon="contact_support">contact_support</span>
+                Support
+            </a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 p-4 md:p-8 pt-8 pb-20">
+<!-- Header -->
+<header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+<div>
+<div class="flex items-center gap-3 mb-2">
+<h2 class="font-display text-display text-primary">Nile Robotics</h2>
+<span class="bg-secondary-fixed text-on-secondary-fixed border-3 border-primary rounded-full px-3 py-1 font-label-bold text-label-bold shadow-[2px_2px_0px_0px_rgba(0,10,30,1)] uppercase tracking-wide">President</span>
+</div>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Welcome back. Here is your club's quest log for today.</p>
+</div>
+<div class="hidden md:flex gap-4">
+<button class="bg-surface-container-lowest text-primary font-label-bold text-label-bold border-3 border-primary px-5 py-2.5 rounded-DEFAULT neo-shadow-sm neo-shadow-sm-hover transition-all flex items-center gap-2">
+                    Restart Guide
+                </button>
+<button class="bg-error text-on-error font-label-bold text-label-bold border-3 border-primary px-5 py-2.5 rounded-DEFAULT neo-shadow-sm neo-shadow-sm-hover transition-all flex items-center gap-2">
+                    Logout
+                </button>
+</div>
+</header>
+<!-- Dashboard Bento Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Club Health Metric (Hero Card) -->
+<section class="lg:col-span-8 bg-surface-container-lowest border-3 border-primary card-radius p-container-padding neo-shadow relative overflow-hidden flex flex-col justify-between min-h-[240px]">
+<div class="absolute top-0 right-0 w-64 h-64 bg-secondary opacity-10 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
+<div class="relative z-10 flex justify-between items-start mb-6">
+<div>
+<span class="inline-block bg-primary-fixed text-on-primary-fixed font-label-bold text-label-bold px-3 py-1 rounded-DEFAULT border-2 border-primary mb-3">Core Metric</span>
+<h3 class="font-headline-lg text-headline-lg text-primary">Club Health Score</h3>
+</div>
+<div class="bg-secondary text-on-secondary font-display text-display border-3 border-primary rounded-2xl w-24 h-24 flex items-center justify-center neo-shadow-sm transform rotate-3">
+                        92
+                    </div>
+</div>
+<div class="relative z-10 w-full">
+<div class="flex justify-between font-label-bold text-label-sm text-on-surface-variant mb-2 uppercase tracking-wider">
+<span>Engagement</span>
+<span>Outstanding</span>
+</div>
+<div class="w-full h-8 bg-surface border-3 border-primary rounded-DEFAULT overflow-hidden p-0.5">
+<div class="h-full bg-secondary border-r-3 border-primary w-[92%] transition-all duration-1000 ease-out"></div>
+</div>
+</div>
+</section>
+<!-- Pending Quests -->
+<section class="lg:col-span-4 bg-surface-container-lowest border-3 border-primary card-radius p-container-padding neo-shadow flex flex-col">
+<div class="flex items-center gap-3 mb-6 border-b-3 border-primary pb-4">
+<div class="bg-error-container text-on-error-container p-2 border-2 border-primary rounded-lg">
+<span class="material-symbols-outlined" data-icon="assignment_late">assignment_late</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-primary">Pending Quests</h3>
+</div>
+<div class="flex flex-col gap-4 flex-1">
+<div class="bg-surface border-3 border-primary rounded-xl p-4 flex flex-col gap-3 neo-shadow-sm hover:-translate-y-1 transition-transform">
+<div class="flex justify-between items-start">
+<span class="font-label-bold text-label-bold text-primary">Membership Requests</span>
+<span class="bg-primary text-on-primary rounded-full w-6 h-6 flex items-center justify-center font-label-sm text-label-sm">3</span>
+</div>
+<button class="w-full bg-surface-container-lowest text-primary font-label-bold text-label-sm border-2 border-primary rounded py-2 hover:bg-primary-fixed transition-colors">
+                            Review Applications
+                        </button>
+</div>
+<div class="bg-surface border-3 border-primary rounded-xl p-4 flex flex-col gap-3 neo-shadow-sm hover:-translate-y-1 transition-transform">
+<div class="flex justify-between items-start">
+<span class="font-label-bold text-label-bold text-primary">Dues Verification</span>
+<span class="bg-primary text-on-primary rounded-full w-6 h-6 flex items-center justify-center font-label-sm text-label-sm">2</span>
+</div>
+<button class="w-full bg-surface-container-lowest text-primary font-label-bold text-label-sm border-2 border-primary rounded py-2 hover:bg-primary-fixed transition-colors">
+                            Verify Payments
+                        </button>
+</div>
+</div>
+</section>
+<!-- Task Delegation Widget -->
+<section class="lg:col-span-6 bg-surface-container-lowest border-3 border-primary card-radius p-container-padding neo-shadow">
+<div class="flex items-center justify-between mb-6 border-b-3 border-primary pb-4">
+<div class="flex items-center gap-3">
+<div class="bg-tertiary-fixed text-on-tertiary-fixed p-2 border-2 border-primary rounded-lg transform -rotate-3">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-primary">Task Delegation</h3>
+</div>
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors" data-icon="more_horiz">more_horiz</button>
+</div>
+<ul class="flex flex-col gap-3">
+<li class="flex items-center justify-between p-3 border-2 border-outline-variant rounded-xl hover:border-primary hover:bg-surface transition-colors group">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full border-2 border-primary overflow-hidden bg-primary-fixed">
+<img alt="VP Operations Avatar" class="w-full h-full object-cover" data-alt="A bright, cheerful headshot of a young female college student with curly hair, wearing glasses and a yellow sweater. The lighting is sunny and optimistic, portraying an active and engaged student leader suitable for a club roster profile." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6MJwq8ovmTolK5X4USbgM2OSN9dq-85hfHoQg7ilF-fwjDkAlgDYaEJWGNiTXnyloXme-JARCfdY9DrkF9hsWWt3SZcV27-KCvNgsBEj9HUTAG74gfeZobALiTilcinWEMRQRdYhNlwEIlOJYrUYjLTfPzHjKG6qPTAO8MVkyZe8avyrdNuM3aEJ3Jc0l3sNCd5zhxZgTKNGRFHi9w_ZV0LBrBo-7E-6qaR7TXx6e5OR42_LQpPgDUwMHBDvV_uN-oT0vcrgIC9Ns"/>
+</div>
+<div>
+<p class="font-label-bold text-label-bold text-primary">Secure Hackathon Venue</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Assigned to: VP Operations</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary" data-icon="arrow_forward_ios">arrow_forward_ios</span>
+</li>
+<li class="flex items-center justify-between p-3 border-2 border-outline-variant rounded-xl hover:border-primary hover:bg-surface transition-colors group">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full border-2 border-primary overflow-hidden bg-secondary-fixed">
+<img alt="Treasurer Avatar" class="w-full h-full object-cover" data-alt="A focused headshot of a young male student looking directly at the camera with a neutral, professional expression. He is wearing a dark blue collared shirt. The background is a soft, out-of-focus brick wall, giving a collegiate feel." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXiWpAP01B7PSE6tg4HaYgflKRK844sqQXcnjb7rhdWURlj2-nE9yNQ2_sqaJHR-HGCAeSQOUr0YpusxAfq4em6DsSt-SDiSDeKv0QsgJhQVyNZ1RqGRrsHU31_eg894nLncWPqVzXOsd6b31TE0AcL1QgguZuQ30lh9y5ACGncby8jkO5MbohRTYjaKmtmYOlQU-rriyPNRX5A_1ZD8eqkLaH_Do2hYGp7eL5ehrbYRzZF2Zt5KIILU84y5zxTphsWCwJWYWm2qFZ"/>
+</div>
+<div>
+<p class="font-label-bold text-label-bold text-primary">Finalize Semester Budget</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Assigned to: Treasurer</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline-variant group-hover:text-primary" data-icon="arrow_forward_ios">arrow_forward_ios</span>
+</li>
+<li class="flex items-center justify-between p-3 border-2 border-outline-variant rounded-xl hover:border-primary hover:bg-surface transition-colors group">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full border-2 border-primary flex items-center justify-center bg-surface-variant text-on-surface-variant font-label-bold">
+                                UN
+                            </div>
+<div>
+<p class="font-label-bold text-label-bold text-primary">Order Competition Kits</p>
+<p class="font-label-sm text-label-sm text-error font-medium">Unassigned</p>
+</div>
+</div>
+<button class="bg-surface-container-lowest text-primary font-label-sm text-label-sm border-2 border-primary px-3 py-1 rounded hover:bg-primary-fixed transition-colors">Assign</button>
+</li>
+</ul>
+</section>
+<!-- Proposal Status & Events Column -->
+<div class="lg:col-span-6 flex flex-col gap-8">
+<!-- Proposal Status -->
+<section class="bg-surface-container-lowest border-3 border-primary card-radius p-container-padding neo-shadow">
+<h3 class="font-headline-md text-headline-md text-primary mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="description">description</span>
+                        Proposal Status
+                    </h3>
+<div class="grid grid-cols-2 gap-4">
+<div class="bg-surface border-2 border-primary rounded-xl p-4 text-center">
+<div class="text-display font-display text-primary mb-1">1</div>
+<div class="inline-flex items-center gap-1 bg-surface-variant text-on-surface-variant px-2 py-1 rounded border border-outline-variant font-label-sm text-label-sm mt-2">
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+                                Awaiting Advisor
+                            </div>
+</div>
+<div class="bg-secondary-container border-2 border-primary rounded-xl p-4 text-center">
+<div class="text-display font-display text-on-secondary-container mb-1">1</div>
+<div class="inline-flex items-center gap-1 bg-secondary text-on-secondary px-2 py-1 rounded border border-primary font-label-sm text-label-sm mt-2">
+<span class="material-symbols-outlined text-[14px]" data-icon="check_circle">check_circle</span>
+                                Approved
+                            </div>
+</div>
+</div>
+</section>
+<!-- Upcoming Events -->
+<section class="bg-primary border-3 border-primary card-radius p-container-padding neo-shadow text-on-primary">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-headline-md text-headline-md flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="event">event</span>
+                            Upcoming Event
+                        </h3>
+<button class="text-on-primary bg-primary-container px-3 py-1 rounded border-2 border-on-primary font-label-sm text-label-sm hover:bg-on-primary hover:text-primary transition-colors">View Calendar</button>
+</div>
+<div class="bg-surface-container-lowest text-primary border-2 border-primary rounded-xl p-5 neo-shadow-sm transform rotate-1 hover:rotate-0 transition-transform">
+<div class="flex justify-between items-start mb-2">
+<span class="font-label-bold text-label-sm bg-secondary-fixed text-on-secondary-fixed px-2 py-0.5 rounded border border-primary uppercase">Workshop</span>
+<span class="font-label-bold text-label-sm text-on-surface-variant">This Friday, 4:00 PM</span>
+</div>
+<h4 class="font-headline-md text-headline-md text-primary mb-2">Intro to Arduino Robotics</h4>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4">Location: Engineering Lab 302</p>
+<div class="flex items-center justify-between">
+<div class="flex -space-x-2">
+<img alt="Attendee" class="w-8 h-8 rounded-full border-2 border-primary" data-alt="A small, circular headshot of a smiling young woman with dark hair, used as an avatar in a stacked list of event attendees." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBU4moC7U7wT4ZGrGr0kkKRxWwW1sgdS-tzrMsYQJppUQ_ysNVbv8nsiwmJHqA5tSpvrdY0Bt0mPkNVnaaQE6QTuVtWzUd1rJGTqLd1UJE4RKf74l-3T9nn3_UEyfK8aMDtyOWUsPSxMSh08wNPmDTn9bP7gyN1hefbLerhszOG62lmf-yuwIMTG70FvH09v5h06dmY1jO5vmFdbZdGsb6VS1-9npSOciXYgiFBxFvTNHfunC_SCvhL52fCXQXrX9-9Sssd-RD-3TXq"/>
+<img alt="Attendee" class="w-8 h-8 rounded-full border-2 border-primary" data-alt="A small, circular headshot of a young man with a slight smile, used as an avatar in a stacked list of event attendees." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCPalwx3BLCOfCZPA0AqFaE2hjgJu8iQRI4ikN0L12kmogoBoxM04d1hJIG9-2X0XLiVsHy7e8lZ1Nc49eYbpszrC_M3t5PYxiJnWXhtlw5HO3RqEsJqo8Cl66W_JUzjE3KJnyjQgVj6hD50RHO7B6I4b46RguQQlqfkgGfEYRPXyvWtJybAo2d_hwc7s2hgSKDfKVj16u2qtA1LNFAyXlohZ-yQIcpszslgF-8jiEYguU3584Ipye_CEIlp-KpOdyisTOzOeE7NH1x"/>
+<div class="w-8 h-8 rounded-full border-2 border-primary bg-surface flex items-center justify-center font-label-sm text-primary text-xs">+12</div>
+</div>
+<button class="font-label-bold text-label-sm text-secondary hover:underline flex items-center gap-1">
+                                Details <span class="material-symbols-outlined text-[16px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+</body></html>

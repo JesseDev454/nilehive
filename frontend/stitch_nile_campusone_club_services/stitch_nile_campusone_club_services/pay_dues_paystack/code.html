@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Pay Dues - Nile Club Services</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-variant": "#e0e3e5",
+                        "tertiary-container": "#002532",
+                        "surface-container-low": "#f2f4f6",
+                        "secondary": "#1f6d0f",
+                        "on-tertiary-fixed-variant": "#1e4c5f",
+                        "surface": "#f7f9fb",
+                        "surface-container-high": "#e6e8ea",
+                        "surface-bright": "#f7f9fb",
+                        "outline-variant": "#c4c6cf",
+                        "secondary-fixed": "#a4f78a",
+                        "on-background": "#191c1e",
+                        "background": "#f7f9fb",
+                        "primary-fixed": "#d6e3ff",
+                        "primary-container": "#002147",
+                        "on-primary-container": "#708ab5",
+                        "tertiary-fixed-dim": "#a1cde3",
+                        "on-tertiary-fixed": "#001f2a",
+                        "secondary-fixed-dim": "#89da71",
+                        "on-primary": "#ffffff",
+                        "tertiary": "#000d13",
+                        "primary-fixed-dim": "#aec7f6",
+                        "surface-dim": "#d8dadc",
+                        "inverse-on-surface": "#eff1f3",
+                        "error-container": "#ffdad6",
+                        "on-error-container": "#93000a",
+                        "on-secondary-container": "#247114",
+                        "inverse-primary": "#aec7f6",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed-variant": "#0b5300",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface": "#191c1e",
+                        "inverse-surface": "#2d3133",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#44474e",
+                        "tertiary-fixed": "#bee9ff",
+                        "outline": "#74777f",
+                        "on-tertiary-container": "#648fa3",
+                        "on-primary-fixed-variant": "#2d476f",
+                        "surface-container": "#eceef0",
+                        "error": "#ba1a1a",
+                        "surface-tint": "#465f88",
+                        "on-primary-fixed": "#001b3d",
+                        "secondary-container": "#a1f487",
+                        "on-secondary": "#ffffff",
+                        "surface-container-highest": "#e0e3e5",
+                        "on-secondary-fixed": "#022100",
+                        "primary": "#000a1e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "20px",
+                        "shadow-offset": "6px",
+                        "border-width": "3px",
+                        "container-padding": "24px",
+                        "base": "8px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "label-bold": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "display": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "700" }],
+                        "label-bold": ["14px", { "lineHeight": "1.4", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "display": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "500" }],
+                        "label-sm": ["12px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .neobrutalist-shadow {
+            box-shadow: 6px 6px 0px 0px rgba(0, 10, 30, 1);
+        }
+        .neobrutalist-shadow-hover:hover {
+            box-shadow: 2px 2px 0px 0px rgba(0, 10, 30, 1);
+            transform: translate(4px, 4px);
+        }
+        .neobrutalist-border {
+            border: 3px solid #000a1e;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow {
+            animation: spin 3s linear infinite;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background h-full font-body-md flex flex-col md:flex-row">
+<!-- Desktop Side Nav (Suppressed for transactional flow as per rules, but keeping shell for context if needed, though instructions say to suppress for transactional. I will suppress it to prioritize canvas.) -->
+<!-- Navigation Shell Suppressed due to Transactional Nature (Checkout/Payment) -->
+<!-- Main Content Canvas -->
+<main class="flex-1 min-h-screen flex items-center justify-center p-gutter bg-surface-container-low">
+<div class="max-w-md w-full relative">
+<!-- Payment Card -->
+<div class="bg-surface rounded-[28px] neobrutalist-border neobrutalist-shadow p-container-padding relative z-10 transition-all duration-300" id="payment-card">
+<!-- Tab/Sticker Label -->
+<div class="absolute -top-4 -left-4 bg-secondary-container neobrutalist-border px-4 py-1 rounded-full flex items-center gap-2 transform -rotate-2">
+<span class="material-symbols-outlined text-on-secondary-container" style="font-size: 16px;">receipt_long</span>
+<span class="font-label-bold text-on-secondary-container uppercase tracking-wider">Fee Required</span>
+</div>
+<div class="text-center mt-6 mb-8">
+<h1 class="font-headline-lg text-primary mb-2">Club Dues</h1>
+<p class="font-body-lg text-on-surface-variant">Fall 2023 Semester</p>
+</div>
+<!-- Amount Display -->
+<div class="bg-surface-container-high rounded-xl p-6 neobrutalist-border mb-8 text-center relative overflow-hidden">
+<div class="absolute top-0 right-0 p-2 opacity-10">
+<span class="material-symbols-outlined text-[64px]">payments</span>
+</div>
+<p class="font-label-bold text-on-surface-variant mb-1">Total Amount</p>
+<div class="font-display text-primary">
+<span class="text-headline-md">₦</span>5,000
+                    </div>
+</div>
+<!-- Breakdown -->
+<div class="space-y-4 mb-8">
+<div class="flex justify-between items-center py-2 border-b-2 border-surface-variant border-dashed">
+<span class="font-body-md text-on-surface-variant">Base Registration</span>
+<span class="font-body-lg text-on-surface">₦4,500</span>
+</div>
+<div class="flex justify-between items-center py-2 border-b-2 border-surface-variant border-dashed">
+<span class="font-body-md text-on-surface-variant">Tech Fee</span>
+<span class="font-body-lg text-on-surface">₦500</span>
+</div>
+</div>
+<!-- Action Button -->
+<button class="w-full bg-secondary text-on-secondary py-4 rounded-xl neobrutalist-border neobrutalist-shadow neobrutalist-shadow-hover transition-all duration-200 flex items-center justify-center gap-3 group" id="pay-button">
+<span class="font-headline-md">Pay with Paystack</span>
+<span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+<div class="text-center mt-4">
+<button class="font-label-bold text-on-surface-variant hover:text-primary transition-colors underline decoration-2 underline-offset-4">Cancel &amp; Return</button>
+</div>
+</div>
+<!-- Loading State Card (Hidden by default) -->
+<div class="hidden absolute inset-0 bg-surface rounded-[28px] neobrutalist-border neobrutalist-shadow p-container-padding z-20 flex flex-col items-center justify-center text-center" id="loading-card">
+<div class="relative w-24 h-24 mb-6">
+<!-- Progress Ring -->
+<svg class="w-full h-full animate-spin-slow text-surface-variant" viewbox="0 0 100 100">
+<circle cx="50" cy="50" fill="none" r="45" stroke="currentColor" stroke-dasharray="283" stroke-dashoffset="0" stroke-width="10"></circle>
+<circle class="text-secondary" cx="50" cy="50" fill="none" r="45" stroke="currentColor" stroke-dasharray="283" stroke-dashoffset="75" stroke-linecap="round" stroke-width="10"></circle>
+</svg>
+<!-- Center Icon -->
+<div class="absolute inset-0 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-[32px] animate-pulse">lock</span>
+</div>
+</div>
+<h2 class="font-headline-md text-primary mb-2">Processing...</h2>
+<p class="font-body-md text-on-surface-variant">Waiting for payment confirmation from Paystack. Please don't close this window.</p>
+</div>
+</div>
+</main>
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const payBtn = document.getElementById('pay-button');
+            const paymentCard = document.getElementById('payment-card');
+            const loadingCard = document.getElementById('loading-card');
+
+            payBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                
+                // Simulate transition to loading state
+                paymentCard.style.opacity = '0';
+                paymentCard.style.transform = 'scale(0.95)';
+                
+                setTimeout(() => {
+                    paymentCard.classList.add('hidden');
+                    loadingCard.classList.remove('hidden');
+                    
+                    // Simple fade in for loading
+                    loadingCard.style.opacity = '0';
+                    setTimeout(() => {
+                        loadingCard.style.transition = 'opacity 300ms ease';
+                        loadingCard.style.opacity = '1';
+                    }, 50);
+
+                }, 300);
+            });
+        });
+    </script>
+</body></html>

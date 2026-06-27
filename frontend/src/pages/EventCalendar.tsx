@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import QRCode from "qrcode";
-import { Bell, CalendarDays, CheckCircle2, Clock, Copy, Loader2, MapPin, MessageSquare, Printer, QrCode, Users } from "lucide-react";
+import { Bell, CalendarDays, CheckCircle2, Clock, Copy, Loader2, MapPin, MessageSquare, Printer, QrCode, Share2, Users } from "lucide-react";
 import { NeoLoadingState, NeoPageHeader } from "@/components/NeoBrutal";
 import { DataPagination } from "@/components/DataPagination";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,20 +12,29 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRole } from "@/contexts/RoleContext";
+import { useUsageTracking } from "@/hooks/useUsageTracking";
 import { getEventLifecycleLabel, isPastEvent } from "@/lib/eventLifecycle";
-import { getEventCheckInUrl } from "@/lib/eventCheckIn";
+import { getEventCheckInPath, getEventCheckInUrl } from "@/lib/eventCheckIn";
 import { canViewProposalDetails } from "@/lib/roleAccess";
+import { buildAppUrl, shareOrCopy } from "@/lib/share";
 import {
+  getAnnouncements,
   ApiClientError,
   createFeedback,
+  getClubs,
+  getPublicClubs,
   getApprovedEvents,
   getEventEngagement,
   getEventReminders,
+  getMyMembershipRequests,
+  submitEventSelfCheckIn,
   submitEventAttendance,
   submitEventRsvp,
+  type AnnouncementRecord,
   type ApprovedEventRecord,
   type EventReminderRecord,
-  type EventRsvpRecord
+  type EventRsvpRecord,
+  type MembershipRequestRecord
 } from "@/lib/api";
 import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 import { actionError, actionSuccess } from "@/lib/notify";
@@ -44,6 +53,72 @@ function getDateLabel(value?: string | null) {
 
 function getTimeLabel(value?: string | null) {
   return value ? value.slice(0, 5) : "Time TBC";
+}
+
+function getEventDetailUrl(event: ApprovedEventRecord) {
+  return buildAppUrl(`/events?event=${encodeURIComponent(event.proposal_id)}`);
+}
+
+function getEventShareText(event: ApprovedEventRecord, clubName: string) {
+  const dateTime = `${getDateLabel(event.event_date)} at ${getTimeLabel(event.event_time)}`;
+  return `${clubName} has an event: ${event.title} on ${dateTime}. Join on Campus One.`;
+}
+
+function shareEventInvite(event: ApprovedEventRecord, clubName: string) {
+  void shareOrCopy({
+    title: `${event.title} - ${clubName}`,
+    text: getEventShareText(event, clubName),
+    url: getEventDetailUrl(event),
+    successTitle: "Event invite ready",
+    fallbackTitle: "Event invite copied"
+  });
+}
+
+function isEventThisWeek(event: ApprovedEventRecord) {
+  const eventDate = new Date(`${event.event_date}T00:00:00`);
+
+  if (Number.isNaN(eventDate.getTime())) {
+    return false;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const weekEnd = new Date(today);
+  weekEnd.setDate(today.getDate() + 7);
+
+  return eventDate >= today && eventDate <= weekEnd;
+}
+
+function getEventRequirementText(event: ApprovedEventRecord) {
+  if (event.number_of_participants) {
+    return `${event.number_of_participants} expected participant(s). RSVP early so organizers can plan.`;
+  }
+
+  if (event.can_rsvp) {
+    return "RSVP is open for this event.";
+  }
+
+  if (event.event_lifecycle === "happening_today") {
+    return "Check-in is available on the event date when allowed by Club Services.";
+  }
+
+  return "No special event requirements have been published.";
+}
+
+function getCheckInAvailabilityLabel(event: ApprovedEventRecord, attended?: boolean) {
+  if (attended) {
+    return "Checked in";
+  }
+
+  if (event.event_lifecycle === "happening_today") {
+    return "Check-in open";
+  }
+
+  if (event.event_lifecycle === "past") {
+    return "Check-in closed";
+  }
+
+  return "Opens on event day";
 }
 
 function RsvpBadge({ status }: { status?: string | null }) {
@@ -385,16 +460,24 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
           <p className="text-muted-foreground">Interested</p>
           <p className="text-lg font-bold">{engagement?.summary.interested ?? 0}</p>
         </div>
-        <div className="nh-card-soft p-3">
-          <p className="text-muted-foreground">Attendance</p>
-          <p className="text-lg font-bold">{engagement?.summary.attended ?? 0}</p>
-        </div>
+        {canManageAttendance ? (
+          <div className="nh-card-soft p-3">
+            <p className="text-muted-foreground">Attendance</p>
+            <p className="text-lg font-bold">{engagement?.summary.attended ?? 0}</p>
+          </div>
+        ) : null}
         <div className="nh-card-soft p-3">
           <p className="text-muted-foreground">My RSVP</p>
           <div className="mt-1">
             <RsvpBadge status={engagement?.current_user_rsvp?.status} />
           </div>
         </div>
+        {isStudent ? (
+          <div className="nh-card-soft p-3">
+            <p className="text-muted-foreground">My check-in</p>
+            <p className="mt-1 text-sm font-semibold">{getCheckInAvailabilityLabel(effectiveEvent, engagement?.current_user_attendance?.attended)}</p>
+          </div>
+        ) : null}
       </div>
 
       {isStudent ? (
@@ -533,9 +616,161 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
   );
 }
 
-function EventCard({ event }: { event: ApprovedEventRecord }) {
+function EventDetailDialog({
+  event,
+  clubName,
+  open,
+  onOpenChange
+}: {
+  event: ApprovedEventRecord;
+  clubName: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const {
+    data: announcementsPage = emptyPaginatedResponse<AnnouncementRecord>(),
+    isLoading: announcementsLoading,
+    isError: announcementsError,
+    error: announcementsErrorValue
+  } = useQuery({
+    queryKey: ["event-detail-announcements", event.club_id],
+    queryFn: () => getAnnouncements({ club_id: event.club_id, page: 1, page_size: 3 }),
+    enabled: open,
+    retry: false
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{event.title}</DialogTitle>
+          <DialogDescription>{clubName}</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-5">
+          <div className="grid gap-3 text-sm sm:grid-cols-3">
+            <div className="rounded-xl border border-border bg-muted/40 p-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Date / time</p>
+              <p className="mt-1 font-semibold">{getDateLabel(event.event_date)} - {getTimeLabel(event.event_time)}</p>
+            </div>
+            <div className="rounded-xl border border-border bg-muted/40 p-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Location</p>
+              <p className="mt-1 font-semibold">{event.location || "Venue TBC"}</p>
+            </div>
+            <div className="rounded-xl border border-border bg-muted/40 p-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Status</p>
+              <p className="mt-1 font-semibold">{getEventLifecycleLabel(event)}</p>
+            </div>
+          </div>
+          <div>
+            <p className="text-sm leading-6 text-muted-foreground">{event.description}</p>
+          </div>
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm">
+            <p className="font-semibold text-primary">Event requirements</p>
+            <p className="mt-1 text-muted-foreground">{getEventRequirementText(event)}</p>
+          </div>
+          <EventEngagementPanel event={event} />
+          <div className="space-y-3">
+            <p className="text-sm font-semibold">Related announcements</p>
+            {announcementsLoading ? (
+              <NeoLoadingState title="Loading announcements" message="Checking recent club updates." compact />
+            ) : announcementsError ? (
+              <p className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
+                {getErrorMessage(announcementsErrorValue)}
+              </p>
+            ) : announcementsPage.items.length === 0 ? (
+              <p className="rounded-xl border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+                No event-related announcements have been published yet.
+              </p>
+            ) : (
+              announcementsPage.items.map((announcement) => (
+                <Link key={announcement.id} to="/communications" className="block">
+                  <div className="nh-list-card">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="font-semibold">{announcement.title}</p>
+                      {!announcement.is_read ? <Badge>Unread</Badge> : null}
+                    </div>
+                    <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{announcement.message}</p>
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
+        </div>
+        <DialogFooter className="gap-2 sm:justify-between">
+          {event.event_lifecycle === "happening_today" ? (
+            <Button asChild type="button" variant="outline">
+              <Link to={getEventCheckInPath(event.proposal_id)}>
+                <QrCode className="mr-2 h-4 w-4" />
+                Open Check-In Link
+              </Link>
+            </Button>
+          ) : (
+            <span />
+          )}
+          <Button type="button" onClick={() => shareEventInvite(event, clubName)}>
+            <Share2 className="mr-2 h-4 w-4" />
+            Share Event
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EventCard({
+  event,
+  clubName,
+  isJoinedClub,
+  isDeepLinked = false
+}: {
+  event: ApprovedEventRecord;
+  clubName: string;
+  isJoinedClub: boolean;
+  isDeepLinked?: boolean;
+}) {
   const { role } = useRole();
+  const queryClient = useQueryClient();
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const showProposalLink = canViewProposalDetails(role);
+  const isStudent = role === "student";
+  const {
+    data: engagement,
+    isLoading: engagementLoading
+  } = useQuery({
+    queryKey: ["event-engagement", event.proposal_id],
+    queryFn: () => getEventEngagement(event.proposal_id),
+    retry: false
+  });
+  const rsvpMutation = useMutation({
+    mutationFn: () => submitEventRsvp(event.proposal_id, { status: "going" }),
+    onSuccess: async () => {
+      actionSuccess("RSVP updated", "You're marked as going.");
+      await queryClient.invalidateQueries({ queryKey: ["event-engagement", event.proposal_id] });
+    },
+    onError: (mutationError) => {
+      actionError("Could not update RSVP", mutationError, getErrorMessage(mutationError));
+    }
+  });
+  const selfCheckInMutation = useMutation({
+    mutationFn: () => submitEventSelfCheckIn(event.proposal_id),
+    onSuccess: async () => {
+      actionSuccess("Check-in recorded", "Your attendance has been saved.");
+      await queryClient.invalidateQueries({ queryKey: ["event-engagement", event.proposal_id] });
+    },
+    onError: (mutationError) => {
+      actionError("Could not check in", mutationError, getErrorMessage(mutationError));
+    }
+  });
+  const rsvpStatus = engagement?.current_user_rsvp?.status;
+  const attended = engagement?.current_user_attendance?.attended;
+  const checkInLabel = getCheckInAvailabilityLabel(event, attended);
+  const canSelfCheckIn = isStudent && event.event_lifecycle === "happening_today" && !attended;
+
+  useEffect(() => {
+    if (isDeepLinked) {
+      setDetailsOpen(true);
+    }
+  }, [isDeepLinked]);
 
   return (
     <Card>
@@ -547,7 +782,9 @@ function EventCard({ event }: { event: ApprovedEventRecord }) {
                 <h3 className="text-lg font-black uppercase">{event.title}</h3>
                 <Badge className="bg-success/15 text-success hover:bg-success/15">Approved</Badge>
                 <Badge variant="outline">{getEventLifecycleLabel(event)}</Badge>
+                <Badge variant="outline">{isJoinedClub ? "Joined club" : "Campus event"}</Badge>
               </div>
+              <p className="mt-1 text-sm font-semibold">{clubName}</p>
               <p className="text-sm text-muted-foreground mt-1">{event.description}</p>
             </div>
 
@@ -572,16 +809,59 @@ function EventCard({ event }: { event: ApprovedEventRecord }) {
                 {event.number_of_participants} expected participant(s)
               </p>
             ) : null}
+            <div className="flex flex-wrap gap-2">
+              <RsvpBadge status={rsvpStatus} />
+              <Badge variant={attended ? "default" : "outline"}>{checkInLabel}</Badge>
+              {engagementLoading ? <Badge variant="outline">Loading state...</Badge> : null}
+            </div>
           </div>
 
-          {showProposalLink ? (
-            <Button asChild variant="outline" size="sm">
-              <Link to={`/proposals/${event.proposal_id}`}>View proposal</Link>
+          <div className="flex flex-col gap-2 sm:flex-row lg:flex-col">
+            <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto lg:w-full" onClick={() => setDetailsOpen(true)}>
+              View Details
             </Button>
-          ) : null}
+            <Button type="button" variant="outline" size="sm" className="w-full sm:w-auto lg:w-full" onClick={() => shareEventInvite(event, clubName)}>
+              <Share2 className="mr-2 h-4 w-4" />
+              Share Event
+            </Button>
+            {isStudent && event.can_rsvp && !isPastEvent(event) ? (
+              <Button
+                type="button"
+                size="sm"
+                className="w-full sm:w-auto lg:w-full"
+                disabled={rsvpMutation.isPending || rsvpStatus === "going"}
+                onClick={() => rsvpMutation.mutate()}
+              >
+                {rsvpStatus === "going" ? "RSVP Saved" : "RSVP"}
+              </Button>
+            ) : null}
+            {canSelfCheckIn ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                className="w-full sm:w-auto lg:w-full"
+                disabled={selfCheckInMutation.isPending}
+                onClick={() => selfCheckInMutation.mutate()}
+              >
+                {selfCheckInMutation.isPending ? "Checking in..." : "Check In"}
+              </Button>
+            ) : null}
+            {canSelfCheckIn ? (
+              <Button asChild variant="outline" size="sm" className="w-full sm:w-auto lg:w-full">
+                <Link to={getEventCheckInPath(event.proposal_id)}>Check In with QR</Link>
+              </Button>
+            ) : null}
+            {showProposalLink ? (
+              <Button asChild variant="outline" size="sm" className="w-full sm:w-auto lg:w-full">
+                <Link to={`/proposals/${event.proposal_id}`}>View proposal</Link>
+              </Button>
+            ) : null}
+          </div>
         </div>
         <EventEngagementPanel event={event} />
       </CardContent>
+      <EventDetailDialog event={event} clubName={clubName} open={detailsOpen} onOpenChange={setDetailsOpen} />
     </Card>
   );
 }
@@ -605,6 +885,11 @@ function ReminderCard({ reminder }: { reminder: EventReminderRecord }) {
 }
 
 export default function EventCalendar() {
+  useUsageTracking("event_view");
+  const { role } = useRole();
+  const [searchParams] = useSearchParams();
+  const sharedEventId = searchParams.get("event");
+  const deepLinkPageSize = sharedEventId ? 100 : DEFAULT_PAGE_SIZE;
   const [upcomingPage, setUpcomingPage] = useState(1);
   const [pastPage, setPastPage] = useState(1);
   const {
@@ -613,8 +898,8 @@ export default function EventCalendar() {
     isError: upcomingError,
     error: upcomingErrorValue
   } = useQuery({
-    queryKey: ["approved-events", "upcoming", upcomingPage],
-    queryFn: () => getApprovedEvents({ lifecycle: "upcoming", page: upcomingPage, page_size: DEFAULT_PAGE_SIZE }),
+    queryKey: ["approved-events", "upcoming", upcomingPage, deepLinkPageSize],
+    queryFn: () => getApprovedEvents({ lifecycle: "upcoming", page: upcomingPage, page_size: deepLinkPageSize }),
     retry: false
   });
   const {
@@ -623,8 +908,8 @@ export default function EventCalendar() {
     isError: pastError,
     error: pastErrorValue
   } = useQuery({
-    queryKey: ["approved-events", "past", pastPage],
-    queryFn: () => getApprovedEvents({ lifecycle: "past", page: pastPage, page_size: DEFAULT_PAGE_SIZE }),
+    queryKey: ["approved-events", "past", pastPage, deepLinkPageSize],
+    queryFn: () => getApprovedEvents({ lifecycle: "past", page: pastPage, page_size: deepLinkPageSize }),
     retry: false
   });
   const {
@@ -637,25 +922,100 @@ export default function EventCalendar() {
     queryFn: () => getEventReminders(),
     retry: false
   });
+  const { data: clubs = [] } = useQuery({
+    queryKey: ["events-clubs", role],
+    queryFn: () => (role === "student" ? getPublicClubs() : getClubs()),
+    retry: false
+  });
+  const { data: myRequests = [] } = useQuery({
+    queryKey: ["my-membership-requests"],
+    queryFn: () => getMyMembershipRequests(),
+    enabled: role === "student",
+    retry: false
+  });
   const activeEvents = upcomingEventsPage.items;
   const pastEvents = pastEventsPage.items;
   const eventsLoading = upcomingLoading || pastLoading;
   const eventsError = upcomingError || pastError;
   const eventsErrorValue = upcomingErrorValue || pastErrorValue;
+  const joinedClubIds = useMemo(
+    () => new Set((myRequests as MembershipRequestRecord[]).filter((request) => request.status === "active").map((request) => request.club_id)),
+    [myRequests]
+  );
+  const clubNameById = useMemo(
+    () => {
+      const fromClubs = new Map(clubs.map((club) => [club.id, club.name] as const));
+
+      myRequests.forEach((request) => {
+        if (request.club?.name) {
+          fromClubs.set(request.club_id, request.club.name);
+        }
+      });
+
+      return fromClubs;
+    },
+    [clubs, myRequests]
+  );
+  const todayEvents = activeEvents.filter((event) => event.event_lifecycle === "happening_today");
+  const thisWeekEvents = activeEvents.filter((event) => event.event_lifecycle !== "happening_today" && isEventThisWeek(event));
+  const upcomingOnlyEvents = activeEvents.filter((event) => event.event_lifecycle !== "happening_today" && !isEventThisWeek(event));
+  function isSharedEvent(event: ApprovedEventRecord) {
+    return sharedEventId === event.proposal_id || sharedEventId === event.id;
+  }
+
+  function renderEventList(events: ApprovedEventRecord[], emptyTitle: string, emptyMessage: string) {
+    if (events.length === 0) {
+      return (
+        <div className="nh-empty">
+          <p className="font-medium">{emptyTitle}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{emptyMessage}</p>
+        </div>
+      );
+    }
+
+    return events.map((event) => (
+      <EventCard
+        key={event.id}
+        event={event}
+        clubName={clubNameById.get(event.club_id) || "Campus club"}
+        isJoinedClub={joinedClubIds.has(event.club_id)}
+        isDeepLinked={isSharedEvent(event)}
+      />
+    ));
+  }
 
   return (
     <div className="nh-page">
       <NeoPageHeader
         eyebrow="Events"
         title="Events"
-        description="See approved events, RSVP updates, and reminders in one place."
+        description="Find today's events, RSVP for what is coming up, and check in when an event is live."
       />
 
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-6">
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Event Calendar</CardTitle>
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <CardTitle className="text-lg">Student Event Feed</CardTitle>
+                  <p className="mt-1 text-sm text-muted-foreground">Events from your joined clubs are highlighted, while public campus club events remain discoverable.</p>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="rounded-xl border border-border bg-muted/40 p-3">
+                    <p className="text-lg font-black">{todayEvents.length}</p>
+                    <p className="text-muted-foreground">Today</p>
+                  </div>
+                  <div className="rounded-xl border border-border bg-muted/40 p-3">
+                    <p className="text-lg font-black">{activeEvents.filter((event) => joinedClubIds.has(event.club_id)).length}</p>
+                    <p className="text-muted-foreground">My clubs</p>
+                  </div>
+                  <div className="rounded-xl border border-border bg-muted/40 p-3">
+                    <p className="text-lg font-black">{activeEvents.filter((event) => !joinedClubIds.has(event.club_id)).length}</p>
+                    <p className="text-muted-foreground">Campus</p>
+                  </div>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-3">
               {eventsLoading ? (
@@ -667,7 +1027,7 @@ export default function EventCalendar() {
                 />
               ) : eventsError ? (
                 <div className="nh-empty border-destructive bg-destructive/5">
-                  <p className="font-medium">We couldn’t load events right now</p>
+                  <p className="font-medium">We couldn't load events right now</p>
                   <p className="text-sm text-muted-foreground mt-1">
                     {getErrorMessage(eventsErrorValue)}
                   </p>
@@ -682,26 +1042,35 @@ export default function EventCalendar() {
                 <div className="space-y-8">
                   <section className="space-y-3">
                     <div>
-                      <h3 className="text-sm font-black uppercase tracking-[0.12em]">Upcoming & Happening Now</h3>
-                      <p className="text-sm text-muted-foreground">These events are still open for student RSVP.</p>
+                      <h3 className="text-sm font-black uppercase tracking-[0.12em]">Today's Events</h3>
+                      <p className="text-sm text-muted-foreground">Check in here when the event is active.</p>
                     </div>
-                    {activeEvents.length === 0 ? (
-                      <div className="nh-empty">
-                        <p className="font-medium">No upcoming events</p>
-                        <p className="mt-1 text-sm text-muted-foreground">Past events are still available below for memories and feedback.</p>
-                      </div>
-                    ) : (
-                      <>
-                        {activeEvents.map((event) => <EventCard key={event.id} event={event} />)}
-                        <DataPagination
-                          page={upcomingEventsPage.page}
-                          pageSize={upcomingEventsPage.page_size}
-                          total={upcomingEventsPage.total}
-                          hasNext={upcomingEventsPage.has_next}
-                          onPageChange={setUpcomingPage}
-                        />
-                      </>
-                    )}
+                    {renderEventList(todayEvents, "No events happening today", "This is a quiet day. Check this week and upcoming events below.")}
+                  </section>
+
+                  <section className="space-y-3">
+                    <div>
+                      <h3 className="text-sm font-black uppercase tracking-[0.12em]">This Week</h3>
+                      <p className="text-sm text-muted-foreground">Events coming soon from clubs you can follow or join.</p>
+                    </div>
+                    {renderEventList(thisWeekEvents, "No events this week", "Upcoming events beyond this week are listed below.")}
+                  </section>
+
+                  <section className="space-y-3">
+                    <div>
+                      <h3 className="text-sm font-black uppercase tracking-[0.12em]">Upcoming Events</h3>
+                      <p className="text-sm text-muted-foreground">Plan ahead and RSVP before event day.</p>
+                    </div>
+                    {renderEventList(upcomingOnlyEvents, "No upcoming events", "Past events are still available below for memories and feedback.")}
+                    {activeEvents.length > 0 ? (
+                      <DataPagination
+                        page={upcomingEventsPage.page}
+                        pageSize={upcomingEventsPage.page_size}
+                        total={upcomingEventsPage.total}
+                        hasNext={upcomingEventsPage.has_next}
+                        onPageChange={setUpcomingPage}
+                      />
+                    ) : null}
                   </section>
 
                   <section className="space-y-3">
@@ -709,14 +1078,17 @@ export default function EventCalendar() {
                       <h3 className="text-sm font-black uppercase tracking-[0.12em]">Past Events</h3>
                       <p className="text-sm text-muted-foreground">Look back on completed events and leave feedback if you attended.</p>
                     </div>
-                    {pastEvents.length === 0 ? (
-                      <div className="nh-empty">
-                        <p className="font-medium">No past events yet</p>
-                        <p className="mt-1 text-sm text-muted-foreground">Completed events will appear here after their event date passes.</p>
-                      </div>
-                    ) : (
+                    {pastEvents.length === 0 ? renderEventList([], "No past events yet", "Completed events will appear here after their event date passes.") : (
                       <>
-                        {pastEvents.map((event) => <EventCard key={event.id} event={event} />)}
+                        {pastEvents.map((event) => (
+                          <EventCard
+                            key={event.id}
+                            event={event}
+                            clubName={clubNameById.get(event.club_id) || "Campus club"}
+                            isJoinedClub={joinedClubIds.has(event.club_id)}
+                            isDeepLinked={isSharedEvent(event)}
+                          />
+                        ))}
                         <DataPagination
                           page={pastEventsPage.page}
                           pageSize={pastEventsPage.page_size}
@@ -747,7 +1119,7 @@ export default function EventCalendar() {
               />
             ) : remindersError ? (
               <div className="nh-empty border-destructive bg-destructive/5">
-                <p className="font-medium">We couldn’t load reminders right now</p>
+                <p className="font-medium">We couldn't load reminders right now</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   {getErrorMessage(remindersErrorValue)}
                 </p>

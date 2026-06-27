@@ -16,6 +16,46 @@ function getErrorMessage(error: unknown) {
   return "We could not open this event check-in right now.";
 }
 
+function getCheckInErrorTitle(error: unknown) {
+  if (error instanceof ApiClientError) {
+    if (error.status === 401 || error.status === 403) {
+      return "Check-in not authorized";
+    }
+
+    if (error.status === 404) {
+      return "Invalid check-in link";
+    }
+
+    if (error.status === 409) {
+      return "Check-in already handled";
+    }
+
+    if (error.status === 422) {
+      return "Check-in unavailable";
+    }
+  }
+
+  return "Unable to open event check-in";
+}
+
+function getMutationErrorTitle(message?: string | null) {
+  const normalized = message?.toLowerCase() ?? "";
+
+  if (normalized.includes("already")) {
+    return "Already checked in";
+  }
+
+  if (normalized.includes("expired") || normalized.includes("not active") || normalized.includes("event date")) {
+    return "Check-in expired";
+  }
+
+  if (normalized.includes("unauthorized") || normalized.includes("not allowed")) {
+    return "Check-in not authorized";
+  }
+
+  return "Could not complete check-in";
+}
+
 export default function EventCheckIn() {
   const { proposalId = "" } = useParams();
   const { role } = useAuth();
@@ -57,6 +97,10 @@ export default function EventCheckIn() {
       return;
     }
 
+    if (checkInState === "success") {
+      return;
+    }
+
     if (engagement.current_user_attendance?.attended) {
       setCheckInState("idle");
       setCheckInError(null);
@@ -75,7 +119,7 @@ export default function EventCheckIn() {
     setCheckInState("submitting");
     setCheckInError(null);
     checkInMutation.mutate();
-  }, [engagement, proposalId, role, checkInMutation]);
+  }, [checkInState, engagement, proposalId, role, checkInMutation]);
 
   if (!proposalId) {
     return (
@@ -106,13 +150,13 @@ export default function EventCheckIn() {
       <div className="mx-auto flex min-h-[60vh] w-full max-w-2xl items-center justify-center">
         <NeoStateCard
           icon={XCircle}
-          title="Unable to open event check-in"
+          title={getCheckInErrorTitle(error)}
           message={getErrorMessage(error)}
           tone="danger"
         >
           <div className="flex justify-center">
             <Button asChild variant="outline">
-              <Link to="/events">Back to events</Link>
+              <Link to="/events">View Events</Link>
             </Button>
           </div>
         </NeoStateCard>
@@ -132,7 +176,7 @@ export default function EventCheckIn() {
         >
           <div className="flex justify-center">
             <Button asChild variant="outline">
-              <Link to="/events">Open events</Link>
+              <Link to="/events">View Events</Link>
             </Button>
           </div>
         </NeoStateCard>
@@ -151,7 +195,7 @@ export default function EventCheckIn() {
         >
           <div className="flex justify-center">
             <Button asChild variant="outline">
-              <Link to="/events">Back to events</Link>
+              <Link to="/events">View Events</Link>
             </Button>
           </div>
         </NeoStateCard>
@@ -172,7 +216,7 @@ export default function EventCheckIn() {
             <p>{getEventLifecycleLabel(event)}</p>
             <div className="flex justify-center">
               <Button asChild variant="outline">
-                <Link to="/events">Back to events</Link>
+                <Link to="/events">View Events</Link>
               </Button>
             </div>
           </div>
@@ -187,13 +231,13 @@ export default function EventCheckIn() {
         <NeoStateCard
           icon={QrCode}
           title="Check-in unavailable right now"
-          message={`Attendance for ${event.title} can only be recorded on the event date.`}
+          message={`Attendance for ${event.title} can only be recorded while Club Services check-in is active for the event date.`}
         >
           <div className="space-y-3 text-sm text-muted-foreground">
             <p>{getEventLifecycleLabel(event)}</p>
             <div className="flex justify-center">
               <Button asChild variant="outline">
-                <Link to="/events">Back to events</Link>
+                <Link to="/events">View Events</Link>
               </Button>
             </div>
           </div>
@@ -207,13 +251,13 @@ export default function EventCheckIn() {
       <div className="mx-auto flex min-h-[60vh] w-full max-w-2xl items-center justify-center">
         <NeoStateCard
           icon={XCircle}
-          title="Could not complete check-in"
+          title={getMutationErrorTitle(checkInError)}
           message={checkInError || `We could not record attendance for ${event.title}.`}
           tone="danger"
         >
           <div className="flex justify-center">
             <Button asChild variant="outline">
-              <Link to="/events">Back to events</Link>
+              <Link to="/events">View Events</Link>
             </Button>
           </div>
         </NeoStateCard>
