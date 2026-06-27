@@ -119,7 +119,7 @@ export async function resolveStorageFileUrl(bucket: StorageBucket, value: string
     return null;
   }
 
-  if (/^https?:\/\//i.test(value)) {
+  if (/^(https?:)?\/\//i.test(value) || value.startsWith("/")) {
     return value;
   }
 

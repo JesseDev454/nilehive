@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { createApp } = require("../src/app");
-const { createClub, updateClub, updateClubProfile } = require("../src/modules/clubs/clubs.service");
+const { createClub, listVisibleClubs, updateClub, updateClubProfile } = require("../src/modules/clubs/clubs.service");
 
 function createFakeDatabase() {
   const profiles = {
@@ -319,4 +319,27 @@ test("president cannot update another club profile", async () => {
     }),
     (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
   );
+});
+
+test("student club visibility excludes private WhatsApp onboarding settings", async () => {
+  const clubs = await listVisibleClubs({
+    actor: { id: "student-1", role: "student", clubId: null },
+    database: {
+      async listClubs() {
+        return [
+          {
+            id: "club-1",
+            name: "Nile Book Club",
+            whatsapp_group_name: "Private group",
+            whatsapp_onboarding_notes: "Private onboarding note",
+            website_url: "https://clubs.campusone.com.ng/demo/nile-book-club"
+          }
+        ];
+      }
+    }
+  });
+
+  assert.equal(clubs[0].website_url, "https://clubs.campusone.com.ng/demo/nile-book-club");
+  assert.equal(Object.prototype.hasOwnProperty.call(clubs[0], "whatsapp_group_name"), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(clubs[0], "whatsapp_onboarding_notes"), false);
 });

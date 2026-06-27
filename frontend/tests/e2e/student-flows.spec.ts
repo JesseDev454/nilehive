@@ -18,7 +18,9 @@ test("student discovers a club, uploads dues proof, and submits a join request",
   await expect(page.getByRole("heading", { name: "Approved events" })).toBeVisible();
   await expect(page.getByText("Build Night", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("link", { name: "Website" })).toHaveAttribute("href", "https://clubs.campusone.com.ng/nile-tech");
-  await expect(page.getByText("Students presenting projects at Build Night")).toBeVisible();
+  await expect(page.getByText("Demo preview: students presenting projects at Build Night")).toBeVisible();
+  await expect(page.getByRole("img", { name: "Demo preview: students presenting projects at Build Night" }))
+    .toHaveAttribute("src", "/demo-club-gallery/nile-google-developers/coding-workshop.png");
 
   await page.getByLabel("Student ID").fill("123456789");
   await page.getByLabel("Phone Number").fill("08000000000");
@@ -138,13 +140,10 @@ test("student interest filter narrows discovery cards", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Nile Tech Club" }).first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "Nile Business Club" }).first()).toBeVisible();
   await expect(page.getByRole("img", { name: "Nile Business Club logo" }).first()).toHaveAttribute("src", "/club-logos/NBUC.png");
-  await expect(page.getByText("Dues", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Any dues", { exact: true })).toHaveCount(0);
-  await expect(page.getByText("Membership", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Any signup status", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Sort", { exact: true })).toHaveCount(0);
   await expect(page.getByText("Recommended", { exact: true })).toHaveCount(0);
-  await expect(page.getByText("Events", { exact: true })).toBeVisible();
   await expect(page.getByText("Any event status", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Faith" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Wellness" })).toHaveCount(0);

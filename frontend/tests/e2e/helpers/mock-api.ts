@@ -25,8 +25,8 @@ export function createE2EState() {
       {
         id: "media-tech-1",
         club_id: "club-tech",
-        storage_path: "club-tech/build-night.webp",
-        caption: "Students presenting projects at Build Night",
+        storage_path: "/demo-club-gallery/nile-google-developers/coding-workshop.png",
+        caption: "Demo preview: students presenting projects at Build Night",
         display_order: 0,
         uploaded_by: "e2e-president",
         created_at: now,
