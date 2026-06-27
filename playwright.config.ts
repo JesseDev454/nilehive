@@ -27,7 +27,7 @@ export default defineConfig({
     timeout: 120_000,
     env: {
       VITE_ENABLE_E2E_AUTH: "true",
-      VITE_AUTH_PROVIDER: "portal",
+      VITE_AUTH_PROVIDER: "supabase",
       VITE_AUTH_MODE: "password",
       VITE_API_BASE_URL: "http://127.0.0.1:7777",
       VITE_SUPABASE_URL: "http://127.0.0.1:54321",
