@@ -38,7 +38,7 @@ export function createE2EState() {
   const businessClub = {
     id: "club-business",
     name: "Nile Business Club",
-    code: "NBC",
+    code: "NBUC",
     description: "A club for entrepreneurship, finance, startups, and business leadership.",
     dues_amount: 10000,
     is_public_signup: true,
@@ -683,6 +683,32 @@ export async function mockClubServicesApi(page: Page, state = createE2EState()) 
 
     if (method === "GET" && path === "/communications/feedback") {
       return ok(route, state.feedback);
+    }
+
+    if (method === "POST" && path === "/communications/feedback") {
+      const body = request.postDataJSON() as {
+        category?: string;
+        rating?: number | null;
+        comment?: string;
+        club_id?: string | null;
+        proposal_id?: string | null;
+      };
+      const feedback = {
+        id: `feedback-${state.feedback.length + 1}`,
+        club_id: body.club_id || null,
+        proposal_id: body.proposal_id || null,
+        submitted_by: getTestProfileId(page) || "e2e-user",
+        category: body.category || "general",
+        rating: body.rating ?? null,
+        comment: body.comment || "",
+        status: "open",
+        proposal: null,
+        created_at: now,
+        updated_at: now
+      };
+
+      state.feedback = [feedback, ...state.feedback];
+      return ok(route, feedback);
     }
 
     if (method === "GET" && path === "/reminders") {

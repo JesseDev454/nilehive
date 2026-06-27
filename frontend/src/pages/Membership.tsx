@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ExternalLink, Filter, ImageIcon, Loader2, Search, Share2, ShieldCheck, Sparkles, Users } from "lucide-react";
+import { ArrowLeft, Camera, Copy, ExternalLink, Filter, ImageIcon, Instagram, Loader2, MessageCircle, Search, Share2, ShieldCheck, Smartphone, Sparkles, Users } from "lucide-react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { DataPagination } from "@/components/DataPagination";
@@ -10,6 +10,7 @@ import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBr
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -53,25 +54,9 @@ const STUDENT_TYPES = [
   { value: "fresher", label: "Fresher" },
   { value: "returning", label: "Returning Student" }
 ] as const;
-const DUES_FILTERS = [
-  { value: "all", label: "Any dues" },
-  { value: "required", label: "Dues required" },
-  { value: "free", label: "No dues" }
-] as const;
-const MEMBERSHIP_OPEN_FILTERS = [
-  { value: "all", label: "Any signup status" },
-  { value: "open", label: "Open for membership" },
-  { value: "closed", label: "Not open yet" }
-] as const;
 const EVENT_FILTERS = [
   { value: "all", label: "Any event status" },
   { value: "upcoming", label: "Upcoming event available" }
-] as const;
-const SORT_FILTERS = [
-  { value: "recommended", label: "Recommended" },
-  { value: "active", label: "Active clubs" },
-  { value: "new", label: "New clubs" },
-  { value: "name", label: "A-Z" }
 ] as const;
 const CLUB_DESCRIPTION_OVERRIDES: Record<string, string> = {
   "Nile Book Club":
@@ -104,17 +89,55 @@ const CLUB_DESCRIPTION_OVERRIDES: Record<string, string> = {
     "Break boundaries and inspire innovation. Join a community of like-minded women who are shaping the future of technology and making strides in a traditionally male-dominated field."
 };
 
+const STATIC_CLUB_LOGO_CODES = new Set([
+  "NBC",
+  "NBUC",
+  "NCC",
+  "NCIC",
+  "NCAC",
+  "NDC",
+  "NGC",
+  "NGD",
+  "NMUN",
+  "NPC",
+  "NSC",
+  "NTC",
+  "TEDX",
+  "WIT"
+]);
+
+function getStaticClubLogoUrl(club: ClubRecord) {
+  const code = club.code?.trim().toUpperCase();
+
+  return code && STATIC_CLUB_LOGO_CODES.has(code) ? `/club-logos/${code}.png` : null;
+}
+
 function ClubLogo({ club, className = "h-14 w-14" }: { club: ClubRecord; className?: string }) {
   const [url, setUrl] = useState<string | null>(null);
+  const staticLogoUrl = getStaticClubLogoUrl(club);
+
   useEffect(() => {
     let active = true;
+
+    if (!club.logo_path) {
+      setUrl(staticLogoUrl);
+      return () => { active = false; };
+    }
+
     void resolveStorageFileUrl("club-logos", club.logo_path).then((value) => {
-      if (active) setUrl(value);
+      if (active) setUrl(value || staticLogoUrl);
     });
     return () => { active = false; };
-  }, [club.logo_path]);
+  }, [club.logo_path, staticLogoUrl]);
 
-  return url ? <img src={url} alt={`${club.name} logo`} className={`${className} shrink-0 rounded-lg border-2 border-foreground object-cover`} /> : (
+  return url ? (
+    <img
+      src={url}
+      alt={`${club.name} logo`}
+      className={`${className} shrink-0 rounded-lg border-2 border-foreground object-cover`}
+      onError={() => setUrl((currentUrl) => (currentUrl !== staticLogoUrl ? staticLogoUrl : null))}
+    />
+  ) : (
     <div className={`${className} flex shrink-0 items-center justify-center rounded-lg border-2 border-foreground bg-muted`} aria-label={`${club.name} logo unavailable`}>
       <ImageIcon className="h-6 w-6" />
     </div>
@@ -827,22 +850,40 @@ function ClubDetailOverview({
   announcementsFailed: boolean;
   announcementsError: unknown;
 }) {
+  const [shareOpen, setShareOpen] = useState(false);
   const payment = existingRequest?.due_payment || undefined;
   const membershipStatus = existingRequest ? resolveMembershipStatus(existingRequest, payment) : "not_started";
   const duesRequired = isDuesRequired(club, settings);
   const active = membershipStatus === "active";
   const canInvite = club.is_public_signup !== false;
+  const inviteReason = getClubInviteReason(club, nextEvent);
+  const inviteUrl = getClubShareUrl(club.id);
+  const inviteText = `Hey, join ${club.name} on Campus One. ${inviteReason}`;
+  const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(`${inviteText}\n${inviteUrl}`)}`;
 
-  function handleInviteFriend() {
-    const reason = getClubInviteReason(club, nextEvent);
-
-    void shareOrCopy({
+  async function handleNativeShare(successTitle = "Club invite ready", fallbackTitle = "Club invite copied") {
+    await shareOrCopy({
       title: `Join ${club.name}`,
-      text: `Hey, join ${club.name} on Campus One. ${reason}`,
-      url: getClubShareUrl(club.id),
-      successTitle: "Club invite ready",
-      fallbackTitle: "Club invite copied"
+      text: inviteText,
+      url: inviteUrl,
+      successTitle,
+      fallbackTitle
     });
+    setShareOpen(false);
+  }
+
+  async function handleCopyClubLink() {
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      toast.success("Club link copied", {
+        description: "Paste it into any chat or social app."
+      });
+      setShareOpen(false);
+    } catch (copyError) {
+      toast.error("Could not copy club link", {
+        description: getErrorMessage(copyError)
+      });
+    }
   }
 
   return (
@@ -861,10 +902,96 @@ function ClubDetailOverview({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {canInvite ? (
-              <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={handleInviteFriend}>
-                <Share2 className="mr-2 h-4 w-4" />
-                Invite Friend
-              </Button>
+              <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+                <DialogTrigger asChild>
+                  <Button type="button" variant="outline" className="w-full sm:w-auto">
+                    <Share2 className="mr-2 h-4 w-4" />
+                    Invite Friend
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md" data-testid="club-share-sheet">
+                  <DialogHeader>
+                    <DialogTitle>Share {club.name}</DialogTitle>
+                    <DialogDescription>
+                      Send this club to a friend or copy the link for any chat app.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left"
+                      onClick={() => void handleNativeShare()}
+                    >
+                      <Smartphone className="h-5 w-5 shrink-0" />
+                      <span>
+                        <span className="block font-black">Share to apps</span>
+                        <span className="block text-xs normal-case tracking-normal text-muted-foreground">Open your device share sheet</span>
+                      </span>
+                    </Button>
+                    <Button
+                      asChild
+                      type="button"
+                      variant="outline"
+                      className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left"
+                    >
+                      <a
+                        href={whatsappShareUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={() => {
+                          toast.success("WhatsApp invite ready", {
+                            description: "Choose the friend or group you want to send it to."
+                          });
+                          setShareOpen(false);
+                        }}
+                      >
+                        <MessageCircle className="h-5 w-5 shrink-0" />
+                        <span>
+                          <span className="block font-black">WhatsApp</span>
+                          <span className="block text-xs normal-case tracking-normal text-muted-foreground">Send as a chat invite</span>
+                        </span>
+                      </a>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left"
+                      onClick={() => void handleNativeShare("Snapchat invite ready", "Snapchat invite copied")}
+                    >
+                      <Camera className="h-5 w-5 shrink-0" />
+                      <span>
+                        <span className="block font-black">Snapchat</span>
+                        <span className="block text-xs normal-case tracking-normal text-muted-foreground">Share or copy for Snap</span>
+                      </span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left"
+                      onClick={() => void handleNativeShare("Instagram invite ready", "Instagram invite copied")}
+                    >
+                      <Instagram className="h-5 w-5 shrink-0" />
+                      <span>
+                        <span className="block font-black">Instagram</span>
+                        <span className="block text-xs normal-case tracking-normal text-muted-foreground">Use share sheet or copy</span>
+                      </span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left sm:col-span-2"
+                      onClick={() => void handleCopyClubLink()}
+                    >
+                      <Copy className="h-5 w-5 shrink-0" />
+                      <span>
+                        <span className="block font-black">Copy Link</span>
+                        <span className="block text-xs normal-case tracking-normal text-muted-foreground">Paste anywhere</span>
+                      </span>
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             ) : (
               <Badge variant="outline">Invites open when membership opens</Badge>
             )}
@@ -1524,10 +1651,7 @@ function StudentMembershipView() {
   useUsageTracking(clubId ? "club_detail_view" : "club_discovery_view");
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<ClubInterestCategory | "all">("all");
-  const [duesFilter, setDuesFilter] = useState<(typeof DUES_FILTERS)[number]["value"]>("all");
-  const [membershipOpenFilter, setMembershipOpenFilter] = useState<(typeof MEMBERSHIP_OPEN_FILTERS)[number]["value"]>("all");
   const [eventFilter, setEventFilter] = useState<(typeof EVENT_FILTERS)[number]["value"]>("all");
-  const [sortFilter, setSortFilter] = useState<(typeof SORT_FILTERS)[number]["value"]>("recommended");
   const [recommendationsDismissed, setRecommendationsDismissed] = useState(() => sessionStorage.getItem("club-recommendations-dismissed") === "true");
   const {
     data: clubs = [],
@@ -1576,7 +1700,7 @@ function StudentMembershipView() {
 
     return clubs
       .filter((club) => {
-        const categories = clubCategoriesById.get(club.id) ?? ["Other"];
+        const categories = clubCategoriesById.get(club.id) ?? [];
         const hasUpcomingEvent = Boolean(nextEventByClubId.get(club.id));
 
         if (normalizedSearch && !getClubSearchFields(club, categories).includes(normalizedSearch)) {
@@ -1587,22 +1711,6 @@ function StudentMembershipView() {
           return false;
         }
 
-        if (duesFilter === "required" && club.dues_amount <= 0) {
-          return false;
-        }
-
-        if (duesFilter === "free" && club.dues_amount > 0) {
-          return false;
-        }
-
-        if (membershipOpenFilter === "open" && club.is_public_signup === false) {
-          return false;
-        }
-
-        if (membershipOpenFilter === "closed" && club.is_public_signup !== false) {
-          return false;
-        }
-
         if (eventFilter === "upcoming" && !hasUpcomingEvent) {
           return false;
         }
@@ -1610,50 +1718,36 @@ function StudentMembershipView() {
         return true;
       })
       .sort((first, second) => {
-        if (sortFilter === "name") {
-          return first.name.localeCompare(second.name);
-        }
-
-        if (sortFilter === "new") {
-          return new Date(second.created_at).getTime() - new Date(first.created_at).getTime();
-        }
-
-        if (sortFilter === "active") {
-          return Number(Boolean(nextEventByClubId.get(second.id))) - Number(Boolean(nextEventByClubId.get(first.id)));
-        }
-
         const firstRecommended = recommendedCategories.some((category) => clubCategoriesById.get(first.id)?.includes(category));
         const secondRecommended = recommendedCategories.some((category) => clubCategoriesById.get(second.id)?.includes(category));
 
         return Number(secondRecommended) - Number(firstRecommended) || Number(Boolean(nextEventByClubId.get(second.id))) - Number(Boolean(nextEventByClubId.get(first.id))) || first.name.localeCompare(second.name);
       });
-  }, [categoryFilter, clubCategoriesById, clubs, duesFilter, eventFilter, membershipOpenFilter, nextEventByClubId, recommendedCategories, search, sortFilter]);
-  const activeFilterCount = [categoryFilter !== "all", duesFilter !== "all", membershipOpenFilter !== "all", eventFilter !== "all", search.trim().length > 0].filter(Boolean).length;
+  }, [categoryFilter, clubCategoriesById, clubs, eventFilter, nextEventByClubId, recommendedCategories, search]);
+  const activeFilterCount = [categoryFilter !== "all", eventFilter !== "all", search.trim().length > 0].filter(Boolean).length;
   const recommendedClubs = useMemo(() => {
-    const candidateCategories = recommendedCategories.length > 0 ? recommendedCategories : CLUB_INTEREST_CATEGORIES.filter((category) => category !== "Other");
+    const candidateCategories = recommendedCategories.length > 0 ? recommendedCategories : CLUB_INTEREST_CATEGORIES;
 
     return filteredClubs
       .filter((club) => {
-        const categories = clubCategoriesById.get(club.id) ?? ["Other"];
+        const categories = clubCategoriesById.get(club.id) ?? [];
 
         return candidateCategories.some((category) => categories.includes(category)) || Boolean(nextEventByClubId.get(club.id));
       })
       .sort((first, second) => Number(Boolean(nextEventByClubId.get(second.id))) - Number(Boolean(nextEventByClubId.get(first.id))) || first.name.localeCompare(second.name))
       .slice(0, 3);
   }, [clubCategoriesById, filteredClubs, nextEventByClubId, recommendedCategories]);
+  const showRecommendations = activeFilterCount === 0 && recommendedClubs.length > 0 && !recommendationsDismissed;
   const recommendedClubIds = useMemo(() => new Set(recommendedClubs.map((club) => club.id)), [recommendedClubs]);
   const directoryClubs = useMemo(
-    () => filteredClubs.filter((club) => !recommendedClubIds.has(club.id)),
-    [filteredClubs, recommendedClubIds]
+    () => showRecommendations ? filteredClubs.filter((club) => !recommendedClubIds.has(club.id)) : filteredClubs,
+    [filteredClubs, recommendedClubIds, showRecommendations]
   );
 
   function clearDiscoveryFilters() {
     setSearch("");
     setCategoryFilter("all");
-    setDuesFilter("all");
-    setMembershipOpenFilter("all");
     setEventFilter("all");
-    setSortFilter("recommended");
   }
 
   if (clubId) {
@@ -1680,7 +1774,7 @@ function StudentMembershipView() {
       <NeoPageHeader
         eyebrow="Membership"
         title="Discover Clubs"
-        description="Find clubs that fit your interests, dues preference, and next campus activity."
+        description="Find clubs that fit your interests and next campus activity."
       />
 
       <Card>
@@ -1726,33 +1820,7 @@ function StudentMembershipView() {
               </Button>
             ))}
           </div>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <div className="space-y-2">
-              <Label>Dues</Label>
-              <Select value={duesFilter} onValueChange={(value) => setDuesFilter(value as typeof duesFilter)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {DUES_FILTERS.map((filter) => (
-                    <SelectItem key={filter.value} value={filter.value}>{filter.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Membership</Label>
-              <Select value={membershipOpenFilter} onValueChange={(value) => setMembershipOpenFilter(value as typeof membershipOpenFilter)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {MEMBERSHIP_OPEN_FILTERS.map((filter) => (
-                    <SelectItem key={filter.value} value={filter.value}>{filter.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="grid gap-3 md:max-w-sm">
             <div className="space-y-2">
               <Label>Events</Label>
               <Select value={eventFilter} onValueChange={(value) => setEventFilter(value as typeof eventFilter)}>
@@ -1761,19 +1829,6 @@ function StudentMembershipView() {
                 </SelectTrigger>
                 <SelectContent>
                   {EVENT_FILTERS.map((filter) => (
-                    <SelectItem key={filter.value} value={filter.value}>{filter.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Sort</Label>
-              <Select value={sortFilter} onValueChange={(value) => setSortFilter(value as typeof sortFilter)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SORT_FILTERS.map((filter) => (
                     <SelectItem key={filter.value} value={filter.value}>{filter.label}</SelectItem>
                   ))}
                 </SelectContent>
@@ -1821,12 +1876,12 @@ function StudentMembershipView() {
             </Card>
           ) : null}
 
-          {recommendedClubs.length && !recommendationsDismissed ? (
+          {showRecommendations ? (
             <Card>
               <CardHeader>
                 <div className="flex items-start justify-between gap-3"><CardTitle className="flex items-center gap-2 text-lg">
                   <Sparkles className="h-5 w-5 text-primary" />
-                  {activeFilterCount ? "Top Matches" : recommendedCategories.length ? "Recommended Clubs" : "Explore by Interest"}
+                  {recommendedCategories.length ? "Recommended Clubs" : "Explore by Interest"}
                 </CardTitle><Button type="button" size="sm" variant="ghost" onClick={() => { sessionStorage.setItem("club-recommendations-dismissed", "true"); setRecommendationsDismissed(true); }}>Dismiss</Button></div>
                 <p className="text-sm text-muted-foreground">
                   {recommendedCategories.length
@@ -1841,7 +1896,7 @@ function StudentMembershipView() {
                       key={club.id}
                       club={club}
                       existingRequest={requestByClubId.get(club.id)}
-                      categories={clubCategoriesById.get(club.id) ?? ["Other"]}
+                      categories={clubCategoriesById.get(club.id) ?? []}
                       nextEvent={nextEventByClubId.get(club.id)}
                     />
                   ))}
@@ -1871,7 +1926,7 @@ function StudentMembershipView() {
                     key={club.id}
                     club={club}
                     existingRequest={existingRequest}
-                    categories={clubCategoriesById.get(club.id) ?? ["Other"]}
+                    categories={clubCategoriesById.get(club.id) ?? []}
                     nextEvent={nextEventByClubId.get(club.id)}
                   />
                 );
