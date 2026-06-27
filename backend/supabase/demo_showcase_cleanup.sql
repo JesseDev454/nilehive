@@ -6,37 +6,37 @@ begin;
 delete from public.announcement_reads
 where announcement_id in (
   select id from public.announcements
-  where id between 'dd040000-0000-0000-0000-000000000001'::uuid and 'dd040000-0000-0000-0000-000000000007'::uuid
+  where id between 'dd040000-0000-0000-0000-000000000001'::uuid and 'dd040000-0000-0000-0000-000000000014'::uuid
 );
 
 delete from public.notifications
 where proposal_id in (
   select id from public.proposals
-  where id between 'dd030000-0000-0000-0000-000000000001'::uuid and 'dd030000-0000-0000-0000-000000000006'::uuid
+  where id between 'dd030000-0000-0000-0000-000000000001'::uuid and 'dd030000-0000-0000-0000-000000000014'::uuid
 )
 or announcement_id in (
   select id from public.announcements
-  where id between 'dd040000-0000-0000-0000-000000000001'::uuid and 'dd040000-0000-0000-0000-000000000007'::uuid
+  where id between 'dd040000-0000-0000-0000-000000000001'::uuid and 'dd040000-0000-0000-0000-000000000014'::uuid
 );
 
 delete from public.event_reminders
 where proposal_id in (
   select id from public.proposals
-  where id between 'dd030000-0000-0000-0000-000000000001'::uuid and 'dd030000-0000-0000-0000-000000000006'::uuid
+  where id between 'dd030000-0000-0000-0000-000000000001'::uuid and 'dd030000-0000-0000-0000-000000000014'::uuid
 );
 
 delete from public.event_attendance
 where id between 'dd090000-0000-0000-0000-000000000001'::uuid and 'dd090000-0000-0000-0000-000000000002'::uuid
    or proposal_id in (
     select id from public.proposals
-    where id between 'dd030000-0000-0000-0000-000000000001'::uuid and 'dd030000-0000-0000-0000-000000000006'::uuid
+    where id between 'dd030000-0000-0000-0000-000000000001'::uuid and 'dd030000-0000-0000-0000-000000000014'::uuid
   );
 
 delete from public.event_rsvps
 where id between 'dd080000-0000-0000-0000-000000000001'::uuid and 'dd080000-0000-0000-0000-000000000003'::uuid
    or proposal_id in (
     select id from public.proposals
-    where id between 'dd030000-0000-0000-0000-000000000001'::uuid and 'dd030000-0000-0000-0000-000000000006'::uuid
+    where id between 'dd030000-0000-0000-0000-000000000001'::uuid and 'dd030000-0000-0000-0000-000000000014'::uuid
   );
 
 delete from public.event_feedback
@@ -44,19 +44,26 @@ where id between 'dd0a0000-0000-0000-0000-000000000001'::uuid and 'dd0a0000-0000
    or comment ilike '%demo_showcase_2026%';
 
 delete from public.approvals
-where id between 'dd031000-0000-0000-0000-000000000001'::uuid and 'dd032000-0000-0000-0000-000000000006'::uuid
+where id between 'dd031000-0000-0000-0000-000000000001'::uuid and 'dd032000-0000-0000-0000-000000000014'::uuid
    or proposal_id in (
     select id from public.proposals
-    where id between 'dd030000-0000-0000-0000-000000000001'::uuid and 'dd030000-0000-0000-0000-000000000006'::uuid
+    where id between 'dd030000-0000-0000-0000-000000000001'::uuid and 'dd030000-0000-0000-0000-000000000014'::uuid
   );
 
 delete from public.proposals
-where id between 'dd030000-0000-0000-0000-000000000001'::uuid and 'dd030000-0000-0000-0000-000000000006'::uuid
+where id between 'dd030000-0000-0000-0000-000000000001'::uuid and 'dd030000-0000-0000-0000-000000000014'::uuid
    or description ilike '%demo_showcase_2026%';
 
 delete from public.announcements
-where id between 'dd040000-0000-0000-0000-000000000001'::uuid and 'dd040000-0000-0000-0000-000000000007'::uuid
+where id between 'dd040000-0000-0000-0000-000000000001'::uuid and 'dd040000-0000-0000-0000-000000000014'::uuid
    or message ilike '%demo_showcase_2026%';
+
+delete from public.task_status_history
+where task_id between 'dd0b0000-0000-0000-0000-000000000001'::uuid and 'dd0b0000-0000-0000-0000-000000000014'::uuid;
+
+delete from public.tasks
+where id between 'dd0b0000-0000-0000-0000-000000000001'::uuid and 'dd0b0000-0000-0000-0000-000000000014'::uuid
+   or description ilike '%demo showcase task:%';
 
 delete from public.membership_requests
 where id between 'dd070000-0000-0000-0000-000000000001'::uuid and 'dd070000-0000-0000-0000-000000000004'::uuid
@@ -67,7 +74,7 @@ where id between 'dd060000-0000-0000-0000-000000000001'::uuid and 'dd060000-0000
    or payment_reference like 'DEMO-%';
 
 delete from public.club_members
-where id between 'dd050000-0000-0000-0000-000000000001'::uuid and 'dd050000-0000-0000-0000-000000000003'::uuid;
+where id between 'dd050000-0000-0000-0000-000000000001'::uuid and 'dd050000-0000-0000-0000-000000000014'::uuid;
 
 delete from public.club_media
 where id between 'dd010000-0000-0000-0000-000000000001'::uuid and 'dd010000-0000-0000-0000-000000000028'::uuid

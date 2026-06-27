@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import type { ElementType, ReactNode } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { NeoEmptyState, NeoErrorState, NeoLoadingState } from "@/components/NeoBrutal";
 import {
   getAdminOperationsDashboard,
@@ -51,19 +52,25 @@ import {
   BarChart3,
   Bell,
   CalendarDays,
+  Camera,
   CheckCircle,
   ClipboardList,
   Clock,
+  Copy,
   CreditCard,
   FileText,
   Gauge,
+  Instagram,
   ListChecks,
   MapPin,
+  MessageCircle,
   MessageSquare,
   Plus,
   QrCode,
   RefreshCw,
+  Share2,
   ShieldCheck,
+  Smartphone,
   TrendingUp,
   UserPlus,
   Users,
@@ -78,6 +85,7 @@ import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 import { canViewProposalDetails } from "@/lib/roleAccess";
 import { downloadAdminPerformanceMatrixCsv } from "@/lib/exports";
 import { getStudentNextAction, type StudentNextActionKind } from "@/lib/studentActivation";
+import { buildAppUrl, shareOrCopy } from "@/lib/share";
 
 function StatCard({
   title,
@@ -1346,7 +1354,7 @@ function AdvisorDashboard() {
             ) : isEventsError ? (
               <NeoErrorState title="Unable to load events" message={getErrorMessage(eventsError)} />
             ) : upcomingEvents.length === 0 ? (
-              <NeoEmptyState title="No upcoming events" message="Approved events from assigned clubs will appear here." />
+              <NeoEmptyState title="No upcoming events" message="Events from assigned clubs will appear here." />
             ) : (
               <UpcomingEventsList events={upcomingEvents} canOpenProposal={canViewProposalDetails("advisor")} />
             )}
@@ -1736,7 +1744,7 @@ function PolishedAdminDashboard() {
                 <AdminReviewQueueCard
                   title="Upcoming events"
                   count={upcomingEventCount}
-                  detail="Approved events coming up soon."
+                  detail="Events coming up soon."
                   to="/events"
                   icon={CalendarDays}
                 />
@@ -2467,6 +2475,7 @@ const STUDENT_NEXT_ACTION_ICONS: Record<StudentNextActionKind, ElementType> = {
 
 function StudentDashboard() {
   const { profile } = useAuth();
+  const [dashboardShareOpen, setDashboardShareOpen] = useState(false);
   const {
     data: membershipRequests = [],
     isLoading: membershipsLoading,
@@ -2587,17 +2596,31 @@ function StudentDashboard() {
   });
   const NextActionIcon = STUDENT_NEXT_ACTION_ICONS[nextAction.kind];
 
-  async function handleCopyInviteLink() {
-    const inviteUrl = `${window.location.origin}/membership`;
+  const dashboardInviteUrl = buildAppUrl("/membership");
+  const dashboardInviteText = "Hey, join Campus One Club Services and find a Nile University club that fits you.";
+  const dashboardWhatsAppShareUrl = `https://wa.me/?text=${encodeURIComponent(`${dashboardInviteText}\n${dashboardInviteUrl}`)}`;
 
+  async function handleDashboardShare(successTitle = "Invite ready", fallbackTitle = "Invite copied") {
+    await shareOrCopy({
+      title: "Discover Nile University clubs",
+      text: dashboardInviteText,
+      url: dashboardInviteUrl,
+      successTitle,
+      fallbackTitle
+    });
+    setDashboardShareOpen(false);
+  }
+
+  async function handleCopyInviteLink() {
     try {
-      await navigator.clipboard.writeText(inviteUrl);
+      await navigator.clipboard.writeText(`${dashboardInviteText}\n${dashboardInviteUrl}`);
       toast.success("Invite link copied", {
         description: "Share it with a friend so they can discover clubs too."
       });
+      setDashboardShareOpen(false);
     } catch {
       toast.error("Couldn't copy link", {
-        description: inviteUrl
+        description: dashboardInviteUrl
       });
     }
   }
@@ -2672,11 +2695,93 @@ function StudentDashboard() {
             </CardContent>
           </Card>
           <StudentQuickLink title="Pay Dues" description="Upload proof and track status." to="/membership" icon={CreditCard} />
+          <StudentQuickLink title="Discover Clubs" description="Find clubs, events, and membership status." to="/membership" icon={UserPlus} />
           <StudentQuickLink title="Announcements" description="Catch updates from clubs and admins." to="/communications" icon={MessageSquare} />
-          <Button type="button" variant="outline" className="h-auto w-full justify-start rounded-[24px] p-5 text-left" onClick={handleCopyInviteLink}>
-            <Users className="mr-3 h-5 w-5" />
-            Invite a friend to discover clubs
-          </Button>
+          <Dialog open={dashboardShareOpen} onOpenChange={setDashboardShareOpen}>
+            <DialogTrigger asChild>
+              <Button type="button" variant="outline" className="h-auto w-full justify-start rounded-[24px] p-5 text-left">
+                <Users className="mr-3 h-5 w-5" />
+                Invite a friend to discover clubs
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md" data-testid="dashboard-share-sheet">
+              <DialogHeader>
+                <DialogTitle>Invite a friend</DialogTitle>
+                <DialogDescription>
+                  Share the Club Services directory with a classmate so they can find clubs faster.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left"
+                  onClick={() => void handleDashboardShare()}
+                >
+                  <Smartphone className="h-5 w-5 shrink-0" />
+                  <span>
+                    <span className="block font-black">Share to apps</span>
+                    <span className="block text-xs normal-case tracking-normal text-muted-foreground">Use your device menu</span>
+                  </span>
+                </Button>
+                <Button asChild type="button" variant="outline" className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left">
+                  <a
+                    href={dashboardWhatsAppShareUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={() => {
+                      toast.success("WhatsApp invite ready", {
+                        description: "Choose the friend or group you want to send it to."
+                      });
+                      setDashboardShareOpen(false);
+                    }}
+                  >
+                    <MessageCircle className="h-5 w-5 shrink-0" />
+                    <span>
+                      <span className="block font-black">WhatsApp</span>
+                      <span className="block text-xs normal-case tracking-normal text-muted-foreground">Send as a chat invite</span>
+                    </span>
+                  </a>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left"
+                  onClick={() => void handleDashboardShare("Snapchat invite ready", "Snapchat invite copied")}
+                >
+                  <Camera className="h-5 w-5 shrink-0" />
+                  <span>
+                    <span className="block font-black">Snapchat</span>
+                    <span className="block text-xs normal-case tracking-normal text-muted-foreground">Share or copy for Snap</span>
+                  </span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left"
+                  onClick={() => void handleDashboardShare("Instagram invite ready", "Instagram invite copied")}
+                >
+                  <Instagram className="h-5 w-5 shrink-0" />
+                  <span>
+                    <span className="block font-black">Instagram</span>
+                    <span className="block text-xs normal-case tracking-normal text-muted-foreground">Use share sheet or copy</span>
+                  </span>
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left sm:col-span-2"
+                  onClick={() => void handleCopyInviteLink()}
+                >
+                  <Copy className="h-5 w-5 shrink-0" />
+                  <span>
+                    <span className="block font-black">Copy Link</span>
+                    <span className="block text-xs normal-case tracking-normal text-muted-foreground">Paste anywhere</span>
+                  </span>
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
           <Link to="/feedback" className="block">
             <div className="rounded-[28px] border-3 border-foreground bg-primary p-8 text-center text-primary-foreground shadow-neo transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-[2px_2px_0_hsl(var(--neo-shadow))]">
               <MessageSquare className="mx-auto h-9 w-9" />
@@ -2827,7 +2932,7 @@ function StudentDashboard() {
                 <AdminEmptyState
                   icon={CalendarDays}
                   title="No club events yet"
-                  message="Approved events from your active clubs will show up here once they are ready."
+                  message="Events from your active clubs will show up here once they are ready."
                 />
               ) : (
                 <div className="space-y-3">

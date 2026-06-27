@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Camera, Copy, ExternalLink, Filter, ImageIcon, Instagram, Loader2, MessageCircle, Search, Share2, ShieldCheck, Smartphone, Sparkles, Users } from "lucide-react";
+import { ArrowLeft, Camera, Copy, Filter, ImageIcon, Instagram, Loader2, MessageCircle, Search, Share2, ShieldCheck, Smartphone, Sparkles, Users } from "lucide-react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { DataPagination } from "@/components/DataPagination";
@@ -153,7 +153,18 @@ function GalleryImage({ path, caption }: { path: string; caption: string | null 
     });
     return () => { active = false; };
   }, [path]);
-  return url ? <figure><img src={url} alt={caption || "Club activity"} className="aspect-square w-full rounded-lg border-2 border-foreground object-cover" />{caption ? <figcaption className="mt-1 text-xs text-muted-foreground">{caption}</figcaption> : null}</figure> : <div className="aspect-square animate-pulse rounded-lg bg-muted" />;
+  return url ? (
+    <figure>
+      <img
+        src={url}
+        alt={caption || "Club activity"}
+        loading="lazy"
+        decoding="async"
+        className="aspect-square w-full rounded-lg border-2 border-foreground object-cover"
+      />
+      {caption ? <figcaption className="mt-1 text-xs text-muted-foreground">{caption}</figcaption> : null}
+    </figure>
+  ) : <div className="aspect-square animate-pulse rounded-lg bg-muted" />;
 }
 
 function getErrorMessage(error: unknown) {
@@ -1006,17 +1017,11 @@ function ClubDetailOverview({
         </CardHeader>
         <CardContent className="space-y-5">
           <p className="text-sm leading-6 text-muted-foreground">{getClubDescription(club)}</p>
-          {(club.website_url || Object.keys(club.social_links || {}).length > 0) ? (
-            <div className="flex flex-wrap gap-2">
-              {club.website_url ? <Button asChild size="sm" variant="outline"><a href={club.website_url} target="_blank" rel="noreferrer"><ExternalLink className="h-4 w-4" /> Website</a></Button> : null}
-              {Object.entries(club.social_links || {}).map(([network, url]) => <Button key={network} asChild size="sm" variant="outline"><a href={url} target="_blank" rel="noreferrer">{network}</a></Button>)}
-            </div>
-          ) : null}
           {club.gallery?.length ? (
             <div><h3 className="mb-3 font-black">Club gallery</h3><div className="grid grid-cols-2 gap-3 md:grid-cols-3">{club.gallery.map((media) => <GalleryImage key={media.id} path={media.storage_path} caption={media.caption} />)}</div></div>
           ) : null}
           <div>
-            <h3 className="mb-3 font-black">Approved events</h3>
+            <h3 className="mb-3 font-black">Events</h3>
             {clubEvents.length ? <div className="space-y-2">{clubEvents.slice(0, 6).map((event) => <div key={event.proposal_id} className="rounded-lg border p-3"><p className="font-semibold">{event.title}</p><p className="text-sm text-muted-foreground">{formatDate(event.event_date)} · {event.event_lifecycle === "past" ? "Past event" : "Upcoming"}</p></div>)}</div> : <p className="text-sm text-muted-foreground">No approved events have been published for this club yet.</p>}
           </div>
           <div className="grid gap-3 md:grid-cols-2">
@@ -1616,7 +1621,7 @@ function StudentClubJoinPage({
           <NeoPageHeader
             eyebrow="Membership"
             title={`Join ${club.name}`}
-            description={getClubDescription(club)}
+            description="Review the club profile, events, dues status, and next membership step."
           />
           <ClubDetailOverview
             club={club}

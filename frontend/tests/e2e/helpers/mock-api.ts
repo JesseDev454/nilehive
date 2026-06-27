@@ -270,6 +270,40 @@ export function createE2EState() {
     created_at: now,
     updated_at: now
   };
+  const adminUsers = [
+    {
+      id: "e2e-student",
+      full_name: "E2E Student",
+      student_id: "123456789",
+      email: "e2e-student@nilehive.test",
+      phone_number: "08000000000",
+      role: "student",
+      effective_role: "student",
+      requested_role: "student",
+      access_pending: false,
+      club_id: null,
+      club: null,
+      advisor_assignments: [],
+      created_at: now,
+      updated_at: now
+    },
+    {
+      id: "e2e-president",
+      full_name: "E2E President",
+      student_id: "123456789",
+      email: "e2e-president@nilehive.test",
+      phone_number: "08000000000",
+      role: "president",
+      effective_role: "president",
+      requested_role: "president",
+      access_pending: false,
+      club_id: "club-tech",
+      club: { id: "club-tech", name: "Nile Tech Club", code: "NTC" },
+      advisor_assignments: [],
+      created_at: now,
+      updated_at: now
+    }
+  ];
 
   return {
     clubs: [club, businessClub],
@@ -280,6 +314,7 @@ export function createE2EState() {
     announcements: [announcement],
     notifications,
     feedback: [feedback],
+    adminUsers,
     studentMemberships: [] as typeof membership[],
     adminMemberships: [membership],
     studentDues: [] as typeof duePayment[],
@@ -307,6 +342,10 @@ export function createE2EState() {
 }
 
 type E2EState = ReturnType<typeof createE2EState>;
+
+function getTestRole(page: Page) {
+  return getTestProfileId(page)?.replace(/^e2e-/, "") || null;
+}
 
 function ok(route: Route, data: JsonValue | null = null) {
   return route.fulfill({
@@ -514,12 +553,75 @@ export async function mockClubServicesApi(page: Page, state = createE2EState()) 
     }
 
     if (method === "GET" && path === "/clubs") {
-      return ok(route, state.clubs);
+      const role = getTestRole(page);
+      return ok(route, role === "president" ? state.clubs.filter((club) => club.id === "club-tech") : state.clubs);
     }
 
     if (method === "GET" && path.match(/^\/clubs\/[^/]+$/)) {
       const clubId = path.split("/")[2];
+      const role = getTestRole(page);
+      if (role === "president" && clubId !== "club-tech") {
+        return apiError(route, 404, "Club not found", "CLUB_NOT_FOUND");
+      }
       return ok(route, state.clubs.find((club) => club.id === clubId) || state.clubs[0]);
+    }
+
+    if (method === "POST" && path === "/clubs") {
+      if (getTestRole(page) !== "admin") {
+        return apiError(route, 403, "Only Club Services admins can manage clubs", "FORBIDDEN");
+      }
+      const body = request.postDataJSON() as Partial<typeof state.clubs[number]>;
+      const created = {
+        ...state.clubs[0],
+        id: `club-created-${state.clubs.length + 1}`,
+        name: body.name || "Created Club",
+        code: body.code || null,
+        description: body.description || "",
+        is_public_signup: body.is_public_signup !== false,
+        categories: body.categories || [],
+        logo_path: body.logo_path || null,
+        gallery: [],
+        created_at: now
+      };
+      state.clubs = [...state.clubs, created];
+      return ok(route, created);
+    }
+
+    if (method === "PATCH" && path.match(/^\/clubs\/[^/]+$/)) {
+      if (getTestRole(page) !== "admin") {
+        return apiError(route, 403, "Only Club Services admins can manage clubs", "FORBIDDEN");
+      }
+      const clubId = path.split("/")[2];
+      const body = request.postDataJSON() as Partial<typeof state.clubs[number]>;
+      state.clubs = state.clubs.map((club) => club.id === clubId ? { ...club, ...body } : club);
+      return ok(route, state.clubs.find((club) => club.id === clubId) || state.clubs[0]);
+    }
+
+    if (method === "PATCH" && path.match(/^\/clubs\/[^/]+\/profile$/)) {
+      const clubId = path.split("/")[2];
+      if (getTestRole(page) !== "president" || clubId !== "club-tech") {
+        return apiError(route, 403, "You can only manage content for your assigned club", "FORBIDDEN");
+      }
+      const body = request.postDataJSON() as Partial<typeof state.clubs[number]>;
+      state.clubs = state.clubs.map((club) => club.id === clubId ? { ...club, ...body } : club);
+      return ok(route, state.clubs.find((club) => club.id === clubId) || state.clubs[0]);
+    }
+
+    if (method === "POST" && path.match(/^\/clubs\/[^/]+\/media$/)) {
+      const clubId = path.split("/")[2];
+      const body = request.postDataJSON() as { storage_path?: string; caption?: string | null; display_order?: number };
+      const media = {
+        id: `media-${clubId}-${state.clubs.flatMap((club) => club.gallery || []).length + 1}`,
+        club_id: clubId,
+        storage_path: body.storage_path || `/demo-club-gallery/${clubId}/upload.png`,
+        caption: body.caption || "Uploaded gallery image",
+        display_order: body.display_order || 0,
+        uploaded_by: getTestProfileId(page) || "e2e-user",
+        created_at: now,
+        updated_at: now
+      };
+      state.clubs = state.clubs.map((club) => club.id === clubId ? { ...club, gallery: [...(club.gallery || []), media] } : club);
+      return ok(route, media);
     }
 
     if (method === "POST" && path === "/analytics/activity") {
@@ -600,10 +702,11 @@ export async function mockClubServicesApi(page: Page, state = createE2EState()) 
     }
 
     if (method === "POST" && path === "/storage/upload") {
+      const body = request.postDataJSON() as { bucket?: string; path?: string };
       return ok(route, {
-        bucket: "dues-receipts",
-        path: "dues/e2e-student/proof.png",
-        url: "https://example.test/proof.png"
+        bucket: body.bucket || "dues-receipts",
+        path: body.path || "dues/e2e-student/proof.png",
+        url: `https://example.test/${body.path || "proof.png"}`
       });
     }
 
@@ -725,6 +828,37 @@ export async function mockClubServicesApi(page: Page, state = createE2EState()) 
 
     if (method === "GET" && path === "/dashboard/executive") {
       return ok(route, getExecutiveDashboard(state));
+    }
+
+    if (method === "GET" && path === "/admin/users") {
+      return ok(route, paginated(state.adminUsers, 10));
+    }
+
+    if (method === "GET" && path.match(/^\/admin\/users\/[^/]+$/)) {
+      const profileId = path.split("/")[3];
+      const user = state.adminUsers.find((item) => item.id === profileId);
+      return user ? ok(route, user) : apiError(route, 404, "User not found", "USER_NOT_FOUND");
+    }
+
+    if (method === "POST" && path.match(/^\/admin\/users\/[^/]+\/role$/)) {
+      const profileId = path.split("/")[3];
+      const body = request.postDataJSON() as { role?: string; club_id?: string | null };
+      state.adminUsers = state.adminUsers.map((user) =>
+        user.id === profileId
+          ? {
+              ...user,
+              role: (body.role || user.role) as typeof user.role,
+              effective_role: body.role || user.effective_role,
+              club_id: body.club_id || null,
+              club: body.club_id ? { id: "club-tech", name: "Nile Tech Club", code: "NTC" } : null,
+              updated_at: now
+            }
+          : user
+      );
+      return ok(route, {
+        profile: state.adminUsers.find((item) => item.id === profileId) || state.adminUsers[0],
+        history: null
+      });
     }
 
     if (method === "GET" && path === "/proposals/pending-advisor") {

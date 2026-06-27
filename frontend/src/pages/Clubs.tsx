@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Pencil, Plus, School } from "lucide-react";
+import { ArrowLeft, Loader2, Pencil, Plus, School } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,12 +38,16 @@ function getErrorMessage(error: unknown) {
 
 export default function Clubs() {
   const { role } = useRole();
+  const { clubId: editClubId } = useParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [editingClub, setEditingClub] = useState<ClubRecord | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [galleryFile, setGalleryFile] = useState<File | null>(null);
   const canManageClubs = role === "admin" || role === "president";
+  const canCreateClubs = role === "admin";
+  const isFocusedEdit = Boolean(editClubId);
   const { data: clubs = [], isLoading, isError, error } = useQuery({
     queryKey: ["clubs-management"],
     queryFn: () => getClubs(),
@@ -71,10 +76,13 @@ export default function Clubs() {
   }, [editingClub]);
 
   useEffect(() => {
-    if (role === "president" && clubs.length === 1 && !editingClub) {
-      setEditingClub(clubs[0]);
+    if (!editClubId) {
+      setEditingClub(null);
+      return;
     }
-  }, [clubs, editingClub, role]);
+
+    setEditingClub(clubs.find((club) => club.id === editClubId) || null);
+  }, [clubs, editClubId]);
 
   const saveMutation = useMutation({
     mutationFn: async () => {
@@ -124,6 +132,9 @@ export default function Clubs() {
         queryClient.invalidateQueries({ queryKey: ["dues-clubs"] }),
         queryClient.invalidateQueries({ queryKey: ["membership-review-clubs"] })
       ]);
+      if (isFocusedEdit) {
+        navigate("/clubs");
+      }
     },
     onError: (mutationError) => actionError("Could not save club", mutationError, getErrorMessage(mutationError))
   });
@@ -143,14 +154,32 @@ export default function Clubs() {
 
   return (
     <div className="nh-page">
-      <NeoPageHeader eyebrow="Club Services" title="Clubs" description="Create and maintain the clubs students discover in the app." />
+      <NeoPageHeader
+        eyebrow="Club Services"
+        title={isFocusedEdit ? "Edit Club Profile" : "Clubs"}
+        description={isFocusedEdit ? "Update this club profile in a focused editor." : role === "president" ? "Maintain the public profile for your assigned club." : "Create and maintain the clubs students discover in the app."}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">{editingClub ? `Edit ${editingClub.name}` : "Add a new club"}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="nh-form-grid">
+      {isFocusedEdit ? (
+        <Button asChild variant="outline" className="w-fit">
+          <Link to="/clubs">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to clubs
+          </Link>
+        </Button>
+      ) : null}
+
+      {isFocusedEdit && isLoading ? (
+        <NeoLoadingState title="Opening club editor" message="We are loading the selected club profile." compact />
+      ) : isFocusedEdit && !editingClub ? (
+        <NeoStateCard icon={School} title="Club editor unavailable" message="This club is not available for your role, or it no longer exists." />
+      ) : (canCreateClubs || editingClub) ? (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">{editingClub ? `Edit ${editingClub.name}` : "Add a new club"}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="nh-form-grid">
             <div className="space-y-2">
               <Label htmlFor="club_name">Club Name</Label>
               <Input id="club_name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required disabled={role === "president"} />
@@ -176,21 +205,28 @@ export default function Clubs() {
             <div className="space-y-2"><Label htmlFor="club_linkedin">LinkedIn</Label><Input id="club_linkedin" type="url" value={form.linkedin} onChange={(event) => setForm({ ...form, linkedin: event.target.value })} placeholder="https://" /></div>
             {editingClub ? <><div className="space-y-2"><Label htmlFor="club_logo">Club logo</Label><Input id="club_logo" type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setLogoFile(event.target.files?.[0] || null)} /></div><div className="space-y-2"><Label htmlFor="club_gallery">Add gallery image</Label><Input id="club_gallery" type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setGalleryFile(event.target.files?.[0] || null)} /></div></> : null}
             <div className="flex flex-wrap justify-end gap-2 lg:col-span-2">
-              {editingClub && role === "admin" ? <Button type="button" variant="outline" onClick={() => setEditingClub(null)}>Cancel</Button> : null}
+              {editingClub && role === "admin" ? <Button asChild type="button" variant="outline"><Link to="/clubs">Cancel</Link></Button> : null}
               <Button type="submit" disabled={saveMutation.isPending || (role === "president" && !editingClub)}>
                 {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : editingClub ? <Pencil className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                 {editingClub ? "Save Changes" : "Add Club"}
               </Button>
             </div>
-          </form>
-        </CardContent>
-      </Card>
+            </form>
+          </CardContent>
+        </Card>
+      ) : null}
 
-      <Card>
+      {!isFocusedEdit ? <Card>
         <CardHeader><CardTitle className="text-lg">Configured clubs</CardTitle></CardHeader>
         <CardContent>
           {isLoading ? <NeoLoadingState title="Loading clubs" message="We are gathering the current club directory." compact /> : isError ? (
             <NeoStateCard icon={School} title="Could not load clubs" message={getErrorMessage(error)} tone="danger" />
+          ) : !clubs.length ? (
+            <NeoStateCard
+              icon={School}
+              title={role === "president" ? "No assigned club found" : "No clubs configured yet"}
+              message={role === "president" ? "Ask a Club Services admin to assign your president profile to a club." : "Admins can add a club from the form above."}
+            />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {clubs.map((club) => (
@@ -201,13 +237,13 @@ export default function Clubs() {
                   </div>
                   <p className="text-sm text-muted-foreground">{club.description || "No description yet."}</p>
                   <div className="flex flex-wrap gap-1">{(club.categories || []).map((category) => <Badge key={category} variant="outline">{category}</Badge>)}</div>
-                  <Button type="button" size="sm" variant="outline" onClick={() => setEditingClub(club)}><Pencil className="h-4 w-4" /> Edit Club</Button>
+                  <Button asChild size="sm" variant="outline"><Link to={`/clubs/${club.id}/edit`}><Pencil className="h-4 w-4" /> Edit Club</Link></Button>
                 </div>
               ))}
             </div>
           )}
         </CardContent>
-      </Card>
+      </Card> : null}
     </div>
   );
 }

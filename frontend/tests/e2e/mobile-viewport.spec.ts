@@ -11,7 +11,7 @@ test("mobile viewport supports student dashboard, notifications, and QR check-in
 
   await page.goto("/");
   await expect(page.getByRole("heading", { name: /Hello, E2E/i })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Discover Clubs" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /Discover Clubs/i }).first()).toBeVisible();
   await expect(page.getByRole("link", { name: /Announcements/i }).first()).toBeVisible();
   await expect(page.getByRole("link", { name: "View Announcements" })).toBeVisible();
 

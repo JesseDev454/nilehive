@@ -127,10 +127,12 @@ const App = () => (
                   <Route path="/dues" element={<Dues />} />
                   <Route path="/communications" element={<Communications />} />
                   <Route path="/clubs" element={<Clubs />} />
+                  <Route path="/clubs/:clubId/edit" element={<Clubs />} />
                   <Route path="/feedback" element={<Communications defaultTab="feedback" />} />
                   <Route path="/tasks" element={<Tasks />} />
                   <Route path="/clubs/:clubId/dashboard" element={<AdminClubDashboard />} />
                   <Route path="/user-management" element={<UserManagement />} />
+                  <Route path="/user-management/:userId" element={<UserManagement />} />
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/archive" element={<MediaArchive />} />
                 </Route>

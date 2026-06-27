@@ -1529,6 +1529,18 @@ export async function getAdminUsers(
   return response.data;
 }
 
+export async function getAdminUser(profileId: string, token?: string) {
+  const response = await request<ApiEnvelope<AdminUserProfileRecord>>(
+    `/api/v1/admin/users/${profileId}`,
+    {
+      method: "GET",
+      token
+    }
+  );
+
+  return response.data;
+}
+
 export async function updateAdminUserRole(
   profileId: string,
   payload: UpdateAdminUserRolePayload,

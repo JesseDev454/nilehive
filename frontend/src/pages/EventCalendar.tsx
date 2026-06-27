@@ -1036,7 +1036,7 @@ export default function EventCalendar() {
                 <div className="nh-empty">
                   <CalendarDays className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
                   <p className="font-medium">No events yet</p>
-                  <p className="text-sm text-muted-foreground mt-1">Approved events will appear here once they are ready.</p>
+                  <p className="text-sm text-muted-foreground mt-1">Events will appear here once they are ready.</p>
                 </div>
               ) : (
                 <div className="space-y-8">

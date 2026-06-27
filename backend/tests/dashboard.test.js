@@ -106,6 +106,57 @@ test("club health score handles weak clubs without dropping below zero", () => {
   assert.equal(health.label, "At Risk");
 });
 
+test("club health score uses deterministic weighted inputs and breakdown", () => {
+  const health = calculateClubHealthScore({
+    members: [
+      { membership_status: "active" },
+      { membership_status: "active" },
+      { membership_status: "inactive" },
+      { membership_status: "inactive" }
+    ],
+    duePayments: [
+      { status: "paid" },
+      { status: "paid" },
+      { status: "submitted" },
+      { status: "rejected" }
+    ],
+    proposals: [
+      createProposal({ id: "proposal-weighted-1", status: "approved", event_date: getRelativeDate(-5) }),
+      createProposal({ id: "proposal-weighted-2", status: "approved", event_date: getRelativeDate(8) }),
+      createProposal({ id: "proposal-weighted-3", status: "pending_admin_review", event_date: getRelativeDate(12) }),
+      createProposal({ id: "proposal-weighted-4", status: "admin_rejected", event_date: getRelativeDate(15) })
+    ],
+    approvedEvents: [
+      createProposal({ id: "proposal-weighted-1", status: "approved", event_date: getRelativeDate(-5) }),
+      createProposal({ id: "proposal-weighted-2", status: "approved", event_date: getRelativeDate(8) })
+    ],
+    reports: [
+      { proposal_id: "proposal-weighted-1" }
+    ],
+    tasks: [
+      { status: "completed" },
+      { status: "pending" },
+      { status: "blocked" }
+    ],
+    feedback: [
+      { rating: 5, status: "resolved" },
+      { rating: 3, status: "open" }
+    ],
+    now: new Date()
+  });
+
+  assert.deepEqual(health.breakdown, {
+    dues: 50,
+    membership: 50,
+    events: 58,
+    reports: 100,
+    tasks: 40,
+    feedback: 74
+  });
+  assert.equal(health.score, 59);
+  assert.equal(health.label, "Getting Started");
+});
+
 test("club health score utilities clamp extreme values", () => {
   assert.equal(clampScore(200), 100);
   assert.equal(clampScore(-20), 0);
