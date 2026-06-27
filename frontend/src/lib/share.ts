@@ -26,7 +26,7 @@ export async function shareOrCopy(payload: SharePayload) {
   const clipboardText = `${payload.text}\n${payload.url}`;
 
   try {
-    if (nav && "share" in nav) {
+    if (nav && typeof nav.share === "function") {
       await nav.share(shareData);
       actionSuccess(payload.successTitle ?? "Ready to share", "Your invite is ready to send.");
       return;

@@ -2671,15 +2671,6 @@ function StudentDashboard() {
               </div>
             </CardContent>
           </Card>
-          <div className="rounded-[24px] border-3 border-foreground bg-primary p-5 text-primary-foreground shadow-neo">
-            <div className="flex items-center justify-between gap-4">
-              <h2 className="text-2xl font-black tracking-[-0.04em]">Discover Clubs</h2>
-              <div className="flex h-12 w-12 items-center justify-center rounded-full border-3 border-foreground bg-card text-foreground">
-                <UserPlus className="h-6 w-6" />
-              </div>
-            </div>
-          </div>
-          <StudentQuickLink featured title="Join a Club" description="Find your next community." to="/membership" icon={UserPlus} />
           <StudentQuickLink title="Pay Dues" description="Upload proof and track status." to="/membership" icon={CreditCard} />
           <StudentQuickLink title="Announcements" description="Catch updates from clubs and admins." to="/communications" icon={MessageSquare} />
           <Button type="button" variant="outline" className="h-auto w-full justify-start rounded-[24px] p-5 text-left" onClick={handleCopyInviteLink}>
@@ -2866,12 +2857,12 @@ function StudentDashboard() {
 
         <div className="space-y-6">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-3">
-              <div>
+            <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
                 <CardTitle className="text-lg">Announcements Preview</CardTitle>
                 <p className="mt-1 text-sm text-muted-foreground">Recent updates from your clubs and Club Services.</p>
               </div>
-              <Button asChild variant="outline" size="sm">
+              <Button asChild variant="outline" size="sm" className="w-full shrink-0 sm:w-auto">
                 <Link to="/communications">View Announcements</Link>
               </Button>
             </CardHeader>

@@ -9,17 +9,30 @@ export const CLUB_INTEREST_CATEGORIES = [
   "Volunteering",
   "Academics",
   "Media",
-  "Faith",
   "Arts",
-  "Leadership",
-  "Wellness",
-  "Culture",
-  "Other"
+  "Leadership"
 ] as const;
 
 export type ClubInterestCategory = (typeof CLUB_INTEREST_CATEGORIES)[number];
 
-const CATEGORY_KEYWORDS: Record<Exclude<ClubInterestCategory, "Other">, string[]> = {
+const CLUB_CODE_CATEGORIES: Record<string, ClubInterestCategory[]> = {
+  NCIC: ["Tech", "Volunteering", "Arts"],
+  NGD: ["Tech", "Volunteering", "Academics"],
+  WIT: ["Tech", "Entrepreneurship", "Volunteering"],
+  NGC: ["Gaming", "Sports"],
+  NCAC: ["Music", "Media", "Arts"],
+  NBUC: ["Entrepreneurship"],
+  NSC: ["Entrepreneurship", "Arts"],
+  NCC: ["Volunteering", "Academics", "Arts"],
+  NBC: ["Academics"],
+  NDC: ["Academics", "Leadership"],
+  NMUN: ["Academics", "Media", "Leadership"],
+  NTC: ["Academics", "Leadership"],
+  NPC: ["Media"],
+  TEDX: ["Media", "Arts"]
+};
+
+const CATEGORY_KEYWORDS: Record<ClubInterestCategory, string[]> = {
   Tech: ["tech", "developer", "google", "code", "coding", "software", "computer", "data", "ai", "robotics", "women in tech"],
   Gaming: ["game", "gaming", "esport", "chess", "board game", "video game"],
   Music: ["music", "choir", "band", "sound", "instrument", "song"],
@@ -28,11 +41,8 @@ const CATEGORY_KEYWORDS: Record<Exclude<ClubInterestCategory, "Other">, string[]
   Volunteering: ["charity", "volunteer", "community", "outreach", "service", "climate", "sustainability"],
   Academics: ["academic", "book", "debate", "model united", "mun", "research", "science", "study"],
   Media: ["media", "photo", "photography", "film", "press", "content", "journalism", "tedx"],
-  Faith: ["faith", "fellowship", "muslim", "christian", "chapel", "islamic", "religious"],
   Arts: ["art", "creative", "design", "drama", "theatre", "dance", "painting", "poetry"],
-  Leadership: ["leadership", "toastmaster", "debate", "model united", "mun", "public speaking", "diplomacy"],
-  Wellness: ["wellness", "health", "mental", "fitness", "medical", "mindfulness"],
-  Culture: ["culture", "cultural", "international", "language", "heritage", "nations"]
+  Leadership: ["leadership", "toastmaster", "debate", "model united", "mun", "public speaking", "diplomacy"]
 };
 
 function normalize(value: string | null | undefined) {
@@ -44,12 +54,14 @@ export function getClubInterestCategories(club: Pick<ClubRecord, "name" | "code"
     CLUB_INTEREST_CATEGORIES.includes(category as ClubInterestCategory)
   );
   if (persisted.length > 0) return persisted;
+  const mapped = CLUB_CODE_CATEGORIES[normalize(club.code).toUpperCase()];
+  if (mapped?.length) return mapped;
   const searchableText = [club.name, club.code, club.description].map(normalize).join(" ");
   const matches = Object.entries(CATEGORY_KEYWORDS)
     .filter(([, keywords]) => keywords.some((keyword) => searchableText.includes(keyword)))
     .map(([category]) => category as ClubInterestCategory);
 
-  return matches.length > 0 ? matches : ["Other"];
+  return matches;
 }
 
 export function getStudentInterestCategories(
@@ -69,7 +81,7 @@ export function getStudentInterestCategories(
   }
   if (searchableText.includes("law")) matches.push("Leadership", "Academics");
   if (searchableText.includes("mass communication") || searchableText.includes("journalism")) matches.push("Media");
-  if (searchableText.includes("medicine") || searchableText.includes("nursing") || searchableText.includes("public health")) matches.push("Wellness", "Academics");
+  if (searchableText.includes("medicine") || searchableText.includes("nursing") || searchableText.includes("public health")) matches.push("Academics");
   if (searchableText.includes("architecture") || searchableText.includes("design")) matches.push("Arts");
 
   return Array.from(new Set(matches));
