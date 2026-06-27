@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, ShieldCheck, UserCog, Users } from "lucide-react";
+import { ArrowLeft, Loader2, ShieldCheck, UserCog, Users } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { DataPagination } from "@/components/DataPagination";
 import { NeoLoadingState, NeoMetricCard, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +24,7 @@ import {
   ApiClientError,
   assignAdminUserAdvisor,
   getClubs,
+  getAdminUser,
   getAdminUsers,
   updateAdminUserRole,
   type AdminUserProfileRecord,
@@ -333,13 +335,14 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
 
 export default function UserManagement() {
   const { role } = useRole();
-  const actionPanelRef = useRef<HTMLDivElement | null>(null);
+  const { userId } = useParams();
+  const navigate = useNavigate();
   const [roleFilter, setRoleFilter] = useState("all");
   const [clubFilter, setClubFilter] = useState("all");
   const [requestedRoleFilter, setRequestedRoleFilter] = useState("all");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
-  const [selectedUser, setSelectedUser] = useState<AdminUserProfileRecord | null>(null);
+  const isFocusedAccess = Boolean(userId);
   useEffect(() => {
     setPage(1);
   }, [roleFilter, clubFilter, requestedRoleFilter, query]);
@@ -368,6 +371,17 @@ export default function UserManagement() {
     enabled: role === "admin",
     retry: false
   });
+  const {
+    data: focusedUser,
+    isLoading: isLoadingFocusedUser,
+    isError: focusedUserFailed,
+    error: focusedUserError
+  } = useQuery({
+    queryKey: ["admin-user", userId],
+    queryFn: () => getAdminUser(userId as string),
+    enabled: role === "admin" && Boolean(userId),
+    retry: false
+  });
   const users = usersPage.items;
   const summary = useMemo(
     () => ({
@@ -380,30 +394,6 @@ export default function UserManagement() {
     }),
     [users, usersPage.total]
   );
-
-  useEffect(() => {
-    if (!selectedUser || typeof window === "undefined") {
-      return;
-    }
-
-    const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
-    const panel = actionPanelRef.current;
-
-    if (!isDesktop || !panel) {
-      return;
-    }
-
-    const scrollTimer = window.setTimeout(() => {
-      panel.scrollIntoView({
-        behavior: "smooth",
-        block: "start"
-      });
-    }, 80);
-
-    return () => {
-      window.clearTimeout(scrollTimer);
-    };
-  }, [selectedUser]);
 
   if (role !== "admin") {
     return (
@@ -421,10 +411,28 @@ export default function UserManagement() {
     <div className="nh-page">
       <NeoPageHeader
         eyebrow="Admin Controls"
-        title="User Management"
-        description="Review signed-up users, adjust local club roles, and assign club access from one place."
+        title={isFocusedAccess ? "Manage User Access" : "User Management"}
+        description={isFocusedAccess ? "Update one user's local Club Services role and club assignment." : "Review signed-up users, adjust local club roles, and assign club access from one place."}
       />
 
+      {isFocusedAccess ? (
+        <>
+          <Button asChild variant="outline" className="w-fit">
+            <Link to="/user-management">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to users
+            </Link>
+          </Button>
+          {isLoadingFocusedUser ? (
+            <NeoLoadingState title="Opening access editor" message="We are loading this user's role and club details." compact />
+          ) : focusedUserFailed || !focusedUser ? (
+            <NeoStateCard icon={UserCog} title="User access editor unavailable" message={getErrorMessage(focusedUserError)} />
+          ) : (
+            <UserActionPanel user={focusedUser} onClose={() => navigate("/user-management")} />
+          )}
+        </>
+      ) : (
+        <>
       <div className="nh-metric-grid">
         <NeoMetricCard title="Users" value={summary.total} icon={Users} tone="navy" />
         <NeoMetricCard title="Students" value={summary.students} icon={UserCog} tone="gold" />
@@ -457,12 +465,6 @@ export default function UserManagement() {
             </div>
         </CardContent>
       </Card>
-
-      {selectedUser ? (
-        <div ref={actionPanelRef}>
-          <UserActionPanel user={selectedUser} onClose={() => setSelectedUser(null)} />
-        </div>
-      ) : null}
 
       <Card>
         <CardHeader>
@@ -560,8 +562,8 @@ export default function UserManagement() {
                       ) : null}
                       <p className="text-xs text-muted-foreground">Joined {formatDate(user.created_at)}</p>
                     </div>
-                    <Button type="button" onClick={() => setSelectedUser(user)}>
-                      Manage Access
+                    <Button asChild>
+                      <Link to={`/user-management/${user.id}`}>Manage Access</Link>
                     </Button>
                   </div>
                 ))}
@@ -577,6 +579,8 @@ export default function UserManagement() {
           )}
         </CardContent>
       </Card>
+        </>
+      )}
     </div>
   );
 }

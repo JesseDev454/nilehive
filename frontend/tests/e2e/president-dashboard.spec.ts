@@ -46,11 +46,14 @@ test("president can edit only their assigned club profile and cannot add clubs",
 
   await expect(page.getByRole("heading", { name: "Clubs", exact: true })).toBeVisible();
   await expect(page.getByText("Add a new club")).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "Edit Nile Tech Club" })).toBeVisible();
+  await expect(page.getByText("Nile Tech Club", { exact: true })).toBeVisible();
   await expect(page.getByText("Nile Business Club")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Add Club" })).toHaveCount(0);
 
-  await expect(page.getByText("Edit Nile Tech Club")).toBeVisible();
+  await page.getByRole("link", { name: /Edit Club/i }).click();
+  await expect(page).toHaveURL(/\/clubs\/club-tech\/edit$/);
+  await expect(page.getByRole("heading", { name: "Edit Club Profile" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Edit Nile Tech Club" })).toBeVisible();
   await page.getByLabel("Description").fill("President-owned profile update for student discovery.");
   await page.getByLabel("Club logo").setInputFiles({
     name: "president-logo.png",
@@ -65,6 +68,7 @@ test("president can edit only their assigned club profile and cannot add clubs",
   await page.getByRole("button", { name: "Save Changes" }).click();
 
   await expect(page.getByText("Club updated")).toBeVisible();
+  await expect(page).toHaveURL(/\/clubs$/);
 
   const forbiddenEditStatus = await page.evaluate(async () => {
     const response = await fetch("/api/v1/clubs/club-business/profile", {

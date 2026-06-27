@@ -270,6 +270,40 @@ export function createE2EState() {
     created_at: now,
     updated_at: now
   };
+  const adminUsers = [
+    {
+      id: "e2e-student",
+      full_name: "E2E Student",
+      student_id: "123456789",
+      email: "e2e-student@nilehive.test",
+      phone_number: "08000000000",
+      role: "student",
+      effective_role: "student",
+      requested_role: "student",
+      access_pending: false,
+      club_id: null,
+      club: null,
+      advisor_assignments: [],
+      created_at: now,
+      updated_at: now
+    },
+    {
+      id: "e2e-president",
+      full_name: "E2E President",
+      student_id: "123456789",
+      email: "e2e-president@nilehive.test",
+      phone_number: "08000000000",
+      role: "president",
+      effective_role: "president",
+      requested_role: "president",
+      access_pending: false,
+      club_id: "club-tech",
+      club: { id: "club-tech", name: "Nile Tech Club", code: "NTC" },
+      advisor_assignments: [],
+      created_at: now,
+      updated_at: now
+    }
+  ];
 
   return {
     clubs: [club, businessClub],
@@ -280,6 +314,7 @@ export function createE2EState() {
     announcements: [announcement],
     notifications,
     feedback: [feedback],
+    adminUsers,
     studentMemberships: [] as typeof membership[],
     adminMemberships: [membership],
     studentDues: [] as typeof duePayment[],
@@ -793,6 +828,37 @@ export async function mockClubServicesApi(page: Page, state = createE2EState()) 
 
     if (method === "GET" && path === "/dashboard/executive") {
       return ok(route, getExecutiveDashboard(state));
+    }
+
+    if (method === "GET" && path === "/admin/users") {
+      return ok(route, paginated(state.adminUsers, 10));
+    }
+
+    if (method === "GET" && path.match(/^\/admin\/users\/[^/]+$/)) {
+      const profileId = path.split("/")[3];
+      const user = state.adminUsers.find((item) => item.id === profileId);
+      return user ? ok(route, user) : apiError(route, 404, "User not found", "USER_NOT_FOUND");
+    }
+
+    if (method === "POST" && path.match(/^\/admin\/users\/[^/]+\/role$/)) {
+      const profileId = path.split("/")[3];
+      const body = request.postDataJSON() as { role?: string; club_id?: string | null };
+      state.adminUsers = state.adminUsers.map((user) =>
+        user.id === profileId
+          ? {
+              ...user,
+              role: (body.role || user.role) as typeof user.role,
+              effective_role: body.role || user.effective_role,
+              club_id: body.club_id || null,
+              club: body.club_id ? { id: "club-tech", name: "Nile Tech Club", code: "NTC" } : null,
+              updated_at: now
+            }
+          : user
+      );
+      return ok(route, {
+        profile: state.adminUsers.find((item) => item.id === profileId) || state.adminUsers[0],
+        history: null
+      });
     }
 
     if (method === "GET" && path === "/proposals/pending-advisor") {
