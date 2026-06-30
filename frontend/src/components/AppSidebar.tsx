@@ -141,42 +141,31 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar collapsible="icon" className="border-r-3 border-foreground bg-sidebar">
-      <SidebarHeader className={collapsed ? "border-b-3 border-sidebar-border px-1 py-5" : "border-b-0 p-6 pb-4"}>
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border/10 bg-sidebar/75 backdrop-blur-xl">
+      <SidebarHeader className={collapsed ? "border-b border-sidebar-border/10 px-1 py-5" : "border-b-0 p-5 pb-4"}>
         {!collapsed && (
-          <div className="space-y-7">
+          <div className="space-y-6">
             <div className="space-y-4">
-              <div className="club-logo-orbit" aria-hidden="true">
-                <span className="club-logo-orbit-ring club-logo-orbit-ring-primary">
-                  <span className="club-logo-orbit-dot club-logo-orbit-dot-green" />
-                </span>
-                <span className="club-logo-orbit-ring club-logo-orbit-ring-secondary">
-                  <span className="club-logo-orbit-dot club-logo-orbit-dot-blue" />
-                </span>
-                <span className="club-logo-orbit-ring club-logo-orbit-ring-tertiary">
-                  <span className="club-logo-orbit-dot club-logo-orbit-dot-sky" />
-                </span>
-                <div className="club-logo-core">
-                  <School className="h-8 w-8" />
-                </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-primary text-primary-foreground shadow-soft-sm" aria-hidden="true">
+                <School className="h-6 w-6" />
               </div>
               <div>
-                <h2 className="text-3xl font-black leading-none tracking-[-0.05em] text-sidebar-foreground">
-                  Club Services
+                <h2 className="text-2xl font-bold leading-none tracking-tight text-sidebar-foreground">
+                  Clubly
                 </h2>
-                <p className="mt-2 text-lg font-medium text-sidebar-foreground/75">Academic Quest</p>
+                <p className="mt-2 text-sm font-medium leading-6 text-sidebar-foreground/60">Club Services workspace</p>
               </div>
             </div>
-            <div className="rounded-[24px] border-3 border-sidebar-border bg-card p-4 shadow-neo-sm">
+            <div className="rounded-[22px] border border-sidebar-border/10 bg-card/70 p-4 shadow-soft-sm">
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground">
-                  <span className="text-sm font-black uppercase tracking-[0.08em]">{initials}</span>
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-accent-foreground">
+                  <span className="text-sm font-semibold tracking-wide">{initials}</span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="truncate text-sm font-black uppercase tracking-[0.1em] text-sidebar-foreground">
+                  <h3 className="truncate text-sm font-semibold text-sidebar-foreground">
                     {displayName}
                   </h3>
-                  <p className="block truncate text-[11px] font-bold uppercase tracking-[0.12em] text-sidebar-foreground/65">
+                  <p className="block truncate text-[11px] font-medium tracking-wide text-sidebar-foreground/60">
                     {identityLabel}
                   </p>
                 </div>
@@ -185,7 +174,7 @@ export function AppSidebar() {
           </div>
         )}
         {collapsed && (
-          <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-[14px] border-2 border-sidebar-border bg-primary text-primary-foreground shadow-none">
+          <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-[14px] bg-primary text-primary-foreground shadow-soft-sm">
             <School className="h-5 w-5" />
           </div>
         )}
@@ -193,7 +182,7 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="px-4 text-[11px] font-black uppercase tracking-[0.18em] text-sidebar-foreground/55">
+          <SidebarGroupLabel className="px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-sidebar-foreground/45">
             Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>
@@ -206,8 +195,8 @@ export function AppSidebar() {
                       end={item.url === "/"}
                       activeOverride={getActiveOverride(item.url)}
                       data-onboarding-target={item.onboardingTarget}
-                      className="flex min-w-0 items-center rounded-[18px] border-2 border-transparent px-3 py-3 text-base font-bold tracking-[-0.01em] transition-all duration-200 hover:border-sidebar-border hover:bg-sidebar-accent/50"
-                      activeClassName="translate-x-1 border-sidebar-border bg-sidebar-accent text-sidebar-accent-foreground shadow-[4px_4px_0_hsl(var(--neo-shadow))]"
+                      className="flex min-w-0 items-center rounded-[16px] px-3 py-3 text-sm font-semibold tracking-[-0.01em] text-sidebar-foreground/70 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground shadow-soft-sm"
                     >
                       <item.icon className="mr-3 h-5 w-5" />
                       {!collapsed && <span className="min-w-0 flex-1 truncate">{item.title}</span>}

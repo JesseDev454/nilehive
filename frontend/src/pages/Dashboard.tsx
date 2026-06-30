@@ -113,7 +113,7 @@ function StatCard({
             <QuestSticker tone={variant === "success" ? "green" : variant === "destructive" ? "red" : variant === "warning" ? "blue" : "muted"}>
               {title}
             </QuestSticker>
-            <p className="mt-8 text-5xl font-black tracking-[-0.06em] text-primary">{value}</p>
+            <p className="mt-8 text-5xl font-bold tracking-tight text-primary">{value}</p>
           </div>
           <Icon className={`h-12 w-12 ${colors[variant || "default"]} opacity-15`} />
         </div>
@@ -150,8 +150,8 @@ function QuestProgressBar({ value, className = "" }: { value: number; className?
   const safeValue = Math.max(0, Math.min(100, value));
 
   return (
-    <div className={`h-5 overflow-hidden rounded-full border-3 border-foreground bg-muted ${className}`}>
-      <div className="h-full bg-secondary transition-all duration-700 ease-out" style={{ width: `${safeValue}%` }} />
+    <div className={`h-3 overflow-hidden rounded-full bg-muted ${className}`}>
+      <div className="h-full rounded-full bg-primary transition-all duration-700 ease-out" style={{ width: `${safeValue}%` }} />
     </div>
   );
 }
@@ -164,15 +164,15 @@ function QuestSticker({
   tone?: "blue" | "green" | "red" | "navy" | "muted";
 }) {
   const toneClass = {
-    blue: "bg-accent text-foreground",
-    green: "bg-secondary text-secondary-foreground",
+    blue: "border-primary/15 bg-accent text-accent-foreground",
+    green: "border-secondary/15 bg-secondary/10 text-secondary",
     red: "bg-destructive/15 text-destructive",
-    navy: "bg-primary text-primary-foreground",
-    muted: "bg-muted text-foreground"
+    navy: "border-primary/15 bg-primary text-primary-foreground",
+    muted: "border-border bg-muted text-muted-foreground"
   }[tone];
 
   return (
-    <span className={`inline-flex w-fit items-center gap-2 rounded-full border-2 border-foreground px-3 py-1 text-xs font-black uppercase tracking-[0.08em] ${toneClass}`}>
+    <span className={`inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold tracking-wide ${toneClass}`}>
       {children}
     </span>
   );
@@ -186,15 +186,15 @@ function QuestIconBadge({
   tone?: "blue" | "green" | "red" | "navy" | "muted";
 }) {
   const toneClass = {
-    blue: "bg-accent text-foreground",
-    green: "bg-secondary text-secondary-foreground",
+    blue: "bg-accent text-accent-foreground",
+    green: "bg-secondary/10 text-secondary",
     red: "bg-destructive/15 text-destructive",
     navy: "bg-primary text-primary-foreground",
     muted: "bg-muted text-foreground"
   }[tone];
 
   return (
-    <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] border-3 border-foreground shadow-neo-sm ${toneClass}`}>
+    <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-[18px] shadow-soft-sm ${toneClass}`}>
       <Icon className="h-7 w-7" />
     </div>
   );
