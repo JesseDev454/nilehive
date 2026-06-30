@@ -4,52 +4,52 @@
 
 @layer base {
   :root {
-    --background: 210 33% 98%;
-    --foreground: 220 100% 6%;
+    --background: 36 36% 95%;
+    --foreground: 24 10% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 100% 6%;
+    --card-foreground: 24 10% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 100% 6%;
+    --popover-foreground: 24 10% 10%;
 
-    --primary: 212 100% 14%;
-    --primary-foreground: 210 45% 98%;
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 107 45% 54%;
-    --secondary-foreground: 220 100% 6%;
+    --secondary: 174 84% 32%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 17% 94%;
-    --muted-foreground: 220 7% 29%;
+    --muted: 34 23% 91%;
+    --muted-foreground: 25 5% 45%;
 
-    --accent: 199 88% 84%;
-    --accent-foreground: 220 100% 6%;
+    --accent: 232 100% 97%;
+    --accent-foreground: 243 75% 59%;
 
-    --destructive: 0 75% 42%;
-    --destructive-foreground: 210 45% 98%;
+    --destructive: 0 61% 54%;
+    --destructive-foreground: 0 0% 100%;
 
-    --warning: 199 88% 84%;
-    --warning-foreground: 220 100% 6%;
+    --warning: 28 91% 37%;
+    --warning-foreground: 0 0% 100%;
 
-    --success: 107 45% 54%;
-    --success-foreground: 220 100% 6%;
+    --success: 174 84% 32%;
+    --success-foreground: 0 0% 100%;
 
-    --border: 220 100% 6%;
-    --input: 220 11% 78%;
-    --ring: 107 45% 54%;
-    --neo-shadow: 220 100% 6%;
+    --border: 24 14% 84%;
+    --input: 24 10% 78%;
+    --ring: 239 84% 67%;
+    --neo-shadow: 24 10% 10%;
 
-    --radius: 1.5rem;
+    --radius: 1rem;
 
-    --sidebar-background: 210 33% 98%;
-    --sidebar-foreground: 220 100% 6%;
-    --sidebar-primary: 0 0% 100%;
-    --sidebar-primary-foreground: 220 100% 6%;
-    --sidebar-accent: 107 78% 74%;
-    --sidebar-accent-foreground: 220 100% 6%;
-    --sidebar-border: 220 100% 6%;
-    --sidebar-ring: 107 45% 54%;
-    --sidebar-muted: 210 17% 94%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 24 10% 10%;
+    --sidebar-primary: 239 84% 67%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 232 100% 97%;
+    --sidebar-accent-foreground: 243 75% 59%;
+    --sidebar-border: 24 14% 84%;
+    --sidebar-ring: 239 84% 67%;
+    --sidebar-muted: 34 23% 91%;
   }
 
   .dark {
@@ -96,10 +96,9 @@
   body {
     @apply bg-background text-foreground antialiased;
     background-image:
-      radial-gradient(circle at 1px 1px, hsl(var(--accent) / 0.55) 1.4px, transparent 0),
-      linear-gradient(140deg, hsl(var(--accent) / 0.32), transparent 34%),
-      linear-gradient(215deg, hsl(var(--secondary) / 0.13), transparent 48%);
-    background-size: 28px 28px, 100% 100%, 100% 100%;
+      radial-gradient(circle at top left, hsl(var(--primary) / 0.08), transparent 32rem),
+      radial-gradient(circle at bottom right, hsl(var(--warning) / 0.07), transparent 34rem);
+    background-attachment: fixed;
     font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
   }
 
@@ -107,8 +106,8 @@
   h2,
   h3,
   h4 {
-    font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
-    letter-spacing: -0.035em;
+    font-family: 'Epilogue', 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
+    letter-spacing: -0.02em;
   }
 }
 
@@ -118,46 +117,44 @@
   }
 
   .nh-page-header {
-    @apply rounded-[24px] border-3 border-foreground bg-card px-5 py-4 shadow-neo-sm;
+    @apply rounded-[24px] border border-border bg-card/90 px-5 py-4 shadow-soft backdrop-blur;
   }
 
   .nh-eyebrow {
-    @apply text-xs font-black uppercase tracking-[0.24em] text-muted-foreground;
+    @apply text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground;
   }
 
   .nh-title {
-    @apply text-4xl font-black uppercase leading-none text-foreground md:text-5xl;
-    text-shadow: 2px 2px 0 hsl(var(--accent) / 0.75);
+    @apply text-4xl font-bold leading-tight text-foreground md:text-5xl;
   }
 
   .nh-card {
-    @apply rounded-[28px] border-3 border-foreground bg-card shadow-neo;
+    @apply rounded-[24px] border border-border bg-card shadow-soft;
   }
 
   .nh-card-soft {
-    @apply rounded-[24px] border-3 border-foreground bg-background shadow-neo-sm;
+    @apply rounded-[20px] border border-border bg-card/80 shadow-soft-sm backdrop-blur;
   }
 
   .nh-card-dark {
-    @apply rounded-[28px] border-3 border-foreground bg-primary text-primary-foreground shadow-neo;
+    @apply rounded-[24px] border border-primary/20 bg-primary text-primary-foreground shadow-soft;
   }
 
   .nh-panel-title {
-    @apply text-sm font-black uppercase tracking-[0.18em];
+    @apply text-sm font-semibold tracking-tight;
   }
 
   .nh-action-strip {
-    @apply rounded-[24px] border-3 border-foreground bg-primary p-4 text-primary-foreground shadow-neo;
+    @apply rounded-[20px] border border-primary/20 bg-primary p-4 text-primary-foreground shadow-soft;
   }
 
   .nh-command-panel {
-    @apply relative overflow-hidden rounded-[28px] border-3 border-foreground bg-primary p-6 text-primary-foreground shadow-neo-lg;
+    @apply relative overflow-hidden rounded-[28px] border border-primary/15 bg-primary p-6 text-primary-foreground shadow-soft-lg;
   }
 
   .nh-command-panel::after {
     content: "";
-    @apply pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-[32px] border-3 border-primary-foreground/25 bg-accent/35;
-    transform: rotate(10deg);
+    @apply pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10 blur-2xl;
   }
 
   .nh-section-grid {
@@ -169,23 +166,23 @@
   }
 
   .nh-mobile-card {
-    @apply rounded-[24px] border-3 border-foreground bg-card p-4 shadow-neo-sm;
+    @apply rounded-[20px] border border-border bg-card p-4 shadow-soft-sm;
   }
 
   .nh-list-card {
-    @apply rounded-[24px] border-3 border-foreground bg-card p-4 shadow-neo-sm transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-[2px_2px_0_hsl(var(--neo-shadow))];
+    @apply rounded-[20px] border border-border bg-card p-4 shadow-soft-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-soft;
   }
 
   .nh-empty {
-    @apply rounded-[28px] border-3 border-dashed border-foreground bg-background p-8 text-center shadow-neo-sm;
+    @apply rounded-[24px] border border-dashed border-border bg-card/70 p-8 text-center shadow-soft-sm;
   }
 
   .nh-status {
-    @apply inline-flex items-center rounded-full border-2 border-current px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em];
+    @apply inline-flex items-center rounded-full border border-current px-2.5 py-1 text-[11px] font-semibold tracking-wide;
   }
 
   .nh-table-wrap {
-    @apply overflow-x-auto rounded-[28px] border-3 border-foreground bg-card shadow-neo;
+    @apply overflow-x-auto rounded-[24px] border border-border bg-card shadow-soft;
   }
 
   .nh-table {
@@ -193,11 +190,11 @@
   }
 
   .nh-table th {
-    @apply border-b-3 border-foreground bg-primary p-3 text-left text-xs font-black uppercase tracking-[0.14em] text-primary-foreground;
+    @apply border-b border-border bg-muted/50 p-3 text-left text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground;
   }
 
   .nh-table td {
-    @apply border-b border-foreground/20 p-3 align-top;
+    @apply border-b border-border p-3 align-top;
   }
 
   .nh-form-grid {
@@ -220,17 +217,17 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 3px solid hsl(var(--sidebar-border));
+    border: 1px solid hsl(var(--sidebar-border));
     border-radius: 9999px;
     background: hsl(var(--primary));
     color: hsl(var(--primary-foreground));
-    box-shadow: 5px 5px 0 hsl(var(--neo-shadow));
+    box-shadow: 0 4px 20px hsl(var(--neo-shadow) / 0.04), 0 1px 3px hsl(var(--neo-shadow) / 0.03);
   }
 
   .club-logo-orbit-ring {
     position: absolute;
     border-radius: 9999px;
-    border: 2.5px solid hsl(var(--sidebar-border) / 0.32);
+    border: 1px solid hsl(var(--sidebar-border) / 0.5);
     pointer-events: none;
     animation: clubLogoOrbit 7.5s linear infinite;
   }
@@ -260,9 +257,9 @@
     right: -0.18rem;
     height: 0.48rem;
     width: 0.48rem;
-    border: 2px solid hsl(var(--sidebar-border));
+    border: 1px solid hsl(var(--sidebar-border));
     border-radius: 9999px;
-    box-shadow: 2px 2px 0 hsl(var(--neo-shadow));
+    box-shadow: 0 2px 8px hsl(var(--neo-shadow) / 0.05);
     transform: translateY(-50%);
   }
 
@@ -280,6 +277,30 @@
 }
 
 @layer utilities {
+  .border-2,
+  .border-3 {
+    border-width: 1px !important;
+  }
+
+  .font-black {
+    font-weight: 700 !important;
+  }
+
+  [class*="shadow-["] {
+    box-shadow: 0 4px 20px hsl(var(--neo-shadow) / 0.04), 0 1px 3px hsl(var(--neo-shadow) / 0.03) !important;
+  }
+
+  [class*="hover:shadow-"]:hover {
+    box-shadow: 0 12px 32px hsl(var(--neo-shadow) / 0.07), 0 2px 6px hsl(var(--neo-shadow) / 0.03) !important;
+  }
+
+  [class*="hover:translate-x-1"]:hover,
+  [class*="hover:translate-y-1"]:hover,
+  [class*="hover:translate-x-0.5"]:hover,
+  [class*="hover:translate-y-0.5"]:hover {
+    transform: translateY(-0.125rem) !important;
+  }
+
   .animate-fade-in {
     animation: fadeIn 0.3s ease-out;
   }
