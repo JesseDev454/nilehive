@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { NeoEmptyState, NeoErrorState, NeoLoadingState } from "@/components/NeoBrutal";
+import { ClublyEmptyState, ClublyErrorState, ClublyLoadingState } from "@/components/Clubly";
 import {
   getAdminOperationsDashboard,
   getAnnouncements,
@@ -212,14 +212,14 @@ function ProposalListState({
   emptyMessage?: string;
 }) {
   if (isLoading) {
-    return <NeoLoadingState title="Loading proposal records" message="We are checking the latest workflow state." compact />;
+    return <ClublyLoadingState title="Loading proposal records" message="We are checking the latest workflow state." compact />;
   }
 
   if (isError) {
-    return <NeoErrorState title="Unable to load proposals" message={getErrorMessage(error)} />;
+    return <ClublyErrorState title="Unable to load proposals" message={getErrorMessage(error)} />;
   }
 
-  return <NeoEmptyState title="No proposals found yet" message={emptyMessage || "Proposal records will appear here once work starts."} />;
+  return <ClublyEmptyState title="No proposals found yet" message={emptyMessage || "Proposal records will appear here once work starts."} />;
 }
 
 function ProposalSummaryList({
@@ -233,7 +233,7 @@ function ProposalSummaryList({
     <div className="space-y-3">
       {proposals.slice(0, 4).map((proposal) => (
         <Link key={proposal.id} to={`/proposals/${proposal.id}`} className="block">
-          <div className="nh-list-card flex items-center justify-between gap-3">
+          <div className="clb-list-card flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
               <div className="min-w-0">
@@ -264,7 +264,7 @@ function UpcomingEventsList({
     <div className="space-y-3">
       {events.slice(0, 4).map((event) => {
         const content = (
-          <div className="nh-list-card flex items-center justify-between gap-3">
+          <div className="clb-list-card flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <CalendarDays className="h-4 w-4 text-success shrink-0" />
               <div className="min-w-0">
@@ -295,7 +295,7 @@ function RecentActivityList({ activity }: { activity: DashboardActivity[] }) {
     <div className="space-y-3">
       {activity.slice(0, 5).map((item) => (
         <Link key={item.id} to={`/proposals/${item.proposal_id}`} className="block">
-          <div className="nh-list-card flex items-start gap-3">
+          <div className="clb-list-card flex items-start gap-3">
             <Activity className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
             <div className="min-w-0">
               <p className="text-sm font-medium truncate">{item.title}</p>
@@ -332,8 +332,8 @@ function PresidentActionCard({
             <ArrowRight className="h-4 w-4 text-muted-foreground" />
           </div>
           <div>
-            <p className="text-sm font-black uppercase tracking-[0.12em] text-muted-foreground">{title}</p>
-            <p className="mt-2 text-4xl font-black tracking-[-0.05em]">{value}</p>
+            <p className="text-sm font-bold tracking-[0.12em] text-muted-foreground">{title}</p>
+            <p className="mt-2 text-4xl font-bold tracking-[-0.05em]">{value}</p>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">{detail}</p>
           </div>
         </CardContent>
@@ -391,14 +391,14 @@ function PresidentAnnouncementsPreview({
       </CardHeader>
       <CardContent className="space-y-3">
         {isLoading ? (
-          <NeoLoadingState title="Loading updates" message="We are checking club announcements and notices." compact />
+          <ClublyLoadingState title="Loading updates" message="We are checking club announcements and notices." compact />
         ) : announcements.length === 0 && notifications.length === 0 ? (
-          <NeoEmptyState title="No recent updates yet" message="Announcements and role-specific notices will appear here." />
+          <ClublyEmptyState title="No recent updates yet" message="Announcements and role-specific notices will appear here." />
         ) : (
           <>
             {announcements.slice(0, 3).map((announcement) => (
               <Link key={announcement.id} to="/communications" className="block">
-                <div className="nh-list-card">
+                <div className="clb-list-card">
                   <div className="flex items-start justify-between gap-3">
                     <p className="font-semibold">{announcement.title}</p>
                     {!announcement.is_read ? <Badge>Unread</Badge> : null}
@@ -409,7 +409,7 @@ function PresidentAnnouncementsPreview({
             ))}
             {notifications.slice(0, 2).map((notification) => (
               <Link key={notification.id} to="/notifications" className="block">
-                <div className="nh-list-card">
+                <div className="clb-list-card">
                   <p className="font-semibold capitalize">{notification.type.replace(/_/g, " ")}</p>
                   <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{notification.message}</p>
                 </div>
@@ -440,7 +440,7 @@ function AdminActivityList({
     <div className="relative space-y-5 before:absolute before:bottom-2 before:left-4 before:top-2 before:w-0.5 before:bg-foreground">
       {activity.slice(0, 6).map((item) => (
         <div key={item.id} className="relative flex items-start gap-3 pl-10">
-          <div className="absolute left-0 top-0 z-10 flex h-8 w-8 items-center justify-center border-2 border-foreground bg-primary text-primary-foreground shadow-[2px_2px_0_hsl(var(--foreground))]">
+          <div className="absolute left-0 top-0 z-10 flex h-8 w-8 items-center justify-center border border-border bg-primary text-primary-foreground shadow-soft-sm">
             {(() => {
               const Icon = activityIcons[item.type] || Activity;
               return <Icon className="h-4 w-4" />;
@@ -581,15 +581,15 @@ function AdminMetricCard({
             <QuestSticker tone={variant === "green" ? "green" : variant === "red" ? "red" : variant === "navy" ? "navy" : "blue"}>
               {title}
             </QuestSticker>
-            <p className="mt-8 text-5xl font-black tracking-[-0.06em] text-primary">{value}</p>
+            <p className="mt-8 text-5xl font-bold tracking-[-0.06em] text-primary">{value}</p>
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{detail}</p>
           </div>
-          <div className={`rounded-[18px] border-3 border-foreground p-3 shadow-neo-sm ${variants[variant]}`}>
+          <div className={`rounded-[18px] border border-border p-3 shadow-soft-sm ${variants[variant]}`}>
             <Icon className="h-5 w-5" />
           </div>
         </div>
         {to ? (
-          <div className="mt-5 flex items-center gap-2 text-xs font-black uppercase tracking-[0.14em] text-primary">
+          <div className="mt-5 flex items-center gap-2 text-xs font-bold tracking-[0.14em] text-primary">
             Open queue
             <ArrowRight className="h-3.5 w-3.5" />
           </div>
@@ -649,12 +649,12 @@ function AdminReviewQueueCard({
 
   return (
     <Link to={to} className="group block">
-      <div className={`nh-list-card flex h-full flex-col justify-between gap-4 transition-all hover:-translate-y-0.5 ${
+      <div className={`clb-list-card flex h-full flex-col justify-between gap-4 transition-all hover:-translate-y-0.5 ${
         count > 0 ? "border-primary bg-primary/5" : "bg-card"
       }`}>
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-foreground bg-background text-primary shadow-[3px_3px_0_hsl(var(--foreground))]">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-border bg-background text-primary shadow-soft-sm">
               <Icon className="h-5 w-5" />
             </div>
             <div>
@@ -665,7 +665,7 @@ function AdminReviewQueueCard({
           <QuestSticker tone={urgency.tone}>{urgency.label}</QuestSticker>
         </div>
         <div className="flex items-end justify-between gap-3">
-          <p className="text-4xl font-black tracking-[-0.05em] text-primary">{formatNumber(count)}</p>
+          <p className="text-4xl font-bold tracking-[-0.05em] text-primary">{formatNumber(count)}</p>
           <div className="flex items-center gap-1 text-sm font-semibold text-muted-foreground">
             Open
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -678,7 +678,7 @@ function AdminReviewQueueCard({
 
 function AdminLoadingSkeleton() {
   return (
-    <NeoLoadingState
+    <ClublyLoadingState
       title="Loading Club Services controls"
       message="We are preparing dashboards, queues, dues records, and club health data."
     />
@@ -697,9 +697,9 @@ function AdminEmptyState({
   action?: { label: string; to: string };
 }) {
   return (
-    <div className="nh-empty">
+    <div className="clb-empty">
       <Icon className="mx-auto h-8 w-8 text-muted-foreground" />
-      <p className="mt-3 font-black uppercase">{title}</p>
+      <p className="mt-3 font-bold">{title}</p>
       <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">{message}</p>
       {action ? (
         <Button asChild variant="outline" size="sm" className="mt-4">
@@ -717,10 +717,10 @@ function AssignedTasksProgressCard({ total, completed }: { total: number; comple
     <Card className="animate-fade-in transition-all hover:-translate-y-0.5">
       <CardContent className="p-5">
         <div className="mb-4 flex items-start justify-between">
-          <div className="flex h-10 w-10 items-center justify-center border-2 border-foreground bg-secondary/10 text-secondary shadow-[3px_3px_0_hsl(var(--foreground))]">
+          <div className="flex h-10 w-10 items-center justify-center border border-border bg-secondary/10 text-secondary shadow-soft-sm">
             <ListChecks className="h-6 w-6" />
           </div>
-          <div className="border-2 border-foreground bg-success/15 px-2 py-1 text-[10px] font-black uppercase tracking-tight text-success">
+          <div className="border border-border bg-success/15 px-2 py-1 text-[10px] font-bold tracking-tight text-success">
             Active
           </div>
         </div>
@@ -728,7 +728,7 @@ function AssignedTasksProgressCard({ total, completed }: { total: number; comple
         <h3 className="mt-1 text-2xl font-bold text-primary">
           {completed} <span className="text-sm font-normal text-muted-foreground">/ {total}</span>
         </h3>
-        <div className="mt-4 h-1.5 w-full overflow-hidden border border-foreground bg-secondary/15">
+        <div className="mt-4 h-1.5 w-full overflow-hidden border border-border bg-secondary/15">
           <div className="h-full bg-secondary transition-all duration-500 ease-in-out" style={{ width: `${percentage}%` }} />
         </div>
       </CardContent>
@@ -741,10 +741,10 @@ function PendingTasksCard({ value }: { value: number }) {
     <Card className="animate-fade-in transition-all hover:-translate-y-0.5">
       <CardContent className="flex h-full flex-col p-5">
         <div className="mb-4 flex items-start justify-between">
-          <div className="flex h-10 w-10 items-center justify-center border-2 border-foreground bg-warning/15 text-warning shadow-[3px_3px_0_hsl(var(--foreground))]">
+          <div className="flex h-10 w-10 items-center justify-center border border-border bg-warning/15 text-warning shadow-soft-sm">
             <Clock className="h-6 w-6" />
           </div>
-          <div className="border-2 border-foreground bg-warning/15 px-2 py-1 text-[10px] font-black uppercase tracking-tight text-warning">
+          <div className="border border-border bg-warning/15 px-2 py-1 text-[10px] font-bold tracking-tight text-warning">
             Open
           </div>
         </div>
@@ -768,14 +768,14 @@ function InProgressTasksCard({ total, inProgress }: { total: number; inProgress:
       <CardContent className="flex h-full flex-col justify-between p-5">
         <div>
           <div className="mb-4 flex items-start justify-between">
-            <div className="flex h-10 w-10 items-center justify-center border-2 border-foreground bg-primary/10 text-primary shadow-[3px_3px_0_hsl(var(--foreground))]">
+            <div className="flex h-10 w-10 items-center justify-center border border-border bg-primary/10 text-primary shadow-soft-sm">
               <TrendingUp className="h-6 w-6" />
             </div>
           </div>
           <p className="text-sm font-medium text-muted-foreground">In Progress</p>
           <h3 className="mt-1 text-2xl font-bold text-primary">{percentage}%</h3>
         </div>
-        <div className="mt-4 h-1.5 w-full overflow-hidden border border-foreground bg-primary/10">
+        <div className="mt-4 h-1.5 w-full overflow-hidden border border-border bg-primary/10">
           <div className="h-full bg-primary transition-all duration-500 ease-in-out" style={{ width: `${percentage}%` }} />
         </div>
       </CardContent>
@@ -791,7 +791,7 @@ function CompletedTasksProgressCard({ total, completed }: { total: number; compl
       <CardContent className="flex h-full flex-col justify-between p-5">
         <div>
           <div className="mb-4 flex items-start justify-between">
-            <div className="flex h-10 w-10 items-center justify-center border-2 border-foreground bg-success/15 text-success shadow-[3px_3px_0_hsl(var(--foreground))]">
+            <div className="flex h-10 w-10 items-center justify-center border border-border bg-success/15 text-success shadow-soft-sm">
               <CheckCircle className="h-6 w-6" />
             </div>
           </div>
@@ -801,7 +801,7 @@ function CompletedTasksProgressCard({ total, completed }: { total: number; compl
             {completed} {completed === 1 ? "task" : "tasks"} out of {total} {total === 1 ? "task" : "tasks"} completed
           </p>
         </div>
-        <div className="mt-4 h-1.5 w-full overflow-hidden border border-foreground bg-success/15">
+        <div className="mt-4 h-1.5 w-full overflow-hidden border border-border bg-success/15">
           <div className="h-full bg-success transition-all duration-500 ease-in-out" style={{ width: `${percentage}%` }} />
         </div>
       </CardContent>
@@ -826,7 +826,7 @@ function UpcomingEventsCard({ events }: { events: ApprovedEventRecord[] }) {
     <Card className="h-full animate-fade-in transition-all hover:-translate-y-0.5">
       <CardContent className="flex h-full flex-col p-5">
         <div className="mb-4 flex items-start justify-between">
-          <div className="flex h-10 w-10 items-center justify-center border-2 border-foreground bg-primary/10 text-primary shadow-[3px_3px_0_hsl(var(--foreground))]">
+          <div className="flex h-10 w-10 items-center justify-center border border-border bg-primary/10 text-primary shadow-soft-sm">
             <CalendarDays className="h-6 w-6" />
           </div>
         </div>
@@ -923,7 +923,7 @@ function ExecutiveDashboard() {
       <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-4">
-              <h1 className="text-5xl font-black leading-none tracking-[-0.07em] md:text-6xl">Executive Dashboard</h1>
+              <h1 className="text-5xl font-bold leading-none tracking-[-0.07em] md:text-6xl">Executive Dashboard</h1>
               <QuestSticker tone="green">Exec</QuestSticker>
             </div>
             <p className="mt-4 max-w-2xl text-xl font-medium text-muted-foreground">
@@ -976,16 +976,16 @@ function ExecutiveDashboard() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <NeoLoadingState title="Preparing task board" message="We are loading assigned work." compact />
+              <ClublyLoadingState title="Preparing task board" message="We are loading assigned work." compact />
             ) : isError ? (
-              <NeoErrorState title="Unable to load tasks" message={getErrorMessage(error)} />
+              <ClublyErrorState title="Unable to load tasks" message={getErrorMessage(error)} />
             ) : prioritizedTasks.length === 0 ? (
-              <NeoEmptyState title="No assigned tasks" message="Tasks assigned by your president will appear here." />
+              <ClublyEmptyState title="No assigned tasks" message="Tasks assigned by your president will appear here." />
             ) : (
               <div className="space-y-3">
                 {prioritizedTasks.map((task) => (
                   <Link key={task.id} to="/tasks" className="block">
-                  <div className={`nh-list-card ${task.status === "blocked" ? "border-destructive bg-destructive/5" : ""}`}>
+                  <div className={`clb-list-card ${task.status === "blocked" ? "border-destructive bg-destructive/5" : ""}`}>
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-sm font-medium">{task.title}</p>
@@ -1025,7 +1025,7 @@ function ExecutiveDashboard() {
               ].map(([label, value, color]) => (
                 <div key={label} className="flex items-center justify-between rounded-lg border border-border bg-muted/40 p-3">
                   <span className="font-semibold">{label}</span>
-                  <span className={`rounded-full px-2.5 py-1 text-xs font-black text-white ${color}`}>{value}</span>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-bold text-white ${color}`}>{value}</span>
                 </div>
               ))}
             </CardContent>
@@ -1034,8 +1034,8 @@ function ExecutiveDashboard() {
           <Card className="bg-primary text-primary-foreground">
             <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between xl:flex-col xl:items-start">
               <div>
-                <p className="text-sm font-black uppercase tracking-[0.14em] text-primary-foreground/70">Feedback</p>
-                <p className="mt-1 text-lg font-black tracking-[-0.03em]">Tell Club Services what would help your club work better.</p>
+                <p className="text-sm font-bold tracking-[0.14em] text-primary-foreground/70">Feedback</p>
+                <p className="mt-1 text-lg font-bold tracking-[-0.03em]">Tell Club Services what would help your club work better.</p>
               </div>
               <Button asChild variant="secondary" size="sm">
                 <Link to="/feedback">Submit feedback</Link>
@@ -1076,15 +1076,15 @@ function ExecutiveDashboard() {
           </CardHeader>
           <CardContent className="space-y-3">
             {isAnnouncementsLoading ? (
-              <NeoLoadingState title="Loading announcements" message="We are checking club updates." compact />
+              <ClublyLoadingState title="Loading announcements" message="We are checking club updates." compact />
             ) : isAnnouncementsError ? (
-              <NeoErrorState title="Unable to load announcements" message={getErrorMessage(announcementsError)} />
+              <ClublyErrorState title="Unable to load announcements" message={getErrorMessage(announcementsError)} />
             ) : announcementsPage.items.length === 0 ? (
-              <NeoEmptyState title="No announcements yet" message="Club announcements for your role will appear here." />
+              <ClublyEmptyState title="No announcements yet" message="Club announcements for your role will appear here." />
             ) : (
               announcementsPage.items.slice(0, 4).map((announcement) => (
                 <Link key={announcement.id} to="/communications" className="block">
-                  <div className="nh-list-card">
+                  <div className="clb-list-card">
                     <div className="flex items-start justify-between gap-3">
                       <p className="text-sm font-medium">{announcement.title}</p>
                       {!announcement.is_read ? <Badge>Unread</Badge> : null}
@@ -1106,13 +1106,13 @@ function ExecutiveDashboard() {
           </CardHeader>
           <CardContent className="space-y-3">
             {isLoading ? (
-              <NeoLoadingState title="Loading notifications" message="We are checking your latest updates." compact />
+              <ClublyLoadingState title="Loading notifications" message="We are checking your latest updates." compact />
             ) : notifications.length === 0 ? (
-              <NeoEmptyState title="No notifications" message="Task, event, and club notices will appear here." />
+              <ClublyEmptyState title="No notifications" message="Task, event, and club notices will appear here." />
             ) : (
               notifications.slice(0, 4).map((notification) => (
                 <Link key={notification.id} to="/notifications" className="block">
-                  <div className="nh-list-card">
+                  <div className="clb-list-card">
                     <p className="text-sm font-medium">{notification.message}</p>
                     <p className="text-xs text-muted-foreground mt-1">{getDateLabel(notification.created_at)}</p>
                   </div>
@@ -1157,7 +1157,7 @@ function AdvisorDashboard() {
       <section className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div className="max-w-3xl">
           <div className="flex flex-wrap items-center gap-4">
-            <h1 className="text-5xl font-black leading-none tracking-[-0.07em] md:text-6xl">Advisor Dashboard</h1>
+            <h1 className="text-5xl font-bold leading-none tracking-[-0.07em] md:text-6xl">Advisor Dashboard</h1>
             <QuestSticker tone="blue">Review Focus</QuestSticker>
           </div>
           <p className="mt-4 max-w-2xl text-xl font-medium text-muted-foreground">
@@ -1184,28 +1184,28 @@ function AdvisorDashboard() {
         <Card>
           <CardContent className="p-5">
             <QuestSticker tone={pending.length ? "blue" : "green"}>Decisions</QuestSticker>
-            <p className="mt-6 text-4xl font-black text-primary">{formatNumber(pending.length)}</p>
+            <p className="mt-6 text-4xl font-bold text-primary">{formatNumber(pending.length)}</p>
             <p className="mt-1 text-sm text-muted-foreground">Assigned proposals waiting for comments or decision.</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-5">
             <QuestSticker tone={reports.length ? "navy" : "muted"}>Reports</QuestSticker>
-            <p className="mt-6 text-4xl font-black text-primary">{formatNumber(reports.length)}</p>
+            <p className="mt-6 text-4xl font-bold text-primary">{formatNumber(reports.length)}</p>
             <p className="mt-1 text-sm text-muted-foreground">Recent reports available to check.</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-5">
             <QuestSticker tone={upcomingEvents.length ? "blue" : "muted"}>Events</QuestSticker>
-            <p className="mt-6 text-4xl font-black text-primary">{formatNumber(upcomingEvents.length)}</p>
+            <p className="mt-6 text-4xl font-bold text-primary">{formatNumber(upcomingEvents.length)}</p>
             <p className="mt-1 text-sm text-muted-foreground">Upcoming events from assigned clubs.</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-5">
             <QuestSticker tone={recentActivityCount ? "green" : "muted"}>Activity</QuestSticker>
-            <p className="mt-6 text-4xl font-black text-primary">{formatNumber(recentActivityCount)}</p>
+            <p className="mt-6 text-4xl font-bold text-primary">{formatNumber(recentActivityCount)}</p>
             <p className="mt-1 text-sm text-muted-foreground">Review items, reports, and event signals.</p>
           </CardContent>
         </Card>
@@ -1224,7 +1224,7 @@ function AdvisorDashboard() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <NeoLoadingState title="Loading advisor review queue" message="We are getting proposals assigned to your club." compact />
+              <ClublyLoadingState title="Loading advisor review queue" message="We are getting proposals assigned to your club." compact />
             ) : isError ? (
               <div className="space-y-2">
                 <p className="font-medium">Unable to load advisor queue</p>
@@ -1233,12 +1233,12 @@ function AdvisorDashboard() {
                 </p>
               </div>
             ) : pending.length === 0 ? (
-              <NeoEmptyState title="No pending decisions" message="Assigned proposals that need advisor review will appear here." />
+              <ClublyEmptyState title="No pending decisions" message="Assigned proposals that need advisor review will appear here." />
             ) : (
               <div className="space-y-3">
                 {pending.slice(0, 5).map((proposal) => (
                   <Link key={proposal.id} to={`/proposals/${proposal.id}`} className="block">
-                    <div className="nh-list-card flex items-center justify-between gap-3">
+                    <div className="clb-list-card flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">{proposal.title}</p>
                         <p className="text-xs text-muted-foreground">
@@ -1261,11 +1261,11 @@ function AdvisorDashboard() {
             </CardHeader>
             <CardContent className="space-y-3">
               {pending.length === 0 ? (
-                <NeoEmptyState title="Queue clear" message="No advisor decision is waiting right now." />
+                <ClublyEmptyState title="Queue clear" message="No advisor decision is waiting right now." />
               ) : (
                 <>
-                  <div className="rounded-[20px] border-3 border-foreground bg-warning/15 p-4 shadow-neo-sm">
-                    <p className="text-3xl font-black text-warning">{formatNumber(pending.length)}</p>
+                  <div className="rounded-[20px] border border-border bg-warning/15 p-4 shadow-soft-sm">
+                    <p className="text-3xl font-bold text-warning">{formatNumber(pending.length)}</p>
                     <p className="mt-1 text-sm font-semibold">Proposal{pending.length === 1 ? "" : "s"} need advisor attention.</p>
                   </div>
                   <Button asChild className="w-full">
@@ -1282,7 +1282,7 @@ function AdvisorDashboard() {
             </CardHeader>
             <CardContent className="space-y-3">
               {recentActivityCount === 0 ? (
-                <NeoEmptyState title="No recent activity" message="Reports, events, and assigned reviews will appear here." />
+                <ClublyEmptyState title="No recent activity" message="Reports, events, and assigned reviews will appear here." />
               ) : (
                 <>
                   <div className="flex items-center justify-between rounded-lg border border-border bg-muted/40 p-3 text-sm">
@@ -1314,16 +1314,16 @@ function AdvisorDashboard() {
           </CardHeader>
           <CardContent>
             {isReportsLoading ? (
-              <NeoLoadingState title="Loading reports" message="We are checking reports from assigned clubs." compact />
+              <ClublyLoadingState title="Loading reports" message="We are checking reports from assigned clubs." compact />
             ) : isReportsError ? (
-              <NeoErrorState title="Unable to load reports" message={getErrorMessage(reportsError)} />
+              <ClublyErrorState title="Unable to load reports" message={getErrorMessage(reportsError)} />
             ) : reports.length === 0 ? (
-              <NeoEmptyState title="No reports to check" message="Submitted reports for assigned clubs will appear here." />
+              <ClublyEmptyState title="No reports to check" message="Submitted reports for assigned clubs will appear here." />
             ) : (
               <div className="space-y-3">
                 {reports.map((report) => (
                   <Link key={report.id} to="/archive" className="block">
-                    <div className="nh-list-card">
+                    <div className="clb-list-card">
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="font-semibold">{report.proposal?.proposed_activity || report.proposal?.title || "Event report"}</p>
@@ -1350,11 +1350,11 @@ function AdvisorDashboard() {
           </CardHeader>
           <CardContent>
             {isEventsLoading ? (
-              <NeoLoadingState title="Loading events" message="We are checking upcoming club activity." compact />
+              <ClublyLoadingState title="Loading events" message="We are checking upcoming club activity." compact />
             ) : isEventsError ? (
-              <NeoErrorState title="Unable to load events" message={getErrorMessage(eventsError)} />
+              <ClublyErrorState title="Unable to load events" message={getErrorMessage(eventsError)} />
             ) : upcomingEvents.length === 0 ? (
-              <NeoEmptyState title="No upcoming events" message="Events from assigned clubs will appear here." />
+              <ClublyEmptyState title="No upcoming events" message="Events from assigned clubs will appear here." />
             ) : (
               <UpcomingEventsList events={upcomingEvents} canOpenProposal={canViewProposalDetails("advisor")} />
             )}
@@ -1417,13 +1417,13 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <NeoLoadingState title="Loading operations queue" message="We are checking pending Club Services actions." compact />
+                  <ClublyLoadingState title="Loading operations queue" message="We are checking pending Club Services actions." compact />
                 ) : !dashboard?.pending_actions.length ? (
                   <p className="text-sm text-muted-foreground">No pending operational actions right now.</p>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {dashboard.pending_actions.map((action) => (
-                      <div key={action.type} className="nh-list-card">
+                      <div key={action.type} className="clb-list-card">
                         <p className="text-2xl font-bold">{action.count}</p>
                         <p className="text-sm text-muted-foreground mt-1">{action.label}</p>
                       </div>
@@ -1439,7 +1439,7 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <NeoLoadingState title="Loading proposal states" message="We are checking workflow bottlenecks." compact />
+                  <ClublyLoadingState title="Loading proposal states" message="We are checking workflow bottlenecks." compact />
                 ) : (
                   <div className="space-y-3">
                     {dashboard?.proposal_bottlenecks.map((item) => (
@@ -1461,13 +1461,13 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <NeoLoadingState title="Loading club performance" message="We are calculating club activity health." compact />
+                  <ClublyLoadingState title="Loading club performance" message="We are calculating club activity health." compact />
                 ) : !dashboard?.club_performance.length ? (
                   <p className="text-sm text-muted-foreground">No club records available yet.</p>
                 ) : (
                   <div className="space-y-3">
                     {dashboard.club_performance.slice(0, 6).map((club) => (
-                      <div key={club.club_id} className="nh-list-card">
+                      <div key={club.club_id} className="clb-list-card">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                           <div>
                             <p className="font-semibold">{club.club_name}</p>
@@ -1507,18 +1507,18 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {isLoading ? (
-                  <NeoLoadingState title="Loading institution snapshot" message="We are preparing the latest totals." compact />
+                  <ClublyLoadingState title="Loading institution snapshot" message="We are preparing the latest totals." compact />
                 ) : (
                   <>
-                    <div className="nh-card-soft p-3">
+                    <div className="clb-card p-3">
                       <p className="text-xs text-muted-foreground">Dues collected</p>
                       <p className="text-xl font-bold">{formatCurrency(summary?.dues_collected_amount)}</p>
                     </div>
-                    <div className="nh-card-soft p-3">
+                    <div className="clb-card p-3">
                       <p className="text-xs text-muted-foreground">Attendance rate</p>
                       <p className="text-xl font-bold">{formatNumber(summary?.attendance_rate)}%</p>
                     </div>
-                    <div className="nh-card-soft p-3">
+                    <div className="clb-card p-3">
                       <p className="text-xs text-muted-foreground">Feedback received</p>
                       <p className="text-xl font-bold">{formatNumber(summary?.feedback_count)}</p>
                     </div>
@@ -1538,14 +1538,14 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <NeoLoadingState title="Checking report gaps" message="We are finding events that still need documentation." compact />
+                  <ClublyLoadingState title="Checking report gaps" message="We are finding events that still need documentation." compact />
                 ) : !dashboard?.missing_reports.length ? (
                   <p className="text-sm text-muted-foreground">No past events are missing reports.</p>
                 ) : (
                   <div className="space-y-3">
                     {dashboard.missing_reports.map((report) => (
                       <Link key={report.proposal_id} to={`/proposals/${report.proposal_id}`} className="block">
-                        <div className="nh-list-card transition-colors hover:bg-accent">
+                        <div className="clb-list-card transition-colors hover:bg-accent">
                           <p className="text-sm font-medium">{report.title}</p>
                           <p className="text-xs text-muted-foreground mt-1">
                             Event {getDateLabel(report.event_date)} - {report.days_since_event} day(s) overdue
@@ -1564,7 +1564,7 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <NeoLoadingState title="Loading recent movement" message="We are checking the latest operations activity." compact />
+                  <ClublyLoadingState title="Loading recent movement" message="We are checking the latest operations activity." compact />
                 ) : !dashboard?.recent_activity.length ? (
                   <p className="text-sm text-muted-foreground">No recent operations activity yet.</p>
                 ) : (
@@ -1634,7 +1634,7 @@ function PolishedAdminDashboard() {
     <div className="space-y-8 animate-slide-up">
       <section className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <h1 className="text-5xl font-black leading-none tracking-[-0.07em] md:text-6xl">Admin Operations</h1>
+          <h1 className="text-5xl font-bold leading-none tracking-[-0.07em] md:text-6xl">Admin Operations</h1>
           <p className="mt-4 text-xl font-medium text-muted-foreground">
             Overview of university club health and activities.
           </p>
@@ -1776,29 +1776,29 @@ function PolishedAdminDashboard() {
                 <QuestSticker tone="red">{formatNumber(totalPending)} New</QuestSticker>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="rounded-[22px] border-3 border-foreground bg-destructive/15 p-5 text-destructive shadow-neo-sm">
-                  <p className="font-black">Missing Reports</p>
+                <div className="rounded-[22px] border border-border bg-destructive/15 p-5 text-destructive shadow-soft-sm">
+                  <p className="font-bold">Missing Reports</p>
                   <p className="mt-2 text-sm leading-6">{formatNumber(summary?.missing_reports)} approved past events still need documentation.</p>
                   <Button asChild variant="outline" size="sm" className="mt-4">
                     <Link to="/archive">Review Reports</Link>
                   </Button>
                 </div>
-                <div className="rounded-[22px] border-3 border-foreground bg-card p-5 shadow-neo-sm">
-                  <p className="font-black">Dues Queue</p>
+                <div className="rounded-[22px] border border-border bg-card p-5 shadow-soft-sm">
+                  <p className="font-bold">Dues Queue</p>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{formatNumber(summary?.submitted_dues_payments)} payment confirmations need a human check.</p>
                   <Button asChild variant="outline" size="sm" className="mt-4">
                     <Link to="/dues?status=submitted">Review Ledger</Link>
                   </Button>
                 </div>
-                <div className="rounded-[22px] border-3 border-foreground bg-card p-5 shadow-neo-sm">
-                  <p className="font-black">Membership Requests</p>
+                <div className="rounded-[22px] border border-border bg-card p-5 shadow-soft-sm">
+                  <p className="font-bold">Membership Requests</p>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{formatNumber(summary?.pending_membership_requests)} students are waiting for join review.</p>
                   <Button asChild variant="outline" size="sm" className="mt-4">
                     <Link to="/membership?status=pending">Open Requests</Link>
                   </Button>
                 </div>
-                <div className="rounded-[22px] border-3 border-foreground bg-card p-5 shadow-neo-sm">
-                  <p className="font-black">Open Feedback</p>
+                <div className="rounded-[22px] border border-border bg-card p-5 shadow-soft-sm">
+                  <p className="font-bold">Open Feedback</p>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{formatNumber(openFeedback.length)} feedback item(s) still need review.</p>
                   <Button asChild variant="outline" size="sm" className="mt-4">
                     <Link to="/feedback?tab=feedback&status=open">Open Feedback</Link>
@@ -1854,9 +1854,9 @@ function PolishedAdminDashboard() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {dashboard.pending_actions.map((action) => (
                       <Link key={action.type} to={getAdminActionLink(action.type)} className="group block">
-                        <div className="nh-list-card flex items-center justify-between gap-4 transition-all hover:-translate-y-0.5 hover:bg-accent">
+                        <div className="clb-list-card flex items-center justify-between gap-4 transition-all hover:-translate-y-0.5 hover:bg-accent">
                           <div className="flex items-center gap-4">
-                            <div className="border-2 border-foreground bg-background p-3 text-primary shadow-[3px_3px_0_hsl(var(--foreground))]">
+                            <div className="border border-border bg-background p-3 text-primary shadow-soft-sm">
                               {(() => {
                                 const Icon = getAdminActionIcon(action.type);
                                 return <Icon className="h-5 w-5" />;
@@ -1868,7 +1868,7 @@ function PolishedAdminDashboard() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-2xl font-black text-primary">{action.count}</span>
+                            <span className="text-2xl font-bold text-primary">{action.count}</span>
                             <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
                           </div>
                         </div>
@@ -1893,7 +1893,7 @@ function PolishedAdminDashboard() {
                           <StatusBadge status={item.status} />
                           <span className="text-sm font-semibold">{item.count}</span>
                         </div>
-                        <div className="h-2 overflow-hidden border border-foreground bg-muted">
+                        <div className="h-2 overflow-hidden border border-border bg-muted">
                           <div
                             className="h-full bg-primary"
                             style={{
@@ -1923,7 +1923,7 @@ function PolishedAdminDashboard() {
                   <p className="mt-1 text-sm text-muted-foreground">
                     A quick read on activity, dues, reports, and accountability.
                   </p>
-                  <p className="mt-2 text-xs font-black uppercase tracking-[0.16em] text-primary">
+                  <p className="mt-2 text-xs font-bold tracking-[0.16em] text-primary">
                     Showing {dashboard?.club_performance.length ?? 0} of {summary?.total_clubs ?? dashboard?.club_performance.length ?? 0} clubs
                   </p>
                   </div>
@@ -1946,8 +1946,8 @@ function PolishedAdminDashboard() {
                     />
                   </div>
                 ) : (
-                  <div className="nh-table-wrap">
-                    <table className="nh-table text-left">
+                  <div className="clb-table-wrap">
+                    <table className="clb-table text-left">
                       <thead>
                         <tr>
                           <th>Club</th>
@@ -1965,7 +1965,7 @@ function PolishedAdminDashboard() {
                             <tr key={club.club_id} className="transition-colors hover:bg-muted/40">
                               <td>
                                 <div className="flex items-center gap-3">
-                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-foreground bg-primary text-xs font-black text-primary-foreground">
+                                  <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-border bg-primary text-xs font-bold text-primary-foreground">
                                     {getClubInitials(club.club_name)}
                                   </div>
                                   <div>
@@ -1995,7 +1995,7 @@ function PolishedAdminDashboard() {
                                     <span>{club.dues_collection_rate}%</span>
                                     <span>{formatCurrency(club.dues_collected_amount)}</span>
                                   </div>
-                                  <div className="h-2 overflow-hidden border border-foreground bg-muted">
+                                  <div className="h-2 overflow-hidden border border-border bg-muted">
                                     <div
                                       className="h-full bg-success"
                                       style={{ width: `${Math.min(100, club.dues_collection_rate)}%` }}
@@ -2009,10 +2009,10 @@ function PolishedAdminDashboard() {
                               </td>
                               <td>
                                 <div className="flex flex-col gap-1">
-                                  <span className={`nh-status ${pulse.className}`}>
+                                  <span className={`clb-status ${pulse.className}`}>
                                     {club.club_health_score} - {pulse.label}
                                   </span>
-                                  <div className="h-2 overflow-hidden border border-foreground bg-muted">
+                                  <div className="h-2 overflow-hidden border border-border bg-muted">
                                     <div
                                       className="h-full bg-secondary"
                                       style={{ width: `${Math.min(100, Math.max(0, club.club_health_score))}%` }}
@@ -2036,35 +2036,35 @@ function PolishedAdminDashboard() {
                 <p className="text-sm text-muted-foreground">Numbers that help you sense the system at a glance.</p>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="nh-card-soft p-4">
-                  <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                <div className="clb-card p-4">
+                  <div className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground">
                     <Banknote className="h-4 w-4" />
                     Dues collected
                   </div>
-                  <p className="text-2xl font-black text-primary">{formatCurrency(summary?.dues_collected_amount)}</p>
+                  <p className="text-2xl font-bold text-primary">{formatCurrency(summary?.dues_collected_amount)}</p>
                   <p className="mt-1 text-xs text-muted-foreground">Across all tracked club payment records.</p>
                 </div>
-                <div className="nh-card-soft p-4">
-                  <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                <div className="clb-card p-4">
+                  <div className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground">
                     <TrendingUp className="h-4 w-4" />
                     Attendance health
                   </div>
-                  <p className="text-2xl font-black text-primary">{formatNumber(summary?.attendance_rate)}%</p>
+                  <p className="text-2xl font-bold text-primary">{formatNumber(summary?.attendance_rate)}%</p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {formatNumber(summary?.event_attendance_count)} attendance marks from {formatNumber(summary?.event_rsvp_count)} RSVP records.
                   </p>
                 </div>
-                <div className="nh-card-soft p-4">
-                  <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                <div className="clb-card p-4">
+                  <div className="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground">
                     <MessageSquare className="h-4 w-4" />
                     Student feedback
                   </div>
-                  <p className="text-2xl font-black text-primary">{formatNumber(summary?.feedback_count)}</p>
+                  <p className="text-2xl font-bold text-primary">{formatNumber(summary?.feedback_count)}</p>
                   <p className="mt-1 text-xs text-muted-foreground">Feedback records are ready for sentiment review.</p>
                 </div>
-                <div className="nh-card-soft p-4">
+                <div className="clb-card p-4">
                   <div className="mb-2 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    <div className="flex items-center gap-2 text-xs font-semibold tracking-wide text-muted-foreground">
                       <Gauge className="h-4 w-4" />
                       Quiet clubs
                     </div>
@@ -2106,7 +2106,7 @@ function PolishedAdminDashboard() {
               </CardHeader>
               <CardContent>
                 {!dashboard?.missing_reports.length ? (
-                  <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-6 text-center">
+                  <div className="border border-primary-foreground/25 bg-primary-foreground/10 p-6 text-center">
                     <CheckCircle className="mx-auto h-8 w-8 text-success" />
                     <p className="mt-3 font-semibold">No missing reports right now</p>
                     <p className="mt-1 text-sm text-primary-foreground/70">
@@ -2117,7 +2117,7 @@ function PolishedAdminDashboard() {
                   <div className="space-y-3">
                     {dashboard.missing_reports.map((report) => (
                       <Link key={report.proposal_id} to={`/proposals/${report.proposal_id}`} className="block">
-                        <div className="border-2 border-primary-foreground/25 bg-primary-foreground/10 p-4 transition-colors hover:bg-primary-foreground/15">
+                        <div className="border border-primary-foreground/25 bg-primary-foreground/10 p-4 transition-colors hover:bg-primary-foreground/15">
                           <div className="flex items-start justify-between gap-3">
                             <div>
                               <p className="font-semibold">{report.title}</p>
@@ -2125,7 +2125,7 @@ function PolishedAdminDashboard() {
                                 Event date {getDateLabel(report.event_date)}
                               </p>
                             </div>
-                            <span className="border-2 border-foreground bg-destructive px-2.5 py-1 text-xs font-bold text-destructive-foreground">
+                            <span className="border border-border bg-destructive px-2.5 py-1 text-xs font-bold text-destructive-foreground">
                               {report.days_since_event}d overdue
                             </span>
                           </div>
@@ -2388,14 +2388,14 @@ function StudentQuickLink({
 }) {
   return (
     <Link to={to} className="group block">
-      <div className={`flex h-full items-center gap-4 rounded-[24px] border-3 border-foreground p-5 shadow-neo transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-[2px_2px_0_hsl(var(--neo-shadow))] ${
+      <div className={`flex h-full items-center gap-4 rounded-[24px] border border-border p-5 shadow-soft transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-soft-sm ${
         featured ? "bg-secondary text-secondary-foreground" : "bg-card text-foreground"
       }`}>
-        <div className={`rounded-full border-3 border-foreground p-3 ${featured ? "bg-primary text-primary-foreground" : "bg-accent text-foreground"}`}>
+        <div className={`rounded-full border border-border p-3 ${featured ? "bg-primary text-primary-foreground" : "bg-accent text-foreground"}`}>
           <Icon className="h-5 w-5" />
         </div>
         <div className="min-w-0">
-          <p className="text-lg font-black tracking-[-0.03em]">{title}</p>
+          <p className="text-lg font-bold tracking-[-0.03em]">{title}</p>
           <p className="mt-1 text-xs leading-5 opacity-70">{description}</p>
         </div>
         <ArrowRight className="ml-auto h-4 w-4 shrink-0 opacity-60 transition-transform group-hover:translate-x-1" />
@@ -2421,18 +2421,18 @@ function StudentEventCard({
 
   return (
     <Link to="/events" className="block">
-      <div className="nh-card overflow-hidden transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-[2px_2px_0_hsl(var(--neo-shadow))]">
-        <div className="relative h-40 border-b-3 border-foreground bg-[linear-gradient(135deg,hsl(var(--accent)),hsl(var(--primary)/0.88))]">
-          <div className="absolute left-5 top-5 rounded-[14px] border-3 border-foreground bg-card px-4 py-2 text-sm font-black shadow-neo-sm">
+      <div className="clb-card overflow-hidden transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-soft-sm">
+        <div className="relative h-40 border-b border-border/70 bg-[linear-gradient(135deg,hsl(var(--accent)),hsl(var(--primary)/0.88))]">
+          <div className="absolute left-5 top-5 rounded-[14px] border border-border bg-card px-4 py-2 text-sm font-bold shadow-soft-sm">
             {getDateLabel(event.event_date).slice(5)}
           </div>
-          <div className="absolute bottom-4 right-4 rounded-full border-3 border-foreground bg-secondary px-3 py-1 text-xs font-black uppercase shadow-neo-sm">
+          <div className="absolute bottom-4 right-4 rounded-full border border-border bg-secondary px-3 py-1 text-xs font-bold shadow-soft-sm">
             {getEventTimingLabel(event)}
           </div>
         </div>
         <div className="p-6">
           <QuestSticker tone="green">Campus Quest</QuestSticker>
-          <p className="mt-4 text-2xl font-black tracking-[-0.04em]">{event.title}</p>
+          <p className="mt-4 text-2xl font-bold tracking-[-0.04em]">{event.title}</p>
           <p className="mt-2 line-clamp-2 text-sm leading-6 text-muted-foreground">{event.description}</p>
           <div className="mt-5 grid gap-2 text-sm text-muted-foreground sm:grid-cols-3">
             <span className="inline-flex items-center gap-2">
@@ -2448,7 +2448,7 @@ function StudentEventCard({
               {event.location || "Venue TBC"}
             </span>
           </div>
-          <div className="mt-5 flex items-center justify-between gap-3 rounded-[18px] border-3 border-foreground bg-muted/70 p-3">
+          <div className="mt-5 flex items-center justify-between gap-3 rounded-[18px] border border-border bg-muted/70 p-3">
             <p className="text-xs text-muted-foreground">Your event step</p>
             <Badge variant={rsvp?.status || attended ? "default" : "outline"} className="capitalize">
               {actionLabel}
@@ -2630,7 +2630,7 @@ function StudentDashboard() {
       <section className="grid gap-7 xl:grid-cols-[1fr_390px]">
         <div className="space-y-7">
           <div>
-            <h1 className="text-5xl font-black leading-none tracking-[-0.07em] md:text-6xl">
+            <h1 className="text-5xl font-bold leading-none tracking-[-0.07em] md:text-6xl">
               Hello, {firstName}!
             </h1>
             <p className="mt-3 text-xl font-medium text-muted-foreground">
@@ -2649,10 +2649,10 @@ function StudentDashboard() {
                 <div className="mt-8 flex items-center gap-5">
                   <QuestIconBadge icon={ShieldCheck} tone="green" />
                   <div>
-                    <p className="text-3xl font-black tracking-[-0.05em]">
+                    <p className="text-3xl font-bold tracking-[-0.05em]">
                       {featuredMembership?.club?.name || "No club yet"}
                     </p>
-                    <p className="mt-1 text-xl font-black text-success">
+                    <p className="mt-1 text-xl font-bold text-success">
                       {featuredMembership ? getMembershipStatusLabel(resolveStudentMembershipStatus(featuredMembership, featuredPayment)) : "Start by joining a club"}
                     </p>
                   </div>
@@ -2667,7 +2667,7 @@ function StudentDashboard() {
                     <CreditCard className="h-3.5 w-3.5" />
                     Dues
                   </QuestSticker>
-                  <span className="text-4xl font-black tracking-[-0.06em]">{duesProgress}%</span>
+                  <span className="text-4xl font-bold tracking-[-0.06em]">{duesProgress}%</span>
                 </div>
                 <p className="mt-8 text-lg text-muted-foreground">Semester contribution progress</p>
                 <QuestProgressBar value={duesProgress} className="mt-5" />
@@ -2680,12 +2680,12 @@ function StudentDashboard() {
           <Card className="bg-primary text-primary-foreground">
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
-                <div className="rounded-full border-3 border-foreground bg-secondary p-3 text-secondary-foreground shadow-neo-sm">
+                <div className="rounded-full border border-border bg-secondary p-3 text-secondary-foreground shadow-soft-sm">
                   <NextActionIcon className="h-5 w-5" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-black uppercase tracking-[0.16em] text-primary-foreground/70">Next best action</p>
-                  <h2 className="mt-2 text-2xl font-black tracking-[-0.04em]">{nextAction.title}</h2>
+                  <p className="text-xs font-bold tracking-[0.16em] text-primary-foreground/70">Next best action</p>
+                  <h2 className="mt-2 text-2xl font-bold tracking-[-0.04em]">{nextAction.title}</h2>
                   <p className="mt-2 text-sm leading-6 text-primary-foreground/75">{nextAction.description}</p>
                   <Button asChild variant="secondary" className="mt-4 w-full">
                     <Link to={nextAction.to}>{nextAction.label}</Link>
@@ -2720,7 +2720,7 @@ function StudentDashboard() {
                 >
                   <Smartphone className="h-5 w-5 shrink-0" />
                   <span>
-                    <span className="block font-black">Share to apps</span>
+                    <span className="block font-bold">Share to apps</span>
                     <span className="block text-xs normal-case tracking-normal text-muted-foreground">Use your device menu</span>
                   </span>
                 </Button>
@@ -2738,7 +2738,7 @@ function StudentDashboard() {
                   >
                     <MessageCircle className="h-5 w-5 shrink-0" />
                     <span>
-                      <span className="block font-black">WhatsApp</span>
+                      <span className="block font-bold">WhatsApp</span>
                       <span className="block text-xs normal-case tracking-normal text-muted-foreground">Send as a chat invite</span>
                     </span>
                   </a>
@@ -2751,7 +2751,7 @@ function StudentDashboard() {
                 >
                   <Camera className="h-5 w-5 shrink-0" />
                   <span>
-                    <span className="block font-black">Snapchat</span>
+                    <span className="block font-bold">Snapchat</span>
                     <span className="block text-xs normal-case tracking-normal text-muted-foreground">Share or copy for Snap</span>
                   </span>
                 </Button>
@@ -2763,7 +2763,7 @@ function StudentDashboard() {
                 >
                   <Instagram className="h-5 w-5 shrink-0" />
                   <span>
-                    <span className="block font-black">Instagram</span>
+                    <span className="block font-bold">Instagram</span>
                     <span className="block text-xs normal-case tracking-normal text-muted-foreground">Use share sheet or copy</span>
                   </span>
                 </Button>
@@ -2775,7 +2775,7 @@ function StudentDashboard() {
                 >
                   <Copy className="h-5 w-5 shrink-0" />
                   <span>
-                    <span className="block font-black">Copy Link</span>
+                    <span className="block font-bold">Copy Link</span>
                     <span className="block text-xs normal-case tracking-normal text-muted-foreground">Paste anywhere</span>
                   </span>
                 </Button>
@@ -2783,9 +2783,9 @@ function StudentDashboard() {
             </DialogContent>
           </Dialog>
           <Link to="/feedback" className="block">
-            <div className="rounded-[28px] border-3 border-foreground bg-primary p-8 text-center text-primary-foreground shadow-neo transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-[2px_2px_0_hsl(var(--neo-shadow))]">
+            <div className="rounded-[28px] border border-border bg-primary p-8 text-center text-primary-foreground shadow-soft transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-soft-sm">
               <MessageSquare className="mx-auto h-9 w-9" />
-              <h3 className="mt-5 text-3xl font-black tracking-[-0.05em]">Help us improve!</h3>
+              <h3 className="mt-5 text-3xl font-bold tracking-[-0.05em]">Help us improve!</h3>
               <p className="mt-3 text-sm text-primary-foreground/80">Got ideas for Club Services? Drop a line.</p>
             </div>
           </Link>
@@ -2855,7 +2855,7 @@ function StudentDashboard() {
                     return (
                       <div
                         key={request.id}
-                        className={`nh-list-card ${membershipActive ? "border-success/20 bg-success/5" : ""}`}
+                        className={`clb-list-card ${membershipActive ? "border-success/20 bg-success/5" : ""}`}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
@@ -2865,27 +2865,27 @@ function StudentDashboard() {
                           <MembershipStatusPill request={request} payment={payment} />
                         </div>
                         <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
-                          <div className="border-2 border-foreground bg-success/10 p-2 text-success">Submitted</div>
-                          <div className={`border-2 border-foreground p-2 ${reviewStateClass}`}>
+                          <div className="border border-border bg-success/10 p-2 text-success">Submitted</div>
+                          <div className={`border border-border p-2 ${reviewStateClass}`}>
                             {reviewStateLabel}
                           </div>
-                          <div className={`border-2 border-foreground p-2 ${membershipActive ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
+                          <div className={`border border-border p-2 ${membershipActive ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}`}>
                             Active
                           </div>
                         </div>
                         <p className="mt-4 text-sm text-muted-foreground">{getMembershipStatusSummary(request, payment)}</p>
                         <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-                          <div className="rounded-[16px] border-2 border-foreground bg-card p-3">
-                            <p className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Dues state</p>
+                          <div className="rounded-[16px] border border-border bg-card p-3">
+                            <p className="text-xs font-bold tracking-[0.12em] text-muted-foreground">Dues state</p>
                             <p className="mt-1 font-semibold">{getStudentDueStateLabel(payment)}</p>
                           </div>
-                          <div className="rounded-[16px] border-2 border-foreground bg-card p-3">
-                            <p className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Pending action</p>
+                          <div className="rounded-[16px] border border-border bg-card p-3">
+                            <p className="text-xs font-bold tracking-[0.12em] text-muted-foreground">Pending action</p>
                             <p className="mt-1 font-semibold">{getStudentMembershipPendingAction(membershipStatus)}</p>
                           </div>
                         </div>
                         {(membershipStatus === "pending_payment" || membershipStatus === "needs_new_payment_details") && !membershipActive ? (
-                          <div className="mt-4 border-2 border-foreground bg-primary/5 p-3 text-sm">
+                          <div className="mt-4 border border-border bg-primary/5 p-3 text-sm">
                             <p className="font-medium text-primary">
                               {membershipStatus === "needs_new_payment_details" ? "Your payment details need an update." : "Dues payment is the next step."}
                             </p>
@@ -2920,7 +2920,7 @@ function StudentDashboard() {
             </CardHeader>
             <CardContent>
               {eventsLoading ? (
-                <NeoLoadingState title="Loading events" message="We are preparing the student event feed." compact />
+                <ClublyLoadingState title="Loading events" message="We are preparing the student event feed." compact />
               ) : activeMemberships.length === 0 ? (
                 <AdminEmptyState
                   icon={CalendarDays}
@@ -2937,13 +2937,13 @@ function StudentDashboard() {
               ) : (
                 <div className="space-y-3">
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-[18px] border-3 border-foreground bg-success/10 p-4">
-                      <p className="text-xs font-black uppercase tracking-[0.14em] text-muted-foreground">Today</p>
-                      <p className="mt-1 text-2xl font-black">{todayEvents.length}</p>
+                    <div className="rounded-[18px] border border-border bg-success/10 p-4">
+                      <p className="text-xs font-bold tracking-[0.14em] text-muted-foreground">Today</p>
+                      <p className="mt-1 text-2xl font-bold">{todayEvents.length}</p>
                     </div>
-                    <div className="rounded-[18px] border-3 border-foreground bg-accent/30 p-4">
-                      <p className="text-xs font-black uppercase tracking-[0.14em] text-muted-foreground">This week</p>
-                      <p className="mt-1 text-2xl font-black">{thisWeekEvents.length}</p>
+                    <div className="rounded-[18px] border border-border bg-accent/30 p-4">
+                      <p className="text-xs font-bold tracking-[0.14em] text-muted-foreground">This week</p>
+                      <p className="mt-1 text-2xl font-bold">{thisWeekEvents.length}</p>
                     </div>
                   </div>
                   {upcomingEvents.map((event) => (
@@ -2973,11 +2973,11 @@ function StudentDashboard() {
             </CardHeader>
             <CardContent className="space-y-3">
               {announcementsLoading ? (
-                <NeoLoadingState title="Loading announcements" message="Checking your latest club updates." compact />
+                <ClublyLoadingState title="Loading announcements" message="Checking your latest club updates." compact />
               ) : announcementsFailed ? (
-                <NeoErrorState title="Announcements unavailable" message={getErrorMessage(announcementsError)} />
+                <ClublyErrorState title="Announcements unavailable" message={getErrorMessage(announcementsError)} />
               ) : announcementPreview.length === 0 ? (
-                <NeoEmptyState
+                <ClublyEmptyState
                   icon={Bell}
                   title="No announcements yet"
                   message="Updates from your active clubs and public Club Services posts will appear here."
@@ -2985,7 +2985,7 @@ function StudentDashboard() {
               ) : (
                 announcementPreview.map((announcement) => (
                   <Link key={announcement.id} to="/communications" className="block">
-                    <div className="nh-list-card transition-colors hover:bg-accent/15">
+                    <div className="clb-list-card transition-colors hover:bg-accent/15">
                       <div className="flex items-start justify-between gap-3">
                         <p className="font-semibold leading-5">{announcement.title}</p>
                         <Badge className={getAnnouncementPriorityClass(announcement.priority)}>
@@ -2995,7 +2995,7 @@ function StudentDashboard() {
                       <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{announcement.message}</p>
                       <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
                         <span>{getDateLabel(announcement.created_at)}</span>
-                        {!announcement.is_read ? <span className="font-black uppercase text-primary">Unread</span> : null}
+                        {!announcement.is_read ? <span className="font-bold text-primary">Unread</span> : null}
                       </div>
                     </div>
                   </Link>
@@ -3007,8 +3007,8 @@ function StudentDashboard() {
           <Card className="bg-primary text-primary-foreground">
             <CardContent className="flex items-center justify-between gap-4 p-5">
               <div>
-                <p className="text-sm font-black uppercase tracking-[0.14em] text-primary-foreground/70">Feedback</p>
-                <p className="mt-1 text-lg font-black tracking-[-0.03em]">Help us improve Club Services.</p>
+                <p className="text-sm font-bold tracking-[0.14em] text-primary-foreground/70">Feedback</p>
+                <p className="mt-1 text-lg font-bold tracking-[-0.03em]">Help us improve Club Services.</p>
               </div>
               <Button asChild variant="secondary" size="sm" className="shrink-0">
                 <Link to="/feedback">Submit Feedback</Link>
@@ -3025,7 +3025,7 @@ function StudentDashboard() {
                 <p className="text-sm text-muted-foreground">No event reminders yet.</p>
               ) : (
                 reminders.slice(0, 3).map((reminder: EventReminderRecord) => (
-                  <div key={reminder.id} className="nh-list-card">
+                  <div key={reminder.id} className="clb-list-card">
                     <p className="text-sm font-medium">{reminder.message}</p>
                     <p className="mt-1 text-xs text-muted-foreground">Reminder date {getDateLabel(reminder.remind_at)}</p>
                   </div>
@@ -3148,7 +3148,7 @@ function PresidentDashboard() {
       <section className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-4">
-            <h1 className="text-5xl font-black leading-none tracking-[-0.07em] md:text-6xl">
+            <h1 className="text-5xl font-bold leading-none tracking-[-0.07em] md:text-6xl">
               {dashboard?.club?.name || "President Dashboard"}
             </h1>
             <QuestSticker tone="green">President</QuestSticker>
@@ -3213,14 +3213,14 @@ function PresidentDashboard() {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <QuestSticker tone="blue">Core Metric</QuestSticker>
-                    <h2 className="mt-6 text-4xl font-black tracking-[-0.06em] md:text-5xl">Club Health Score</h2>
+                    <h2 className="mt-6 text-4xl font-bold tracking-[-0.06em] md:text-5xl">Club Health Score</h2>
                   </div>
-                  <div className="rotate-2 rounded-[24px] border-3 border-foreground bg-primary px-7 py-5 text-6xl font-black text-primary-foreground shadow-neo">
+                  <div className="rotate-2 rounded-[24px] border border-border bg-primary px-7 py-5 text-6xl font-bold text-primary-foreground shadow-soft">
                     {clubHealthScore}
                   </div>
                 </div>
                 <div>
-                  <div className="mb-3 flex items-center justify-between text-xs font-black uppercase tracking-[0.14em]">
+                  <div className="mb-3 flex items-center justify-between text-xs font-bold tracking-[0.14em]">
                     <span>Overall health</span>
                     <span>{clubHealthLabel}</span>
                   </div>
@@ -3241,12 +3241,12 @@ function PresidentDashboard() {
               <CardContent className="p-7">
                 <div className="mb-6 flex items-center gap-4">
                   <QuestIconBadge icon={ClipboardList} tone={highPriorityTaskCount ? "red" : "blue"} />
-                  <h2 className="text-2xl font-black tracking-[-0.05em]">Task Focus</h2>
+                  <h2 className="text-2xl font-bold tracking-[-0.05em]">Task Focus</h2>
                 </div>
                 <div className="space-y-4">
-                  <div className="rounded-[20px] border-3 border-foreground bg-muted p-4 shadow-neo-sm">
+                  <div className="rounded-[20px] border border-border bg-muted p-4 shadow-soft-sm">
                     <div className="flex items-center justify-between gap-4">
-                      <p className="font-black">Open Tasks</p>
+                      <p className="font-bold">Open Tasks</p>
                       <QuestSticker tone={openTaskCount ? "navy" : "green"}>{isLoadingTasks ? "..." : formatNumber(openTaskCount)}</QuestSticker>
                     </div>
                     <Button asChild variant="outline" className="mt-4 w-full">
@@ -3261,12 +3261,12 @@ function PresidentDashboard() {
               <CardContent className="p-7">
                 <div className="mb-6 flex items-center gap-4">
                   <QuestIconBadge icon={FileText} tone={pendingCount ? "red" : "green"} />
-                  <h2 className="text-2xl font-black tracking-[-0.05em]">Proposals</h2>
+                  <h2 className="text-2xl font-bold tracking-[-0.05em]">Proposals</h2>
                 </div>
                 <div className="space-y-4">
-                  <div className="rounded-[20px] border-3 border-foreground bg-muted p-4 shadow-neo-sm">
+                  <div className="rounded-[20px] border border-border bg-muted p-4 shadow-soft-sm">
                     <div className="flex items-center justify-between gap-4">
-                      <p className="font-black">Pending Workflow</p>
+                      <p className="font-bold">Pending Workflow</p>
                       <QuestSticker tone={pendingCount ? "navy" : "green"}>{formatNumber(pendingCount)}</QuestSticker>
                     </div>
                     <Button asChild variant="outline" className="mt-4 w-full">
@@ -3281,12 +3281,12 @@ function PresidentDashboard() {
               <CardContent className="p-7">
                 <div className="mb-6 flex items-center gap-4">
                   <QuestIconBadge icon={MessageSquare} tone={announcementCount ? "green" : "blue"} />
-                  <h2 className="text-2xl font-black tracking-[-0.05em]">Communication</h2>
+                  <h2 className="text-2xl font-bold tracking-[-0.05em]">Communication</h2>
                 </div>
                 <div className="space-y-4">
-                  <div className="rounded-[20px] border-3 border-foreground bg-muted p-4 shadow-neo-sm">
+                  <div className="rounded-[20px] border border-border bg-muted p-4 shadow-soft-sm">
                     <div className="flex items-center justify-between gap-4">
-                      <p className="font-black">Announcements</p>
+                      <p className="font-bold">Announcements</p>
                       <QuestSticker tone={announcementCount ? "navy" : "muted"}>{isLoadingAnnouncements ? "..." : formatNumber(announcementCount)}</QuestSticker>
                     </div>
                     <Button asChild variant="outline" className="mt-4 w-full">
@@ -3344,9 +3344,9 @@ function PresidentDashboard() {
               <CardContent>
                 {isLoading || !dashboard?.executive_team.length ? (
                   isLoading ? (
-                    <NeoLoadingState title="Loading executive team" message="We are checking club leadership records." compact />
+                    <ClublyLoadingState title="Loading executive team" message="We are checking club leadership records." compact />
                   ) : (
-                    <NeoEmptyState title="No executives linked yet" message="Executives connected to this club will appear here." />
+                    <ClublyEmptyState title="No executives linked yet" message="Executives connected to this club will appear here." />
                   )
                 ) : (
                   <div className="space-y-3">
@@ -3370,9 +3370,9 @@ function PresidentDashboard() {
               <CardContent>
                 {isLoading || !dashboard?.recent_activity.length ? (
                   isLoading ? (
-                    <NeoLoadingState title="Loading recent movement" message="We are checking proposal activity." compact />
+                    <ClublyLoadingState title="Loading recent movement" message="We are checking proposal activity." compact />
                   ) : (
-                    <NeoEmptyState title="No proposal activity yet" message="Proposal updates will appear here once the club starts submitting." />
+                    <ClublyEmptyState title="No proposal activity yet" message="Proposal updates will appear here once the club starts submitting." />
                   )
                 ) : (
                   <RecentActivityList activity={dashboard.recent_activity} />
@@ -3397,7 +3397,7 @@ export default function Dashboard() {
   if (role === "student") return <StudentDashboard />;
   return (
     <div className="flex min-h-[50vh] items-center justify-center">
-      <NeoLoadingState title="Opening your Club Services workspace" message="We are loading your profile and dashboard access." />
+      <ClublyLoadingState title="Opening your Club Services workspace" message="We are loading your profile and dashboard access." />
     </div>
   );
 }

@@ -108,10 +108,7 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    background-image:
-      radial-gradient(circle at top left, hsl(var(--primary) / 0.08), transparent 32rem),
-      radial-gradient(circle at bottom right, hsl(var(--warning) / 0.07), transparent 34rem);
-    background-attachment: fixed;
+    background: var(--clubly-page);
     font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
     color: var(--clubly-body);
   }
@@ -127,92 +124,84 @@
 }
 
 @layer components {
-  .nh-page {
+  .clb-screen {
     @apply mx-auto w-full max-w-[1180px] space-y-6 animate-slide-up;
   }
 
-  .nh-page-header {
-    @apply rounded-[28px] border border-border/70 bg-card/90 px-5 py-5 shadow-soft backdrop-blur;
+  .clb-hero {
+    @apply flex flex-col gap-5 rounded-[28px] border border-border/70 bg-card/85 px-5 py-5 shadow-soft backdrop-blur md:flex-row md:items-end md:justify-between md:px-6 md:py-6;
   }
 
-  .nh-eyebrow {
-    @apply text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground;
+  .clb-eyebrow {
+    @apply text-xs font-semibold tracking-[0.14em] text-muted-foreground;
   }
 
-  .nh-title {
-    @apply text-4xl font-bold leading-tight text-foreground md:text-5xl;
+  .clb-title {
+    @apply text-4xl font-bold leading-tight tracking-[-0.03em] text-foreground md:text-5xl;
   }
 
-  .nh-card {
-    @apply rounded-[24px] border border-border/70 bg-card shadow-soft;
+  .clb-card {
+    @apply rounded-[24px] border border-border/70 bg-card text-card-foreground shadow-soft transition duration-200;
   }
 
-  .nh-card-soft {
-    @apply rounded-[22px] border border-border/70 bg-card/80 shadow-soft-sm backdrop-blur;
+  .clb-panel-title {
+    @apply text-sm font-semibold tracking-tight text-foreground;
   }
 
-  .nh-card-dark {
-    @apply rounded-[24px] border border-primary/20 bg-primary text-primary-foreground shadow-soft;
-  }
-
-  .nh-panel-title {
-    @apply text-sm font-semibold tracking-tight;
-  }
-
-  .nh-action-strip {
+  .clb-action-strip {
     @apply rounded-[20px] border border-primary/20 bg-primary p-4 text-primary-foreground shadow-soft;
   }
 
-  .nh-command-panel {
-    @apply relative overflow-hidden rounded-[28px] border border-primary/15 bg-primary p-6 text-primary-foreground shadow-soft-lg;
+  .clb-command-panel {
+    @apply relative overflow-hidden rounded-[28px] border border-primary/15 bg-primary p-6 text-primary-foreground shadow-soft-lg md:p-7;
   }
 
-  .nh-command-panel::after {
+  .clb-command-panel::after {
     content: "";
     @apply pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10 blur-2xl;
   }
 
-  .nh-section-grid {
+  .clb-section-grid {
     @apply grid gap-6 xl:grid-cols-[420px_1fr];
   }
 
-  .nh-metric-grid {
+  .clb-metric-grid {
     @apply grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4;
   }
 
-  .nh-mobile-card {
+  .clb-mobile-card {
     @apply rounded-[20px] border border-border bg-card p-4 shadow-soft-sm;
   }
 
-  .nh-list-card {
+  .clb-list-card {
     @apply rounded-[22px] border border-border/70 bg-card p-4 shadow-soft-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-soft;
   }
 
-  .nh-empty {
-    @apply rounded-[24px] border border-dashed border-border bg-card/70 p-8 text-center shadow-soft-sm;
+  .clb-empty {
+    @apply rounded-[24px] border border-dashed border-border/80 bg-card/70 p-8 text-center shadow-soft-sm;
   }
 
-  .nh-status {
+  .clb-status {
     @apply inline-flex items-center rounded-full border border-current px-2.5 py-1 text-[11px] font-semibold tracking-wide;
   }
 
-  .nh-table-wrap {
+  .clb-table-wrap {
     @apply overflow-x-auto rounded-[24px] border border-border/70 bg-card shadow-soft;
   }
 
-  .nh-table {
+  .clb-table {
     @apply w-full text-sm;
   }
 
-  .nh-table th {
-    @apply border-b border-border bg-muted/50 p-3 text-left text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground;
+  .clb-table th {
+    @apply border-b border-border bg-muted/50 p-3 text-left text-xs font-semibold tracking-wide text-muted-foreground;
   }
 
-  .nh-table td {
+  .clb-table td {
     @apply border-b border-border p-3 align-top;
   }
 
-  .nh-form-grid {
+  .clb-form-grid {
     @apply grid grid-cols-1 gap-4 lg:grid-cols-2;
   }
 
@@ -294,10 +283,6 @@
     transition: padding 180ms ease;
   }
 
-  .clb-screen {
-    @apply mx-auto w-full max-w-[1180px] animate-slide-up;
-  }
-
   .clb-panel {
     @apply rounded-[24px] border border-border/70 bg-card shadow-soft;
   }
@@ -316,19 +301,6 @@
 }
 
 @layer utilities {
-  .border-2,
-  .border-3 {
-    border-width: 1px !important;
-  }
-
-  .font-black {
-    font-weight: 700 !important;
-  }
-
-  [class*="shadow-["] {
-    box-shadow: 0 4px 20px hsl(var(--neo-shadow) / 0.04), 0 1px 3px hsl(var(--neo-shadow) / 0.03) !important;
-  }
-
   [class*="hover:shadow-"]:hover {
     box-shadow: 0 12px 32px hsl(var(--neo-shadow) / 0.07), 0 2px 6px hsl(var(--neo-shadow) / 0.03) !important;
   }
@@ -347,24 +319,28 @@
     animation: slideUp 0.3s ease-out;
   }
 
+  .animate-clubly-progress {
+    animation: clublyProgress 1.45s ease-in-out infinite;
+  }
+
   [data-density="compact"] .clubly-main-pad {
     @apply min-[921px]:pt-24;
   }
 
-  [data-density="compact"] .nh-page {
+  [data-density="compact"] .clb-screen {
     @apply space-y-4;
   }
 
-  [data-density="compact"] .nh-page-header,
-  [data-density="compact"] .nh-card,
-  [data-density="compact"] .nh-card-soft,
-  [data-density="compact"] .nh-list-card,
+  [data-density="compact"] .clb-hero,
+  [data-density="compact"] .clb-card,
+  [data-density="compact"] .clb-card,
+  [data-density="compact"] .clb-list-card,
   [data-density="compact"] .clb-panel,
   [data-density="compact"] .clb-panel-soft {
     @apply rounded-[20px];
   }
 
-  [data-density="compact"] .nh-page-header {
+  [data-density="compact"] .clb-hero {
     @apply px-4 py-4;
   }
 }
@@ -377,6 +353,12 @@
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes clublyProgress {
+  0% { transform: translateX(-120%); }
+  50% { transform: translateX(90%); }
+  100% { transform: translateX(260%); }
 }
 
 @keyframes clubLogoOrbit {

@@ -23,7 +23,7 @@ import { DataPagination } from "@/components/DataPagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   ApiClientError,
@@ -398,8 +398,8 @@ export default function Notifications() {
   }, []);
 
   return (
-    <div className="nh-page">
-      <NeoPageHeader
+    <div className="clb-screen">
+      <ClublyPageHeader
         eyebrow="Inbox"
         title="Notification Center"
         description={
@@ -412,7 +412,7 @@ export default function Notifications() {
       <Card>
         <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-foreground bg-accent text-accent-foreground">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-border bg-accent text-accent-foreground">
               {pushEnabled ? <BellRing className="h-5 w-5" /> : <BellOff className="h-5 w-5" />}
             </div>
             <div>
@@ -459,44 +459,44 @@ export default function Notifications() {
       <div className="grid gap-3 md:grid-cols-4">
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-foreground bg-primary text-primary-foreground">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-border bg-primary text-primary-foreground">
               <Inbox className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-2xl font-black">{notifications.length}</p>
+              <p className="text-2xl font-bold">{notifications.length}</p>
               <p className="text-xs text-muted-foreground">Relevant updates</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-foreground bg-accent text-accent-foreground">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-border bg-accent text-accent-foreground">
               <BellRing className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-2xl font-black">{unreadCount}</p>
+              <p className="text-2xl font-bold">{unreadCount}</p>
               <p className="text-xs text-muted-foreground">{supportsReadLabels ? "Unread" : "Unread announcements"}</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-foreground bg-warning text-warning-foreground">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-border bg-warning text-warning-foreground">
               <AlertTriangle className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-2xl font-black">{actionCount}</p>
+              <p className="text-2xl font-bold">{actionCount}</p>
               <p className="text-xs text-muted-foreground">Need action</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-foreground bg-secondary text-secondary-foreground">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-border bg-secondary text-secondary-foreground">
               <CalendarDays className="h-5 w-5" />
             </div>
             <div>
-              <p className="text-2xl font-black">{eventCount}</p>
+              <p className="text-2xl font-bold">{eventCount}</p>
               <p className="text-xs text-muted-foreground">Event updates</p>
             </div>
           </CardContent>
@@ -504,9 +504,9 @@ export default function Notifications() {
       </div>
 
       {isLoading ? (
-        <NeoLoadingState title="Loading notifications" message="We are getting your latest updates." />
+        <ClublyLoadingState title="Loading notifications" message="We are getting your latest updates." />
       ) : isError ? (
-        <NeoStateCard icon={Bell} title="Unable to load notifications" message={getErrorMessage(error)} tone="danger" />
+        <ClublyStateCard icon={Bell} title="Unable to load notifications" message={getErrorMessage(error)} tone="danger" />
       ) : (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div className="space-y-4">
@@ -541,7 +541,7 @@ export default function Notifications() {
             </div>
 
             {filteredNotifications.length === 0 ? (
-              <NeoStateCard
+              <ClublyStateCard
                 icon={Bell}
                 title={activeFilter === "all" ? "No notifications yet" : "Nothing in this view"}
                 message={getFilteredEmptyMessage(activeFilter)}
@@ -560,7 +560,7 @@ export default function Notifications() {
                       <CardContent className="p-4">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                           <div className="flex min-w-0 gap-3">
-                            <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center border-2 border-foreground", meta.toneClass)}>
+                            <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center border border-border", meta.toneClass)}>
                               <Icon className="h-5 w-5" />
                             </div>
                             <div className="min-w-0">
@@ -612,7 +612,7 @@ export default function Notifications() {
             <CardContent className="space-y-4 p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="font-black">Latest announcements</h2>
+                  <h2 className="font-bold">Latest announcements</h2>
                   <p className="mt-1 text-sm text-muted-foreground">
                     Recent club and role updates your account can see.
                   </p>
@@ -623,11 +623,11 @@ export default function Notifications() {
               </div>
 
               {isLoadingAnnouncements ? (
-                <NeoLoadingState title="Loading announcements" message="Checking recent club updates." compact />
+                <ClublyLoadingState title="Loading announcements" message="Checking recent club updates." compact />
               ) : isAnnouncementsError ? (
                 <p className="text-sm text-destructive">Unable to load announcements right now.</p>
               ) : announcementsPage.items.length === 0 ? (
-                <div className="nh-empty">
+                <div className="clb-empty">
                   <Megaphone className="mx-auto h-8 w-8 text-muted-foreground" />
                   <p className="mt-3 font-medium">No announcements yet.</p>
                   <p className="mt-1 text-sm text-muted-foreground">
@@ -639,7 +639,7 @@ export default function Notifications() {
                   {announcementsPage.items.map((announcement) => (
                     <div
                       key={announcement.id}
-                      className={cn("nh-list-card", announcement.is_read ? "bg-card" : "border-primary bg-primary/5")}
+                      className={cn("clb-list-card", announcement.is_read ? "bg-card" : "border-primary bg-primary/5")}
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-semibold">{announcement.title}</p>

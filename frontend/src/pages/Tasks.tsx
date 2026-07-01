@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ClipboardList, Loader2, Target, UserCheck } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { DataPagination } from "@/components/DataPagination";
-import { NeoLoadingState, NeoMetricCard, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { ClublyLoadingState, ClublyMetricCard, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -69,12 +69,12 @@ function TaskCard({
   isUpdating: boolean;
 }) {
   return (
-    <div className="nh-list-card">
+    <div className="clb-list-card">
       <CardContent className="p-4">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <h3 className="text-lg font-black uppercase">{task.title}</h3>
+              <h3 className="text-lg font-bold">{task.title}</h3>
               <TaskBadge status={task.status} />
               <PriorityBadge priority={task.priority} />
             </div>
@@ -218,13 +218,13 @@ export default function Tasks() {
 
   if (!canUseTasks) {
     return (
-      <div className="nh-page">
-        <NeoPageHeader
+      <div className="clb-screen">
+        <ClublyPageHeader
           eyebrow="Operations"
           title="Tasks"
           description="Task delegation is available to club presidents, executives, and Club Services oversight."
         />
-        <NeoStateCard
+        <ClublyStateCard
           icon={ClipboardList}
           title="Task access is restricted"
           message="This role does not use task delegation yet."
@@ -234,8 +234,8 @@ export default function Tasks() {
   }
 
   return (
-    <div className="nh-page">
-      <NeoPageHeader
+    <div className="clb-screen">
+      <ClublyPageHeader
         eyebrow="Operations"
         title={role === "admin" ? "All Club Tasks" : role === "president" ? "Task Delegation" : "My Tasks"}
         description={
@@ -248,9 +248,9 @@ export default function Tasks() {
       />
 
       <div className="grid gap-4 md:grid-cols-3">
-        <NeoMetricCard title="Total Tasks" value={tasksPage.total} icon={ClipboardList} tone="navy" />
-        <NeoMetricCard title="In Progress" value={tasks.filter((task) => task.status === "in_progress").length} icon={Target} tone="gold" />
-        <NeoMetricCard title="Completed" value={tasks.filter((task) => task.status === "completed").length} icon={UserCheck} tone="green" />
+        <ClublyMetricCard title="Total Tasks" value={tasksPage.total} icon={ClipboardList} tone="navy" />
+        <ClublyMetricCard title="In Progress" value={tasks.filter((task) => task.status === "in_progress").length} icon={Target} tone="gold" />
+        <ClublyMetricCard title="Completed" value={tasks.filter((task) => task.status === "completed").length} icon={UserCheck} tone="green" />
       </div>
 
       {role === "president" ? (
@@ -259,7 +259,7 @@ export default function Tasks() {
             <CardTitle className="text-lg">Assign A Task</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleCreateTask} className="nh-form-grid">
+            <form onSubmit={handleCreateTask} className="clb-form-grid">
               <div className="space-y-2">
                 <Label htmlFor="assigned_to">Executive</Label>
                 <Select value={assignedTo} onValueChange={setAssignedTo}>
@@ -381,14 +381,14 @@ export default function Tasks() {
         </CardHeader>
         <CardContent className="space-y-3">
           {isLoading ? (
-            <NeoLoadingState title="Preparing task board" message="We are loading assigned work and progress updates." compact />
+            <ClublyLoadingState title="Preparing task board" message="We are loading assigned work and progress updates." compact />
           ) : isError ? (
-            <div className="nh-empty border-destructive bg-destructive/5">
+            <div className="clb-empty border-destructive bg-destructive/5">
               <p className="font-medium">Unable to load tasks</p>
               <p className="text-sm text-muted-foreground mt-1">{getErrorMessage(error)}</p>
             </div>
           ) : tasks.length === 0 ? (
-            <div className="nh-empty">
+            <div className="clb-empty">
               <ClipboardList className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
               <p className="font-medium">No tasks yet</p>
               <p className="text-sm text-muted-foreground mt-1">

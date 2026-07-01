@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Download, Filter, Megaphone, MessageSquare, Send, Users } from "lucide-react";
 import { DataPagination } from "@/components/DataPagination";
-import { NeoCommandPanel, NeoLoadingState } from "@/components/NeoBrutal";
+import { ClublyCommandPanel, ClublyLoadingState } from "@/components/Clubly";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -540,8 +540,8 @@ export default function Communications({ defaultTab = "announcements" }: { defau
   const roleOptions = role === "president" ? presidentRoleOptions : adminRoleOptions;
 
   return (
-    <div className="nh-page">
-      <NeoCommandPanel
+    <div className="clb-screen">
+      <ClublyCommandPanel
         eyebrow="Communication Hub"
         title={isFeedbackManager ? "Feedback Inbox" : "Announcements and Feedback"}
         description={
@@ -584,7 +584,7 @@ export default function Communications({ defaultTab = "announcements" }: { defau
       </div>
 
       {activeTab === "announcements" ? (
-        <div className="nh-section-grid">
+        <div className="clb-section-grid">
           <div className="space-y-6">
             {canCreateAnnouncement ? (
               <Card className="overflow-hidden">
@@ -794,13 +794,13 @@ export default function Communications({ defaultTab = "announcements" }: { defau
               {isLoadingAnnouncements ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map((item) => (
-                    <div key={item} className="h-28 animate-pulse border-2 border-foreground bg-muted shadow-[4px_4px_0_hsl(var(--foreground))]" />
+                    <div key={item} className="h-28 animate-pulse border border-border bg-muted shadow-soft-sm" />
                   ))}
                 </div>
               ) : isAnnouncementsError ? (
                 <p className="text-sm text-destructive">{getErrorMessage(announcementsError)}</p>
               ) : announcements.length === 0 ? (
-                <div className="nh-empty">
+                <div className="clb-empty">
                   <Megaphone className="mx-auto h-8 w-8 text-muted-foreground" />
                   <p className="mt-3 font-medium">No announcements here yet.</p>
                   <p className="mt-1 text-sm text-muted-foreground">
@@ -814,7 +814,7 @@ export default function Communications({ defaultTab = "announcements" }: { defau
                   return (
                     <div
                       key={announcement.id}
-                      className={`nh-list-card ${
+                      className={`clb-list-card ${
                         announcement.is_read ? "bg-card" : "border-primary bg-primary/5"
                       }`}
                     >
@@ -866,7 +866,7 @@ export default function Communications({ defaultTab = "announcements" }: { defau
           </Card>
         </div>
       ) : (
-        <div className={canViewFeedback && !isFeedbackManager ? "nh-section-grid" : "mx-auto grid w-full max-w-5xl gap-6"}>
+        <div className={canViewFeedback && !isFeedbackManager ? "clb-section-grid" : "mx-auto grid w-full max-w-5xl gap-6"}>
           {canSubmitFeedback ? (
             <Card>
               <CardHeader>
@@ -878,7 +878,7 @@ export default function Communications({ defaultTab = "announcements" }: { defau
                   Tell the Club Services team what you were trying to do, what felt confusing, and what would make the app easier.
                 </p>
                 {!canViewFeedback ? (
-                  <p className="border-2 border-primary bg-primary/10 p-3 text-sm font-semibold text-primary">
+                  <p className="border border-primary bg-primary/10 p-3 text-sm font-semibold text-primary">
                     Your feedback is saved privately for Club Services reviewers. Students cannot see submitted feedback.
                   </p>
                 ) : null}
@@ -1158,7 +1158,7 @@ export default function Communications({ defaultTab = "announcements" }: { defau
             </CardHeader>
             <CardContent className="space-y-3">
               {isLoadingFeedback ? (
-                <NeoLoadingState title="Loading feedback" message="We are checking recent club feedback." compact />
+                <ClublyLoadingState title="Loading feedback" message="We are checking recent club feedback." compact />
               ) : isFeedbackError ? (
                 <p className="text-sm text-destructive">{getErrorMessage(feedbackError)}</p>
               ) : feedback.length === 0 ? (
@@ -1171,7 +1171,7 @@ export default function Communications({ defaultTab = "announcements" }: { defau
                   const impact = getStructuredFeedbackValue(entry.comment, "Impact");
 
                   return (
-                    <div key={entry.id} className="nh-list-card">
+                    <div key={entry.id} className="clb-list-card">
                       {getFeedbackEventLabel(entry) ? (
                         <p className="text-sm font-semibold">{getFeedbackEventLabel(entry)}</p>
                       ) : (

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { RoleProvider } from "@/contexts/RoleContext";
 import { AppLayout } from "@/components/AppLayout";
-import { NeoLoadingState, NeoStateCard } from "@/components/NeoBrutal";
+import { ClublyLoadingState, ClublyStateCard } from "@/components/Clubly";
 import Dashboard from "@/pages/Dashboard";
 import ForgotPassword from "@/pages/ForgotPassword";
 import Login from "@/pages/Login";
@@ -43,7 +43,7 @@ function ProtectedRoutes() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-6">
         <div className="w-full max-w-xl">
-          <NeoLoadingState
+          <ClublyLoadingState
             title="Getting your account ready"
             message="Please wait while we open your Club Services workspace."
             delayedMessage="This is taking longer than usual. Please check your network connection."
@@ -66,7 +66,7 @@ function ProtectedRoutes() {
       return (
         <div className="flex min-h-screen items-center justify-center bg-background p-6">
           <div className="w-full max-w-xl">
-            <NeoStateCard
+            <ClublyStateCard
               title="We couldn't open your workspace yet"
               message={profileError}
               tone="danger"
@@ -74,7 +74,7 @@ function ProtectedRoutes() {
               <Button onClick={() => void signOut()} variant="outline">
                 Sign out
               </Button>
-            </NeoStateCard>
+            </ClublyStateCard>
           </div>
         </div>
       );

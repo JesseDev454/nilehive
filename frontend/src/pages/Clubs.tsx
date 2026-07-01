@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Loader2, Pencil, Plus, School, Trash2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -216,15 +216,15 @@ export default function Clubs() {
 
   if (!canManageClubs) {
     return (
-      <div className="nh-page">
-        <NeoStateCard icon={School} title="Club management is restricted" message="Only Club Services admins and assigned presidents can edit club content." />
+      <div className="clb-screen">
+        <ClublyStateCard icon={School} title="Club management is restricted" message="Only Club Services admins and assigned presidents can edit club content." />
       </div>
     );
   }
 
   return (
-    <div className="nh-page">
-      <NeoPageHeader
+    <div className="clb-screen">
+      <ClublyPageHeader
         eyebrow="Club Services"
         title={isFocusedEdit ? "Edit Club Profile" : "Clubs"}
         description={isFocusedEdit ? "Update this club profile in a focused editor." : role === "president" ? "Maintain the public profile for your assigned club." : "Create and maintain the clubs students discover in the app."}
@@ -240,16 +240,16 @@ export default function Clubs() {
       ) : null}
 
       {isFocusedEdit && isLoading ? (
-        <NeoLoadingState title="Opening club editor" message="We are loading the selected club profile." compact />
+        <ClublyLoadingState title="Opening club editor" message="We are loading the selected club profile." compact />
       ) : isFocusedEdit && !editingClub ? (
-        <NeoStateCard icon={School} title="Club editor unavailable" message="This club is not available for your role, or it no longer exists." />
+        <ClublyStateCard icon={School} title="Club editor unavailable" message="This club is not available for your role, or it no longer exists." />
       ) : (canCreateClubs || editingClub) ? (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">{editingClub ? `Edit ${editingClub.name}` : "Add a new club"}</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="nh-form-grid">
+            <form onSubmit={handleSubmit} className="clb-form-grid">
             <div className="space-y-2">
               <Label htmlFor="club_name">Club Name</Label>
               <Input id="club_name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required disabled={role === "president"} />
@@ -343,7 +343,7 @@ export default function Clubs() {
               This removes the club and connected club records from Club Services. This action is only available to admins.
             </DialogDescription>
           </DialogHeader>
-          <div className="rounded-xl border-2 border-destructive bg-destructive/5 p-4 text-sm">
+          <div className="rounded-xl border border-destructive bg-destructive/5 p-4 text-sm">
             <p className="font-semibold">You are about to delete {editingClub?.name || "this club"}.</p>
             <p className="mt-1 text-muted-foreground">Use this only for duplicate or incorrect club records.</p>
           </div>
@@ -361,10 +361,10 @@ export default function Clubs() {
       {!isFocusedEdit ? <Card>
         <CardHeader><CardTitle className="text-lg">Configured clubs</CardTitle></CardHeader>
         <CardContent>
-          {isLoading ? <NeoLoadingState title="Loading clubs" message="We are gathering the current club directory." compact /> : isError ? (
-            <NeoStateCard icon={School} title="Could not load clubs" message={getErrorMessage(error)} tone="danger" />
+          {isLoading ? <ClublyLoadingState title="Loading clubs" message="We are gathering the current club directory." compact /> : isError ? (
+            <ClublyStateCard icon={School} title="Could not load clubs" message={getErrorMessage(error)} tone="danger" />
           ) : !clubs.length ? (
-            <NeoStateCard
+            <ClublyStateCard
               icon={School}
               title={role === "president" ? "No assigned club found" : "No clubs configured yet"}
               message={role === "president" ? "Ask a Club Services admin to assign your president profile to a club." : "Admins can add a club from the form above."}
@@ -372,9 +372,9 @@ export default function Clubs() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {clubs.map((club) => (
-                <div key={club.id} className="nh-list-card space-y-3">
+                <div key={club.id} className="clb-list-card space-y-3">
                   <div className="flex items-start justify-between gap-3">
-                    <div><p className="font-black">{club.name}</p><p className="text-xs text-muted-foreground">{club.code || "No short code"}</p></div>
+                    <div><p className="font-bold">{club.name}</p><p className="text-xs text-muted-foreground">{club.code || "No short code"}</p></div>
                     <Badge>{club.is_public_signup === false ? "Hidden" : "Public"}</Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">{club.description || "No description yet."}</p>

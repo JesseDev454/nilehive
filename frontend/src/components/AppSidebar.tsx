@@ -99,7 +99,7 @@ export function AppSidebar() {
 
       <SidebarContent className="px-2">
         <SidebarGroup>
-          <SidebarGroupLabel className="px-4 text-[11px] font-semibold uppercase tracking-[0.16em] text-sidebar-foreground/45">
+          <SidebarGroupLabel className="px-4 text-[11px] font-semibold tracking-wide text-sidebar-foreground/45">
             Navigation
           </SidebarGroupLabel>
           <SidebarGroupContent>

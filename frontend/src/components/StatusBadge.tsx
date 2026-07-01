@@ -28,7 +28,7 @@ export function StatusBadge({ status, eventDate }: { status: Status; eventDate?:
   };
 
   return (
-    <span className={cn("nh-status", config.className)}>
+    <span className={cn("clb-status", config.className)}>
       {config.label}
     </span>
   );

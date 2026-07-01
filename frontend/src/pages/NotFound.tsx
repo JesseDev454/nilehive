@@ -12,14 +12,14 @@ const NotFound = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-6">
-      <div className="nh-card relative w-full max-w-2xl overflow-hidden bg-card p-8 text-center md:p-12">
-        <div className="absolute -bottom-12 -right-4 text-[10rem] font-black leading-none text-muted/70">404</div>
+      <div className="clb-card relative w-full max-w-2xl overflow-hidden bg-card p-8 text-center md:p-12">
+        <div className="absolute -bottom-12 -right-4 text-[10rem] font-bold leading-none text-muted/70">404</div>
         <div className="relative z-10">
-          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full border-3 border-foreground bg-accent shadow-neo-sm">
+          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full border border-border bg-accent shadow-soft-sm">
             <Compass className="h-10 w-10" />
           </div>
-          <p className="nh-eyebrow">Page not found</p>
-          <h1 className="mt-2 text-4xl font-black tracking-normal md:text-5xl">That page is not available.</h1>
+          <p className="clb-eyebrow">Page not found</p>
+          <h1 className="mt-2 text-4xl font-bold tracking-normal md:text-5xl">That page is not available.</h1>
           <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-muted-foreground">
             The link may be old, or your role may not use this page. Choose a safe place to continue.
           </p>

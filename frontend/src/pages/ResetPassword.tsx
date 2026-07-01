@@ -66,10 +66,10 @@ export default function ResetPassword() {
     return (
       <main className="flex min-h-screen flex-col bg-background text-foreground">
         <section className="flex flex-1 items-center justify-center p-5">
-          <div className="nh-card max-w-xl bg-card p-6 text-center md:p-10">
+          <div className="clb-card max-w-xl bg-card p-6 text-center md:p-10">
             <BrandLogo size="lg" variant="plain" className="mx-auto mb-5 h-24 w-[22rem] max-w-full" />
-            <p className="nh-eyebrow">Account Recovery</p>
-            <h1 className="mt-2 text-3xl font-black uppercase md:text-5xl">Campus One manages passwords</h1>
+            <p className="clb-eyebrow">Account Recovery</p>
+            <h1 className="mt-2 text-3xl font-bold md:text-5xl">Campus One manages passwords</h1>
             <p className="mt-4 text-sm leading-6 text-muted-foreground">
               This recovery link is only for local test accounts. For live Campus One access, continue with your Nile University account.
             </p>
@@ -79,7 +79,7 @@ export default function ResetPassword() {
             >
               Sign in with Campus One
             </Button>
-            <Link className="mt-5 inline-flex items-center justify-center gap-2 text-sm font-black underline underline-offset-4" to="/login">
+            <Link className="mt-5 inline-flex items-center justify-center gap-2 text-sm font-bold underline underline-offset-4" to="/login">
               <ArrowLeft className="h-4 w-4" />
               Back to sign in
             </Link>
@@ -93,9 +93,9 @@ export default function ResetPassword() {
   if (cookieAuthEnabled) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background p-6">
-        <div className="nh-card max-w-md bg-card p-6 text-center">
+        <div className="clb-card max-w-md bg-card p-6 text-center">
           <BrandLogo size="lg" variant="plain" className="mx-auto mb-4 h-20 w-72 max-w-full" />
-          <h1 className="text-2xl font-black uppercase">Opening account recovery</h1>
+          <h1 className="text-2xl font-bold">Opening account recovery</h1>
           <p className="mt-2 text-sm text-muted-foreground">Please wait while we send you to the shared portal.</p>
         </div>
       </main>
@@ -146,7 +146,7 @@ export default function ResetPassword() {
     <main className="flex min-h-screen flex-col bg-background text-foreground">
       <section className="flex flex-1 items-center justify-center p-5">
         <div className="w-full max-w-xl">
-          <Link className="mb-5 inline-flex items-center gap-2 text-sm font-black uppercase tracking-[0.12em]" to="/login">
+          <Link className="mb-5 inline-flex items-center gap-2 text-sm font-bold tracking-[0.12em]" to="/login">
             <ArrowLeft className="h-4 w-4" />
             Back to sign in
           </Link>
@@ -157,11 +157,11 @@ export default function ResetPassword() {
               variant="plain"
               className="mx-auto mb-4 h-24 w-[22rem] max-w-full sm:h-28 sm:w-[24rem]"
             />
-            <p className="nh-eyebrow">Account Recovery</p>
-            <h1 className="nh-title mt-2">Set New Password</h1>
+            <p className="clb-eyebrow">Account Recovery</p>
+            <h1 className="clb-title mt-2">Set New Password</h1>
           </div>
 
-        <form className="nh-card bg-card p-6 md:p-10" onSubmit={handleSubmit}>
+        <form className="clb-card bg-card p-6 md:p-10" onSubmit={handleSubmit}>
           <div className="mb-8 pb-6">
             <p className="mt-2 text-sm text-muted-foreground">
               Choose a new password for your Club Services account.
@@ -173,7 +173,7 @@ export default function ResetPassword() {
           ) : hasRecoverySession ? (
             <div className="space-y-6">
               <div className="space-y-2">
-                <Label className="font-black uppercase tracking-[0.12em]" htmlFor="new-password">
+                <Label className="font-bold tracking-[0.12em]" htmlFor="new-password">
                   New Password
                 </Label>
                 <div className="relative">
@@ -193,7 +193,7 @@ export default function ResetPassword() {
               </div>
 
               <div className="space-y-2">
-                <Label className="font-black uppercase tracking-[0.12em]" htmlFor="confirm-password">
+                <Label className="font-bold tracking-[0.12em]" htmlFor="confirm-password">
                   Confirm Password
                 </Label>
                 <Input
@@ -215,8 +215,8 @@ export default function ResetPassword() {
             </div>
           ) : (
             <div className="space-y-5">
-              <div className="border-2 border-destructive bg-destructive/10 p-5">
-                <p className="font-black uppercase text-destructive">Reset link unavailable</p>
+              <div className="border border-destructive bg-destructive/10 p-5">
+                <p className="font-bold text-destructive">Reset link unavailable</p>
                 <p className="mt-2 text-sm text-muted-foreground">
                   This reset link may have expired or already been used. Request a fresh link to continue.
                 </p>
@@ -227,7 +227,7 @@ export default function ResetPassword() {
             </div>
           )}
 
-          <div className="mt-8 flex items-start gap-3 border-2 border-foreground bg-muted p-4 text-xs text-muted-foreground">
+          <div className="mt-8 flex items-start gap-3 border border-border bg-muted p-4 text-xs text-muted-foreground">
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
             <p>After your password is updated, you will be signed out and asked to sign in again.</p>
           </div>

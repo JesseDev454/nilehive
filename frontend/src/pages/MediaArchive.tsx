@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, FileText, ImageIcon, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { DataPagination } from "@/components/DataPagination";
-import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -99,11 +99,11 @@ function ReportCard({
         <p className="text-sm text-muted-foreground line-clamp-3">{report.summary}</p>
 
         <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="nh-card-soft p-3">
+          <div className="clb-card p-3">
             <p className="text-xs text-muted-foreground">Attendance</p>
             <p className="font-semibold">{report.attendance_count}</p>
           </div>
-          <div className="nh-card-soft p-3">
+          <div className="clb-card p-3">
             <p className="text-xs text-muted-foreground">Budget Used</p>
             <p className="font-semibold">{formatCurrency(report.budget_used)}</p>
           </div>
@@ -457,20 +457,20 @@ export default function MediaArchive() {
 
   if (!canViewReports) {
     return (
-      <div className="nh-page">
-        <NeoPageHeader
+      <div className="clb-screen">
+        <ClublyPageHeader
           eyebrow="Archive"
           title="Reports & Media Archive"
           description="Post-event reports are available to presidents, advisors, and Club Services admins."
         />
-        <NeoStateCard icon={FileText} title="Report access is restricted" message="No report access for this role." />
+        <ClublyStateCard icon={FileText} title="Report access is restricted" message="No report access for this role." />
       </div>
     );
   }
 
   return (
-    <div className="nh-page">
-      <NeoPageHeader
+    <div className="clb-screen">
+      <ClublyPageHeader
         eyebrow="Archive"
         title="Reports & Media Archive"
         description="Document completed events and keep a central Club Services record."
@@ -482,7 +482,7 @@ export default function MediaArchive() {
             <CardTitle className="text-lg">Submit Post-Event Report</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmitReport} className="nh-form-grid">
+            <form onSubmit={handleSubmitReport} className="clb-form-grid">
               <div className="space-y-2 lg:col-span-2">
                 <Label htmlFor="proposal_id">Event</Label>
                 <Select value={proposalId} onValueChange={setProposalId}>
@@ -649,14 +649,14 @@ export default function MediaArchive() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <NeoLoadingState title="Loading report archive" message="We are gathering post-event records." compact />
+            <ClublyLoadingState title="Loading report archive" message="We are gathering post-event records." compact />
           ) : isError ? (
-            <div className="nh-empty border-destructive bg-destructive/5">
+            <div className="clb-empty border-destructive bg-destructive/5">
               <p className="font-medium">Unable to load reports</p>
               <p className="text-sm text-muted-foreground mt-1">{getErrorMessage(error)}</p>
             </div>
           ) : reports.length === 0 ? (
-            <div className="nh-empty">
+            <div className="clb-empty">
               <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
               <p className="font-medium">No event reports yet</p>
               <p className="text-sm text-muted-foreground mt-1">

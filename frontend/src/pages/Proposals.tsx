@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { FileText, Plus } from "lucide-react";
 import { DataPagination } from "@/components/DataPagination";
-import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -96,8 +96,8 @@ export default function Proposals() {
   }, [isAdmin, isPresident]);
 
   return (
-    <div className="nh-page">
-      <NeoPageHeader
+    <div className="clb-screen">
+      <ClublyPageHeader
         eyebrow={pageCopy.eyebrow}
         title={pageCopy.title}
         description={pageCopy.description}
@@ -133,38 +133,38 @@ export default function Proposals() {
       </div>
 
       {!canFetch ? (
-        <NeoStateCard
+        <ClublyStateCard
           icon={FileText}
           title="Proposal access is restricted"
           message="Presidents create proposals here, while advisors and Club Services review them. Executives can follow club work through tasks and events."
         />
       ) : isLoading ? (
-        <NeoLoadingState title="Loading proposals" message="We are getting the latest proposal updates." />
+        <ClublyLoadingState title="Loading proposals" message="We are getting the latest proposal updates." />
       ) : isError ? (
-        <NeoStateCard icon={FileText} title="Unable to load proposals" message={getErrorMessage(error)} tone="danger" />
+        <ClublyStateCard icon={FileText} title="Unable to load proposals" message={getErrorMessage(error)} tone="danger" />
       ) : proposals.length === 0 ? (
-        <NeoStateCard icon={FileText} title="No proposals yet" message="Your club's proposals will appear here once one has been started." />
+        <ClublyStateCard icon={FileText} title="No proposals yet" message="Your club's proposals will appear here once one has been started." />
       ) : (
         <Card>
           <CardContent className="p-0">
             <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b-2 border-foreground bg-primary text-primary-foreground">
-                    <th className="p-4 text-left text-xs font-black uppercase tracking-[0.14em]">Title</th>
-                    <th className="hidden p-4 text-left text-xs font-black uppercase tracking-[0.14em] md:table-cell">
+                  <tr className="border-b border-border/70 bg-primary text-primary-foreground">
+                    <th className="p-4 text-left text-xs font-bold tracking-[0.14em]">Title</th>
+                    <th className="hidden p-4 text-left text-xs font-bold tracking-[0.14em] md:table-cell">
                       {isAdmin ? "Club" : "Waiting On"}
                     </th>
-                    <th className="hidden p-4 text-left text-xs font-black uppercase tracking-[0.14em] sm:table-cell">Date</th>
-                    <th className="p-4 text-left text-xs font-black uppercase tracking-[0.14em]">Status</th>
-                    <th className="p-4 text-left text-xs font-black uppercase tracking-[0.14em]">Actions</th>
+                    <th className="hidden p-4 text-left text-xs font-bold tracking-[0.14em] sm:table-cell">Date</th>
+                    <th className="p-4 text-left text-xs font-bold tracking-[0.14em]">Status</th>
+                    <th className="p-4 text-left text-xs font-bold tracking-[0.14em]">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {proposals.map((proposal: ProposalRecord) => (
-                    <tr key={proposal.id} className="border-b-2 border-foreground transition-colors hover:bg-accent/25">
+                    <tr key={proposal.id} className="border-b border-border/70 transition-colors hover:bg-accent/25">
                       <td className="p-4">
-                        <Link to={`/proposals/${proposal.id}`} className="font-black hover:underline">
+                        <Link to={`/proposals/${proposal.id}`} className="font-bold hover:underline">
                           {proposal.title}
                         </Link>
                       </td>
@@ -197,13 +197,13 @@ export default function Proposals() {
             </div>
             <div className="space-y-4 p-4 md:hidden">
               {proposals.map((proposal: ProposalRecord) => (
-                <div key={proposal.id} className="nh-mobile-card">
+                <div key={proposal.id} className="clb-mobile-card">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <p className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">
+                      <p className="text-xs font-bold tracking-[0.16em] text-muted-foreground">
                         {getDateLabel(proposal.event_date)}
                       </p>
-                      <Link to={`/proposals/${proposal.id}`} className="mt-2 block text-lg font-black hover:underline">
+                      <Link to={`/proposals/${proposal.id}`} className="mt-2 block text-lg font-bold hover:underline">
                         {proposal.title}
                       </Link>
                     </div>

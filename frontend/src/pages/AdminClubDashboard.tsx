@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Banknote, CalendarDays, ClipboardList, FileText, MessageSquare, Users } from "lucide-react";
-import { NeoLoadingState, NeoMetricCard, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { ClublyLoadingState, ClublyMetricCard, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,7 +49,7 @@ function TaskBadge({ status }: { status: TaskRecord["status"] }) {
 function TaskList({ tasks }: { tasks: TaskRecord[] }) {
   if (!tasks.length) {
     return (
-      <div className="nh-empty">
+      <div className="clb-empty">
         <ClipboardList className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
         <p className="font-medium">No tasks assigned yet</p>
         <p className="mt-1 text-sm text-muted-foreground">President-assigned tasks will appear here for Club Services oversight.</p>
@@ -60,11 +60,11 @@ function TaskList({ tasks }: { tasks: TaskRecord[] }) {
   return (
     <div className="space-y-3">
       {tasks.map((task) => (
-        <div key={task.id} className="nh-list-card">
+        <div key={task.id} className="clb-list-card">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <p className="font-black uppercase">{task.title}</p>
+                <p className="font-bold">{task.title}</p>
                 <TaskBadge status={task.status} />
                 <Badge variant="outline" className="capitalize">{task.priority}</Badge>
               </div>
@@ -73,7 +73,7 @@ function TaskList({ tasks }: { tasks: TaskRecord[] }) {
               </p>
               {task.description ? <p className="mt-2 text-sm">{task.description}</p> : null}
             </div>
-            <p className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">
+            <p className="text-xs font-bold tracking-[0.12em] text-muted-foreground">
               Due {getDateLabel(task.due_date)}
             </p>
           </div>
@@ -101,26 +101,26 @@ export default function AdminClubDashboard() {
 
   if (role !== "admin") {
     return (
-      <div className="nh-page">
-        <NeoPageHeader eyebrow="Club Services" title="Club dashboard" description="This club operations view is for Club Services admins." />
-        <NeoStateCard icon={Users} title="Club dashboard access is restricted" message="Only Club Services admins can inspect all-club progress." />
+      <div className="clb-screen">
+        <ClublyPageHeader eyebrow="Club Services" title="Club dashboard" description="This club operations view is for Club Services admins." />
+        <ClublyStateCard icon={Users} title="Club dashboard access is restricted" message="Only Club Services admins can inspect all-club progress." />
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="nh-page">
-        <NeoLoadingState title="Loading club progress" message="We are gathering proposals, members, dues, tasks, reports, and feedback for this club." />
+      <div className="clb-screen">
+        <ClublyLoadingState title="Loading club progress" message="We are gathering proposals, members, dues, tasks, reports, and feedback for this club." />
       </div>
     );
   }
 
   if (isError || !dashboard) {
     return (
-      <div className="nh-page">
-        <NeoPageHeader eyebrow="Club Services" title="Club dashboard" description="We could not load this club operations view." />
-        <NeoStateCard icon={Users} title="Unable to load club dashboard" message={getErrorMessage(error)} />
+      <div className="clb-screen">
+        <ClublyPageHeader eyebrow="Club Services" title="Club dashboard" description="We could not load this club operations view." />
+        <ClublyStateCard icon={Users} title="Unable to load club dashboard" message={getErrorMessage(error)} />
       </div>
     );
   }
@@ -142,9 +142,9 @@ export default function AdminClubDashboard() {
   }
 
   return (
-    <div className="nh-page">
+    <div className="clb-screen">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <NeoPageHeader
+        <ClublyPageHeader
           eyebrow="Club Services Drilldown"
           title={club.name}
           description={`${club.code || "No club code"} - Full operations view for this club.`}
@@ -169,10 +169,10 @@ export default function AdminClubDashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <NeoMetricCard title="Active Members" value={`${summary.active_members}/${summary.total_members}`} icon={Users} tone="green" />
-        <NeoMetricCard title="Pending Proposals" value={summary.pending_proposals} icon={FileText} tone="gold" />
-        <NeoMetricCard title="Open Tasks" value={summary.open_tasks} icon={ClipboardList} tone="navy" />
-        <NeoMetricCard title="Dues Collected" value={formatCurrency(summary.dues_collected_amount)} icon={Banknote} tone="green" />
+        <ClublyMetricCard title="Active Members" value={`${summary.active_members}/${summary.total_members}`} icon={Users} tone="green" />
+        <ClublyMetricCard title="Pending Proposals" value={summary.pending_proposals} icon={FileText} tone="gold" />
+        <ClublyMetricCard title="Open Tasks" value={summary.open_tasks} icon={ClipboardList} tone="navy" />
+        <ClublyMetricCard title="Dues Collected" value={formatCurrency(summary.dues_collected_amount)} icon={Banknote} tone="green" />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
@@ -191,27 +191,27 @@ export default function AdminClubDashboard() {
             <CardTitle className="text-lg">Club Health</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="nh-list-card bg-primary text-primary-foreground">
-              <p className="text-xs font-black uppercase tracking-[0.12em] opacity-80">Overall health score</p>
+            <div className="clb-list-card bg-primary text-primary-foreground">
+              <p className="text-xs font-bold tracking-[0.12em] opacity-80">Overall health score</p>
               <div className="mt-2 flex items-end justify-between gap-4">
-                <p className="text-5xl font-black tracking-[-0.06em]">{summary.club_health_score}</p>
-                <p className="rounded-full border-2 border-primary-foreground px-3 py-1 text-xs font-black uppercase tracking-[0.08em]">
+                <p className="text-5xl font-bold tracking-[-0.06em]">{summary.club_health_score}</p>
+                <p className="rounded-full border border-primary-foreground px-3 py-1 text-xs font-bold tracking-[0.08em]">
                   {summary.club_health_label}
                 </p>
               </div>
             </div>
-            <div className="nh-list-card">
-              <p className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Dues collection</p>
-              <p className="mt-1 text-2xl font-black">{summary.dues_collection_rate}%</p>
+            <div className="clb-list-card">
+              <p className="text-xs font-bold tracking-[0.12em] text-muted-foreground">Dues collection</p>
+              <p className="mt-1 text-2xl font-bold">{summary.dues_collection_rate}%</p>
             </div>
-            <div className="nh-list-card">
-              <p className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Attendance health</p>
-              <p className="mt-1 text-2xl font-black">{summary.attendance_rate}%</p>
+            <div className="clb-list-card">
+              <p className="text-xs font-bold tracking-[0.12em] text-muted-foreground">Attendance health</p>
+              <p className="mt-1 text-2xl font-bold">{summary.attendance_rate}%</p>
               <p className="text-xs text-muted-foreground">{summary.event_attendance_count} attendance marks from {summary.event_rsvp_count} RSVP records.</p>
             </div>
-            <div className="nh-list-card">
-              <p className="text-xs font-black uppercase tracking-[0.12em] text-muted-foreground">Feedback</p>
-              <p className="mt-1 text-2xl font-black">{summary.feedback_count}</p>
+            <div className="clb-list-card">
+              <p className="text-xs font-bold tracking-[0.12em] text-muted-foreground">Feedback</p>
+              <p className="mt-1 text-2xl font-bold">{summary.feedback_count}</p>
               <p className="text-xs text-muted-foreground">Average rating {summary.average_rating ?? "-"}</p>
             </div>
           </CardContent>
@@ -224,15 +224,15 @@ export default function AdminClubDashboard() {
             <CardTitle className="text-lg">Proposal Progress</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="nh-list-card flex items-center justify-between">
+            <div className="clb-list-card flex items-center justify-between">
               <span>Total proposals</span>
               <strong>{summary.total_proposals}</strong>
             </div>
-            <div className="nh-list-card flex items-center justify-between">
+            <div className="clb-list-card flex items-center justify-between">
               <span>Events</span>
               <strong>{summary.approved_events}</strong>
             </div>
-            <div className="nh-list-card flex items-center justify-between">
+            <div className="clb-list-card flex items-center justify-between">
               <span>Missing reports</span>
               <strong>{summary.missing_reports}</strong>
             </div>
@@ -248,7 +248,7 @@ export default function AdminClubDashboard() {
               <p className="text-sm text-muted-foreground">No members are recorded yet.</p>
             ) : (
               visibleRecentMembers.map((member) => (
-                <div key={member.id} className="nh-list-card">
+                <div key={member.id} className="clb-list-card">
                   <p className="font-semibold">{member.full_name}</p>
                   <p className="text-xs text-muted-foreground">{member.student_id} - {member.club_role} - {member.membership_status}</p>
                 </div>
@@ -266,10 +266,10 @@ export default function AdminClubDashboard() {
               <p className="text-sm text-muted-foreground">No recent activity yet.</p>
             ) : (
               dashboard.recent_activity.slice(0, 6).map((activity) => (
-                <div key={activity.id} className="nh-list-card">
+                <div key={activity.id} className="clb-list-card">
                   <p className="font-semibold">{activity.title}</p>
                   <p className="text-xs text-muted-foreground">{activity.message}</p>
-                  <p className="mt-1 text-[11px] font-black uppercase tracking-[0.12em] text-primary">{getDateLabel(activity.created_at)}</p>
+                  <p className="mt-1 text-[11px] font-bold tracking-[0.12em] text-primary">{getDateLabel(activity.created_at)}</p>
                 </div>
               ))
             )}
@@ -282,19 +282,19 @@ export default function AdminClubDashboard() {
           <CardTitle className="text-lg">Events, Reports, And Feedback</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-3">
-          <div className="nh-list-card">
+          <div className="clb-list-card">
             <CalendarDays className="mb-2 h-5 w-5 text-primary" />
-            <p className="font-black">{summary.approved_events} event(s)</p>
+            <p className="font-bold">{summary.approved_events} event(s)</p>
             <p className="text-sm text-muted-foreground">Official events for this club.</p>
           </div>
-          <div className="nh-list-card">
+          <div className="clb-list-card">
             <FileText className="mb-2 h-5 w-5 text-primary" />
-            <p className="font-black">{summary.reports_submitted} report(s)</p>
+            <p className="font-bold">{summary.reports_submitted} report(s)</p>
             <p className="text-sm text-muted-foreground">Post-event documentation submitted.</p>
           </div>
-          <div className="nh-list-card">
+          <div className="clb-list-card">
             <MessageSquare className="mb-2 h-5 w-5 text-primary" />
-            <p className="font-black">{summary.feedback_count} feedback record(s)</p>
+            <p className="font-bold">{summary.feedback_count} feedback record(s)</p>
             <p className="text-sm text-muted-foreground">Student feedback captured after events.</p>
           </div>
         </CardContent>
