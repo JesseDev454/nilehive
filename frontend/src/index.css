@@ -6,6 +6,19 @@
   :root {
     --background: 36 36% 95%;
     --foreground: 24 10% 10%;
+    --clubly-accent: #6366F1;
+    --clubly-accent-d: #4F46E5;
+    --clubly-accent-soft: #EEF0FF;
+    --clubly-ink: #1C1917;
+    --clubly-body: #44403C;
+    --clubly-muted: #79716B;
+    --clubly-faint: #A8A29E;
+    --clubly-line: rgba(28, 25, 23, 0.08);
+    --clubly-line-2: rgba(28, 25, 23, 0.05);
+    --clubly-card-2: #FCFAF7;
+    --clubly-page: #F6F2EC;
+    --soft-sh: 0 4px 20px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02);
+    --lift-sh: 0 14px 36px rgba(0, 0, 0, 0.07), 0 3px 12px rgba(0, 0, 0, 0.03);
 
     --card: 0 0% 100%;
     --card-foreground: 24 10% 10%;
@@ -100,6 +113,7 @@
       radial-gradient(circle at bottom right, hsl(var(--warning) / 0.07), transparent 34rem);
     background-attachment: fixed;
     font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
+    color: var(--clubly-body);
   }
 
   h1,
@@ -108,16 +122,17 @@
   h4 {
     font-family: 'Epilogue', 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
     letter-spacing: -0.02em;
+    color: var(--clubly-ink);
   }
 }
 
 @layer components {
   .nh-page {
-    @apply mx-auto w-full max-w-7xl space-y-6 animate-slide-up;
+    @apply mx-auto w-full max-w-[1180px] space-y-6 animate-slide-up;
   }
 
   .nh-page-header {
-    @apply rounded-[24px] border border-border bg-card/90 px-5 py-4 shadow-soft backdrop-blur;
+    @apply rounded-[28px] border border-border/70 bg-card/90 px-5 py-5 shadow-soft backdrop-blur;
   }
 
   .nh-eyebrow {
@@ -129,11 +144,11 @@
   }
 
   .nh-card {
-    @apply rounded-[24px] border border-border bg-card shadow-soft;
+    @apply rounded-[24px] border border-border/70 bg-card shadow-soft;
   }
 
   .nh-card-soft {
-    @apply rounded-[20px] border border-border bg-card/80 shadow-soft-sm backdrop-blur;
+    @apply rounded-[22px] border border-border/70 bg-card/80 shadow-soft-sm backdrop-blur;
   }
 
   .nh-card-dark {
@@ -170,7 +185,7 @@
   }
 
   .nh-list-card {
-    @apply rounded-[20px] border border-border bg-card p-4 shadow-soft-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-soft;
+    @apply rounded-[22px] border border-border/70 bg-card p-4 shadow-soft-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-soft;
   }
 
   .nh-empty {
@@ -182,7 +197,7 @@
   }
 
   .nh-table-wrap {
-    @apply overflow-x-auto rounded-[24px] border border-border bg-card shadow-soft;
+    @apply overflow-x-auto rounded-[24px] border border-border/70 bg-card shadow-soft;
   }
 
   .nh-table {
@@ -274,6 +289,30 @@
   .club-logo-orbit-dot-sky {
     background: hsl(212 100% 28%);
   }
+
+  .clubly-main-pad {
+    transition: padding 180ms ease;
+  }
+
+  .clb-screen {
+    @apply mx-auto w-full max-w-[1180px] animate-slide-up;
+  }
+
+  .clb-panel {
+    @apply rounded-[24px] border border-border/70 bg-card shadow-soft;
+  }
+
+  .clb-panel-soft {
+    @apply rounded-[24px] border border-border/70 bg-card/80 shadow-soft-sm backdrop-blur;
+  }
+
+  .clb-press {
+    @apply transition duration-200 hover:-translate-y-0.5 active:translate-y-0;
+  }
+
+  .clb-card-h {
+    @apply transition duration-200 hover:-translate-y-0.5 hover:shadow-soft;
+  }
 }
 
 @layer utilities {
@@ -306,6 +345,27 @@
   }
   .animate-slide-up {
     animation: slideUp 0.3s ease-out;
+  }
+
+  [data-density="compact"] .clubly-main-pad {
+    @apply min-[921px]:pt-24;
+  }
+
+  [data-density="compact"] .nh-page {
+    @apply space-y-4;
+  }
+
+  [data-density="compact"] .nh-page-header,
+  [data-density="compact"] .nh-card,
+  [data-density="compact"] .nh-card-soft,
+  [data-density="compact"] .nh-list-card,
+  [data-density="compact"] .clb-panel,
+  [data-density="compact"] .clb-panel-soft {
+    @apply rounded-[20px];
+  }
+
+  [data-density="compact"] .nh-page-header {
+    @apply px-4 py-4;
   }
 }
 
