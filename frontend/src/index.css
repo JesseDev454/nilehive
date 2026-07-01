@@ -4,86 +4,101 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 215 50% 18%;
+    --background: 36 36% 95%;
+    --foreground: 24 10% 10%;
+    --clubly-accent: #6366F1;
+    --clubly-accent-d: #4F46E5;
+    --clubly-accent-soft: #EEF0FF;
+    --clubly-ink: #1C1917;
+    --clubly-body: #44403C;
+    --clubly-muted: #79716B;
+    --clubly-faint: #A8A29E;
+    --clubly-line: rgba(28, 25, 23, 0.08);
+    --clubly-line-2: rgba(28, 25, 23, 0.05);
+    --clubly-card-2: #FCFAF7;
+    --clubly-page: #F6F2EC;
+    --soft-sh: 0 4px 20px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02);
+    --lift-sh: 0 14px 36px rgba(0, 0, 0, 0.07), 0 3px 12px rgba(0, 0, 0, 0.03);
 
     --card: 0 0% 100%;
-    --card-foreground: 215 50% 18%;
+    --card-foreground: 24 10% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 50% 18%;
+    --popover-foreground: 24 10% 10%;
 
-    --primary: 215 55% 23%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 239 84% 67%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 160 84% 30%;
+    --secondary: 174 84% 32%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 210 20% 95%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 34 23% 91%;
+    --muted-foreground: 25 5% 45%;
 
-    --accent: 210 20% 93%;
-    --accent-foreground: 215 50% 18%;
+    --accent: 232 100% 97%;
+    --accent-foreground: 243 75% 59%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 61% 54%;
     --destructive-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
+    --warning: 28 91% 37%;
     --warning-foreground: 0 0% 100%;
 
-    --success: 160 84% 30%;
+    --success: 174 84% 32%;
     --success-foreground: 0 0% 100%;
 
-    --border: 214 20% 90%;
-    --input: 214 20% 90%;
-    --ring: 215 55% 23%;
+    --border: 24 14% 84%;
+    --input: 24 10% 78%;
+    --ring: 239 84% 67%;
+    --neo-shadow: 24 10% 10%;
 
-    --radius: 0.625rem;
+    --radius: 1rem;
 
-    --sidebar-background: 215 55% 23%;
-    --sidebar-foreground: 210 40% 90%;
-    --sidebar-primary: 210 40% 98%;
-    --sidebar-primary-foreground: 215 55% 23%;
-    --sidebar-accent: 215 50% 30%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 215 45% 30%;
-    --sidebar-ring: 210 40% 98%;
-    --sidebar-muted: 215 40% 35%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 24 10% 10%;
+    --sidebar-primary: 239 84% 67%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 232 100% 97%;
+    --sidebar-accent-foreground: 243 75% 59%;
+    --sidebar-border: 24 14% 84%;
+    --sidebar-ring: 239 84% 67%;
+    --sidebar-muted: 34 23% 91%;
   }
 
   .dark {
-    --background: 215 50% 8%;
+    --background: 220 52% 10%;
     --foreground: 210 40% 98%;
-    --card: 215 50% 10%;
+    --card: 220 43% 13%;
     --card-foreground: 210 40% 98%;
-    --popover: 215 50% 10%;
+    --popover: 220 43% 13%;
     --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 215 55% 23%;
-    --secondary: 160 84% 30%;
-    --secondary-foreground: 0 0% 100%;
-    --muted: 217 33% 17%;
+    --primary: 212 100% 22%;
+    --primary-foreground: 222 39% 10%;
+    --secondary: 107 45% 54%;
+    --secondary-foreground: 220 100% 6%;
+    --muted: 221 28% 20%;
     --muted-foreground: 215 20% 65%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 199 70% 72%;
+    --accent-foreground: 220 100% 6%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-    --success: 160 84% 30%;
-    --success-foreground: 0 0% 100%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 213 27% 84%;
-    --sidebar-background: 215 55% 12%;
+    --warning: 199 70% 72%;
+    --warning-foreground: 220 100% 6%;
+    --success: 107 45% 54%;
+    --success-foreground: 220 100% 6%;
+    --border: 220 28% 22%;
+    --input: 220 28% 22%;
+    --ring: 107 45% 54%;
+    --neo-shadow: 220 100% 3%;
+    --sidebar-background: 220 52% 10%;
     --sidebar-foreground: 210 40% 90%;
     --sidebar-primary: 210 40% 98%;
-    --sidebar-primary-foreground: 215 55% 23%;
-    --sidebar-accent: 215 50% 20%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 215 45% 20%;
-    --sidebar-ring: 210 40% 98%;
-    --sidebar-muted: 215 40% 25%;
+    --sidebar-primary-foreground: 220 52% 10%;
+    --sidebar-accent: 107 45% 54%;
+    --sidebar-accent-foreground: 220 100% 6%;
+    --sidebar-border: 220 28% 22%;
+    --sidebar-ring: 107 45% 54%;
+    --sidebar-muted: 220 34% 24%;
   }
 }
 
@@ -93,16 +108,240 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--clubly-page);
+    font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
+    color: var(--clubly-body);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: 'Epilogue', 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
+    letter-spacing: -0.02em;
+    color: var(--clubly-ink);
+  }
+}
+
+@layer components {
+  .clb-screen {
+    @apply mx-auto w-full max-w-[1180px] space-y-6 animate-slide-up;
+  }
+
+  .clb-hero {
+    @apply flex flex-col gap-5 rounded-[28px] border border-border/70 bg-card/85 px-5 py-5 shadow-soft backdrop-blur md:flex-row md:items-end md:justify-between md:px-6 md:py-6;
+  }
+
+  .clb-eyebrow {
+    @apply text-xs font-semibold tracking-[0.14em] text-muted-foreground;
+  }
+
+  .clb-title {
+    @apply text-4xl font-bold leading-tight tracking-[-0.03em] text-foreground md:text-5xl;
+  }
+
+  .clb-card {
+    @apply rounded-[24px] border border-border/70 bg-card text-card-foreground shadow-soft transition duration-200;
+  }
+
+  .clb-panel-title {
+    @apply text-sm font-semibold tracking-tight text-foreground;
+  }
+
+  .clb-action-strip {
+    @apply rounded-[20px] border border-primary/20 bg-primary p-4 text-primary-foreground shadow-soft;
+  }
+
+  .clb-command-panel {
+    @apply relative overflow-hidden rounded-[28px] border border-primary/15 bg-primary p-6 text-primary-foreground shadow-soft-lg md:p-7;
+  }
+
+  .clb-command-panel::after {
+    content: "";
+    @apply pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-white/10 blur-2xl;
+  }
+
+  .clb-section-grid {
+    @apply grid gap-6 xl:grid-cols-[420px_1fr];
+  }
+
+  .clb-metric-grid {
+    @apply grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4;
+  }
+
+  .clb-mobile-card {
+    @apply rounded-[20px] border border-border bg-card p-4 shadow-soft-sm;
+  }
+
+  .clb-list-card {
+    @apply rounded-[22px] border border-border/70 bg-card p-4 shadow-soft-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-soft;
+  }
+
+  .clb-empty {
+    @apply rounded-[24px] border border-dashed border-border/80 bg-card/70 p-8 text-center shadow-soft-sm;
+  }
+
+  .clb-status {
+    @apply inline-flex items-center rounded-full border border-current px-2.5 py-1 text-[11px] font-semibold tracking-wide;
+  }
+
+  .clb-table-wrap {
+    @apply overflow-x-auto rounded-[24px] border border-border/70 bg-card shadow-soft;
+  }
+
+  .clb-table {
+    @apply w-full text-sm;
+  }
+
+  .clb-table th {
+    @apply border-b border-border bg-muted/50 p-3 text-left text-xs font-semibold tracking-wide text-muted-foreground;
+  }
+
+  .clb-table td {
+    @apply border-b border-border p-3 align-top;
+  }
+
+  .clb-form-grid {
+    @apply grid grid-cols-1 gap-4 lg:grid-cols-2;
+  }
+
+  .club-logo-orbit {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    height: 6.75rem;
+    width: 6.75rem;
+    place-items: center;
+  }
+
+  .club-logo-core {
+    position: absolute;
+    inset: 1.25rem;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid hsl(var(--sidebar-border));
+    border-radius: 9999px;
+    background: hsl(var(--primary));
+    color: hsl(var(--primary-foreground));
+    box-shadow: 0 4px 20px hsl(var(--neo-shadow) / 0.04), 0 1px 3px hsl(var(--neo-shadow) / 0.03);
+  }
+
+  .club-logo-orbit-ring {
+    position: absolute;
+    border-radius: 9999px;
+    border: 1px solid hsl(var(--sidebar-border) / 0.5);
+    pointer-events: none;
+    animation: clubLogoOrbit 7.5s linear infinite;
+  }
+
+  .club-logo-orbit-ring-primary {
+    inset: 0.28rem;
+    border-color: hsl(var(--secondary) / 0.58);
+  }
+
+  .club-logo-orbit-ring-secondary {
+    inset: -0.1rem;
+    border-color: hsl(var(--accent) / 0.72);
+    animation-duration: 10s;
+    animation-direction: reverse;
+  }
+
+  .club-logo-orbit-ring-tertiary {
+    inset: 0.48rem;
+    border-style: dashed;
+    border-color: hsl(212 100% 28% / 0.52);
+    animation-duration: 5.75s;
+  }
+
+  .club-logo-orbit-dot {
+    position: absolute;
+    top: 50%;
+    right: -0.18rem;
+    height: 0.48rem;
+    width: 0.48rem;
+    border: 1px solid hsl(var(--sidebar-border));
+    border-radius: 9999px;
+    box-shadow: 0 2px 8px hsl(var(--neo-shadow) / 0.05);
+    transform: translateY(-50%);
+  }
+
+  .club-logo-orbit-dot-green {
+    background: hsl(var(--secondary));
+  }
+
+  .club-logo-orbit-dot-blue {
+    background: hsl(var(--accent));
+  }
+
+  .club-logo-orbit-dot-sky {
+    background: hsl(212 100% 28%);
+  }
+
+  .clubly-main-pad {
+    transition: padding 180ms ease;
+  }
+
+  .clb-panel {
+    @apply rounded-[24px] border border-border/70 bg-card shadow-soft;
+  }
+
+  .clb-panel-soft {
+    @apply rounded-[24px] border border-border/70 bg-card/80 shadow-soft-sm backdrop-blur;
+  }
+
+  .clb-press {
+    @apply transition duration-200 hover:-translate-y-0.5 active:translate-y-0;
+  }
+
+  .clb-card-h {
+    @apply transition duration-200 hover:-translate-y-0.5 hover:shadow-soft;
   }
 }
 
 @layer utilities {
+  [class*="hover:shadow-"]:hover {
+    box-shadow: 0 12px 32px hsl(var(--neo-shadow) / 0.07), 0 2px 6px hsl(var(--neo-shadow) / 0.03) !important;
+  }
+
+  [class*="hover:translate-x-1"]:hover,
+  [class*="hover:translate-y-1"]:hover,
+  [class*="hover:translate-x-0.5"]:hover,
+  [class*="hover:translate-y-0.5"]:hover {
+    transform: translateY(-0.125rem) !important;
+  }
+
   .animate-fade-in {
     animation: fadeIn 0.3s ease-out;
   }
   .animate-slide-up {
     animation: slideUp 0.3s ease-out;
+  }
+
+  .animate-clubly-progress {
+    animation: clublyProgress 1.45s ease-in-out infinite;
+  }
+
+  [data-density="compact"] .clubly-main-pad {
+    @apply min-[921px]:pt-24;
+  }
+
+  [data-density="compact"] .clb-screen {
+    @apply space-y-4;
+  }
+
+  [data-density="compact"] .clb-hero,
+  [data-density="compact"] .clb-card,
+  [data-density="compact"] .clb-card,
+  [data-density="compact"] .clb-list-card,
+  [data-density="compact"] .clb-panel,
+  [data-density="compact"] .clb-panel-soft {
+    @apply rounded-[20px];
+  }
+
+  [data-density="compact"] .clb-hero {
+    @apply px-4 py-4;
   }
 }
 
@@ -114,4 +353,22 @@
 @keyframes slideUp {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes clublyProgress {
+  0% { transform: translateX(-120%); }
+  50% { transform: translateX(90%); }
+  100% { transform: translateX(260%); }
+}
+
+@keyframes clubLogoOrbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .club-logo-orbit-ring {
+    animation: none;
+  }
 }

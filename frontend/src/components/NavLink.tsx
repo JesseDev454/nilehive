@@ -6,16 +6,21 @@ interface NavLinkCompatProps extends Omit<NavLinkProps, "className"> {
   className?: string;
   activeClassName?: string;
   pendingClassName?: string;
+  activeOverride?: boolean;
 }
 
 const NavLink = forwardRef<HTMLAnchorElement, NavLinkCompatProps>(
-  ({ className, activeClassName, pendingClassName, to, ...props }, ref) => {
+  ({ className, activeClassName, pendingClassName, activeOverride, to, ...props }, ref) => {
     return (
       <RouterNavLink
         ref={ref}
         to={to}
         className={({ isActive, isPending }) =>
-          cn(className, isActive && activeClassName, isPending && pendingClassName)
+          cn(
+            className,
+            (typeof activeOverride === "boolean" ? activeOverride : isActive) && activeClassName,
+            isPending && pendingClassName
+          )
         }
         {...props}
       />

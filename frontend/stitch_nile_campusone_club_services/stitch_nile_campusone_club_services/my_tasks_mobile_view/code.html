@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>My Tasks - NileClubs</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary-container": "#247114",
+                    "surface-dim": "#d8dadc",
+                    "secondary-fixed": "#a4f78a",
+                    "on-error-container": "#93000a",
+                    "tertiary-fixed-dim": "#a1cde3",
+                    "surface-variant": "#e0e3e5",
+                    "primary-container": "#002147",
+                    "tertiary": "#000d13",
+                    "inverse-primary": "#aec7f6",
+                    "surface-bright": "#f7f9fb",
+                    "on-secondary-fixed": "#022100",
+                    "surface-container": "#eceef0",
+                    "surface": "#f7f9fb",
+                    "secondary": "#1f6d0f",
+                    "primary-fixed-dim": "#aec7f6",
+                    "outline-variant": "#c4c6cf",
+                    "surface-container-lowest": "#ffffff",
+                    "inverse-on-surface": "#eff1f3",
+                    "tertiary-fixed": "#bee9ff",
+                    "on-tertiary-fixed": "#001f2a",
+                    "on-primary-fixed-variant": "#2d476f",
+                    "on-error": "#ffffff",
+                    "error": "#ba1a1a",
+                    "tertiary-container": "#002532",
+                    "surface-container-low": "#f2f4f6",
+                    "inverse-surface": "#2d3133",
+                    "outline": "#74777f",
+                    "error-container": "#ffdad6",
+                    "background": "#f7f9fb",
+                    "on-surface-variant": "#44474e",
+                    "primary-fixed": "#d6e3ff",
+                    "on-tertiary": "#ffffff",
+                    "surface-container-high": "#e6e8ea",
+                    "on-surface": "#191c1e",
+                    "on-secondary": "#ffffff",
+                    "secondary-fixed-dim": "#89da71",
+                    "secondary-container": "#a1f487",
+                    "on-tertiary-container": "#648fa3",
+                    "on-tertiary-fixed-variant": "#1e4c5f",
+                    "on-primary-fixed": "#001b3d",
+                    "primary": "#000a1e",
+                    "on-secondary-fixed-variant": "#0b5300",
+                    "on-primary-container": "#708ab5",
+                    "on-primary": "#ffffff",
+                    "on-background": "#191c1e",
+                    "surface-tint": "#465f88",
+                    "surface-container-highest": "#e0e3e5"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "container-padding": "24px",
+                    "shadow-offset": "6px",
+                    "border-width": "3px",
+                    "base": "8px",
+                    "gutter": "20px"
+            },
+            "fontFamily": {
+                    "display": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "body-md": ["Plus Jakarta Sans"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "label-sm": ["Plus Jakarta Sans"],
+                    "label-bold": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "display": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                    "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "700" }],
+                    "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                    "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "500" }],
+                    "label-sm": ["12px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                    "label-bold": ["14px", { "lineHeight": "1.4", "fontWeight": "700" }],
+                    "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700" }]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body-md min-h-screen pb-[80px]">
+<!-- TopAppBar -->
+<header class="sticky top-0 w-full bg-background dark:bg-background border-b-[3px] border-primary dark:border-primary-fixed shadow-[6px_6px_0px_0px_rgba(0,10,30,1)] flex items-center justify-between px-gutter py-4 z-50">
+<div class="text-headline-md font-display font-extrabold text-primary dark:text-primary-fixed">NileClubs</div>
+<div class="flex items-center space-x-4">
+<span class="material-symbols-outlined text-primary cursor-pointer active:scale-95 transition-all text-[24px]">notifications</span>
+<span class="material-symbols-outlined text-primary cursor-pointer active:scale-95 transition-all text-[24px]">account_circle</span>
+</div>
+</header>
+<!-- Main Content -->
+<main class="p-gutter space-y-6">
+<!-- Page Title & Filters -->
+<div class="flex justify-between items-end mb-8 mt-4">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-primary">My Tasks</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">4 Pending • 2 High Priority</p>
+</div>
+<button class="bg-surface-container-lowest border-[3px] border-primary rounded-xl px-4 py-2 font-label-bold text-label-bold text-primary shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,10,30,1)] transition-all active:scale-95 flex items-center space-x-2">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+<span>Filter</span>
+</button>
+</div>
+<!-- Task List -->
+<div class="space-y-6">
+<!-- Task Card 1 (Collapsed) -->
+<div class="bg-surface-container-lowest rounded-[28px] border-[3px] border-primary shadow-[6px_6px_0px_0px_rgba(0,10,30,1)] p-container-padding relative">
+<!-- Achievement Chip (Category) -->
+<div class="absolute -top-[16px] left-[24px] bg-tertiary-fixed text-on-tertiary-fixed font-label-bold text-label-bold px-3 py-1 rounded-full border-[3px] border-primary flex items-center space-x-1">
+<span class="material-symbols-outlined text-[14px]">payments</span>
+<span>Finance</span>
+</div>
+<div class="flex justify-between items-start mt-2">
+<div class="pr-4">
+<h3 class="font-body-lg text-body-lg text-primary font-bold">Approve Fall Semester Budget</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1 line-clamp-1">Review the proposed budget for the Photography Club before Friday.</p>
+</div>
+<!-- Priority Badge -->
+<div class="bg-error-container text-on-error-container font-label-sm text-label-sm px-2 py-1 rounded-md border-[2px] border-primary flex-shrink-0 flex items-center">
+<span class="material-symbols-outlined text-[12px] mr-1">flag</span> High
+                    </div>
+</div>
+<div class="flex items-center mt-4 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px] mr-1">calendar_today</span>
+<span class="font-label-sm text-label-sm">Due: Tomorrow, 5:00 PM</span>
+</div>
+</div>
+<!-- Task Card 2 (Expanded) -->
+<div class="bg-surface-container-lowest rounded-[28px] border-[3px] border-primary shadow-[6px_6px_0px_0px_rgba(0,10,30,1)] p-container-padding relative">
+<!-- Achievement Chip (Category) -->
+<div class="absolute -top-[16px] left-[24px] bg-secondary-container text-on-secondary-container font-label-bold text-label-bold px-3 py-1 rounded-full border-[3px] border-primary flex items-center space-x-1">
+<span class="material-symbols-outlined text-[14px]">event</span>
+<span>Events</span>
+</div>
+<div class="flex justify-between items-start mt-2">
+<div class="pr-4">
+<h3 class="font-body-lg text-body-lg text-primary font-bold">Tech Symposium Logistics</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mt-2">Finalize the speaker lineup and confirm catering numbers for the main event hall.</p>
+</div>
+<!-- Priority Badge -->
+<div class="bg-surface-variant text-on-surface-variant font-label-sm text-label-sm px-2 py-1 rounded-md border-[2px] border-primary flex-shrink-0 flex items-center">
+<span class="material-symbols-outlined text-[12px] mr-1">flag</span> Med
+                    </div>
+</div>
+<div class="flex items-center mt-3 text-on-surface-variant mb-4">
+<span class="material-symbols-outlined text-[16px] mr-1">calendar_today</span>
+<span class="font-label-sm text-label-sm">Due: Oct 15</span>
+</div>
+<!-- Checklist (Expanded content) -->
+<div class="bg-surface-bright rounded-xl border-[2px] border-primary p-4 mb-4 space-y-3">
+<h4 class="font-label-bold text-label-bold text-primary mb-2">Checklist (2/3)</h4>
+<label class="flex items-start space-x-3 cursor-pointer">
+<div class="w-6 h-6 border-[2px] border-primary rounded flex items-center justify-center bg-secondary text-on-secondary shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px] font-bold">check</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant line-through">Confirm Keynote Speaker</span>
+</label>
+<label class="flex items-start space-x-3 cursor-pointer">
+<div class="w-6 h-6 border-[2px] border-primary rounded flex items-center justify-center bg-secondary text-on-secondary shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[16px] font-bold">check</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant line-through">Book Main Hall A</span>
+</label>
+<label class="flex items-start space-x-3 cursor-pointer">
+<div class="w-6 h-6 border-[2px] border-primary rounded flex items-center justify-center bg-surface-container-lowest shrink-0 mt-0.5">
+<!-- empty checkbox -->
+</div>
+<span class="font-body-md text-body-md text-primary font-medium">Finalize Catering Order (150 pax)</span>
+</label>
+</div>
+<!-- Expanded Actions -->
+<div class="flex space-x-3 mt-4">
+<button class="flex-1 bg-secondary text-on-secondary font-label-bold text-label-bold py-3 rounded-xl border-[3px] border-primary shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,10,30,1)] active:scale-95 transition-all flex justify-center items-center space-x-2">
+<span class="material-symbols-outlined">done_all</span>
+<span>Mark Complete</span>
+</button>
+</div>
+</div>
+<!-- Task Card 3 (Collapsed) -->
+<div class="bg-surface-container-lowest rounded-[28px] border-[3px] border-primary shadow-[6px_6px_0px_0px_rgba(0,10,30,1)] p-container-padding relative opacity-60">
+<!-- Achievement Chip (Category) -->
+<div class="absolute -top-[16px] left-[24px] bg-primary-container text-on-primary-container font-label-bold text-label-bold px-3 py-1 rounded-full border-[3px] border-primary flex items-center space-x-1">
+<span class="material-symbols-outlined text-[14px]">groups</span>
+<span>Clubs</span>
+</div>
+<div class="flex justify-between items-start mt-2">
+<div class="pr-4">
+<h3 class="font-body-lg text-body-lg text-primary font-bold line-through">Review New Club Charters</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1 line-clamp-1 line-through">Read through the 3 new applications for student organizations.</p>
+</div>
+<!-- Priority Badge -->
+<div class="bg-surface-variant text-on-surface-variant font-label-sm text-label-sm px-2 py-1 rounded-md border-[2px] border-primary flex-shrink-0 flex items-center">
+<span class="material-symbols-outlined text-[12px] mr-1">check</span> Done
+                    </div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="lg:hidden fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center bg-surface-container-lowest pb-safe px-4 h-16 border-t-[3px] border-primary rounded-t-xl shadow-[0px_-4px_0px_0px_rgba(0,10,30,0.1)]">
+<div class="text-on-surface-variant flex flex-col items-center py-2 hover:text-primary active:scale-90 transition-transform cursor-pointer">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-sm text-label-sm mt-1">Home</span>
+</div>
+<div class="text-on-surface-variant flex flex-col items-center py-2 hover:text-primary active:scale-90 transition-transform cursor-pointer">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+<span class="font-label-sm text-label-sm mt-1">Clubs</span>
+</div>
+<div class="text-on-surface-variant flex flex-col items-center py-2 hover:text-primary active:scale-90 transition-transform cursor-pointer">
+<span class="material-symbols-outlined" data-icon="event">event</span>
+<span class="font-label-sm text-label-sm mt-1">Events</span>
+</div>
+<div class="bg-secondary-container text-on-secondary-container rounded-full px-4 py-1 border-[2px] border-primary flex flex-col items-center cursor-pointer">
+<span class="material-symbols-outlined icon-fill" data-icon="person">person</span>
+<span class="font-label-sm text-label-sm mt-1 font-bold">Profile</span>
+</div>
+</nav>
+</body></html>

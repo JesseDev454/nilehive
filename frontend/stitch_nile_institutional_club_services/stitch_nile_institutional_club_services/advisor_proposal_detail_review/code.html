@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Advisor Proposal Detail Review</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@700;900&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-high": "#eee8da",
+                        "on-surface-variant": "#44474d",
+                        "error-container": "#ffdad6",
+                        "outline-variant": "#c4c6ce",
+                        "surface-dim": "#dfdacc",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-bright": "#fff9eb",
+                        "surface-container-low": "#f9f3e5",
+                        "primary": "#00030c",
+                        "outline": "#74777e",
+                        "tertiary-fixed": "#ffdeaa",
+                        "on-tertiary-fixed": "#271900",
+                        "inverse-primary": "#b4c7ec",
+                        "on-surface": "#1d1c13",
+                        "on-tertiary-fixed-variant": "#5f4100",
+                        "secondary-fixed-dim": "#85d7b4",
+                        "on-primary-fixed": "#051b38",
+                        "secondary-container": "#a0f3cf",
+                        "tertiary-fixed-dim": "#f5bd58",
+                        "inverse-surface": "#333027",
+                        "surface-container": "#f3eddf",
+                        "on-primary-container": "#7386a8",
+                        "surface-variant": "#e8e2d4",
+                        "surface-tint": "#4c5f7f",
+                        "secondary": "#0c6b4f",
+                        "on-secondary-container": "#187255",
+                        "inverse-on-surface": "#f6f0e2",
+                        "on-error-container": "#93000a",
+                        "tertiary-container": "#291a00",
+                        "on-primary-fixed-variant": "#354766",
+                        "tertiary": "#040200",
+                        "on-background": "#1d1c13",
+                        "secondary-fixed": "#a0f3cf",
+                        "primary-fixed": "#d6e3ff",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#ac7c1a",
+                        "on-error": "#ffffff",
+                        "surface-container-highest": "#e8e2d4",
+                        "on-primary": "#ffffff",
+                        "surface": "#fff9eb",
+                        "on-secondary-fixed-variant": "#00513b",
+                        "primary-fixed-dim": "#b4c7ec",
+                        "primary-container": "#071d3a",
+                        "on-secondary-fixed": "#002116",
+                        "background": "#fff9eb",
+                        "error": "#ba1a1a"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0px",
+                        "lg": "0px",
+                        "xl": "0px",
+                        "full": "0px"
+                    },
+                    "spacing": {},
+                    "fontFamily": {
+                        "headline": ["Work Sans"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        @layer utilities {
+            .brutalist-shadow {
+                box-shadow: 4px 4px 0px 0px theme('colors.primary');
+            }
+            .brutalist-shadow-sm {
+                box-shadow: 2px 2px 0px 0px theme('colors.primary');
+            }
+            .brutalist-border {
+                border: 2px solid theme('colors.primary');
+            }
+            .brutalist-border-thick {
+                border: 3px solid theme('colors.primary');
+            }
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased min-h-screen flex">
+<!-- TopAppBar (Mobile Only) -->
+<header class="md:hidden flex justify-between items-center w-full px-6 h-16 bg-[#fff9eb] border-b-2 border-[#00030c] font-['Work_Sans'] font-black uppercase tracking-tighter text-[#00030c] fixed top-0 z-50">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-2xl">school</span>
+<span class="text-xl">NILE UNIVERSITY</span>
+</div>
+<div class="flex gap-4">
+<span class="material-symbols-outlined hover:bg-[#e8e2d4] transition-colors p-2 cursor-pointer">notifications</span>
+<span class="material-symbols-outlined hover:bg-[#e8e2d4] transition-colors p-2 cursor-pointer">account_circle</span>
+</div>
+</header>
+<!-- SideNavBar (Web Only) -->
+<nav class="hidden md:flex flex-col fixed left-0 top-0 h-screen w-64 border-r-3 border-[#00030c] bg-[#071D3A] text-white shadow-[4px_0px_0px_0px_#00030c] z-40">
+<div class="p-6 border-b-2 border-[#00030c] bg-primary">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-3xl">school</span>
+<span class="font-headline font-bold text-lg leading-tight uppercase">NILE UNIVERSITY</span>
+</div>
+<div class="flex items-center gap-3">
+<img alt="User Profile Avatar" class="w-10 h-10 border-2 border-white" data-alt="professional portrait of an academic advisor in a campus setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPBO-UOU-UsYL_BGquSlt6K_T1iyzYplsvONxfAq6aZ4eVLwYmnxixNRpexzhA8rZgGBXTaQ30oOjyjdrPPNRDtklmqJ4NMVyyrpx8TVyIQJ5ZqQoY0m14K58axWX0ETo6Zy0zc3xEIeykU_qeIhzASAxqSdc1DYyVcLmUSQG4Gc1gLEtYDDhiK64exPOYuzKZTPDyw-DoyIDkrQOj6VN8-j8PnHbPV6eldC8sj8jiNxhEXJGLoCbwsIirl0t8oUrHQeCLiWoHGUTu"/>
+<div>
+<div class="font-bold text-sm">Institutional Portal</div>
+<div class="text-xs text-outline-variant">Role: Executive Administrator</div>
+</div>
+</div>
+</div>
+<div class="flex-1 py-6 overflow-y-auto font-['Inter'] font-medium text-sm tracking-wide">
+<a class="flex items-center gap-3 text-slate-300 hover:text-white hover:bg-[#00030c] hover:text-[#fff9eb] px-4 py-3 transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 text-slate-300 hover:text-white hover:bg-[#00030c] hover:text-[#fff9eb] px-4 py-3 transition-colors" href="#">
+<span class="material-symbols-outlined">groups</span>
+                Club Directory
+            </a>
+<a class="flex items-center gap-3 bg-[#0c6b4f] text-white border-2 border-[#00030c] shadow-[2px_2px_0px_0px_#00030c] mx-2 px-4 py-3 transform scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined">description</span>
+                Proposal Inbox
+            </a>
+<a class="flex items-center gap-3 text-slate-300 hover:text-white hover:bg-[#00030c] hover:text-[#fff9eb] px-4 py-3 transition-colors" href="#">
+<span class="material-symbols-outlined">person_search</span>
+                Member Registry
+            </a>
+<a class="flex items-center gap-3 text-slate-300 hover:text-white hover:bg-[#00030c] hover:text-[#fff9eb] px-4 py-3 transition-colors" href="#">
+<span class="material-symbols-outlined">admin_panel_settings</span>
+                Admin Panel
+            </a>
+</div>
+<div class="p-6 border-t-2 border-[#00030c] bg-primary">
+<button class="w-full bg-[#fff9eb] text-primary brutalist-border brutalist-shadow-sm py-3 font-bold uppercase tracking-wider hover:translate-y-0.5 hover:shadow-none transition-all">
+                New Proposal
+            </button>
+</div>
+</nav>
+<!-- Main Canvas -->
+<main class="flex-1 md:ml-64 pt-16 md:pt-0 min-h-screen bg-surface flex flex-col">
+<!-- Top App Bar equivalent for Web Content Area -->
+<div class="hidden md:flex justify-between items-center px-8 py-6 border-b-3 border-primary bg-surface-bright">
+<div class="flex items-center gap-4 text-sm font-bold tracking-wide uppercase text-outline">
+<a class="hover:text-primary transition-colors" href="#">Proposal Inbox</a>
+<span class="material-symbols-outlined text-sm">chevron_right</span>
+<span class="text-primary">PRP-2023-089</span>
+</div>
+<div class="flex gap-4">
+<button class="material-symbols-outlined p-2 brutalist-border hover:bg-surface-variant transition-colors">print</button>
+<button class="material-symbols-outlined p-2 brutalist-border hover:bg-surface-variant transition-colors">share</button>
+</div>
+</div>
+<div class="p-4 md:p-8 flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-7xl mx-auto w-full">
+<!-- Left Column: Content Canvas -->
+<div class="lg:col-span-8 flex flex-col gap-8">
+<!-- Hero Header -->
+<div class="bg-surface-container-highest brutalist-border brutalist-shadow p-6 md:p-8 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-tertiary opacity-10 translate-x-8 -translate-y-8 rotate-12"></div>
+<div class="flex flex-wrap items-center gap-3 mb-4">
+<span class="bg-tertiary-fixed-dim text-on-tertiary-fixed brutalist-border px-2 py-1 text-xs font-bold uppercase tracking-widest">Pending Review</span>
+<span class="text-sm font-medium text-outline">Submitted: Oct 12, 2023</span>
+</div>
+<h1 class="font-headline font-black text-4xl md:text-5xl tracking-tighter text-primary mb-2 uppercase leading-none">Annual Tech Symposium</h1>
+<p class="text-xl font-medium text-on-surface-variant">Computer Science Society</p>
+</div>
+<!-- Bento Grid Layout for Details -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<!-- Event Objectives -->
+<div class="md:col-span-2 bg-surface-container-lowest brutalist-border">
+<div class="bg-primary-container text-on-primary border-b-2 border-primary px-6 py-4 flex items-center gap-3">
+<span class="material-symbols-outlined">target</span>
+<h2 class="font-headline font-bold text-lg uppercase tracking-wide">Event Objectives</h2>
+</div>
+<div class="p-6">
+<p class="text-body-lg leading-relaxed mb-4">
+                                The Annual Tech Symposium aims to bridge the gap between theoretical academic knowledge and practical industry applications. We intend to host 3 keynote speakers, 4 hands-on workshops, and a networking mixer for over 200 students.
+                            </p>
+<div class="flex flex-wrap gap-2">
+<span class="bg-surface-variant text-on-surface brutalist-border px-3 py-1 text-sm font-semibold">Networking</span>
+<span class="bg-surface-variant text-on-surface brutalist-border px-3 py-1 text-sm font-semibold">Skill Building</span>
+<span class="bg-surface-variant text-on-surface brutalist-border px-3 py-1 text-sm font-semibold">Industry Outreach</span>
+</div>
+</div>
+</div>
+<!-- Schedule -->
+<div class="bg-surface-container-lowest brutalist-border">
+<div class="bg-surface-container-highest border-b-2 border-primary px-6 py-4 flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">calendar_month</span>
+<h2 class="font-headline font-bold text-lg uppercase tracking-wide text-primary">Schedule</h2>
+</div>
+<div class="p-6">
+<div class="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-1 before:bg-primary">
+<div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+<div class="flex items-center justify-center w-4 h-4 rounded-none border-2 border-primary bg-primary shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 ml-3 md:ml-0"></div>
+<div class="w-[calc(100%-3rem)] md:w-[calc(50%-1.5rem)] p-3 brutalist-border bg-surface">
+<div class="font-bold text-sm text-primary mb-1">Nov 15, 9:00 AM</div>
+<div class="text-sm text-on-surface-variant">Registration &amp; Breakfast</div>
+</div>
+</div>
+<div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+<div class="flex items-center justify-center w-4 h-4 rounded-none border-2 border-primary bg-surface shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 ml-3 md:ml-0"></div>
+<div class="w-[calc(100%-3rem)] md:w-[calc(50%-1.5rem)] p-3 brutalist-border bg-surface">
+<div class="font-bold text-sm text-primary mb-1">Nov 15, 10:30 AM</div>
+<div class="text-sm text-on-surface-variant">Keynote Speakers</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Team -->
+<div class="bg-surface-container-lowest brutalist-border">
+<div class="bg-surface-container-highest border-b-2 border-primary px-6 py-4 flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">groups</span>
+<h2 class="font-headline font-bold text-lg uppercase tracking-wide text-primary">Core Team</h2>
+</div>
+<div class="p-6 space-y-4">
+<div class="flex items-center gap-4 bg-surface p-3 brutalist-border">
+<img alt="Sarah Jenkins" class="w-12 h-12 brutalist-border" data-alt="portrait of a female college student leader looking confident" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAyrVbCDNHul995TSfqZuO00PLR6bAzvSwRZ1u1HeCwA-PgMuOCytwRNhoMrVUu9LZPmrqJlU8W8XFcqKQtq7kxFBFl27f9ttzrwaaiKkapvXkDvk4_7opTPoWMzrXLACAOFstgBgPyMAzARVJOea7UX-ik7ovKYKzYCsJ4WFoO2moMb_TWzGzClq2lJ3HDztR2IwE56i75LxjBdeNcWssTk0XDer9lYK3AHEuOpu15RjoHb6ZQT787MxkfG_zO5Shc9TR7FaQlWgP"/>
+<div>
+<div class="font-bold text-primary">Sarah Jenkins</div>
+<div class="text-xs text-outline font-medium uppercase tracking-wider">President</div>
+</div>
+</div>
+<div class="flex items-center gap-4 bg-surface p-3 brutalist-border">
+<img alt="Michael Chen" class="w-12 h-12 brutalist-border" data-alt="portrait of a male college student looking focused" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUYrlYHVTfNmIKQFoHHFa3ef4fmAgD0fQXO-XCOeMfd5uZIqAOvgvFkQE9DSG4n8PhCwOdn19Fldf7aOaK30H-B19JvSFcpJcBpw8kR7nhNwEmTykojjc_um5RaRCHPu8jfCNTlf1TwkjomHfImkG0d1-etWGXrkSxe5BM08DKM4p1w4tY4T15lB-s2SgKICRaUyhikLkPUjfCNbX2UEnrUvfCKaNSKdeLUwjlb-iJgzGXVOCCK3munuvrwsJc7oAEOII7VqOtuYHj"/>
+<div>
+<div class="font-bold text-primary">Michael Chen</div>
+<div class="text-xs text-outline font-medium uppercase tracking-wider">Treasurer</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Budget Breakdown -->
+<div class="md:col-span-2 bg-surface-container-lowest brutalist-border">
+<div class="bg-primary-container text-on-primary border-b-2 border-primary px-6 py-4 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined">payments</span>
+<h2 class="font-headline font-bold text-lg uppercase tracking-wide">Budget Breakdown</h2>
+</div>
+<div class="font-headline font-black text-xl">$4,250.00</div>
+</div>
+<div class="p-0">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-variant border-b-2 border-primary text-xs uppercase tracking-wider font-bold">
+<th class="p-4 border-r-2 border-primary">Item Description</th>
+<th class="p-4 border-r-2 border-primary">Category</th>
+<th class="p-4 text-right">Amount</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border-b border-outline-variant/30 hover:bg-surface-container-low transition-colors">
+<td class="p-4 border-r-2 border-primary font-medium">Main Auditorium Rental</td>
+<td class="p-4 border-r-2 border-primary text-sm text-outline">Facilities</td>
+<td class="p-4 text-right font-bold font-mono">$1,200.00</td>
+</tr>
+<tr class="border-b border-outline-variant/30 hover:bg-surface-container-low transition-colors">
+<td class="p-4 border-r-2 border-primary font-medium">Guest Speaker Honorariums (x3)</td>
+<td class="p-4 border-r-2 border-primary text-sm text-outline">Programming</td>
+<td class="p-4 text-right font-bold font-mono">$1,500.00</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="p-4 border-r-2 border-primary font-medium">Catering (Breakfast &amp; Lunch)</td>
+<td class="p-4 border-r-2 border-primary text-sm text-outline">Food &amp; Bev</td>
+<td class="p-4 text-right font-bold font-mono">$1,550.00</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Decision Panel -->
+<div class="lg:col-span-4">
+<div class="sticky top-24 bg-surface-container-high brutalist-border-thick brutalist-shadow">
+<div class="bg-tertiary text-on-tertiary px-6 py-5 border-b-3 border-primary flex items-center gap-3">
+<span class="material-symbols-outlined">gavel</span>
+<h2 class="font-headline font-black text-xl uppercase tracking-wider">Decision Panel</h2>
+</div>
+<div class="p-6 flex flex-col gap-6">
+<!-- Review Notes -->
+<div class="space-y-2">
+<label class="block font-bold text-sm uppercase tracking-wide text-primary" for="review-notes">Review Notes</label>
+<textarea class="w-full bg-surface-container-lowest brutalist-border p-3 text-sm focus:ring-0 focus:outline-none focus:border-primary placeholder-outline resize-none" id="review-notes" placeholder="Enter specific feedback or conditions for approval..." rows="4"></textarea>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-col gap-4">
+<button class="w-full bg-secondary text-white brutalist-border brutalist-shadow py-4 font-headline font-bold text-lg uppercase tracking-wider hover:translate-y-1 hover:shadow-none transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">check_circle</span>
+                                Approve Proposal
+                            </button>
+<button class="w-full bg-tertiary-fixed-dim text-on-tertiary-fixed brutalist-border brutalist-shadow py-4 font-headline font-bold text-lg uppercase tracking-wider hover:translate-y-1 hover:shadow-none transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">change_circle</span>
+                                Return for Changes
+                            </button>
+</div>
+<!-- Warning Text -->
+<div class="bg-error-container border-l-4 border-error p-4 mt-2 flex gap-3">
+<span class="material-symbols-outlined text-error shrink-0">warning</span>
+<p class="text-sm font-medium text-on-surface-variant leading-snug">
+                                Returning this proposal sends it back to the Club President for revisions. They will be notified immediately.
+                            </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

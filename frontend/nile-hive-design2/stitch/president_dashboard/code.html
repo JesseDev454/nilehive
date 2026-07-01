@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NileHive | Executive Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-highest": "#e0e3e6",
+                    "on-secondary-fixed": "#001a41",
+                    "on-error": "#ffffff",
+                    "surface-container-high": "#e5e8eb",
+                    "secondary-fixed": "#d8e2ff",
+                    "error-container": "#ffdad6",
+                    "outline": "#75777f",
+                    "inverse-surface": "#2d3133",
+                    "primary": "#000d27",
+                    "outline-variant": "#c4c6cf",
+                    "primary-fixed-dim": "#b2c7f4",
+                    "on-tertiary-container": "#299e5c",
+                    "tertiary": "#001105",
+                    "error": "#ba1a1a",
+                    "surface-tint": "#4a5e86",
+                    "on-error-container": "#93000a",
+                    "surface-bright": "#f7fafd",
+                    "secondary-container": "#629afe",
+                    "on-primary-fixed": "#011b3f",
+                    "surface-variant": "#e0e3e6",
+                    "primary-fixed": "#d7e2ff",
+                    "inverse-on-surface": "#eef1f4",
+                    "on-primary-fixed-variant": "#32476c",
+                    "surface-container-low": "#f1f4f7",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-fixed": "#8af9ae",
+                    "on-secondary-fixed-variant": "#004493",
+                    "secondary": "#0d5bbc",
+                    "surface": "#f7fafd",
+                    "on-surface-variant": "#44474e",
+                    "on-secondary": "#ffffff",
+                    "background": "#f7fafd",
+                    "on-surface": "#181c1e",
+                    "inverse-primary": "#b2c7f4",
+                    "secondary-fixed-dim": "#adc7ff",
+                    "tertiary-fixed-dim": "#6edc94",
+                    "on-tertiary-fixed-variant": "#00522a",
+                    "surface-container": "#ebeef1",
+                    "surface-dim": "#d7dadd",
+                    "on-tertiary-fixed": "#00210e",
+                    "on-secondary-container": "#00316d",
+                    "primary-container": "#0b2347",
+                    "on-primary": "#ffffff",
+                    "on-primary-container": "#778bb5",
+                    "tertiary-container": "#002a13",
+                    "on-background": "#181c1e"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "fontFamily": {
+                    "headline": ["Manrope"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .sunrise-motif {
+            background: radial-gradient(circle at top right, rgba(245, 185, 66, 0.08) 0%, transparent 60%);
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-secondary-fixed selection:text-on-secondary-fixed">
+<!-- SideNavBar (Desktop Shell) -->
+<aside class="h-screen w-64 hidden md:flex flex-col fixed left-0 top-0 bg-[#000d27] dark:bg-[#00081a] shadow-2xl z-50 font-['Manrope'] text-sm py-6">
+<div class="px-6 mb-10 flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-white" style="font-variation-settings: 'FILL' 1;">account_balance</span>
+</div>
+<div>
+<h1 class="text-[#F5B942] font-black tracking-widest uppercase leading-none">NileHive</h1>
+<p class="text-slate-400 text-[10px] uppercase tracking-tighter mt-1">Club Operations</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="bg-[#0b2347] text-white border-l-4 border-[#F5B942] px-4 py-3 ml-2 rounded-l-lg flex items-center gap-3 transition-transform translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="text-slate-400 hover:text-white px-4 py-3 ml-2 flex items-center gap-3 hover:bg-[#0b2347]/50 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span>Proposals</span>
+</a>
+<a class="text-slate-400 hover:text-white px-4 py-3 ml-2 flex items-center gap-3 hover:bg-[#0b2347]/50 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="calendar_month">calendar_month</span>
+<span>Events</span>
+</a>
+<a class="text-slate-400 hover:text-white px-4 py-3 ml-2 flex items-center gap-3 hover:bg-[#0b2347]/50 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span>Members</span>
+</a>
+<a class="text-slate-400 hover:text-white px-4 py-3 ml-2 flex items-center gap-3 hover:bg-[#0b2347]/50 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span>Finance</span>
+</a>
+<a class="text-slate-400 hover:text-white px-4 py-3 ml-2 flex items-center gap-3 hover:bg-[#0b2347]/50 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span>Reports</span>
+</a>
+</nav>
+<div class="mt-auto px-2 space-y-1">
+<button class="w-full bg-[#F5B942] text-[#000d27] font-bold py-3 rounded-xl flex items-center justify-center gap-2 mb-6 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined">add_circle</span>
+<span>Create Proposal</span>
+</button>
+<a class="text-slate-400 hover:text-white px-4 py-3 ml-2 flex items-center gap-3 hover:bg-[#0b2347]/50 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+<a class="text-slate-400 hover:text-white px-4 py-3 ml-2 flex items-center gap-3 hover:bg-[#0b2347]/50 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="contact_support">contact_support</span>
+<span>Support</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="md:ml-64 min-h-screen relative sunrise-motif pb-20">
+<!-- TopAppBar -->
+<header class="sticky top-0 z-40 bg-[#f7fafd]/95 backdrop-blur-md px-8 h-16 flex justify-between items-center font-['Manrope'] antialiased shadow-sm border-none">
+<div class="flex items-center gap-4">
+<h2 class="text-xl font-bold tracking-tight text-[#000d27]">Executive Oversight</h2>
+<div class="hidden lg:flex items-center gap-2 bg-surface-container-low px-3 py-1.5 rounded-full border border-outline-variant/10">
+<span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim animate-pulse"></span>
+<span class="text-xs font-semibold text-on-tertiary-fixed-variant">System Live: Nile University Network</span>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden md:flex bg-surface-container-low items-center px-3 py-1.5 rounded-xl border border-outline-variant/20 focus-within:ring-2 focus-within:ring-secondary/20 transition-all">
+<span class="material-symbols-outlined text-on-surface-variant text-lg">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm px-2 w-64 placeholder:text-outline" placeholder="Search members, events..." type="text"/>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 text-on-surface-variant hover:text-secondary hover:bg-secondary-fixed/30 rounded-full transition-colors relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-2 text-on-surface-variant hover:text-secondary hover:bg-secondary-fixed/30 rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<div class="h-8 w-[1px] bg-outline-variant/30"></div>
+<div class="flex items-center gap-3 pl-2">
+<div class="text-right hidden sm:block">
+<p class="text-xs font-bold text-primary">Dr. Alistair Vance</p>
+<p class="text-[10px] text-on-surface-variant font-medium">President, Robotics Club</p>
+</div>
+<img alt="User profile avatar" class="w-10 h-10 rounded-full object-cover ring-2 ring-secondary/10" data-alt="portrait of a mature academic man with spectacles in a professional office setting with soft natural window lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDu6xoxD_B1QOAAaAK2gO3jkG7G0w8eih2Ds7t9_n-MTnNhGIDGe9ZQp_03V5Vqh0e7vxb5OM83-g_Lif9NEB4z9UXiznlL8R-mQ-6yeNKxzeERMKicDZn6x_LkSVN-sFmdFqRS2DBsOCIveB5E5NdVKzDCM6do07_BkP2cf6pHB49ncpaaYcLCxX8HGzxXirlV3jNJu7NVQqN49mnU_Prxw7Xn0_FvFf5LDBiwMSbksYElt2Uo6T5oEecChqrFmfYAxVAw5rp93Ijw"/>
+</div>
+</div>
+</div>
+</header>
+<div class="p-8 max-w-[1600px] mx-auto space-y-8">
+<!-- Quick Actions & Breadcrumbs -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h3 class="text-headline-md font-headline font-extrabold text-primary tracking-tight">Presidential Command Center</h3>
+<p class="text-on-surface-variant mt-1">Operational overview for the 2023/24 Academic Term</p>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-on-surface hover:bg-surface-container-high rounded-xl transition-all border border-outline-variant/30">
+<span class="material-symbols-outlined text-lg">edit</span>
+                        Edit Club Profile
+                    </button>
+<button class="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-on-surface hover:bg-surface-container-high rounded-xl transition-all border border-outline-variant/30">
+<span class="material-symbols-outlined text-lg">person_search</span>
+                        View Members
+                    </button>
+<button class="flex items-center gap-2 px-6 py-2 text-sm font-bold text-white bg-secondary hover:brightness-110 rounded-xl transition-all shadow-md">
+<span class="material-symbols-outlined text-lg">assignment_ind</span>
+                        Delegate Task
+                    </button>
+</div>
+</div>
+<!-- Top Executive Metrics Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Total Members -->
+<div class="bg-surface-container-lowest p-6 rounded-[2rem] shadow-sm flex flex-col justify-between h-40 border border-white">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-2xl bg-secondary-fixed flex items-center justify-center text-on-secondary-fixed-variant">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">groups</span>
+</div>
+<span class="text-[10px] font-bold text-tertiary-fixed-variant bg-tertiary-fixed/30 px-2 py-1 rounded-full uppercase tracking-widest">+12% Monthly</span>
+</div>
+<div>
+<p class="text-sm font-semibold text-on-surface-variant">Total Members</p>
+<h4 class="text-3xl font-black text-primary">1,248</h4>
+</div>
+</div>
+<!-- Upcoming Events -->
+<div class="bg-surface-container-lowest p-6 rounded-[2rem] shadow-sm flex flex-col justify-between h-40 border border-white">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-2xl bg-secondary-container/10 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">event_upcoming</span>
+</div>
+<span class="text-[10px] font-bold text-on-secondary-container bg-secondary-container/20 px-2 py-1 rounded-full uppercase tracking-widest">Active Phase</span>
+</div>
+<div>
+<p class="text-sm font-semibold text-on-surface-variant">Upcoming Events</p>
+<h4 class="text-3xl font-black text-primary">08</h4>
+</div>
+</div>
+<!-- Pending Approvals -->
+<div class="bg-surface-container-lowest p-6 rounded-[2rem] shadow-sm flex flex-col justify-between h-40 border border-white">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-2xl bg-error-container/20 flex items-center justify-center text-error">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">pending_actions</span>
+</div>
+<span class="text-[10px] font-bold text-on-error-container bg-error-container/50 px-2 py-1 rounded-full uppercase tracking-widest">Urgent</span>
+</div>
+<div>
+<p class="text-sm font-semibold text-on-surface-variant">Pending Approvals</p>
+<h4 class="text-3xl font-black text-primary text-error">14</h4>
+</div>
+</div>
+<!-- Participation Rate -->
+<div class="bg-surface-container-lowest p-6 rounded-[2rem] shadow-sm flex flex-col justify-between h-40 border border-white">
+<div class="flex justify-between items-start">
+<div class="w-12 h-12 rounded-2xl bg-[#F5B942]/10 flex items-center justify-center text-[#F5B942]">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">monitoring</span>
+</div>
+<span class="text-[10px] font-bold text-[#F5B942] bg-[#F5B942]/20 px-2 py-1 rounded-full uppercase tracking-widest">Target Met</span>
+</div>
+<div>
+<p class="text-sm font-semibold text-on-surface-variant">Participation Rate</p>
+<h4 class="text-3xl font-black text-primary">94.2%</h4>
+</div>
+</div>
+</div>
+<!-- Dashboard Main Grid (Bento Style) -->
+<div class="grid grid-cols-12 gap-8">
+<!-- Performance Analytics (Charts) -->
+<div class="col-span-12 lg:col-span-8 bg-surface-container-lowest rounded-[2.5rem] p-8 shadow-sm border border-white">
+<div class="flex justify-between items-center mb-10">
+<div>
+<h5 class="text-xl font-bold text-primary">Club Performance Analytics</h5>
+<p class="text-sm text-on-surface-variant">Comparison of engagement across academic cycles</p>
+</div>
+<div class="flex gap-2 bg-surface-container-low p-1 rounded-xl">
+<button class="px-4 py-1.5 text-xs font-bold bg-white shadow-sm rounded-lg text-primary">Monthly</button>
+<button class="px-4 py-1.5 text-xs font-bold text-on-surface-variant hover:bg-white/50 transition-colors rounded-lg">Quarterly</button>
+</div>
+</div>
+<!-- Simplified Visual Representation of a Chart -->
+<div class="h-80 w-full relative flex items-end gap-4 px-4 overflow-hidden">
+<!-- Chart Grid Lines -->
+<div class="absolute inset-0 flex flex-col justify-between pointer-events-none">
+<div class="w-full border-t border-outline-variant/20"></div>
+<div class="w-full border-t border-outline-variant/20"></div>
+<div class="w-full border-t border-outline-variant/20"></div>
+<div class="w-full border-t border-outline-variant/20"></div>
+<div class="w-full"></div>
+</div>
+<!-- Growth Area Background -->
+<div class="absolute bottom-0 left-0 w-full h-3/4 bg-gradient-to-t from-secondary/5 to-transparent rounded-t-3xl"></div>
+<!-- Data Bars -->
+<div class="flex-1 flex flex-col justify-end items-center group">
+<div class="w-full max-w-[40px] bg-surface-container-high rounded-t-xl group-hover:bg-secondary/40 transition-all h-[40%]"></div>
+<span class="text-[10px] mt-4 font-bold text-outline uppercase">Sep</span>
+</div>
+<div class="flex-1 flex flex-col justify-end items-center group">
+<div class="w-full max-w-[40px] bg-surface-container-high rounded-t-xl group-hover:bg-secondary/40 transition-all h-[55%]"></div>
+<span class="text-[10px] mt-4 font-bold text-outline uppercase">Oct</span>
+</div>
+<div class="flex-1 flex flex-col justify-end items-center group">
+<div class="w-full max-w-[40px] bg-surface-container-high rounded-t-xl group-hover:bg-secondary/40 transition-all h-[48%]"></div>
+<span class="text-[10px] mt-4 font-bold text-outline uppercase">Nov</span>
+</div>
+<div class="flex-1 flex flex-col justify-end items-center group">
+<div class="w-full max-w-[40px] bg-secondary-container rounded-t-xl group-hover:brightness-110 transition-all h-[75%] shadow-lg shadow-secondary/10"></div>
+<span class="text-[10px] mt-4 font-bold text-primary uppercase">Dec</span>
+</div>
+<div class="flex-1 flex flex-col justify-end items-center group">
+<div class="w-full max-w-[40px] bg-surface-container-high rounded-t-xl group-hover:bg-secondary/40 transition-all h-[62%]"></div>
+<span class="text-[10px] mt-4 font-bold text-outline uppercase">Jan</span>
+</div>
+<div class="flex-1 flex flex-col justify-end items-center group">
+<div class="w-full max-w-[40px] bg-surface-container-high rounded-t-xl group-hover:bg-secondary/40 transition-all h-[82%]"></div>
+<span class="text-[10px] mt-4 font-bold text-outline uppercase">Feb</span>
+</div>
+<div class="flex-1 flex flex-col justify-end items-center group">
+<div class="w-full max-w-[40px] bg-surface-container-high rounded-t-xl group-hover:bg-secondary/40 transition-all h-[70%]"></div>
+<span class="text-[10px] mt-4 font-bold text-outline uppercase">Mar</span>
+</div>
+</div>
+<div class="mt-8 flex items-center justify-between p-4 bg-surface-container-low rounded-2xl border border-outline-variant/20">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-secondary-container"></span>
+<span class="text-xs font-semibold">Active Members</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-surface-container-high"></span>
+<span class="text-xs font-semibold">Projected Growth</span>
+</div>
+</div>
+<div class="text-xs font-bold text-on-tertiary-fixed-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">trending_up</span>
+                            24% higher than last year
+                        </div>
+</div>
+</div>
+<!-- Recent Activity Feed -->
+<div class="col-span-12 lg:col-span-4 bg-primary text-white rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden">
+<!-- Subtle Background Motif -->
+<div class="absolute -top-10 -right-10 w-40 h-40 bg-[#F5B942] opacity-10 rounded-full blur-3xl"></div>
+<div class="flex justify-between items-center mb-8 relative z-10">
+<h5 class="text-xl font-bold">Activity Feed</h5>
+<button class="text-xs font-bold text-[#F5B942] uppercase tracking-widest hover:underline">See All</button>
+</div>
+<div class="space-y-8 relative z-10">
+<div class="flex gap-4">
+<div class="relative">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-white/20">
+<img alt="Activity User 1" class="w-full h-full object-cover" data-alt="portrait of a smiling university student in casual wear with architectural buildings in the background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRmmHQ4fgjNcuUTfYI3LVzzT6APsLPMRJt_CBSFnN1ilzuNe7ml7BudOqvukZ5qsBpj-kU4xppcdjJX-nyeylct9x7VYQueo7xfc5KVf9jGkSU55THW8maOZNUnMb9eRpqK_Dmqn-rZ85k69uV3amIdYPlwGhbu-jbSyt6stUiKbzJmPhf7uAnOOLzWMP6PPKEyy7lNFyM2XXIgMukhky197NzVc4V9oUZtEXJpnULxY1TIcMErb4urBxi7qq_ml6V6k_BxAWyoTtp"/>
+</div>
+<div class="absolute -bottom-1 -right-1 w-4 h-4 bg-tertiary-fixed rounded-full border-2 border-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[8px] text-primary font-bold">check</span>
+</div>
+</div>
+<div>
+<p class="text-sm font-medium"><span class="font-bold text-[#F5B942]">James K.</span> approved the budget for "Solar Expo 2024"</p>
+<p class="text-[10px] text-slate-400 mt-1">14 minutes ago</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="relative">
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-white/20">
+<img alt="Activity User 2" class="w-full h-full object-cover" data-alt="headshot of a young professional woman with a warm friendly expression in soft lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQB6BsSAIBls1AaZFlJkg_BtjK-f0CHpWNlONaMHw30brb-hL43AJJgVbyNZmHRWNV4S3iD96W5xs3dTF9Nh0ijp50sKbuWg5k9pZlNm8mJLM405IizyEb5muVBdwaTAzJOo7zadiPjoTNvInAXCh7t28qvD0qlgjWOsL9fHtkIaOa0Q3DGxzrN3W7xxbYqgCGSpbR1JOcBKuBN0ivgDKNXzs2ZB9c0IpyGBdEqVLcbX7mNMmhRX7x7Fu-PuWpDjY6ju3geITgcaFE"/>
+</div>
+<div class="absolute -bottom-1 -right-1 w-4 h-4 bg-secondary-fixed rounded-full border-2 border-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[8px] text-primary font-bold">mail</span>
+</div>
+</div>
+<div>
+<p class="text-sm font-medium"><span class="font-bold text-[#F5B942]">Sarah L.</span> submitted a new membership request</p>
+<p class="text-[10px] text-slate-400 mt-1">2 hours ago</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center border-2 border-white/20">
+<span class="material-symbols-outlined text-sm">rocket_launch</span>
+</div>
+<div>
+<p class="text-sm font-medium">New Project <span class="font-bold text-[#F5B942]">"Ai Automation Lab"</span> was initialized</p>
+<p class="text-[10px] text-slate-400 mt-1">5 hours ago</p>
+</div>
+</div>
+<div class="flex gap-4">
+<div class="w-10 h-10 rounded-full bg-error flex items-center justify-center border-2 border-white/20">
+<span class="material-symbols-outlined text-sm">warning</span>
+</div>
+<div>
+<p class="text-sm font-medium">Quarterly report <span class="font-bold text-error-container">submission deadline</span> is in 24h</p>
+<p class="text-[10px] text-slate-400 mt-1">8 hours ago</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Pending Tasks Oversight -->
+<div class="col-span-12 lg:col-span-7 bg-surface-container-lowest rounded-[2.5rem] p-8 shadow-sm border border-white">
+<div class="flex justify-between items-center mb-6">
+<h5 class="text-xl font-bold text-primary">Pending Oversight</h5>
+<button class="flex items-center gap-2 text-xs font-bold text-secondary px-3 py-1.5 bg-secondary-fixed/30 rounded-lg hover:bg-secondary-fixed/50 transition-colors">
+<span class="material-symbols-outlined text-sm">filter_list</span>
+                            Filter Priority
+                        </button>
+</div>
+<div class="space-y-4">
+<!-- Task 1 -->
+<div class="group flex items-center gap-6 p-4 hover:bg-surface-container-low rounded-2xl transition-all border-l-4 border-error/50">
+<div class="flex-shrink-0 w-6 h-6 rounded border-2 border-outline-variant group-hover:border-secondary transition-colors"></div>
+<div class="flex-1">
+<p class="text-sm font-bold text-primary">Finalize Q1 Financial Audit</p>
+<div class="flex items-center gap-3 mt-1">
+<span class="text-[10px] font-bold text-on-error-container bg-error-container/40 px-2 py-0.5 rounded uppercase">Urgent</span>
+<span class="text-[10px] text-on-surface-variant font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">schedule</span>
+                                        Today, 5:00 PM
+                                    </span>
+</div>
+</div>
+<div class="flex items-center -space-x-2">
+<img class="w-8 h-8 rounded-full border-2 border-white object-cover" data-alt="close up of a student leader looking focused" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDeRkzeWE9iiOqt12Fy8I8wC9t3mZDUSaKsoaVtk_FuqRUPNdLbBU39tRwLSWoChf2CA-7dicktSXSxuhU8KYGDuySNnzeorHuLBX1PdNNXv4M3Ui1_u8_Jlf911aCwsxpy0f6JMZSKuZ5Aug--WFtFFplF6_EO-QofqXOV2F-ueWNV4aJgxtI3mg83Mvha3z8mG8sDDcFfe8WA8smJIyFLnDjg6pIwbpFDof0EyO7svmyLXl5VPWf9NtvQP4EcACjvmSNOj5BzRQdk"/>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest border-2 border-white flex items-center justify-center text-[10px] font-bold">+2</div>
+</div>
+</div>
+<!-- Task 2 -->
+<div class="group flex items-center gap-6 p-4 hover:bg-surface-container-low rounded-2xl transition-all border-l-4 border-secondary/50">
+<div class="flex-shrink-0 w-6 h-6 rounded border-2 border-outline-variant group-hover:border-secondary transition-colors"></div>
+<div class="flex-1">
+<p class="text-sm font-bold text-primary">Review 5 Proposal Documents</p>
+<div class="flex items-center gap-3 mt-1">
+<span class="text-[10px] font-bold text-on-secondary-container bg-secondary-container/20 px-2 py-0.5 rounded uppercase">Pending</span>
+<span class="text-[10px] text-on-surface-variant font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">schedule</span>
+                                        Tomorrow
+                                    </span>
+</div>
+</div>
+<img class="w-8 h-8 rounded-full border-2 border-white object-cover" data-alt="portrait of a man with short hair and an academic look" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2G93XGczoHbdUncjCFEtkUK0axCE81AxsQvi9wM-GiN-hQfvvfuy62udHWVY_r_TWfIv-n2sJMwS-Mz0MPLQwzy__PWyzkElodbWasrd8Ye_m4MiZaOf2_nxSREu3h6uKu00xoL_QrxRXw7pkycLwe8m6yFlVTDPBHvfo6n8XuNlCNGdXJ0D8Lsks0nUXHZHUe2fUzme5F6tX4WLHIL2LC6JpeU6MCPJ-unigbjkz5-oFVX7pW7hq3e4ssIcZYwvEA816lcy1_vYx"/>
+</div>
+<!-- Task 3 -->
+<div class="group flex items-center gap-6 p-4 hover:bg-surface-container-low rounded-2xl transition-all border-l-4 border-tertiary-fixed-dim/50">
+<div class="flex-shrink-0 w-6 h-6 rounded border-2 border-outline-variant group-hover:border-secondary transition-colors"></div>
+<div class="flex-1">
+<p class="text-sm font-bold text-primary">Approve Robotics Workshop Venue</p>
+<div class="flex items-center gap-3 mt-1">
+<span class="text-[10px] font-bold text-on-tertiary-fixed-variant bg-tertiary-fixed/30 px-2 py-0.5 rounded uppercase">Routine</span>
+<span class="text-[10px] text-on-surface-variant font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">schedule</span>
+                                        Next Week
+                                    </span>
+</div>
+</div>
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-[10px] font-bold">RH</div>
+</div>
+</div>
+</div>
+<!-- Upcoming Events List -->
+<div class="col-span-12 lg:col-span-5 bg-surface-container-low rounded-[2.5rem] p-8 shadow-sm border border-outline-variant/10">
+<div class="flex justify-between items-center mb-6">
+<h5 class="text-xl font-bold text-primary">Strategic Timeline</h5>
+<button class="material-symbols-outlined text-secondary">calendar_today</button>
+</div>
+<div class="space-y-6">
+<div class="flex gap-5 group">
+<div class="flex flex-col items-center">
+<span class="text-xs font-black text-secondary uppercase">Dec</span>
+<span class="text-2xl font-black text-primary">15</span>
+<div class="w-0.5 flex-1 bg-outline-variant/30 mt-2"></div>
+</div>
+<div class="flex-1 bg-white p-4 rounded-2xl border border-outline-variant/10 shadow-sm group-hover:-translate-y-1 transition-transform">
+<div class="flex items-center justify-between mb-2">
+<span class="text-[10px] font-bold text-[#F5B942] uppercase tracking-widest">Main Hall</span>
+<span class="material-symbols-outlined text-secondary text-sm">star</span>
+</div>
+<h6 class="text-sm font-extrabold text-primary">Annual Tech Summit</h6>
+<p class="text-xs text-on-surface-variant mt-1">Expected: 500+ attendees</p>
+</div>
+</div>
+<div class="flex gap-5 group">
+<div class="flex flex-col items-center">
+<span class="text-xs font-black text-secondary uppercase">Dec</span>
+<span class="text-2xl font-black text-primary">18</span>
+<div class="w-0.5 flex-1 bg-outline-variant/30 mt-2"></div>
+</div>
+<div class="flex-1 bg-white p-4 rounded-2xl border border-outline-variant/10 shadow-sm group-hover:-translate-y-1 transition-transform">
+<div class="flex items-center justify-between mb-2">
+<span class="text-[10px] font-bold text-tertiary-fixed-variant uppercase tracking-widest">Online</span>
+</div>
+<h6 class="text-sm font-extrabold text-primary">Board Member Elections</h6>
+<p class="text-xs text-on-surface-variant mt-1">Final voter list verification</p>
+</div>
+</div>
+<div class="flex gap-5 group">
+<div class="flex flex-col items-center">
+<span class="text-xs font-black text-secondary uppercase">Jan</span>
+<span class="text-2xl font-black text-primary">05</span>
+</div>
+<div class="flex-1 bg-white p-4 rounded-2xl border border-outline-variant/10 shadow-sm group-hover:-translate-y-1 transition-transform">
+<div class="flex items-center justify-between mb-2">
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Workshop</span>
+</div>
+<h6 class="text-sm font-extrabold text-primary">Arduino Fundamentals</h6>
+<p class="text-xs text-on-surface-variant mt-1">Member recruitment special</p>
+</div>
+</div>
+</div>
+<button class="w-full mt-8 py-3 bg-white border border-outline-variant/20 rounded-xl text-xs font-bold text-primary hover:bg-primary hover:text-white transition-all uppercase tracking-widest">
+                        View Full Calendar
+                    </button>
+</div>
+</div>
+<!-- Footer Meta -->
+<footer class="pt-10 flex flex-col md:flex-row justify-between items-center text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">
+<div class="flex items-center gap-2">
+<span>Nile University</span>
+<span class="w-1 h-1 rounded-full bg-outline-variant"></span>
+<span>Student Affairs Department</span>
+</div>
+<div class="mt-4 md:mt-0">
+                    © 2023 NileHive Management System v4.1.0
+                </div>
+</footer>
+</div>
+</main>
+<!-- Mobile Bottom Navigation (Hidden on Desktop) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pt-2 pb-6 md:hidden bg-white/90 dark:bg-[#000d27]/90 backdrop-blur-xl shadow-[0_-4px_20px_rgba(11,35,71,0.08)] rounded-t-3xl border-t border-[#ebeef1] dark:border-[#0b2347]">
+<a class="flex flex-col items-center justify-center text-[#0d5bbc] bg-[#f1f4f7] dark:bg-[#0b2347] rounded-xl px-3 py-1 scale-90 active:scale-100 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="home" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-['Inter'] text-[10px] font-semibold mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#44474e] dark:text-slate-400 active:bg-slate-100 transition-all scale-90 active:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="assignment">assignment</span>
+<span class="font-['Inter'] text-[10px] font-semibold mt-1">Proposals</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#44474e] dark:text-slate-400 active:bg-slate-100 transition-all scale-90 active:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="event">event</span>
+<span class="font-['Inter'] text-[10px] font-semibold mt-1">Events</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#44474e] dark:text-slate-400 active:bg-slate-100 transition-all scale-90 active:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="checklist">checklist</span>
+<span class="font-['Inter'] text-[10px] font-semibold mt-1">Tasks</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#44474e] dark:text-slate-400 active:bg-slate-100 transition-all scale-90 active:scale-100" href="#">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+<span class="font-['Inter'] text-[10px] font-semibold mt-1">Menu</span>
+</a>
+</nav>
+</body></html>

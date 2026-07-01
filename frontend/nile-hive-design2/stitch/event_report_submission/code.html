@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Post-Event Report | Nile Operations</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed": "#d8e2ff",
+                        "inverse-on-surface": "#eef1f4",
+                        "outline": "#75777f",
+                        "on-tertiary": "#ffffff",
+                        "on-surface": "#181c1e",
+                        "on-primary-container": "#778bb5",
+                        "surface-container": "#ebeef1",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#d7dadd",
+                        "surface-bright": "#f7fafd",
+                        "secondary-fixed-dim": "#adc7ff",
+                        "on-tertiary-container": "#299e5c",
+                        "on-primary-fixed-variant": "#32476c",
+                        "on-secondary-fixed-variant": "#004493",
+                        "inverse-primary": "#b2c7f4",
+                        "surface-container-highest": "#e0e3e6",
+                        "surface-container-low": "#f1f4f7",
+                        "on-primary-fixed": "#011b3f",
+                        "surface": "#f7fafd",
+                        "primary-container": "#0b2347",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed": "#00210e",
+                        "surface-container-high": "#e5e8eb",
+                        "tertiary-fixed": "#8af9ae",
+                        "error-container": "#ffdad6",
+                        "secondary": "#0d5bbc",
+                        "on-background": "#181c1e",
+                        "tertiary": "#001105",
+                        "on-tertiary-fixed-variant": "#00522a",
+                        "primary-fixed-dim": "#b2c7f4",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "error": "#ba1a1a",
+                        "on-surface-variant": "#44474e",
+                        "tertiary-fixed-dim": "#6edc94",
+                        "primary": "#000d27",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#001a41",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#4a5e86",
+                        "tertiary-container": "#002a13",
+                        "secondary-container": "#629afe",
+                        "background": "#f7fafd",
+                        "primary-fixed": "#d7e2ff",
+                        "on-secondary-container": "#00316d",
+                        "outline-variant": "#c4c6cf",
+                        "surface-variant": "#e0e3e6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, .font-headline { font-family: 'Manrope', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- TopNavBar -->
+<header class="fixed top-0 w-full z-50 bg-slate-50/80 backdrop-blur-xl border-b border-slate-200/50 flex justify-between items-center px-6 h-16 w-full shadow-sm">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold tracking-tighter text-[#000d27]">Nile Operations</span>
+<nav class="hidden md:flex gap-6 items-center">
+<a class="text-slate-500 hover:text-[#000d27] transition-colors font-['Manrope'] font-semibold tracking-tight" href="#">Dashboard</a>
+<a class="text-slate-500 hover:text-[#000d27] transition-colors font-['Manrope'] font-semibold tracking-tight" href="#">Calendar</a>
+<a class="text-slate-500 hover:text-[#000d27] transition-colors font-['Manrope'] font-semibold tracking-tight" href="#">Directory</a>
+<a class="text-[#0d5bbc] border-b-2 border-[#F5B942] pb-1 font-['Manrope'] font-semibold tracking-tight" href="#">Reports</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-slate-100 transition-all rounded-full active:scale-95 duration-200">
+<span class="material-symbols-outlined text-slate-600">notifications</span>
+</button>
+<button class="p-2 hover:bg-slate-100 transition-all rounded-full active:scale-95 duration-200">
+<span class="material-symbols-outlined text-slate-600">settings</span>
+</button>
+<img alt="User profile avatar" class="w-8 h-8 rounded-full border border-slate-200" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXq5Qys-IYDzjmG51SoDgu_9C1Ec85g5AIcCc1Yj8-TVJ1BBkKneCM63Uy3njbQsQXd3wj7edEwfLOYni0fL6DOvEC749flrDWjnURmH9zrQcOdQmenxTdHbNBtlwXscmlmwHfN19e75BLV6BqS3NbhNS5H0aOWDrbdFbvwBwJnhk2O3cm33gLL2cSgNOzjL8IS6WTH6eBjDMmfrzwzAtJsmukzG16aPFGSFKF0dO62O7RSMkTM8f-H_eKx7l-gY7Xll_edZ9A1YSP"/>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 hidden lg:flex flex-col bg-[#000d27] p-4 gap-2 shadow-2xl shadow-[#000d27]/40 z-40">
+<div class="pt-20 pb-8 px-4">
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 rounded-lg bg-[#0d5bbc] flex items-center justify-center">
+<span class="material-symbols-outlined text-white">account_balance</span>
+</div>
+<div>
+<p class="text-white font-black text-lg uppercase tracking-widest leading-none">Executive Portal</p>
+<p class="text-slate-400 text-xs font-medium">Academic Operations</p>
+</div>
+</div>
+<button class="w-full py-3 bg-[#0d5bbc] text-white rounded-lg shadow-inner font-['Manrope'] text-sm font-bold flex items-center justify-center gap-2 active:opacity-80 transition-all">
+<span class="material-symbols-outlined">add</span>
+                New Initiative
+            </button>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 transition-transform hover:translate-x-1 font-['Manrope'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">shield_person</span> Admin
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 bg-[#0d5bbc] text-white rounded-lg shadow-inner font-['Manrope'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">groups</span> Executive
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 transition-transform hover:translate-x-1 font-['Manrope'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">person</span> Student
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 transition-transform hover:translate-x-1 font-['Manrope'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">diversity_3</span> Clubs
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 transition-transform hover:translate-x-1 font-['Manrope'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">event</span> Events
+            </a>
+</nav>
+<div class="mt-auto border-t border-white/10 pt-4">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 transition-transform hover:translate-x-1 font-['Manrope'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">help</span> Help Center
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-white hover:bg-white/5 transition-transform hover:translate-x-1 font-['Manrope'] text-sm font-medium" href="#">
+<span class="material-symbols-outlined">logout</span> Logout
+            </a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="lg:ml-64 pt-24 pb-20 px-6 lg:px-12 min-h-screen">
+<!-- Page Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
+<div class="max-w-2xl">
+<div class="flex items-center gap-3 mb-2">
+<span class="px-3 py-1 bg-secondary/10 text-secondary rounded-full text-xs font-bold uppercase tracking-wider">Academic Year 2024</span>
+<span class="flex items-center gap-1 text-on-surface-variant text-sm font-medium">
+<span class="w-2 h-2 rounded-full bg-[#F5B942]"></span> Draft
+                    </span>
+</div>
+<h1 class="text-4xl font-extrabold text-primary tracking-tight leading-tight">Post-Event Report: Annual Tech Symposium</h1>
+<p class="text-on-surface-variant mt-2 text-lg">Finalize the documentation for the university's flagship engineering event.</p>
+</div>
+<div class="flex gap-3">
+<button class="px-6 py-3 rounded-full bg-surface-container-highest text-on-surface font-semibold flex items-center gap-2 hover:bg-surface-dim transition-all">
+<span class="material-symbols-outlined">save</span> Save Draft
+                </button>
+<button class="px-6 py-3 rounded-full bg-secondary text-white font-semibold flex items-center gap-2 shadow-lg shadow-secondary/20 hover:scale-[1.02] transition-all active:scale-95">
+<span class="material-symbols-outlined">file_download</span> Download Compiled Report
+                </button>
+</div>
+</div>
+<!-- Bento Layout for Form -->
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+<!-- Left Column: Primary Data -->
+<div class="xl:col-span-8 space-y-8">
+<!-- Core Form Card -->
+<section class="bg-surface-container-lowest rounded-3xl p-8 shadow-sm">
+<h2 class="text-xl font-bold text-primary mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">description</span>
+                        Event Performance Data
+                    </h2>
+<div class="space-y-8">
+<!-- Numeric Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+<div class="space-y-2">
+<label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest ml-1">Attendance Numbers</label>
+<input class="w-full bg-surface-container-low border-none rounded-xl p-4 focus:ring-2 focus:ring-secondary/20 text-primary font-bold text-lg" placeholder="0" type="number"/>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest ml-1">Speaker Count</label>
+<input class="w-full bg-surface-container-low border-none rounded-xl p-4 focus:ring-2 focus:ring-secondary/20 text-primary font-bold text-lg" placeholder="0" type="number"/>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest ml-1">Workshops Held</label>
+<input class="w-full bg-surface-container-low border-none rounded-xl p-4 focus:ring-2 focus:ring-secondary/20 text-primary font-bold text-lg" placeholder="0" type="number"/>
+</div>
+</div>
+<!-- Summary -->
+<div class="space-y-2">
+<label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest ml-1">Event Summary</label>
+<textarea class="w-full bg-surface-container-low border-none rounded-xl p-4 focus:ring-2 focus:ring-secondary/20 text-on-surface leading-relaxed" placeholder="Briefly describe the overall execution and atmosphere..." rows="4"></textarea>
+</div>
+<!-- Outcomes & Challenges Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-2">
+<label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest ml-1">Key Outcomes</label>
+<textarea class="w-full bg-surface-container-low border-none rounded-xl p-4 focus:ring-2 focus:ring-secondary/20 text-on-surface leading-relaxed" placeholder="List the primary achievements..." rows="6"></textarea>
+</div>
+<div class="space-y-2">
+<label class="text-xs font-bold text-on-surface-variant uppercase tracking-widest ml-1">Challenges Faced</label>
+<textarea class="w-full bg-surface-container-low border-none rounded-xl p-4 focus:ring-2 focus:ring-secondary/20 text-on-surface leading-relaxed" placeholder="What obstacles were encountered?" rows="6"></textarea>
+</div>
+</div>
+</div>
+</section>
+<!-- Media Upload Section -->
+<section class="bg-surface-container-lowest rounded-3xl p-8 shadow-sm">
+<h2 class="text-xl font-bold text-primary mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">collections</span>
+                        Multimedia Evidence
+                    </h2>
+<p class="text-on-surface-variant mb-6 text-sm">Upload high-resolution photos and session videos for the university archive.</p>
+<div class="border-2 border-dashed border-outline-variant/30 rounded-2xl p-12 flex flex-col items-center justify-center bg-surface-container-low/50 hover:bg-surface-container-low transition-colors group cursor-pointer">
+<div class="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-secondary text-3xl">upload_file</span>
+</div>
+<p class="text-primary font-bold">Drop files here or click to upload</p>
+<p class="text-on-surface-variant text-xs mt-1">PNG, JPG, MP4 up to 500MB each</p>
+</div>
+<div class="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4">
+<div class="aspect-square rounded-xl overflow-hidden relative group">
+<img class="w-full h-full object-cover" data-alt="professional photography of a large university lecture hall filled with students during a tech conference" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCG_PSmitVDdAaASxKuy6JPMomakX-tTq5_4fEe-5BgxjLRUSAQWf5ipBhsyHHVpcinQHdzpU0kMwsa_ZZ_VDMfArehhHOG5xh5tjWyfT_NeQfEgNu0yxhOctJXlOp0hbHzMfZIgA0OLa6wHOLzy5iCflrdAnyq6oIEPOw-KJbtuF7xj7Zc-31jbVwOXFKMfdOOub49NtFxltJYfzVPxTT1_DJsAWQ7ePLjRQCApV1KmASVWL2n37Kf6cHpsOxq2tAgzrqfM2bEIwCA"/>
+<div class="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<button class="text-white"><span class="material-symbols-outlined">delete</span></button>
+</div>
+</div>
+<div class="aspect-square rounded-xl overflow-hidden relative group">
+<img class="w-full h-full object-cover" data-alt="close up of collaborative student group working on a laptop in a modern campus environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBNBjv-98JY1jG66cxy75FbYIALoPNZHFGezSaGtvqpwO8S0_1M1_jr1lVYyks4Y1zXnzmtWqHSQvjzM_yqvDeQM3u6kReD0h41dElLhXVsJBVbRgX205M9OskykIdZbBjtb0VtY-xsOI94zmLMQDl7Kg-QzdTezfWki5DMQm7DuYLuPCtV7UlPc2lYtXSgimw7h20rxvbzngQjyzW25ALb2VwMKIDdgrXRyj42MIOU9KPL_mdrA2Twnsl4aqtYWymTO9aCq8qmTc6G"/>
+<div class="absolute inset-0 bg-primary/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<button class="text-white"><span class="material-symbols-outlined">delete</span></button>
+</div>
+</div>
+<div class="aspect-square rounded-xl bg-surface-container-high border border-outline-variant/20 flex flex-col items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined mb-1">movie</span>
+<span class="text-[10px] font-bold">KEYNOTE.MP4</span>
+<span class="text-[9px]">82% Uploaded</span>
+</div>
+<div class="aspect-square rounded-xl border border-dashed border-outline-variant flex items-center justify-center hover:bg-surface-container transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-outline">add</span>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Meta & Preview -->
+<div class="xl:col-span-4 space-y-8">
+<!-- Status & Metadata Card -->
+<section class="bg-primary text-white rounded-3xl p-8 relative overflow-hidden shadow-2xl shadow-primary/30">
+<!-- Sunrise Motif Background -->
+<div class="absolute -top-12 -right-12 w-48 h-48 bg-[#F5B942]/10 rounded-full blur-3xl"></div>
+<h3 class="text-lg font-bold mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-[#F5B942]">info</span>
+                        Submission Details
+                    </h3>
+<div class="space-y-6 relative z-10">
+<div class="flex justify-between items-center pb-4 border-b border-white/10">
+<span class="text-slate-400 text-sm">Created By</span>
+<span class="font-semibold text-sm">Dr. Arthur Nile</span>
+</div>
+<div class="flex justify-between items-center pb-4 border-b border-white/10">
+<span class="text-slate-400 text-sm">Department</span>
+<span class="font-semibold text-sm">Computer Science</span>
+</div>
+<div class="flex justify-between items-center pb-4 border-b border-white/10">
+<span class="text-slate-400 text-sm">Deadline</span>
+<span class="font-semibold text-sm">Oct 24, 2024</span>
+</div>
+<div class="pt-4">
+<p class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-3">Approval Workflow</p>
+<div class="flex items-center gap-4">
+<div class="w-8 h-8 rounded-full bg-[#F5B942] flex items-center justify-center text-primary font-bold text-xs">1</div>
+<div class="flex-1 h-px bg-white/20"></div>
+<div class="w-8 h-8 rounded-full border border-white/30 flex items-center justify-center text-white/50 font-bold text-xs">2</div>
+<div class="flex-1 h-px bg-white/20"></div>
+<div class="w-8 h-8 rounded-full border border-white/30 flex items-center justify-center text-white/50 font-bold text-xs">3</div>
+</div>
+<div class="flex justify-between mt-2">
+<span class="text-[10px] text-white font-bold">Executive</span>
+<span class="text-[10px] text-white/40">President</span>
+<span class="text-[10px] text-white/40">Admin</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Admin Preview Section -->
+<section class="bg-surface-container-high/50 rounded-3xl p-8 border border-outline-variant/10">
+<div class="flex items-center justify-between mb-6">
+<h2 class="text-xl font-bold text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">visibility</span>
+                            Admin Preview
+                        </h2>
+<span class="text-[10px] font-black bg-primary text-white px-2 py-0.5 rounded">READ-ONLY</span>
+</div>
+<div class="bg-white rounded-2xl p-6 shadow-sm pointer-events-none opacity-80 scale-[0.98] transform origin-top border border-slate-100">
+<div class="mb-6 border-b border-slate-100 pb-4">
+<h4 class="text-xs font-black text-slate-400 uppercase tracking-tighter mb-2">Internal Report Header</h4>
+<div class="flex gap-4">
+<div class="h-8 w-24 bg-slate-100 rounded-lg"></div>
+<div class="h-8 w-24 bg-slate-100 rounded-lg"></div>
+</div>
+</div>
+<div class="space-y-4">
+<div class="space-y-2">
+<div class="h-3 w-1/2 bg-slate-100 rounded"></div>
+<div class="h-3 w-full bg-slate-50 rounded"></div>
+<div class="h-3 w-full bg-slate-50 rounded"></div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="p-4 bg-slate-50 rounded-xl">
+<div class="h-2 w-1/2 bg-slate-200 rounded mb-2"></div>
+<div class="h-6 w-3/4 bg-slate-100 rounded"></div>
+</div>
+<div class="p-4 bg-slate-50 rounded-xl">
+<div class="h-2 w-1/2 bg-slate-200 rounded mb-2"></div>
+<div class="h-6 w-3/4 bg-slate-100 rounded"></div>
+</div>
+</div>
+<div class="flex items-center gap-2 mt-4 pt-4 border-t border-slate-100">
+<div class="w-6 h-6 rounded-full bg-[#8af9ae]"></div>
+<div class="h-2 w-32 bg-slate-100 rounded"></div>
+</div>
+</div>
+</div>
+<p class="mt-6 text-center text-on-surface-variant text-xs leading-relaxed italic">
+                        "This is a live reflection of how the Registrar and Provost will see your data. Ensure all metrics are verified before final submission."
+                    </p>
+</section>
+<button class="w-full py-5 rounded-3xl bg-secondary text-white font-black text-lg uppercase tracking-widest shadow-xl shadow-secondary/30 active:scale-95 transition-transform">
+                    Submit Final Report
+                </button>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-3 pb-safe lg:hidden bg-white/90 backdrop-blur-md border-t border-slate-100 shadow-[0_-4px_20px_rgba(11,35,71,0.08)] rounded-t-3xl">
+<button class="flex flex-col items-center justify-center text-slate-400">
+<span class="material-symbols-outlined">grid_view</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase tracking-wider">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-400">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase tracking-wider">Clubs</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-[#0d5bbc]/10 text-[#0d5bbc] rounded-2xl px-4 py-1">
+<span class="material-symbols-outlined">notifications</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase tracking-wider">Alerts</span>
+</button>
+<button class="flex flex-col items-center justify-center text-slate-400">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="font-['Inter'] text-[10px] font-bold uppercase tracking-wider">Profile</span>
+</button>
+</nav>
+</body></html>
