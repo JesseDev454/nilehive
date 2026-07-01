@@ -315,7 +315,7 @@ export function GuidedOnboarding({ restartSignal = 0 }: { restartSignal?: number
       <div className="absolute inset-0 bg-slate-950/55" />
       {highlightBox ? (
         <div
-          className="absolute rounded-xl border-4 border-primary bg-primary/10 shadow-[0_0_0_9999px_rgba(2,6,23,0.45),6px_6px_0_hsl(var(--foreground))] transition-all duration-200"
+          className="absolute rounded-xl border-4 border-primary bg-primary/10 shadow-soft-sm transition-all duration-200"
           style={{
             top: highlightBox.top,
             left: highlightBox.left,
@@ -324,14 +324,14 @@ export function GuidedOnboarding({ restartSignal = 0 }: { restartSignal?: number
           }}
         />
       ) : null}
-      <section className="pointer-events-auto absolute bottom-6 left-4 right-4 mx-auto max-w-lg border-2 border-foreground bg-card p-5 shadow-[6px_6px_0_hsl(var(--foreground))] md:bottom-8 md:right-8 md:left-auto">
-        <p className="text-xs font-black uppercase tracking-[0.16em] text-muted-foreground">
+      <section className="pointer-events-auto absolute bottom-6 left-4 right-4 mx-auto max-w-lg border border-border bg-card p-5 shadow-soft-sm md:bottom-8 md:right-8 md:left-auto">
+        <p className="text-xs font-bold tracking-[0.16em] text-muted-foreground">
           Step {stepIndex + 1} of {steps.length}
         </p>
-        <h2 className="mt-2 text-xl font-black uppercase tracking-[0.06em]">{currentStep.title}</h2>
+        <h2 className="mt-2 text-xl font-bold tracking-[0.06em]">{currentStep.title}</h2>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">{currentStep.body}</p>
         {!highlightBox ? (
-          <p className="mt-3 border-2 border-dashed border-muted-foreground/40 bg-muted/40 p-3 text-xs font-semibold text-muted-foreground">
+          <p className="mt-3 border border-dashed border-muted-foreground/40 bg-muted/40 p-3 text-xs font-semibold text-muted-foreground">
             This section may be hidden on your screen. Use the sidebar menu if you do not see it immediately.
           </p>
         ) : null}

@@ -52,7 +52,7 @@ export function BrandLogo({
     return (
       <div
         className={cn(
-          "flex items-center justify-center overflow-hidden rounded-[18px] border-3 border-foreground bg-white shadow-neo-sm",
+          "flex items-center justify-center overflow-hidden rounded-[18px] border border-border bg-white shadow-soft-sm",
           compactSizes[size],
           className
         )}
@@ -71,7 +71,7 @@ export function BrandLogo({
       className={cn(
         "flex items-center justify-center overflow-hidden",
         variant === "framed"
-          ? "rounded-[18px] border-3 border-foreground bg-white shadow-neo-sm"
+          ? "rounded-[18px] border border-border bg-white shadow-soft-sm"
           : "border-0 bg-transparent shadow-none",
         variant === "framed" ? frameSizes[size] : plainSizes[size],
         className

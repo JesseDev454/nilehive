@@ -344,6 +344,62 @@ test("unpaid or rejected current-session dues keep a member inactive", async () 
   });
 });
 
+test("rejected dues proof notifies the student", async () => {
+  let createdNotifications = [];
+  const fakeDatabase = {
+    async getDuePaymentById() {
+      return createPayment({
+        status: "submitted",
+        academic_session: "2025/2026"
+      });
+    },
+    async updateDuePayment(paymentId, update) {
+      return createPayment({
+        id: paymentId,
+        academic_session: "2025/2026",
+        ...update
+      });
+    },
+    async getClubMemberById() {
+      return createMember({
+        id: "member-1",
+        membership_status: "inactive",
+        profile_id: "student-1"
+      });
+    },
+    async createNotifications(notifications) {
+      createdNotifications = notifications;
+      return notifications.map((notification, index) => ({
+        ...notification,
+        id: `notification-${index + 1}`
+      }));
+    }
+  };
+
+  await updateDuePayment({
+    actor: {
+      id: "admin-1",
+      role: "admin",
+      clubId: null
+    },
+    paymentId: "payment-1",
+    payload: {
+      status: "rejected"
+    },
+    database: fakeDatabase
+  });
+
+  assert.equal(createdNotifications.length, 1);
+  assert.deepEqual(createdNotifications[0], {
+    user_id: "student-1",
+    proposal_id: null,
+    announcement_id: null,
+    type: "dues_proof_rejected",
+    message: "Your dues proof could not be verified. Please upload a clearer copy or the correct receipt.",
+    delivery_status: "stored"
+  });
+});
+
 test("student can list own dues payments", async () => {
   const fakeDatabase = {
     async listDuePaymentsForProfile(profileId) {

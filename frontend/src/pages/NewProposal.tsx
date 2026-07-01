@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/contexts/RoleContext";
 import {
@@ -626,8 +626,8 @@ export default function NewProposal() {
 
   if (!canManageProposals) {
     return (
-      <div className="nh-page max-w-3xl">
-        <NeoStateCard
+      <div className="clb-screen max-w-3xl">
+        <ClublyStateCard
           icon={Building2}
           title="Proposal access is for club presidents"
           message="Club presidents create and resubmit proposals here. Executives can keep up with club work through tasks and events."
@@ -638,8 +638,8 @@ export default function NewProposal() {
 
   if (!profile?.club_id && !editProposal?.club_id) {
     return (
-      <div className="nh-page max-w-3xl">
-        <NeoStateCard
+      <div className="clb-screen max-w-3xl">
+        <ClublyStateCard
           icon={Building2}
           title="Your club assignment is still needed"
           message="Your president profile is not linked to a club yet. Club Services needs to assign your club before you can create or edit proposals."
@@ -650,8 +650,8 @@ export default function NewProposal() {
   }
 
   return (
-    <div className="nh-page max-w-6xl">
-      <NeoPageHeader
+    <div className="clb-screen max-w-6xl">
+      <ClublyPageHeader
         eyebrow="Event Proposal"
         title={isEditMode ? "Edit Proposal" : "Create Proposal"}
         description={
@@ -662,11 +662,11 @@ export default function NewProposal() {
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {lastLocalSaveAt ? (
-              <span className="nh-status border-foreground bg-background text-foreground">
+              <span className="clb-status border-border bg-background text-foreground">
                 Saved locally {formatProposalDraftSavedAt(lastLocalSaveAt)}
               </span>
             ) : null}
-            <span className="nh-status border-secondary bg-secondary text-secondary-foreground">
+            <span className="clb-status border-secondary bg-secondary text-secondary-foreground">
               Max {MAX_RESPONSIBLE_MEMBERS} members
             </span>
           </div>
@@ -689,15 +689,15 @@ export default function NewProposal() {
             >
               <span
                 className={cn(
-                  "flex h-10 w-10 items-center justify-center border-2 border-foreground text-sm font-black transition-colors",
+                  "flex h-10 w-10 items-center justify-center border border-border text-sm font-bold transition-colors",
                   index < step && "bg-secondary text-secondary-foreground",
-                  index === step && "bg-primary text-primary-foreground shadow-[4px_4px_0_hsl(var(--foreground))]",
+                  index === step && "bg-primary text-primary-foreground shadow-soft-sm",
                   index > step && "bg-muted text-muted-foreground"
                 )}
               >
                 {index < step ? <Check className="h-4 w-4" /> : index + 1}
               </span>
-              <span className="hidden text-xs font-black uppercase tracking-[0.12em] text-foreground sm:block">{label}</span>
+              <span className="hidden text-xs font-bold tracking-[0.12em] text-foreground sm:block">{label}</span>
             </button>
           ))}
         </div>
@@ -716,15 +716,15 @@ export default function NewProposal() {
               <CardContent className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <div className="space-y-3 md:col-span-2">
                   <Label>Club</Label>
-                  <div className="nh-card-soft rounded-xl p-4">
+                  <div className="clb-card rounded-xl p-4">
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                       <div>
-                        <p className="text-lg font-black uppercase text-[#163B7A]">{clubContextName}</p>
+                        <p className="text-lg font-bold text-[#163B7A]">{clubContextName}</p>
                         <p className="text-sm text-muted-foreground">
                           {clubContextCode ? `Club code: ${clubContextCode}` : "Club code will appear here when available."}
                         </p>
                       </div>
-                      <span className="nh-status border-secondary bg-secondary text-secondary-foreground">
+                      <span className="clb-status border-secondary bg-secondary text-secondary-foreground">
                         Club president
                       </span>
                     </div>
@@ -949,7 +949,7 @@ export default function NewProposal() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {budgetItems.map((item, index) => (
-                  <div key={item.id} className="nh-card-soft grid grid-cols-1 gap-3 p-4 md:grid-cols-12">
+                  <div key={item.id} className="clb-card grid grid-cols-1 gap-3 p-4 md:grid-cols-12">
                     <div className="space-y-2 md:col-span-3">
                       <Label>Item</Label>
                       <Input
@@ -1031,7 +1031,7 @@ export default function NewProposal() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {responsibleMembers.map((member, index) => (
-                  <div key={member.id} className="nh-card-soft p-4">
+                  <div key={member.id} className="clb-card p-4">
                     <div className="mb-4 flex items-center justify-between">
                       <p className="font-bold text-[#163B7A]">Responsible Member {index + 1}</p>
                       <Button
@@ -1143,7 +1143,7 @@ export default function NewProposal() {
                     <ReviewItem label="Club" value={clubContextName || "-"} />
                     <ReviewItem label="Club Code" value={clubContextCode || "-"} />
                   </div>
-                  <div className="nh-card-soft mt-3 p-4">
+                  <div className="clb-card mt-3 p-4">
                     <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Purpose and goals</p>
                     <p className="mt-2 leading-relaxed">{form.aimObjectives || "-"}</p>
                   </div>
@@ -1181,7 +1181,7 @@ export default function NewProposal() {
                     />
                     <ReviewItem label="Expected Participants" value={form.numberOfParticipants || "-"} />
                   </div>
-                  <div className="nh-card-soft mt-3 p-4">
+                  <div className="clb-card mt-3 p-4">
                     <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Detailed Description</p>
                     <p className="mt-2 leading-relaxed">{form.description || "-"}</p>
                   </div>
@@ -1216,9 +1216,9 @@ export default function NewProposal() {
                           ))}
                         </tbody>
                         <tfoot>
-                          <tr className="border-t-2 border-[#1D4DA1]/20 bg-[#EEF3FB]">
+                          <tr className="border-t border-border/70 bg-[#EEF3FB]">
                             <td colSpan={4} className="p-3 font-bold text-[#163B7A]">Total Budget Request</td>
-                            <td className="p-3 text-right font-black text-[#1D4DA1] font-mono">{formatCurrency(budgetTotal)}</td>
+                            <td className="p-3 text-right font-bold text-[#1D4DA1] font-mono">{formatCurrency(budgetTotal)}</td>
                           </tr>
                         </tfoot>
                       </table>
@@ -1236,7 +1236,7 @@ export default function NewProposal() {
                   {toResponsibleMembers(responsibleMembers).length > 0 ? (
                     <div className="space-y-3">
                       {toResponsibleMembers(responsibleMembers).map((member, i) => (
-                        <div key={i} className="nh-card-soft p-4">
+                        <div key={i} className="clb-card p-4">
                           <p className="font-bold text-[#163B7A] mb-2">Team Member {i + 1}</p>
                           <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
                             <span className="text-muted-foreground">Name</span>
@@ -1264,8 +1264,8 @@ export default function NewProposal() {
         <aside className="lg:col-span-4 space-y-5">
           <Card className="overflow-hidden bg-[#163B7A] text-white">
             <CardContent className="relative p-7">
-              <div className="absolute -right-8 -top-8 h-32 w-32 border-2 border-white/20 bg-[#D4A437]/20" />
-              <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#D4A437]">Budget Summary</p>
+              <div className="absolute -right-8 -top-8 h-32 w-32 border border-white/20 bg-[#D4A437]/20" />
+              <p className="text-xs font-bold tracking-wide text-[#D4A437]">Budget Summary</p>
               <div className="mt-6 space-y-3">
                 {toBudgetLineItems(budgetItems).slice(0, 4).map((item) => (
                   <div key={`${item.item}-${item.description}`} className="flex justify-between border-b border-white/10 pb-2">
@@ -1276,7 +1276,7 @@ export default function NewProposal() {
                 <div className="flex items-end justify-between pt-4">
                   <div>
                     <p className="text-xs font-bold uppercase text-white/50">Total Request</p>
-                    <p className="text-3xl font-black">{formatCurrency(budgetTotal)}</p>
+                    <p className="text-3xl font-bold">{formatCurrency(budgetTotal)}</p>
                   </div>
                   <WalletCards className="h-10 w-10 text-[#D4A437]" />
                 </div>
@@ -1333,7 +1333,7 @@ export default function NewProposal() {
 
 function ReviewItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="nh-card-soft p-4">
+    <div className="clb-card p-4">
       <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
       <p className="mt-2 font-semibold text-[#163B7A]">{value}</p>
     </div>

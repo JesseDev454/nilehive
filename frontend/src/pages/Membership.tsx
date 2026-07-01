@@ -6,7 +6,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { DataPagination } from "@/components/DataPagination";
 import { NhStudentId } from "@/components/NhStudentId";
-import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,6 +50,8 @@ import { isValidStudentId, normalizeStudentId, STUDENT_ID_ERROR_MESSAGE } from "
 import { resolveStorageFileUrl, uploadStorageFile } from "@/lib/storage";
 
 const REQUEST_STATUSES = ["all", "pending", "active", "rejected", "cancelled"] as const;
+const DUES_PROOF_MAX_BYTES = 10 * 1024 * 1024;
+const DUES_PROOF_ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "application/pdf"]);
 const STUDENT_TYPES = [
   { value: "fresher", label: "Fresher" },
   { value: "returning", label: "Returning Student" }
@@ -58,6 +60,17 @@ const EVENT_FILTERS = [
   { value: "all", label: "Any event status" },
   { value: "upcoming", label: "Upcoming event available" }
 ] as const;
+
+function isAcceptedDuesProof(file: File) {
+  const lowerName = file.name.toLowerCase();
+  return (
+    DUES_PROOF_ACCEPTED_TYPES.has(file.type) ||
+    lowerName.endsWith(".jpg") ||
+    lowerName.endsWith(".jpeg") ||
+    lowerName.endsWith(".png") ||
+    lowerName.endsWith(".pdf")
+  );
+}
 const CLUB_DESCRIPTION_OVERRIDES: Record<string, string> = {
   "Nile Book Club":
     "Dive into the world of literature with fellow bookworms. Discover new genres, share your favourite reads, and engage in lively discussions that will broaden your horizons.",
@@ -134,11 +147,11 @@ function ClubLogo({ club, className = "h-14 w-14" }: { club: ClubRecord; classNa
     <img
       src={url}
       alt={`${club.name} logo`}
-      className={`${className} shrink-0 rounded-lg border-2 border-foreground object-cover`}
+      className={`${className} shrink-0 rounded-lg border border-border object-cover`}
       onError={() => setUrl((currentUrl) => (currentUrl !== staticLogoUrl ? staticLogoUrl : null))}
     />
   ) : (
-    <div className={`${className} flex shrink-0 items-center justify-center rounded-lg border-2 border-foreground bg-muted`} aria-label={`${club.name} logo unavailable`}>
+    <div className={`${className} flex shrink-0 items-center justify-center rounded-lg border border-border bg-muted`} aria-label={`${club.name} logo unavailable`}>
       <ImageIcon className="h-6 w-6" />
     </div>
   );
@@ -160,7 +173,7 @@ function GalleryImage({ path, caption }: { path: string; caption: string | null 
         alt={caption || "Club activity"}
         loading="lazy"
         decoding="async"
-        className="aspect-square w-full rounded-lg border-2 border-foreground object-cover"
+        className="aspect-square w-full rounded-lg border border-border object-cover"
       />
       {caption ? <figcaption className="mt-1 text-xs text-muted-foreground">{caption}</figcaption> : null}
     </figure>
@@ -586,9 +599,16 @@ function DuesConfirmationCard({
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (!isAcceptedDuesProof(file)) {
+      toast.error("Unsupported receipt file", {
+        description: "Please upload a JPG, PNG, or PDF under 10MB."
+      });
+      return;
+    }
+
+    if (file.size > DUES_PROOF_MAX_BYTES) {
       toast.error("Receipt is too large", {
-        description: "Please upload a file smaller than 5MB."
+        description: "Please upload a JPG, PNG, or PDF under 10MB."
       });
       return;
     }
@@ -710,7 +730,7 @@ function DuesConfirmationCard({
         ) : null}
       </div>
 
-      <div className="nh-card-soft p-4">
+      <div className="clb-card p-4">
         {settings ? (
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
@@ -771,7 +791,7 @@ function DuesConfirmationCard({
             ref={proofInputRef}
             id={`membership_proof_upload_${request.id}`}
             type="file"
-            accept="image/*,.pdf"
+            accept="image/jpeg,image/png,application/pdf,.jpg,.jpeg,.png,.pdf"
             onChange={handleReceiptUpload}
             disabled={isUploadingProof}
           />
@@ -821,7 +841,7 @@ function JoinFlowStepper({
         {steps.map((step, index) => (
           <div
             key={step.label}
-            className={`rounded-xl border-2 p-3 text-sm ${
+            className={`rounded-xl border p-3 text-sm ${
               step.done
                 ? "border-success bg-success/10 text-success"
                 : step.current
@@ -936,7 +956,7 @@ function ClubDetailOverview({
                     >
                       <Smartphone className="h-5 w-5 shrink-0" />
                       <span>
-                        <span className="block font-black">Share to apps</span>
+                        <span className="block font-bold">Share to apps</span>
                         <span className="block text-xs normal-case tracking-normal text-muted-foreground">Open your device share sheet</span>
                       </span>
                     </Button>
@@ -959,7 +979,7 @@ function ClubDetailOverview({
                       >
                         <MessageCircle className="h-5 w-5 shrink-0" />
                         <span>
-                          <span className="block font-black">WhatsApp</span>
+                          <span className="block font-bold">WhatsApp</span>
                           <span className="block text-xs normal-case tracking-normal text-muted-foreground">Send as a chat invite</span>
                         </span>
                       </a>
@@ -972,7 +992,7 @@ function ClubDetailOverview({
                     >
                       <Camera className="h-5 w-5 shrink-0" />
                       <span>
-                        <span className="block font-black">Snapchat</span>
+                        <span className="block font-bold">Snapchat</span>
                         <span className="block text-xs normal-case tracking-normal text-muted-foreground">Share or copy for Snap</span>
                       </span>
                     </Button>
@@ -984,7 +1004,7 @@ function ClubDetailOverview({
                     >
                       <Instagram className="h-5 w-5 shrink-0" />
                       <span>
-                        <span className="block font-black">Instagram</span>
+                        <span className="block font-bold">Instagram</span>
                         <span className="block text-xs normal-case tracking-normal text-muted-foreground">Use share sheet or copy</span>
                       </span>
                     </Button>
@@ -996,7 +1016,7 @@ function ClubDetailOverview({
                     >
                       <Copy className="h-5 w-5 shrink-0" />
                       <span>
-                        <span className="block font-black">Copy Link</span>
+                        <span className="block font-bold">Copy Link</span>
                         <span className="block text-xs normal-case tracking-normal text-muted-foreground">Paste anywhere</span>
                       </span>
                     </Button>
@@ -1018,10 +1038,10 @@ function ClubDetailOverview({
         <CardContent className="space-y-5">
           <p className="text-sm leading-6 text-muted-foreground">{getClubDescription(club)}</p>
           {club.gallery?.length ? (
-            <div><h3 className="mb-3 font-black">Club gallery</h3><div className="grid grid-cols-2 gap-3 md:grid-cols-3">{club.gallery.map((media) => <GalleryImage key={media.id} path={media.storage_path} caption={media.caption} />)}</div></div>
+            <div><h3 className="mb-3 font-bold">Club gallery</h3><div className="grid grid-cols-2 gap-3 md:grid-cols-3">{club.gallery.map((media) => <GalleryImage key={media.id} path={media.storage_path} caption={media.caption} />)}</div></div>
           ) : null}
           <div>
-            <h3 className="mb-3 font-black">Events</h3>
+            <h3 className="mb-3 font-bold">Events</h3>
             {clubEvents.length ? <div className="space-y-2">{clubEvents.slice(0, 6).map((event) => <div key={event.proposal_id} className="rounded-lg border p-3"><p className="font-semibold">{event.title}</p><p className="text-sm text-muted-foreground">{formatDate(event.event_date)} · {event.event_lifecycle === "past" ? "Past event" : "Upcoming"}</p></div>)}</div> : <p className="text-sm text-muted-foreground">No approved events have been published for this club yet.</p>}
           </div>
           <div className="grid gap-3 md:grid-cols-2">
@@ -1076,7 +1096,7 @@ function ClubDetailOverview({
         </CardHeader>
         <CardContent className="space-y-3">
           {announcementsLoading ? (
-            <NeoLoadingState title="Loading announcements" message="Checking recent club updates." compact />
+            <ClublyLoadingState title="Loading announcements" message="Checking recent club updates." compact />
           ) : announcementsFailed ? (
             <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
               {getErrorMessage(announcementsError)}
@@ -1086,7 +1106,7 @@ function ClubDetailOverview({
           ) : (
             announcements.slice(0, 3).map((announcement) => (
               <Link key={announcement.id} to="/communications" className="block">
-                <div className="nh-list-card transition-colors hover:bg-accent/15">
+                <div className="clb-list-card transition-colors hover:bg-accent/15">
                   <div className="flex items-start justify-between gap-3">
                     <p className="font-semibold leading-5">{announcement.title}</p>
                     <Badge className={getAnnouncementPriorityClass(announcement.priority)}>{announcement.priority}</Badge>
@@ -1232,9 +1252,16 @@ function JoinClubPanel({
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (!isAcceptedDuesProof(file)) {
+      toast.error("Unsupported receipt file", {
+        description: "Please upload a JPG, PNG, or PDF under 10MB."
+      });
+      return;
+    }
+
+    if (file.size > DUES_PROOF_MAX_BYTES) {
       toast.error("Receipt is too large", {
-        description: "Please upload a file smaller than 5MB."
+        description: "Please upload a JPG, PNG, or PDF under 10MB."
       });
       return;
     }
@@ -1279,7 +1306,7 @@ function JoinClubPanel({
 
   return (
     <Card className="overflow-hidden">
-      <CardHeader className="border-b-2 border-foreground bg-primary/10">
+      <CardHeader className="border-b border-border/70 bg-accent/70">
         <div className="flex items-start justify-between gap-3">
           <div>
             <CardTitle className="text-lg">{club.name}</CardTitle>
@@ -1289,7 +1316,7 @@ function JoinClubPanel({
         </div>
       </CardHeader>
       <CardContent className="space-y-4 p-5">
-        <div className="space-y-3 rounded-xl border-2 border-foreground bg-warning/10 p-4">
+        <div className="space-y-3 rounded-xl border border-border bg-warning/10 p-4">
           <div>
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Student type</p>
             <Select
@@ -1321,7 +1348,7 @@ function JoinClubPanel({
         </div>
 
         {duesRequired && settings ? (
-          <div className="nh-card-soft space-y-2 p-4 text-sm">
+          <div className="clb-card space-y-2 p-4 text-sm">
             <p className="font-semibold">Club Services Account</p>
             <p><span className="text-muted-foreground">Bank:</span> {settings.bank_name}</p>
             <p><span className="text-muted-foreground">Account:</span> {settings.account_number}</p>
@@ -1414,7 +1441,7 @@ function JoinClubPanel({
                     ref={proofInputRef}
                     id={`join-proof-${club.id}`}
                     type="file"
-                    accept="image/*,.pdf"
+                    accept="image/jpeg,image/png,application/pdf,.jpg,.jpeg,.png,.pdf"
                     onChange={handleReceiptUpload}
                     disabled={isUploadingProof}
                   />
@@ -1476,7 +1503,7 @@ function DiscoverClubCard({
 
   return (
     <Card className="flex h-full flex-col overflow-hidden">
-      <CardHeader className="border-b-2 border-foreground bg-primary/10">
+      <CardHeader className="border-b border-border/70 bg-accent/70">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-3"><ClubLogo club={club} className="h-12 w-12" /><div><CardTitle className="text-lg">{club.name}</CardTitle><p className="text-sm text-muted-foreground">{club.code || "Nile University club"}</p></div></div>
@@ -1584,7 +1611,7 @@ function StudentClubJoinPage({
   const duesRequired = club ? isDuesRequired(club, settings) : false;
 
   return (
-    <div className="nh-page">
+    <div className="clb-screen">
       <div className="flex items-center">
         <Button asChild variant="outline" className="gap-2">
           <Link to="/membership">
@@ -1595,7 +1622,7 @@ function StudentClubJoinPage({
       </div>
 
       {isLoadingClubs || isLoadingRequests ? (
-        <NeoLoadingState title="Opening club join form" message="We are loading the club details and your current request status." compact />
+        <ClublyLoadingState title="Opening club join form" message="We are loading the club details and your current request status." compact />
       ) : clubsFailed ? (
         <Card>
           <CardContent className="p-8">
@@ -1611,14 +1638,14 @@ function StudentClubJoinPage({
           </CardContent>
         </Card>
       ) : !club ? (
-        <NeoStateCard
+        <ClublyStateCard
           icon={Users}
           title="Club not found"
           message="We couldn't find that club. Please go back to the discover page and choose another one."
         />
       ) : (
         <>
-          <NeoPageHeader
+          <ClublyPageHeader
             eyebrow="Membership"
             title={`Join ${club.name}`}
             description="Review the club profile, events, dues status, and next membership step."
@@ -1775,8 +1802,8 @@ function StudentMembershipView() {
   }
 
   return (
-    <div className="nh-page">
-      <NeoPageHeader
+    <div className="clb-screen">
+      <ClublyPageHeader
         eyebrow="Membership"
         title="Discover Clubs"
         description="Find clubs that fit your interests and next campus activity."
@@ -1855,7 +1882,7 @@ function StudentMembershipView() {
       </Card>
 
       {isLoadingClubs || isLoadingRequests ? (
-        <NeoLoadingState title="Checking club membership status" message="We are loading clubs and your current requests." compact />
+        <ClublyLoadingState title="Checking club membership status" message="We are loading clubs and your current requests." compact />
       ) : clubsFailed ? (
         <Card>
           <CardContent className="p-8">
@@ -1948,7 +1975,7 @@ function StudentMembershipView() {
           </CardHeader>
           <CardContent className="space-y-3">
             {myRequests.map((request) => (
-              <div key={request.id} className="nh-list-card">
+              <div key={request.id} className="clb-list-card">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <p className="font-semibold">{request.club?.name || "Selected club"}</p>
@@ -2021,8 +2048,8 @@ function ReviewerMembershipView() {
   });
 
   return (
-    <div className="nh-page">
-      <NeoPageHeader
+    <div className="clb-screen">
+      <ClublyPageHeader
         eyebrow="Membership"
         title="Membership Review"
         description="Students submit paid join requests first. Use the dues table to confirm the payment and activate the membership."
@@ -2071,14 +2098,14 @@ function ReviewerMembershipView() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <NeoLoadingState title="Loading membership requests" message="We are preparing the payment-backed join queue." compact />
+            <ClublyLoadingState title="Loading membership requests" message="We are preparing the payment-backed join queue." compact />
           ) : isError ? (
-            <div className="nh-empty border-destructive bg-destructive/5">
+            <div className="clb-empty border-destructive bg-destructive/5">
               <p className="font-medium">Unable to load membership requests</p>
               <p className="mt-1 text-sm text-muted-foreground">{getErrorMessage(error)}</p>
             </div>
           ) : visibleRequests.length === 0 ? (
-            <div className="nh-empty">
+            <div className="clb-empty">
               <ShieldCheck className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
               <p className="font-medium">No join requests match this view</p>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -2089,7 +2116,7 @@ function ReviewerMembershipView() {
             <div>
               <div className="space-y-3">
                 {visibleRequests.map((request) => (
-                  <div key={request.id} className="nh-list-card">
+                  <div key={request.id} className="clb-list-card">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
@@ -2148,8 +2175,8 @@ export default function Membership() {
   }
 
   return (
-    <div className="nh-page">
-      <NeoStateCard
+    <div className="clb-screen">
+      <ClublyStateCard
         icon={Users}
         title="Membership tools are not available here"
         message="This role does not use the membership workflow."

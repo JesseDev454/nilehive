@@ -38,10 +38,10 @@ export default function ForgotPassword() {
     return (
       <main className="flex min-h-screen flex-col bg-background text-foreground">
         <section className="flex flex-1 items-center justify-center p-5">
-          <div className="nh-card max-w-xl bg-card p-6 text-center md:p-10">
+          <div className="clb-card max-w-xl bg-card p-6 text-center md:p-10">
             <BrandLogo size="lg" variant="plain" className="mx-auto mb-5 h-24 w-[22rem] max-w-full" />
-            <p className="nh-eyebrow">Account Recovery</p>
-            <h1 className="mt-2 text-3xl font-black uppercase md:text-5xl">Use Campus One recovery</h1>
+            <p className="clb-eyebrow">Account Recovery</p>
+            <h1 className="mt-2 text-3xl font-bold md:text-5xl">Use Campus One recovery</h1>
             <p className="mt-4 text-sm leading-6 text-muted-foreground">
               Club Services does not manage your Campus One password. Use Campus One or your Nile University account recovery options to restore access.
             </p>
@@ -51,7 +51,7 @@ export default function ForgotPassword() {
             >
               Sign in with Campus One
             </Button>
-            <Link className="mt-5 inline-flex items-center justify-center gap-2 text-sm font-black underline underline-offset-4" to="/login">
+            <Link className="mt-5 inline-flex items-center justify-center gap-2 text-sm font-bold underline underline-offset-4" to="/login">
               <ArrowLeft className="h-4 w-4" />
               Back to sign in
             </Link>
@@ -65,9 +65,9 @@ export default function ForgotPassword() {
   if (cookieAuthEnabled) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background p-6">
-        <div className="nh-card max-w-md bg-card p-6 text-center">
+        <div className="clb-card max-w-md bg-card p-6 text-center">
           <BrandLogo size="lg" variant="plain" className="mx-auto mb-4 h-20 w-72 max-w-full" />
-          <h1 className="text-2xl font-black uppercase">Opening account recovery</h1>
+          <h1 className="text-2xl font-bold">Opening account recovery</h1>
           <p className="mt-2 text-sm text-muted-foreground">Please wait while we send you to the shared portal.</p>
         </div>
       </main>
@@ -114,7 +114,7 @@ export default function ForgotPassword() {
     <main className="flex min-h-screen flex-col bg-background text-foreground">
       <section className="flex flex-1 items-center justify-center p-5">
         <div className="w-full max-w-xl">
-          <Link className="mb-5 inline-flex items-center gap-2 text-sm font-black uppercase tracking-[0.12em]" to="/login">
+          <Link className="mb-5 inline-flex items-center gap-2 text-sm font-bold tracking-[0.12em]" to="/login">
             <ArrowLeft className="h-4 w-4" />
             Back to sign in
           </Link>
@@ -125,12 +125,12 @@ export default function ForgotPassword() {
               variant="plain"
               className="mx-auto mb-4 h-24 w-[22rem] max-w-full sm:h-28 sm:w-[24rem]"
             />
-            <p className="nh-eyebrow">Account Recovery</p>
+            <p className="clb-eyebrow">Account Recovery</p>
           </div>
 
-          <div className="nh-card bg-card p-6 md:p-10">
-            <div className="mb-8 border-b-2 border-foreground pb-6">
-              <h1 className="nh-title">Reset Password</h1>
+          <div className="clb-card bg-card p-6 md:p-10">
+            <div className="mb-8 border-b border-border/70 pb-6">
+              <h1 className="clb-title">Reset Password</h1>
               <p className="mt-2 text-sm text-muted-foreground">
                 Enter your Nile University email and we will send a secure reset link.
               </p>
@@ -139,7 +139,7 @@ export default function ForgotPassword() {
           {passwordAuthEnabled ? (
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-2">
-                <Label className="font-black uppercase tracking-[0.12em]" htmlFor="reset-email">
+                <Label className="font-bold tracking-[0.12em]" htmlFor="reset-email">
                   University Email
                 </Label>
                 <div className="relative">
@@ -163,8 +163,8 @@ export default function ForgotPassword() {
               </Button>
 
               {sentEmail ? (
-                <div className="border-2 border-success bg-success/10 p-4 text-sm">
-                  <p className="font-black">Reset link sent</p>
+                <div className="border border-success bg-success/10 p-4 text-sm">
+                  <p className="font-bold">Reset link sent</p>
                   <p className="mt-1 text-muted-foreground">
                     If an account exists for {sentEmail}, Supabase will send the password reset email.
                   </p>
@@ -173,8 +173,8 @@ export default function ForgotPassword() {
             </form>
           ) : (
             <div className="space-y-5">
-              <div className="border-2 border-foreground bg-muted p-5">
-                <p className="font-black uppercase">Microsoft account recovery</p>
+              <div className="border border-border bg-muted p-5">
+                <p className="font-bold">Microsoft account recovery</p>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Password reset is handled through your Nile University Microsoft account.
                 </p>
@@ -187,7 +187,7 @@ export default function ForgotPassword() {
             </div>
           )}
 
-          <div className="mt-8 flex items-start gap-3 border-2 border-foreground bg-muted p-4 text-xs text-muted-foreground">
+          <div className="mt-8 flex items-start gap-3 border border-border bg-muted p-4 text-xs text-muted-foreground">
             <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-secondary" />
             <p>
               For security, reset links expire. If the link no longer works, request a fresh one from this page.

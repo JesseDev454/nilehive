@@ -11,6 +11,7 @@ const {
 } = require("./dues.validation");
 const { activateMembershipAfterPaidDues } = require("../membership-requests/membership-requests.service");
 const { syncMemberStatusFromDuePayment } = require("../members/member-status");
+const { sendPushForNotifications } = require("../notifications/push.service");
 
 function requireActor(actor) {
   if (!actor) {
@@ -252,7 +253,44 @@ async function updateDuePayment(options) {
     });
   }
 
+  if (updatedPayment.status === "rejected" && payment.status !== "rejected") {
+    await notifyRejectedDuePayment({
+      payment: updatedPayment,
+      database
+    });
+  }
+
   return formatDuePayment(updatedPayment);
+}
+
+async function notifyRejectedDuePayment({ payment, database }) {
+  if (typeof database.createNotifications !== "function" || typeof database.getClubMemberById !== "function") {
+    return;
+  }
+
+  const member = await database.getClubMemberById(payment.member_id);
+  const userId = member?.profile_id;
+
+  if (!userId) {
+    return;
+  }
+
+  const notifications = await database.createNotifications([
+    {
+      user_id: userId,
+      proposal_id: null,
+      announcement_id: null,
+      type: "dues_proof_rejected",
+      message: "Your dues proof could not be verified. Please upload a clearer copy or the correct receipt.",
+      delivery_status: "stored"
+    }
+  ]);
+
+  try {
+    await sendPushForNotifications({ database, notifications });
+  } catch {
+    // Dues review should not fail if optional browser push delivery is unavailable.
+  }
 }
 
 async function submitDuePaymentConfirmation(options) {

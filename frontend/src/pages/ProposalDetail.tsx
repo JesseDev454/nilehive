@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Clock, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { ApprovalStepper } from "@/components/ApprovalStepper";
-import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -156,11 +156,11 @@ export default function ProposalDetail() {
 
   if (isUnsupportedRole) {
     return (
-      <div className="nh-page max-w-4xl">
+      <div className="clb-screen max-w-4xl">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-muted-foreground">
           <ArrowLeft className="h-4 w-4 mr-1" /> Back
         </Button>
-        <NeoStateCard
+        <ClublyStateCard
           icon={FileText}
           title="Proposal access is restricted"
           message="This area is for club presidents, advisors, and Club Services reviewers. Executives can keep up with club work through tasks and events."
@@ -244,18 +244,18 @@ export default function ProposalDetail() {
   }
 
   return (
-    <div className="nh-page">
+    <div className="clb-screen">
       <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-muted-foreground">
         <ArrowLeft className="h-4 w-4 mr-1" /> Back
       </Button>
 
       {isLoading ? (
-        <NeoLoadingState title="Loading proposal" message="We are getting the latest workflow status." />
+        <ClublyLoadingState title="Loading proposal" message="We are getting the latest workflow status." />
       ) : isError || !proposal ? (
-        <NeoStateCard icon={FileText} title="Proposal not found" message={getErrorMessage(error)} tone="danger" />
+        <ClublyStateCard icon={FileText} title="Proposal not found" message={getErrorMessage(error)} tone="danger" />
       ) : (
         <>
-          <NeoPageHeader
+          <ClublyPageHeader
             eyebrow={role === "admin" ? "Club Services Review" : role === "advisor" ? "Advisor Review" : "Club Proposal"}
             title={proposal.title}
             description={`${
@@ -266,9 +266,9 @@ export default function ProposalDetail() {
             actions={<StatusBadge status={proposal.status} eventDate={proposal.event_date} />}
           />
 
-          <Card className="nh-card-dark text-white">
+          <Card className="clb-card bg-primary text-primary-foreground text-white">
             <CardHeader>
-              <CardTitle className="nh-panel-title text-white">Where this proposal stands</CardTitle>
+              <CardTitle className="clb-panel-title text-white">Where this proposal stands</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
               <div>
@@ -287,7 +287,7 @@ export default function ProposalDetail() {
                 <p className="text-xs font-bold uppercase tracking-wide text-white/50">Last Updated</p>
                 <p className="mt-1 font-semibold">{getDateLabel(proposal.updated_at)}</p>
               </div>
-              <div className="border-2 border-primary-foreground/30 bg-white/10 p-4 sm:col-span-2 lg:col-span-4">
+              <div className="border border-primary-foreground/30 bg-white/10 p-4 sm:col-span-2 lg:col-span-4">
                 <p className="text-xs font-bold uppercase tracking-wide text-[#D4A437]">Next Action</p>
                 <p className="mt-1 text-white/90">{getProposalNextAction(proposal.status, proposal.event_date)}</p>
               </div>
@@ -420,7 +420,7 @@ export default function ProposalDetail() {
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm">
                     {proposal.budget_line_items.map((item, index) => (
-                      <div key={`${item.item}-${index}`} className="border-2 border-foreground bg-muted p-3">
+                      <div key={`${item.item}-${index}`} className="border border-border bg-muted p-3">
                         <div className="flex items-center justify-between gap-3">
                           <p className="font-medium">{item.item}</p>
                           <p className="font-mono font-semibold">{formatCurrency(item.amount)}</p>
@@ -440,7 +440,7 @@ export default function ProposalDetail() {
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm">
                     {proposal.responsible_members.map((member, index) => (
-                      <div key={`${member.student_id}-${index}`} className="border-2 border-foreground bg-muted p-3">
+                      <div key={`${member.student_id}-${index}`} className="border border-border bg-muted p-3">
                         <p className="font-medium">{member.name}</p>
                         <p className="text-muted-foreground mt-1">
                           {member.position} - {member.student_id}
@@ -492,7 +492,7 @@ export default function ProposalDetail() {
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm">
                     {proposal.advisor_remarks && (
-                      <div className="border-2 border-foreground bg-muted p-3">
+                      <div className="border border-border bg-muted p-3">
                         <span className="font-medium">Advisor remarks</span>
                         <p className="mt-1">{proposal.advisor_remarks}</p>
                         {proposal.advisor_decided_at && (
@@ -501,7 +501,7 @@ export default function ProposalDetail() {
                       </div>
                     )}
                     {proposal.admin_remarks && (
-                      <div className="border-2 border-foreground bg-muted p-3">
+                      <div className="border border-border bg-muted p-3">
                         <span className="font-medium">Club Services admin remarks</span>
                         <p className="mt-1">{proposal.admin_remarks}</p>
                         {proposal.admin_decided_at && (
@@ -510,7 +510,7 @@ export default function ProposalDetail() {
                       </div>
                     )}
                     {proposal.latest_approval && (
-                      <div className="border-2 border-foreground p-3">
+                      <div className="border border-border p-3">
                         <span className="font-medium">Most recent decision</span>
                         <p className="mt-1">
                           {proposal.latest_approval.reviewer_role} {proposal.latest_approval.decision} on{" "}
@@ -529,7 +529,7 @@ export default function ProposalDetail() {
             <div>
               <Card className="sticky top-4">
                 <CardHeader>
-                  <CardTitle className="nh-panel-title">Review Timeline</CardTitle>
+                  <CardTitle className="clb-panel-title">Review Timeline</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ApprovalStepper steps={buildApprovalSteps(proposal)} />

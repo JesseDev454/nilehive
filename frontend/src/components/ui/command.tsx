@@ -13,7 +13,7 @@ const Command = React.forwardRef<
   <CommandPrimitive
     ref={ref}
     className={cn(
-      "flex h-full w-full flex-col overflow-hidden border-2 border-foreground bg-popover text-popover-foreground",
+      "flex h-full w-full flex-col overflow-hidden border border-border bg-popover text-popover-foreground",
       className,
     )}
     {...props}
@@ -26,7 +26,7 @@ interface CommandDialogProps extends DialogProps {}
 const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
   return (
     <Dialog {...props}>
-      <DialogContent className="overflow-hidden p-0 shadow-[8px_8px_0_hsl(var(--foreground))]">
+      <DialogContent className="overflow-hidden p-0 shadow-soft-sm">
         <DialogTitle className="sr-only">Command menu</DialogTitle>
         <DialogDescription className="sr-only">
           Search and run available app actions.
@@ -43,7 +43,7 @@ const CommandInput = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Input>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
 >(({ className, ...props }, ref) => (
-  <div className="flex items-center border-b-2 border-foreground bg-card px-3" cmdk-input-wrapper="">
+  <div className="flex items-center border-b border-border/70 bg-card px-3" cmdk-input-wrapper="">
     <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
     <CommandPrimitive.Input
       ref={ref}
@@ -109,7 +109,7 @@ const CommandItem = React.forwardRef<
   <CommandPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex cursor-default select-none items-center border-2 border-transparent px-2 py-1.5 text-sm font-semibold outline-none data-[disabled=true]:pointer-events-none data-[selected='true']:border-foreground data-[selected='true']:bg-accent data-[selected=true]:text-accent-foreground data-[disabled=true]:opacity-50",
+      "relative flex cursor-default select-none items-center border border-transparent px-2 py-1.5 text-sm font-semibold outline-none data-[disabled=true]:pointer-events-none data-[selected='true']:border-border data-[selected='true']:bg-accent data-[selected=true]:text-accent-foreground data-[disabled=true]:opacity-50",
       className,
     )}
     {...props}

@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Loader2, ShieldCheck, UserCog, Users } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { DataPagination } from "@/components/DataPagination";
-import { NeoLoadingState, NeoMetricCard, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { ClublyLoadingState, ClublyMetricCard, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -191,8 +191,8 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
           </div>
         </CardHeader>
         <CardContent>
-          <form className="nh-form-grid" onSubmit={handleSubmit}>
-            <div className="nh-card-soft p-4 lg:col-span-2">
+          <form className="clb-form-grid" onSubmit={handleSubmit}>
+            <div className="clb-card p-4 lg:col-span-2">
               <p className="font-semibold">{user.full_name || "Unnamed user"}</p>
               <p className="text-sm text-muted-foreground">
                 {user.student_id || "University ID not set"} - Current role: <span className="capitalize">{user.effective_role ?? user.role}</span>
@@ -244,7 +244,7 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
             </div>
 
             {role === "advisor" && user.advisor_assignments?.length ? (
-              <div className="nh-card-soft p-4 text-sm lg:col-span-2">
+              <div className="clb-card p-4 text-sm lg:col-span-2">
                 <p className="font-semibold">Current advisor clubs</p>
                 <p className="mt-2 text-muted-foreground">
                   {user.advisor_assignments
@@ -297,13 +297,13 @@ function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onCl
               This club already has a president. Confirming this change will replace the current president and keep the one-president-per-club rule intact.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 rounded-xl border-2 border-foreground bg-muted/40 p-4 text-sm">
+          <div className="space-y-3 rounded-xl border border-border bg-muted/40 p-4 text-sm">
             <p>
-              <span className="font-black uppercase tracking-[0.08em]">Current president:</span>{" "}
+              <span className="font-bold tracking-[0.08em]">Current president:</span>{" "}
               {currentPresidentLabel}
             </p>
             <p>
-              <span className="font-black uppercase tracking-[0.08em]">New president:</span>{" "}
+              <span className="font-bold tracking-[0.08em]">New president:</span>{" "}
               {replacementUserLabel}
             </p>
             <p className="text-muted-foreground">
@@ -397,8 +397,8 @@ export default function UserManagement() {
 
   if (role !== "admin") {
     return (
-      <div className="nh-page">
-        <NeoStateCard
+      <div className="clb-screen">
+        <ClublyStateCard
           icon={ShieldCheck}
           title="Admin area"
           message="User Management is only available to Campus One admins."
@@ -408,8 +408,8 @@ export default function UserManagement() {
   }
 
   return (
-    <div className="nh-page">
-      <NeoPageHeader
+    <div className="clb-screen">
+      <ClublyPageHeader
         eyebrow="Admin Controls"
         title={isFocusedAccess ? "Manage User Access" : "User Management"}
         description={isFocusedAccess ? "Update one user's local Club Services role and club assignment." : "Review signed-up users, adjust local club roles, and assign club access from one place."}
@@ -424,20 +424,20 @@ export default function UserManagement() {
             </Link>
           </Button>
           {isLoadingFocusedUser ? (
-            <NeoLoadingState title="Opening access editor" message="We are loading this user's role and club details." compact />
+            <ClublyLoadingState title="Opening access editor" message="We are loading this user's role and club details." compact />
           ) : focusedUserFailed || !focusedUser ? (
-            <NeoStateCard icon={UserCog} title="User access editor unavailable" message={getErrorMessage(focusedUserError)} />
+            <ClublyStateCard icon={UserCog} title="User access editor unavailable" message={getErrorMessage(focusedUserError)} />
           ) : (
             <UserActionPanel user={focusedUser} onClose={() => navigate("/user-management")} />
           )}
         </>
       ) : (
         <>
-      <div className="nh-metric-grid">
-        <NeoMetricCard title="Users" value={summary.total} icon={Users} tone="navy" />
-        <NeoMetricCard title="Students" value={summary.students} icon={UserCog} tone="gold" />
-        <NeoMetricCard title="Presidents / Executives" value={`${summary.presidents} / ${summary.executives}`} icon={ShieldCheck} tone="green" />
-        <NeoMetricCard title="Advisors / Requests" value={`${summary.advisors} / ${summary.advisorRequests}`} icon={Users} />
+      <div className="clb-metric-grid">
+        <ClublyMetricCard title="Users" value={summary.total} icon={Users} tone="navy" />
+        <ClublyMetricCard title="Students" value={summary.students} icon={UserCog} tone="gold" />
+        <ClublyMetricCard title="Presidents / Executives" value={`${summary.presidents} / ${summary.executives}`} icon={ShieldCheck} tone="green" />
+        <ClublyMetricCard title="Advisors / Requests" value={`${summary.advisors} / ${summary.advisorRequests}`} icon={Users} />
       </div>
 
       <Card>
@@ -445,19 +445,19 @@ export default function UserManagement() {
           <CardTitle className="text-lg">How access works</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-3">
-          <div className="nh-card-soft p-4">
+          <div className="clb-card p-4">
             <p className="font-semibold">1. User signs up first</p>
             <p className="mt-1 text-sm text-muted-foreground">
               Campus One creates the shared identity first. Club Services then links the existing user account to local club access.
             </p>
           </div>
-            <div className="nh-card-soft p-4">
+            <div className="clb-card p-4">
               <p className="font-semibold">2. Club Services updates access</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Campus One only controls admin access. Use this page to manage local Club Services roles like student, president, executive, and advisor.
               </p>
             </div>
-            <div className="nh-card-soft p-4">
+            <div className="clb-card p-4">
               <p className="font-semibold">3. They log in with the new role</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 Presidents can then choose executives from active club members. Local role changes appear after the next refresh, focus, or sign-in.
@@ -520,14 +520,14 @@ export default function UserManagement() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <NeoLoadingState title="Loading Club Services controls" message="We are preparing the user directory." compact />
+            <ClublyLoadingState title="Loading Club Services controls" message="We are preparing the user directory." compact />
           ) : isError ? (
-            <div className="nh-empty border-destructive bg-destructive/5">
+            <div className="clb-empty border-destructive bg-destructive/5">
               <p className="font-medium">Unable to load users</p>
               <p className="mt-1 text-sm text-muted-foreground">{getErrorMessage(error)}</p>
             </div>
           ) : users.length === 0 ? (
-            <div className="nh-empty">
+            <div className="clb-empty">
               <UserCog className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
               <p className="font-medium">No users match this view</p>
               <p className="mt-1 text-sm text-muted-foreground">Try another role filter or search term.</p>
@@ -538,7 +538,7 @@ export default function UserManagement() {
                 {users.map((user) => (
                   <div
                     key={user.id}
-                    className="nh-list-card flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
+                    className="clb-list-card flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
                   >
                     <div className="space-y-2">
                       <div className="flex flex-wrap items-center gap-2">

@@ -5,7 +5,7 @@ import { useSearchParams } from "react-router-dom";
 import { CreditCard, Landmark, Loader2, Receipt, TrendingUp } from "lucide-react";
 import { CounterUp } from "@/components/CounterUp";
 import { DataPagination } from "@/components/DataPagination";
-import { NeoLoadingState, NeoMetricCard, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { ClublyLoadingState, ClublyMetricCard, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -248,13 +248,13 @@ export default function Dues() {
 
   if (!canViewDues) {
     return (
-      <div className="nh-page">
-        <NeoPageHeader
+      <div className="clb-screen">
+        <ClublyPageHeader
           eyebrow="Finance"
           title="Dues & Payments"
           description="Dues tracking is available only to Club Services admins."
         />
-        <NeoStateCard
+        <ClublyStateCard
           icon={CreditCard}
           title="Dues access is restricted"
           message="This role does not use dues tracking yet."
@@ -264,33 +264,33 @@ export default function Dues() {
   }
 
   return (
-    <div className="nh-page">
-      <NeoPageHeader
+    <div className="clb-screen">
+      <ClublyPageHeader
         eyebrow="Finance"
         title="Dues & Payment Review"
         description="Students attach payment details when they join a club. Club Services verifies those records here."
       />
 
-      <div className="nh-metric-grid">
-        <NeoMetricCard
+      <div className="clb-metric-grid">
+        <ClublyMetricCard
           title="Expected"
           value={<CounterUp value={duesData?.summary.expected_amount ?? 0} format={(nextValue) => formatCurrency(Math.round(nextValue))} />}
           icon={CreditCard}
           tone="navy"
         />
-        <NeoMetricCard
+        <ClublyMetricCard
           title="Collected"
           value={<CounterUp value={duesData?.summary.collected_amount ?? 0} format={(nextValue) => formatCurrency(Math.round(nextValue))} />}
           icon={Receipt}
           tone="green"
         />
-        <NeoMetricCard
+        <ClublyMetricCard
           title="Paid"
           value={<CounterUp value={duesData?.summary.paid ?? 0} format={(nextValue) => Math.round(nextValue).toLocaleString("en-NG")} />}
           icon={Landmark}
           tone="gold"
         />
-        <NeoMetricCard
+        <ClublyMetricCard
           title="Collection Rate"
           value={<CounterUp value={duesData?.summary.collection_rate ?? 0} format={(nextValue) => `${Math.round(nextValue)}%`} />}
           icon={TrendingUp}
@@ -306,7 +306,7 @@ export default function Dues() {
         </CardHeader>
         <CardContent>
           {canManageSharedProfile ? (
-            <form onSubmit={handleSaveSharedProfile} className="nh-form-grid">
+            <form onSubmit={handleSaveSharedProfile} className="clb-form-grid">
               <div className="space-y-2">
                 <Label htmlFor="fresher_dues_amount">Freshers Dues</Label>
                 <Input
@@ -369,23 +369,23 @@ export default function Dues() {
             </form>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="nh-card-soft p-4">
+              <div className="clb-card p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Freshers Dues</p>
                 <p className="mt-1 font-semibold">{formatCurrency(sharedPaymentSettings?.fresher_dues_amount ?? 10000)}</p>
               </div>
-              <div className="nh-card-soft p-4">
+              <div className="clb-card p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Returning Students Dues</p>
                 <p className="mt-1 font-semibold">{formatCurrency(sharedPaymentSettings?.returning_student_dues_amount ?? 10000)}</p>
               </div>
-              <div className="nh-card-soft p-4">
+              <div className="clb-card p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Bank</p>
                 <p className="mt-1 font-semibold">{sharedPaymentSettings?.bank_name || "Not set yet"}</p>
               </div>
-              <div className="nh-card-soft p-4">
+              <div className="clb-card p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Account Number</p>
                 <p className="mt-1 font-semibold">{sharedPaymentSettings?.account_number || "Not set yet"}</p>
               </div>
-              <div className="nh-card-soft p-4 sm:col-span-2">
+              <div className="clb-card p-4 sm:col-span-2">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Account Name</p>
                 <p className="mt-1 font-semibold">{sharedPaymentSettings?.account_name || "Not set yet"}</p>
                 {sharedPaymentSettings?.payment_instructions ? (
@@ -441,14 +441,14 @@ export default function Dues() {
             </div>
           ) : null}
           {isLoading ? (
-            <NeoLoadingState title="Loading dues records" message="We are checking payment status and receipts." compact />
+            <ClublyLoadingState title="Loading dues records" message="We are checking payment status and receipts." compact />
           ) : isError ? (
-            <div className="nh-empty border-destructive bg-destructive/5">
+            <div className="clb-empty border-destructive bg-destructive/5">
               <p className="font-medium">Unable to load dues</p>
               <p className="text-sm text-muted-foreground mt-1">{getErrorMessage(error)}</p>
             </div>
           ) : !visiblePayments.length ? (
-            <div className="nh-empty">
+            <div className="clb-empty">
               <CreditCard className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
               <p className="font-medium">No dues records yet</p>
               <p className="text-sm text-muted-foreground mt-1">
@@ -456,8 +456,8 @@ export default function Dues() {
               </p>
             </div>
           ) : (
-            <div className="nh-table-wrap">
-              <table className="nh-table">
+            <div className="clb-table-wrap">
+              <table className="clb-table">
                 <thead>
                   <tr>
                     <th>Club</th>

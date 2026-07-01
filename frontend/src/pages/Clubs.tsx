@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Loader2, Pencil, Plus, School, Trash2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -37,6 +37,20 @@ const emptyForm = {
   instagram: "",
   linkedin: ""
 };
+const CLUB_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+const CLUB_IMAGE_ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const CLUB_GALLERY_MAX_IMAGES = 12;
+
+function isAcceptedClubImage(file: File) {
+  const lowerName = file.name.toLowerCase();
+  return (
+    CLUB_IMAGE_ACCEPTED_TYPES.has(file.type) ||
+    lowerName.endsWith(".jpg") ||
+    lowerName.endsWith(".jpeg") ||
+    lowerName.endsWith(".png") ||
+    lowerName.endsWith(".webp")
+  );
+}
 
 function getErrorMessage(error: unknown) {
   return error instanceof ApiClientError || error instanceof Error
@@ -122,6 +136,10 @@ export default function Clubs() {
               whatsapp_onboarding_notes: payload.whatsapp_onboarding_notes
             });
         if (galleryFile) {
+          if ((editingClub.gallery?.length || 0) >= CLUB_GALLERY_MAX_IMAGES) {
+            throw new Error(`A club gallery can contain up to ${CLUB_GALLERY_MAX_IMAGES} images.`);
+          }
+
           const upload = await uploadStorageFile(galleryFile, "club-media", { folder: editingClub.id });
           await createClubMedia(editingClub.id, { storage_path: upload.path, display_order: editingClub.gallery?.length || 0 });
         }
@@ -175,17 +193,38 @@ export default function Clubs() {
     saveMutation.mutate();
   }
 
+  function chooseClubImage(file: File | undefined, setter: (file: File | null) => void, label: string) {
+    if (!file) {
+      setter(null);
+      return;
+    }
+
+    if (!isAcceptedClubImage(file)) {
+      actionError(`${label} is not supported`, new Error("Please upload a JPG, PNG, or WEBP image."));
+      setter(null);
+      return;
+    }
+
+    if (file.size > CLUB_IMAGE_MAX_BYTES) {
+      actionError(`${label} is too large`, new Error("Please upload an image under 5MB."));
+      setter(null);
+      return;
+    }
+
+    setter(file);
+  }
+
   if (!canManageClubs) {
     return (
-      <div className="nh-page">
-        <NeoStateCard icon={School} title="Club management is restricted" message="Only Club Services admins and assigned presidents can edit club content." />
+      <div className="clb-screen">
+        <ClublyStateCard icon={School} title="Club management is restricted" message="Only Club Services admins and assigned presidents can edit club content." />
       </div>
     );
   }
 
   return (
-    <div className="nh-page">
-      <NeoPageHeader
+    <div className="clb-screen">
+      <ClublyPageHeader
         eyebrow="Club Services"
         title={isFocusedEdit ? "Edit Club Profile" : "Clubs"}
         description={isFocusedEdit ? "Update this club profile in a focused editor." : role === "president" ? "Maintain the public profile for your assigned club." : "Create and maintain the clubs students discover in the app."}
@@ -201,16 +240,16 @@ export default function Clubs() {
       ) : null}
 
       {isFocusedEdit && isLoading ? (
-        <NeoLoadingState title="Opening club editor" message="We are loading the selected club profile." compact />
+        <ClublyLoadingState title="Opening club editor" message="We are loading the selected club profile." compact />
       ) : isFocusedEdit && !editingClub ? (
-        <NeoStateCard icon={School} title="Club editor unavailable" message="This club is not available for your role, or it no longer exists." />
+        <ClublyStateCard icon={School} title="Club editor unavailable" message="This club is not available for your role, or it no longer exists." />
       ) : (canCreateClubs || editingClub) ? (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">{editingClub ? `Edit ${editingClub.name}` : "Add a new club"}</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="nh-form-grid">
+            <form onSubmit={handleSubmit} className="clb-form-grid">
             <div className="space-y-2">
               <Label htmlFor="club_name">Club Name</Label>
               <Input id="club_name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required disabled={role === "president"} />
@@ -246,7 +285,33 @@ export default function Clubs() {
             <p className="text-xs font-semibold text-muted-foreground lg:col-span-2">
               Leave website or social links blank to remove them from the public club profile.
             </p>
-            {editingClub ? <><div className="space-y-2"><Label htmlFor="club_logo">Club logo</Label><Input id="club_logo" type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setLogoFile(event.target.files?.[0] || null)} /></div><div className="space-y-2"><Label htmlFor="club_gallery">Add gallery image</Label><Input id="club_gallery" type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setGalleryFile(event.target.files?.[0] || null)} /></div></> : null}
+            {editingClub ? (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="club_logo">Club logo</Label>
+                  <Input
+                    id="club_logo"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+                    onChange={(event) => chooseClubImage(event.target.files?.[0], setLogoFile, "Club logo")}
+                  />
+                  <p className="text-xs text-muted-foreground">JPG, PNG, or WEBP under 5MB.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="club_gallery">Add gallery image</Label>
+                  <Input
+                    id="club_gallery"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+                    onChange={(event) => chooseClubImage(event.target.files?.[0], setGalleryFile, "Gallery image")}
+                    disabled={(editingClub.gallery?.length || 0) >= CLUB_GALLERY_MAX_IMAGES}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    JPG, PNG, or WEBP under 5MB. Gallery images: {editingClub.gallery?.length || 0}/{CLUB_GALLERY_MAX_IMAGES}.
+                  </p>
+                </div>
+              </>
+            ) : null}
             <div className="flex flex-wrap justify-end gap-2 lg:col-span-2">
               {editingClub && role === "admin" ? (
                 <Button
@@ -278,7 +343,7 @@ export default function Clubs() {
               This removes the club and connected club records from Club Services. This action is only available to admins.
             </DialogDescription>
           </DialogHeader>
-          <div className="rounded-xl border-2 border-destructive bg-destructive/5 p-4 text-sm">
+          <div className="rounded-xl border border-destructive bg-destructive/5 p-4 text-sm">
             <p className="font-semibold">You are about to delete {editingClub?.name || "this club"}.</p>
             <p className="mt-1 text-muted-foreground">Use this only for duplicate or incorrect club records.</p>
           </div>
@@ -296,10 +361,10 @@ export default function Clubs() {
       {!isFocusedEdit ? <Card>
         <CardHeader><CardTitle className="text-lg">Configured clubs</CardTitle></CardHeader>
         <CardContent>
-          {isLoading ? <NeoLoadingState title="Loading clubs" message="We are gathering the current club directory." compact /> : isError ? (
-            <NeoStateCard icon={School} title="Could not load clubs" message={getErrorMessage(error)} tone="danger" />
+          {isLoading ? <ClublyLoadingState title="Loading clubs" message="We are gathering the current club directory." compact /> : isError ? (
+            <ClublyStateCard icon={School} title="Could not load clubs" message={getErrorMessage(error)} tone="danger" />
           ) : !clubs.length ? (
-            <NeoStateCard
+            <ClublyStateCard
               icon={School}
               title={role === "president" ? "No assigned club found" : "No clubs configured yet"}
               message={role === "president" ? "Ask a Club Services admin to assign your president profile to a club." : "Admins can add a club from the form above."}
@@ -307,9 +372,9 @@ export default function Clubs() {
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {clubs.map((club) => (
-                <div key={club.id} className="nh-list-card space-y-3">
+                <div key={club.id} className="clb-list-card space-y-3">
                   <div className="flex items-start justify-between gap-3">
-                    <div><p className="font-black">{club.name}</p><p className="text-xs text-muted-foreground">{club.code || "No short code"}</p></div>
+                    <div><p className="font-bold">{club.name}</p><p className="text-xs text-muted-foreground">{club.code || "No short code"}</p></div>
                     <Badge>{club.is_public_signup === false ? "Hidden" : "Public"}</Badge>
                   </div>
                   <p className="text-sm text-muted-foreground">{club.description || "No description yet."}</p>

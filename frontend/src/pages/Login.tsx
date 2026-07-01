@@ -91,8 +91,8 @@ export default function Login() {
           <div className="absolute left-8 top-10 hidden h-40 w-40 rotate-12 rounded-[32px] border-[14px] border-secondary/25 md:block" />
           <div className="absolute bottom-10 right-10 hidden h-56 w-56 -rotate-12 rounded-[44px] border-[18px] border-primary/15 lg:block" />
 
-          <section className="nh-card relative z-10 w-full max-w-2xl bg-card p-6 text-center md:p-10">
-            <div className="absolute -left-5 -top-5 rounded-full border-3 border-foreground bg-accent px-4 py-2 text-xs font-black uppercase tracking-[0.12em] shadow-[4px_4px_0_hsl(var(--neo-shadow))]">
+          <section className="clb-card relative z-10 w-full max-w-2xl bg-card p-6 text-center md:p-10">
+            <div className="absolute -left-5 -top-5 rounded-full border border-border bg-accent px-4 py-2 text-xs font-bold tracking-[0.12em] shadow-soft-sm">
               CampusOne SSO
             </div>
             <div className="mx-auto mb-8 flex justify-center" aria-hidden="true">
@@ -111,7 +111,7 @@ export default function Login() {
                 </div>
               </div>
             </div>
-            <h1 className="text-5xl font-black leading-none tracking-[-0.05em] md:text-7xl">
+            <h1 className="text-5xl font-bold leading-none tracking-[-0.05em] md:text-7xl">
               Welcome Back.
             </h1>
             <p className="mt-4 text-lg font-medium text-muted-foreground">
@@ -120,15 +120,15 @@ export default function Login() {
 
             <div className="mx-auto my-8 h-1 max-w-md rounded-full bg-accent" />
 
-            <div className="mx-auto max-w-xl rounded-[24px] border-3 border-foreground bg-muted p-5 text-left shadow-neo-sm">
-              <p className="text-2xl font-black tracking-[-0.04em]">Single Sign-On</p>
+            <div className="mx-auto max-w-xl rounded-[24px] border border-border bg-muted p-5 text-left shadow-soft-sm">
+              <p className="text-2xl font-bold tracking-[-0.04em]">Single Sign-On</p>
               <p className="mt-3 text-sm leading-6 text-muted-foreground">
                 Use your Nile University CampusOne account. No separate password needed. Club Services applies your correct club access after sign-in.
               </p>
             </div>
 
             {(isSignedOutView || authError === "cancelled" || authError === "failed" || authError === "account_link_conflict") ? (
-              <div className={`mt-6 rounded-[18px] border-3 p-4 text-left text-sm font-bold ${
+              <div className={`mt-6 rounded-[18px] border p-4 text-left text-sm font-bold ${
                 authError === "cancelled" || authError === "failed" || authError === "account_link_conflict"
                   ? "border-destructive bg-destructive/10 text-destructive"
                   : "border-success bg-success/15 text-foreground"
@@ -138,7 +138,7 @@ export default function Login() {
             ) : null}
 
             <Button
-              className="mt-8 h-14 w-full text-base font-black uppercase tracking-[0.08em]"
+              className="mt-8 h-14 w-full text-base font-bold tracking-[0.08em]"
               onClick={() => window.location.assign(getCampusOneOidcAuthUrl("login", redirectTo))}
             >
               Sign in with Campus One
@@ -154,9 +154,9 @@ export default function Login() {
   if (cookieAuthEnabled) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background p-6">
-        <div className="nh-card max-w-md bg-card p-6 text-center">
+        <div className="clb-card max-w-md bg-card p-6 text-center">
           <BrandLogo size="lg" variant="plain" className="mx-auto mb-4 h-20 w-72 max-w-full" />
-          <h1 className="text-2xl font-black uppercase">Opening sign in</h1>
+          <h1 className="text-2xl font-bold">Opening sign in</h1>
           <p className="mt-2 text-sm text-muted-foreground">Please wait while we send you to the shared portal.</p>
         </div>
       </main>
@@ -183,13 +183,13 @@ export default function Login() {
     <main className="flex min-h-screen flex-col bg-background text-foreground">
       <section className="grid min-h-screen flex-1 lg:grid-cols-[1fr_0.95fr]">
         <aside className="relative hidden overflow-hidden bg-primary p-12 text-primary-foreground lg:flex lg:flex-col lg:justify-between">
-          <div className="absolute inset-10 border-2 border-primary-foreground/20" />
+          <div className="absolute inset-10 border border-primary-foreground/20" />
           <div className="absolute -right-28 top-20 h-80 w-80 rotate-45 border-[18px] border-secondary/30" />
           <div className="absolute -bottom-20 left-12 h-72 w-72 rotate-12 rounded-[44px] border-[18px] border-accent/30" />
 
           <div className="relative z-10 max-w-xl">
-            <p className="nh-eyebrow text-primary-foreground/70">Institutional Access</p>
-            <h2 className="mt-4 text-6xl font-black uppercase leading-[0.9] tracking-tighter">
+            <p className="clb-eyebrow text-primary-foreground/70">Institutional Access</p>
+            <h2 className="mt-4 text-6xl font-bold leading-[0.9] tracking-tighter">
               Campus clubs, proposals, and records.
             </h2>
             <p className="mt-6 border-l-4 border-secondary pl-5 text-lg leading-8 text-primary-foreground/82">
@@ -197,8 +197,8 @@ export default function Login() {
             </p>
           </div>
 
-          <div className="relative z-10 rounded-[24px] border-2 border-primary-foreground/40 bg-primary/70 p-5">
-            <p className="text-sm font-black uppercase tracking-[0.14em]">Notice to Students</p>
+          <div className="relative z-10 rounded-[24px] border border-primary-foreground/40 bg-primary/70 p-5">
+            <p className="text-sm font-bold tracking-[0.14em]">Notice to Students</p>
             <p className="mt-2 text-sm text-primary-foreground/75">
               Use your Nile University email address. Campus One manages shared sign-in and admin access, while Club Services manages student, advisor, and leadership roles locally.
             </p>
@@ -213,20 +213,20 @@ export default function Login() {
                 variant="plain"
                 className="mx-auto mb-4 h-24 w-[22rem] max-w-full sm:h-28 sm:w-[24rem]"
               />
-              <p className="nh-eyebrow">Nile University</p>
-              <h1 className="nh-title mt-2">Club Services</h1>
+              <p className="clb-eyebrow">Nile University</p>
+              <h1 className="clb-title mt-2">Club Services</h1>
             </div>
 
-            <form className="nh-card bg-card p-6 md:p-10" onSubmit={handleSubmit}>
-              <div className="mb-8 border-b-3 border-foreground pb-6">
-                <p className="nh-eyebrow">Access Portal</p>
-                <h2 className="mt-2 text-4xl font-black uppercase">Sign In</h2>
+            <form className="clb-card bg-card p-6 md:p-10" onSubmit={handleSubmit}>
+              <div className="mb-8 border-b border-border/70 pb-6">
+                <p className="clb-eyebrow">Access Portal</p>
+                <h2 className="mt-2 text-4xl font-bold">Sign In</h2>
                 <p className="mt-2 text-sm text-muted-foreground">Access your Club Services workspace.</p>
               </div>
 
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <Label className="font-black uppercase tracking-[0.12em]" htmlFor="email">
+                  <Label className="font-bold tracking-[0.12em]" htmlFor="email">
                     University Email
                   </Label>
                   <div className="relative">
@@ -246,16 +246,16 @@ export default function Login() {
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-3">
-                    <Label className="font-black uppercase tracking-[0.12em]" htmlFor="password">
+                    <Label className="font-bold tracking-[0.12em]" htmlFor="password">
                       Password
                     </Label>
                     {passwordAuthEnabled ? (
-                      <Link className="text-xs font-black text-foreground underline underline-offset-4" to="/forgot-password">
+                      <Link className="text-xs font-bold text-foreground underline underline-offset-4" to="/forgot-password">
                         Forgot password?
                       </Link>
                     ) : (
                       <a
-                        className="text-xs font-black text-foreground underline underline-offset-4"
+                        className="text-xs font-bold text-foreground underline underline-offset-4"
                         href={getMicrosoftPasswordHelpUrl()}
                         rel="noreferrer"
                         target="_blank"
@@ -284,9 +284,9 @@ export default function Login() {
                   <ArrowRight className="h-5 w-5" />
                 </Button>
 
-                <div className="rounded-[18px] border-3 border-foreground bg-muted p-4 text-sm">
+                <div className="rounded-[18px] border border-border bg-muted p-4 text-sm">
                   New club officer or student?{" "}
-                  <Link className="font-black underline underline-offset-4" to="/signup">
+                  <Link className="font-bold underline underline-offset-4" to="/signup">
                     Create an account
                   </Link>
                 </div>

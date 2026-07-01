@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, FileText, ImageIcon, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { DataPagination } from "@/components/DataPagination";
-import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +28,7 @@ import { actionError, actionSuccess } from "@/lib/notify";
 import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 
 const MAX_REPORT_MEDIA_IMAGES = 10;
+const REPORT_DRAFT_STORAGE_KEY = "clubly:post-event-report-draft:v1";
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -98,11 +99,11 @@ function ReportCard({
         <p className="text-sm text-muted-foreground line-clamp-3">{report.summary}</p>
 
         <div className="grid grid-cols-2 gap-3 text-sm">
-          <div className="nh-card-soft p-3">
+          <div className="clb-card p-3">
             <p className="text-xs text-muted-foreground">Attendance</p>
             <p className="font-semibold">{report.attendance_count}</p>
           </div>
-          <div className="nh-card-soft p-3">
+          <div className="clb-card p-3">
             <p className="text-xs text-muted-foreground">Budget Used</p>
             <p className="font-semibold">{formatCurrency(report.budget_used)}</p>
           </div>
@@ -218,6 +219,38 @@ export default function MediaArchive() {
     setPage(1);
   }, [reportClubFilter]);
 
+  useEffect(() => {
+    const savedDraft = window.localStorage.getItem(REPORT_DRAFT_STORAGE_KEY);
+
+    if (!savedDraft) {
+      return;
+    }
+
+    try {
+      const draft = JSON.parse(savedDraft) as {
+        proposalId?: string;
+        attendanceCount?: string;
+        summary?: string;
+        challenges?: string;
+        outcomes?: string;
+        budgetUsed?: string;
+        uploadedMediaUrls?: string[];
+        uploadedMediaNames?: string[];
+      };
+
+      setProposalId(draft.proposalId || "");
+      setAttendanceCount(draft.attendanceCount || "");
+      setSummary(draft.summary || "");
+      setChallenges(draft.challenges || "");
+      setOutcomes(draft.outcomes || "");
+      setBudgetUsed(draft.budgetUsed || "");
+      setUploadedMediaUrls(Array.isArray(draft.uploadedMediaUrls) ? draft.uploadedMediaUrls : []);
+      setUploadedMediaNames(Array.isArray(draft.uploadedMediaNames) ? draft.uploadedMediaNames : []);
+    } catch {
+      window.localStorage.removeItem(REPORT_DRAFT_STORAGE_KEY);
+    }
+  }, []);
+
   const createMutation = useMutation({
     mutationFn: () =>
       createEventReport({
@@ -239,6 +272,7 @@ export default function MediaArchive() {
       setBudgetUsed("");
       setUploadedMediaUrls([]);
       setUploadedMediaNames([]);
+      window.localStorage.removeItem(REPORT_DRAFT_STORAGE_KEY);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["event-reports"] }),
         queryClient.invalidateQueries({ queryKey: ["approved-events"] })
@@ -260,6 +294,26 @@ export default function MediaArchive() {
     }
 
     createMutation.mutate();
+  }
+
+  function handleSaveDraft() {
+    window.localStorage.setItem(
+      REPORT_DRAFT_STORAGE_KEY,
+      JSON.stringify({
+        proposalId,
+        attendanceCount,
+        summary,
+        challenges,
+        outcomes,
+        budgetUsed,
+        uploadedMediaUrls,
+        uploadedMediaNames
+      })
+    );
+
+    toast.success("Report draft saved", {
+      description: "This draft stays on this device until you submit or replace it."
+    });
   }
 
   async function handleMediaUpload(event: ChangeEvent<HTMLInputElement>) {
@@ -403,20 +457,20 @@ export default function MediaArchive() {
 
   if (!canViewReports) {
     return (
-      <div className="nh-page">
-        <NeoPageHeader
+      <div className="clb-screen">
+        <ClublyPageHeader
           eyebrow="Archive"
           title="Reports & Media Archive"
           description="Post-event reports are available to presidents, advisors, and Club Services admins."
         />
-        <NeoStateCard icon={FileText} title="Report access is restricted" message="No report access for this role." />
+        <ClublyStateCard icon={FileText} title="Report access is restricted" message="No report access for this role." />
       </div>
     );
   }
 
   return (
-    <div className="nh-page">
-      <NeoPageHeader
+    <div className="clb-screen">
+      <ClublyPageHeader
         eyebrow="Archive"
         title="Reports & Media Archive"
         description="Document completed events and keep a central Club Services record."
@@ -428,7 +482,7 @@ export default function MediaArchive() {
             <CardTitle className="text-lg">Submit Post-Event Report</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmitReport} className="nh-form-grid">
+            <form onSubmit={handleSubmitReport} className="clb-form-grid">
               <div className="space-y-2 lg:col-span-2">
                 <Label htmlFor="proposal_id">Event</Label>
                 <Select value={proposalId} onValueChange={setProposalId}>
@@ -529,7 +583,19 @@ export default function MediaArchive() {
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground">Total media count: {totalMediaCount}/{MAX_REPORT_MEDIA_IMAGES}</p>
               </div>
-              <div className="lg:col-span-2 flex justify-end">
+              <div className="lg:col-span-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-muted-foreground">
+                  Drafts stay on this device and are not visible as submitted reports.
+                </p>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleSaveDraft}
+                    disabled={createMutation.isPending || isUploadingMedia}
+                  >
+                    Save Draft
+                  </Button>
                 <Button
                   type="submit"
                   disabled={createMutation.isPending || isUploadingMedia || !proposalId || totalMediaCount > MAX_REPORT_MEDIA_IMAGES}
@@ -546,6 +612,7 @@ export default function MediaArchive() {
                     </>
                   )}
                 </Button>
+                </div>
               </div>
             </form>
           </CardContent>
@@ -582,14 +649,14 @@ export default function MediaArchive() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <NeoLoadingState title="Loading report archive" message="We are gathering post-event records." compact />
+            <ClublyLoadingState title="Loading report archive" message="We are gathering post-event records." compact />
           ) : isError ? (
-            <div className="nh-empty border-destructive bg-destructive/5">
+            <div className="clb-empty border-destructive bg-destructive/5">
               <p className="font-medium">Unable to load reports</p>
               <p className="text-sm text-muted-foreground mt-1">{getErrorMessage(error)}</p>
             </div>
           ) : reports.length === 0 ? (
-            <div className="nh-empty">
+            <div className="clb-empty">
               <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
               <p className="font-medium">No event reports yet</p>
               <p className="text-sm text-muted-foreground mt-1">

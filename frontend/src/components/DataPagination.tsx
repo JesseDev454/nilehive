@@ -25,7 +25,7 @@ export function DataPagination({
   const to = total === 0 ? 0 : Math.min(page * pageSize, total);
 
   return (
-    <div className="flex flex-col gap-3 border-t-2 border-foreground px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 border-t border-border/70 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm text-muted-foreground">
         Showing {from}-{to} of {total}
       </p>
@@ -45,7 +45,7 @@ export function DataPagination({
             />
           </PaginationItem>
           <PaginationItem>
-            <span className="inline-flex h-10 items-center border-2 border-foreground bg-card px-4 text-sm font-black uppercase tracking-[0.12em]">
+            <span className="inline-flex h-10 items-center rounded-full border border-border bg-card px-4 text-sm font-semibold shadow-soft-sm">
               Page {page}
             </span>
           </PaginationItem>

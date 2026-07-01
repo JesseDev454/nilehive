@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import QRCode from "qrcode";
 import { Bell, CalendarDays, CheckCircle2, Clock, Copy, Loader2, MapPin, MessageSquare, Printer, QrCode, Share2, Users } from "lucide-react";
-import { NeoLoadingState, NeoPageHeader } from "@/components/NeoBrutal";
+import { ClublyLoadingState, ClublyPageHeader } from "@/components/Clubly";
 import { DataPagination } from "@/components/DataPagination";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -298,16 +298,16 @@ function EventQrDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="nh-card-soft space-y-2 p-4 text-sm">
-            <p className="text-lg font-black uppercase">{event.title}</p>
+          <div className="clb-card space-y-2 p-4 text-sm">
+            <p className="text-lg font-bold">{event.title}</p>
             <p className="text-muted-foreground">
               {getDateLabel(event.event_date)} - {getTimeLabel(event.event_time)} - {event.location || "Venue TBC"}
             </p>
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            <p className="text-xs font-semibold tracking-wide text-muted-foreground">
               Students can only use this QR on the event date.
             </p>
           </div>
-          <div className="flex min-h-[24rem] items-center justify-center border-2 border-dashed border-foreground/40 bg-muted/30 p-4">
+          <div className="flex min-h-[24rem] items-center justify-center border border-dashed border-border/70 bg-muted/30 p-4">
             {isGenerating ? (
               <div className="flex flex-col items-center gap-3 text-sm text-muted-foreground">
                 <Loader2 className="h-6 w-6 animate-spin" />
@@ -322,7 +322,7 @@ function EventQrDialog({
               </div>
             )}
           </div>
-          <div className="rounded-lg border border-foreground/20 bg-background p-3 text-xs text-muted-foreground">
+          <div className="rounded-lg border border-border/70 bg-background p-3 text-xs text-muted-foreground">
             {checkInUrl}
           </div>
         </div>
@@ -437,7 +437,7 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
   }
 
   if (isLoading) {
-    return <NeoLoadingState title="Loading event engagement" message="We are checking RSVPs and feedback." compact />;
+    return <ClublyLoadingState title="Loading event engagement" message="We are checking RSVPs and feedback." compact />;
   }
 
   if (isError) {
@@ -452,28 +452,28 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
   return (
     <div className="space-y-4 border-t pt-4">
       <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-        <div className="nh-card-soft p-3">
+        <div className="clb-card p-3">
           <p className="text-muted-foreground">Going</p>
           <p className="text-lg font-bold">{engagement?.summary.going ?? 0}</p>
         </div>
-        <div className="nh-card-soft p-3">
+        <div className="clb-card p-3">
           <p className="text-muted-foreground">Interested</p>
           <p className="text-lg font-bold">{engagement?.summary.interested ?? 0}</p>
         </div>
         {canManageAttendance ? (
-          <div className="nh-card-soft p-3">
+          <div className="clb-card p-3">
             <p className="text-muted-foreground">Attendance</p>
             <p className="text-lg font-bold">{engagement?.summary.attended ?? 0}</p>
           </div>
         ) : null}
-        <div className="nh-card-soft p-3">
+        <div className="clb-card p-3">
           <p className="text-muted-foreground">My RSVP</p>
           <div className="mt-1">
             <RsvpBadge status={engagement?.current_user_rsvp?.status} />
           </div>
         </div>
         {isStudent ? (
-          <div className="nh-card-soft p-3">
+          <div className="clb-card p-3">
             <p className="text-muted-foreground">My check-in</p>
             <p className="mt-1 text-sm font-semibold">{getCheckInAvailabilityLabel(effectiveEvent, engagement?.current_user_attendance?.attended)}</p>
           </div>
@@ -481,7 +481,7 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
       </div>
 
       {isStudent ? (
-        <div className="space-y-3 border-2 border-foreground bg-primary/5 p-4">
+        <div className="space-y-3 border border-border bg-primary/5 p-4">
           {!isPast ? (
             <>
               <div className="flex flex-wrap gap-2">
@@ -513,7 +513,7 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
                   Not Going
                 </Button>
               </div>
-              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              <p className="text-xs font-semibold tracking-wide text-muted-foreground">
                 Feedback opens after the event for students marked attended.
               </p>
             </>
@@ -582,7 +582,7 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
           ) : (
             <div className="space-y-2">
               {engagement.rsvps.map((rsvp) => (
-                <div key={rsvp.id} className="nh-list-card flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div key={rsvp.id} className="clb-list-card flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="font-medium">{rsvp.profile?.full_name || "Student"}</p>
                     <p className="text-xs text-muted-foreground">{rsvp.profile?.student_id || "No student ID"}</p>
@@ -672,7 +672,7 @@ function EventDetailDialog({
           <div className="space-y-3">
             <p className="text-sm font-semibold">Related announcements</p>
             {announcementsLoading ? (
-              <NeoLoadingState title="Loading announcements" message="Checking recent club updates." compact />
+              <ClublyLoadingState title="Loading announcements" message="Checking recent club updates." compact />
             ) : announcementsError ? (
               <p className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
                 {getErrorMessage(announcementsErrorValue)}
@@ -684,7 +684,7 @@ function EventDetailDialog({
             ) : (
               announcementsPage.items.map((announcement) => (
                 <Link key={announcement.id} to="/communications" className="block">
-                  <div className="nh-list-card">
+                  <div className="clb-list-card">
                     <div className="flex items-start justify-between gap-3">
                       <p className="font-semibold">{announcement.title}</p>
                       {!announcement.is_read ? <Badge>Unread</Badge> : null}
@@ -779,7 +779,7 @@ function EventCard({
           <div className="space-y-3">
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-lg font-black uppercase">{event.title}</h3>
+                <h3 className="text-lg font-bold">{event.title}</h3>
                 <Badge className="bg-success/15 text-success hover:bg-success/15">Approved</Badge>
                 <Badge variant="outline">{getEventLifecycleLabel(event)}</Badge>
                 <Badge variant="outline">{isJoinedClub ? "Joined club" : "Campus event"}</Badge>
@@ -868,9 +868,9 @@ function EventCard({
 
 function ReminderCard({ reminder }: { reminder: EventReminderRecord }) {
   return (
-    <div className="nh-list-card">
+    <div className="clb-list-card">
       <div className="flex items-start gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center border-2 border-foreground bg-accent text-accent-foreground">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center border border-border bg-accent text-accent-foreground">
           <Bell className="h-4 w-4" />
         </div>
         <div>
@@ -966,7 +966,7 @@ export default function EventCalendar() {
   function renderEventList(events: ApprovedEventRecord[], emptyTitle: string, emptyMessage: string) {
     if (events.length === 0) {
       return (
-        <div className="nh-empty">
+        <div className="clb-empty">
           <p className="font-medium">{emptyTitle}</p>
           <p className="mt-1 text-sm text-muted-foreground">{emptyMessage}</p>
         </div>
@@ -985,8 +985,8 @@ export default function EventCalendar() {
   }
 
   return (
-    <div className="nh-page">
-      <NeoPageHeader
+    <div className="clb-screen">
+      <ClublyPageHeader
         eyebrow="Events"
         title="Events"
         description="Find today's events, RSVP for what is coming up, and check in when an event is live."
@@ -1003,15 +1003,15 @@ export default function EventCalendar() {
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center text-xs">
                   <div className="rounded-xl border border-border bg-muted/40 p-3">
-                    <p className="text-lg font-black">{todayEvents.length}</p>
+                    <p className="text-lg font-bold">{todayEvents.length}</p>
                     <p className="text-muted-foreground">Today</p>
                   </div>
                   <div className="rounded-xl border border-border bg-muted/40 p-3">
-                    <p className="text-lg font-black">{activeEvents.filter((event) => joinedClubIds.has(event.club_id)).length}</p>
+                    <p className="text-lg font-bold">{activeEvents.filter((event) => joinedClubIds.has(event.club_id)).length}</p>
                     <p className="text-muted-foreground">My clubs</p>
                   </div>
                   <div className="rounded-xl border border-border bg-muted/40 p-3">
-                    <p className="text-lg font-black">{activeEvents.filter((event) => !joinedClubIds.has(event.club_id)).length}</p>
+                    <p className="text-lg font-bold">{activeEvents.filter((event) => !joinedClubIds.has(event.club_id)).length}</p>
                     <p className="text-muted-foreground">Campus</p>
                   </div>
                 </div>
@@ -1019,21 +1019,21 @@ export default function EventCalendar() {
             </CardHeader>
             <CardContent className="space-y-3">
               {eventsLoading ? (
-                <NeoLoadingState
+                <ClublyLoadingState
                   title="Getting events ready"
                   message="Please wait while we load the events you can see."
                   delayedMessage="This is taking longer than usual. Please check your network connection."
                   compact
                 />
               ) : eventsError ? (
-                <div className="nh-empty border-destructive bg-destructive/5">
+                <div className="clb-empty border-destructive bg-destructive/5">
                   <p className="font-medium">We couldn't load events right now</p>
                   <p className="text-sm text-muted-foreground mt-1">
                     {getErrorMessage(eventsErrorValue)}
                   </p>
                 </div>
               ) : activeEvents.length === 0 && pastEvents.length === 0 ? (
-                <div className="nh-empty">
+                <div className="clb-empty">
                   <CalendarDays className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
                   <p className="font-medium">No events yet</p>
                   <p className="text-sm text-muted-foreground mt-1">Events will appear here once they are ready.</p>
@@ -1042,7 +1042,7 @@ export default function EventCalendar() {
                 <div className="space-y-8">
                   <section className="space-y-3">
                     <div>
-                      <h3 className="text-sm font-black uppercase tracking-[0.12em]">Today's Events</h3>
+                      <h3 className="text-sm font-bold tracking-[0.12em]">Today's Events</h3>
                       <p className="text-sm text-muted-foreground">Check in here when the event is active.</p>
                     </div>
                     {renderEventList(todayEvents, "No events happening today", "This is a quiet day. Check this week and upcoming events below.")}
@@ -1050,7 +1050,7 @@ export default function EventCalendar() {
 
                   <section className="space-y-3">
                     <div>
-                      <h3 className="text-sm font-black uppercase tracking-[0.12em]">This Week</h3>
+                      <h3 className="text-sm font-bold tracking-[0.12em]">This Week</h3>
                       <p className="text-sm text-muted-foreground">Events coming soon from clubs you can follow or join.</p>
                     </div>
                     {renderEventList(thisWeekEvents, "No events this week", "Upcoming events beyond this week are listed below.")}
@@ -1058,7 +1058,7 @@ export default function EventCalendar() {
 
                   <section className="space-y-3">
                     <div>
-                      <h3 className="text-sm font-black uppercase tracking-[0.12em]">Upcoming Events</h3>
+                      <h3 className="text-sm font-bold tracking-[0.12em]">Upcoming Events</h3>
                       <p className="text-sm text-muted-foreground">Plan ahead and RSVP before event day.</p>
                     </div>
                     {renderEventList(upcomingOnlyEvents, "No upcoming events", "Past events are still available below for memories and feedback.")}
@@ -1075,7 +1075,7 @@ export default function EventCalendar() {
 
                   <section className="space-y-3">
                     <div>
-                      <h3 className="text-sm font-black uppercase tracking-[0.12em]">Past Events</h3>
+                      <h3 className="text-sm font-bold tracking-[0.12em]">Past Events</h3>
                       <p className="text-sm text-muted-foreground">Look back on completed events and leave feedback if you attended.</p>
                     </div>
                     {pastEvents.length === 0 ? renderEventList([], "No past events yet", "Completed events will appear here after their event date passes.") : (
@@ -1111,14 +1111,14 @@ export default function EventCalendar() {
           </CardHeader>
           <CardContent className="space-y-3">
             {remindersLoading ? (
-              <NeoLoadingState
+              <ClublyLoadingState
                 title="Getting reminders ready"
                 message="Please wait while we load your event reminders."
                 delayedMessage="This is taking longer than usual. Please check your network connection."
                 compact
               />
             ) : remindersError ? (
-              <div className="nh-empty border-destructive bg-destructive/5">
+              <div className="clb-empty border-destructive bg-destructive/5">
                 <p className="font-medium">We couldn't load reminders right now</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   {getErrorMessage(remindersErrorValue)}

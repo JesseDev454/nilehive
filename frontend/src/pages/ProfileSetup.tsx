@@ -115,7 +115,7 @@ export default function ProfileSetup() {
             className="h-24 w-[22rem] max-w-full sm:h-28 sm:w-[24rem]"
           />
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.24em] text-primary">
+            <p className="text-xs font-bold tracking-wide text-primary">
               Legacy Profile Recovery
             </p>
             <h1 className="mt-3 text-4xl font-extrabold leading-tight text-foreground md:text-5xl">
@@ -146,7 +146,7 @@ export default function ProfileSetup() {
 
         <div className="lg:col-span-7">
           <form
-            className="relative overflow-hidden border-2 border-foreground bg-white p-7 shadow-[8px_8px_0_hsl(var(--foreground))] md:p-10"
+            className="relative overflow-hidden border border-border bg-white p-7 shadow-soft-sm md:p-10"
             onSubmit={handleSubmit}
           >
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -154,7 +154,7 @@ export default function ProfileSetup() {
                 <Label htmlFor="profile-full-name">Full Name</Label>
                 <Input
                   id="profile-full-name"
-                  className="border-2 border-foreground bg-muted px-5 py-6"
+                  className="border border-border bg-muted px-5 py-6"
                   value={fullName}
                   onChange={(event) => setFullName(event.target.value)}
                   required
@@ -175,7 +175,7 @@ export default function ProfileSetup() {
 
               <div className="space-y-2">
                 <Label>Starting Access</Label>
-                <div className="border-2 border-foreground bg-muted px-5 py-4 text-sm font-bold text-foreground">
+                <div className="border border-border bg-muted px-5 py-4 text-sm font-bold text-foreground">
                   {requestedRole === "advisor" ? "Advisor" : "Student"}
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -188,7 +188,7 @@ export default function ProfileSetup() {
               <div className="space-y-2 md:col-span-2">
                 <Label>{requestedRole === "advisor" ? "Advising Club" : "Club"}</Label>
                 <Select disabled={isLoadingClubs || clubsFailed || clubs.length === 0} value={clubId} onValueChange={setClubId}>
-                  <SelectTrigger className="border-2 border-foreground bg-muted py-6">
+                  <SelectTrigger className="border border-border bg-muted py-6">
                     <SelectValue
                       placeholder={
                         isLoadingClubs
