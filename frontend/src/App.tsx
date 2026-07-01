@@ -85,7 +85,7 @@ function ProtectedRoutes() {
 
   const effectiveRole = profile.effective_role ?? profile.role;
 
-  if (effectiveRole === "feedback_manager" && location.pathname !== "/feedback") {
+  if (effectiveRole === "feedback_manager" && !["/feedback", "/notifications"].includes(location.pathname)) {
     return <Navigate to="/feedback" replace />;
   }
 

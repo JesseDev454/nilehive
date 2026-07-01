@@ -37,6 +37,20 @@ const emptyForm = {
   instagram: "",
   linkedin: ""
 };
+const CLUB_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+const CLUB_IMAGE_ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const CLUB_GALLERY_MAX_IMAGES = 12;
+
+function isAcceptedClubImage(file: File) {
+  const lowerName = file.name.toLowerCase();
+  return (
+    CLUB_IMAGE_ACCEPTED_TYPES.has(file.type) ||
+    lowerName.endsWith(".jpg") ||
+    lowerName.endsWith(".jpeg") ||
+    lowerName.endsWith(".png") ||
+    lowerName.endsWith(".webp")
+  );
+}
 
 function getErrorMessage(error: unknown) {
   return error instanceof ApiClientError || error instanceof Error
@@ -122,6 +136,10 @@ export default function Clubs() {
               whatsapp_onboarding_notes: payload.whatsapp_onboarding_notes
             });
         if (galleryFile) {
+          if ((editingClub.gallery?.length || 0) >= CLUB_GALLERY_MAX_IMAGES) {
+            throw new Error(`A club gallery can contain up to ${CLUB_GALLERY_MAX_IMAGES} images.`);
+          }
+
           const upload = await uploadStorageFile(galleryFile, "club-media", { folder: editingClub.id });
           await createClubMedia(editingClub.id, { storage_path: upload.path, display_order: editingClub.gallery?.length || 0 });
         }
@@ -173,6 +191,27 @@ export default function Clubs() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     saveMutation.mutate();
+  }
+
+  function chooseClubImage(file: File | undefined, setter: (file: File | null) => void, label: string) {
+    if (!file) {
+      setter(null);
+      return;
+    }
+
+    if (!isAcceptedClubImage(file)) {
+      actionError(`${label} is not supported`, new Error("Please upload a JPG, PNG, or WEBP image."));
+      setter(null);
+      return;
+    }
+
+    if (file.size > CLUB_IMAGE_MAX_BYTES) {
+      actionError(`${label} is too large`, new Error("Please upload an image under 5MB."));
+      setter(null);
+      return;
+    }
+
+    setter(file);
   }
 
   if (!canManageClubs) {
@@ -246,7 +285,33 @@ export default function Clubs() {
             <p className="text-xs font-semibold text-muted-foreground lg:col-span-2">
               Leave website or social links blank to remove them from the public club profile.
             </p>
-            {editingClub ? <><div className="space-y-2"><Label htmlFor="club_logo">Club logo</Label><Input id="club_logo" type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setLogoFile(event.target.files?.[0] || null)} /></div><div className="space-y-2"><Label htmlFor="club_gallery">Add gallery image</Label><Input id="club_gallery" type="file" accept="image/png,image/jpeg,image/webp" onChange={(event) => setGalleryFile(event.target.files?.[0] || null)} /></div></> : null}
+            {editingClub ? (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="club_logo">Club logo</Label>
+                  <Input
+                    id="club_logo"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+                    onChange={(event) => chooseClubImage(event.target.files?.[0], setLogoFile, "Club logo")}
+                  />
+                  <p className="text-xs text-muted-foreground">JPG, PNG, or WEBP under 5MB.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="club_gallery">Add gallery image</Label>
+                  <Input
+                    id="club_gallery"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+                    onChange={(event) => chooseClubImage(event.target.files?.[0], setGalleryFile, "Gallery image")}
+                    disabled={(editingClub.gallery?.length || 0) >= CLUB_GALLERY_MAX_IMAGES}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    JPG, PNG, or WEBP under 5MB. Gallery images: {editingClub.gallery?.length || 0}/{CLUB_GALLERY_MAX_IMAGES}.
+                  </p>
+                </div>
+              </>
+            ) : null}
             <div className="flex flex-wrap justify-end gap-2 lg:col-span-2">
               {editingClub && role === "admin" ? (
                 <Button

@@ -62,7 +62,8 @@ function getNotificationTitle(type) {
     admin_rejected: "Proposal rejected",
     event_reminder: "Event reminder",
     event_report_submitted: "Event report submitted",
-    missing_report_prompt: "Event report is due"
+    missing_report_prompt: "Event report is due",
+    dues_proof_rejected: "Dues proof needs another upload"
   };
 
   return labels[type] ?? "NileHive notification";

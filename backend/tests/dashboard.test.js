@@ -32,7 +32,7 @@ test("club health score starts new clubs at a neutral baseline", () => {
   const health = calculateClubHealthScore();
 
   assert.equal(health.score, 50);
-  assert.equal(health.label, "Getting Started");
+  assert.equal(health.label, "Needs attention");
   assert.deepEqual(health.breakdown, {
     dues: 50,
     membership: 50,
@@ -75,7 +75,7 @@ test("club health score rewards excellent clubs without exceeding 100", () => {
   });
 
   assert.equal(health.score, 100);
-  assert.equal(health.label, "Excellent");
+  assert.equal(health.label, "Healthy");
 });
 
 test("club health score handles weak clubs without dropping below zero", () => {
@@ -103,7 +103,7 @@ test("club health score handles weak clubs without dropping below zero", () => {
 
   assert.ok(health.score >= 0);
   assert.ok(health.score < 40);
-  assert.equal(health.label, "At Risk");
+  assert.equal(health.label, "At risk");
 });
 
 test("club health score uses deterministic weighted inputs and breakdown", () => {
@@ -154,7 +154,7 @@ test("club health score uses deterministic weighted inputs and breakdown", () =>
     feedback: 74
   });
   assert.equal(health.score, 59);
-  assert.equal(health.label, "Getting Started");
+  assert.equal(health.label, "Needs attention");
 });
 
 test("club health score utilities clamp extreme values", () => {

@@ -95,6 +95,7 @@ const studentItems: AppNavItem[] = [
 
 const feedbackManagerItems: AppNavItem[] = [
   { title: "App Feedback", shortTitle: "Feedback", url: "/feedback", icon: MessageSquare, onboardingTarget: "nav-feedback" },
+  { title: "Notifications", shortTitle: "Alerts", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications" },
 ];
 
 export function getRoleNavItems(role: Role | null): AppNavItem[] {

@@ -54,23 +54,15 @@ function scoreRatio(part, total, fallback = 50) {
 }
 
 function getClubHealthLabel(score) {
-  if (score >= 90) {
-    return "Excellent";
-  }
-
-  if (score >= 75) {
+  if (score >= 80) {
     return "Healthy";
   }
 
-  if (score >= 60) {
-    return "Needs Attention";
+  if (score >= 50) {
+    return "Needs attention";
   }
 
-  if (score >= 40) {
-    return "Getting Started";
-  }
-
-  return "At Risk";
+  return "At risk";
 }
 
 function calculateClubHealthScore({
@@ -120,12 +112,12 @@ function calculateClubHealthScore({
     feedback: feedbackScore
   };
   const score = clampScore(
-    (breakdown.dues * 0.3) +
-      (breakdown.membership * 0.2) +
+    (breakdown.membership * 0.25) +
+      (breakdown.dues * 0.2) +
       (breakdown.events * 0.2) +
-      (breakdown.reports * 0.15) +
+      (breakdown.reports * 0.1) +
       (breakdown.tasks * 0.1) +
-      (breakdown.feedback * 0.05)
+      (breakdown.feedback * 0.15)
   );
 
   return {

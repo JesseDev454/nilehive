@@ -344,7 +344,7 @@ export default function Notifications() {
     mutationFn: enablePushNotifications,
     onSuccess: () => {
       setPushEnabled(true);
-      actionSuccess("Phone notifications enabled", "This device can now receive Club Services alerts.");
+      actionSuccess("Browser alerts enabled", "This browser can now receive optional Club Services device alerts.");
     },
     onError: (mutationError) => {
       actionError("Could not enable notifications", mutationError, getErrorMessage(mutationError));
@@ -354,7 +354,7 @@ export default function Notifications() {
     mutationFn: disablePushNotifications,
     onSuccess: () => {
       setPushEnabled(false);
-      actionSuccess("Phone notifications disabled", "This device will no longer receive push alerts.");
+      actionSuccess("Browser alerts disabled", "This browser will no longer receive optional device alerts.");
     },
     onError: (mutationError) => {
       actionError("Could not disable notifications", mutationError, getErrorMessage(mutationError));
@@ -416,13 +416,13 @@ export default function Notifications() {
               {pushEnabled ? <BellRing className="h-5 w-5" /> : <BellOff className="h-5 w-5" />}
             </div>
             <div>
-              <p className="font-semibold">Optional phone alerts</p>
+              <p className="font-semibold">Optional browser/device alerts</p>
               <p className="mt-1 text-sm text-muted-foreground">
                 {pushSupported
                   ? pushEnabled
-                    ? "Enabled on this device."
-                    : "Enable alerts for important Club Services updates on this device."
-                  : "This browser does not support web push notifications."}
+                    ? "Enabled on this device. These are not SMS or WhatsApp messages."
+                    : "Enable optional browser/device alerts for important Club Services updates. These are not SMS or WhatsApp messages."
+                  : "This browser does not support web push notifications. You will still receive in-app updates."}
               </p>
             </div>
           </div>

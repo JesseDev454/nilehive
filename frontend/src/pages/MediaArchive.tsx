@@ -28,6 +28,7 @@ import { actionError, actionSuccess } from "@/lib/notify";
 import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 
 const MAX_REPORT_MEDIA_IMAGES = 10;
+const REPORT_DRAFT_STORAGE_KEY = "clubly:post-event-report-draft:v1";
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -218,6 +219,38 @@ export default function MediaArchive() {
     setPage(1);
   }, [reportClubFilter]);
 
+  useEffect(() => {
+    const savedDraft = window.localStorage.getItem(REPORT_DRAFT_STORAGE_KEY);
+
+    if (!savedDraft) {
+      return;
+    }
+
+    try {
+      const draft = JSON.parse(savedDraft) as {
+        proposalId?: string;
+        attendanceCount?: string;
+        summary?: string;
+        challenges?: string;
+        outcomes?: string;
+        budgetUsed?: string;
+        uploadedMediaUrls?: string[];
+        uploadedMediaNames?: string[];
+      };
+
+      setProposalId(draft.proposalId || "");
+      setAttendanceCount(draft.attendanceCount || "");
+      setSummary(draft.summary || "");
+      setChallenges(draft.challenges || "");
+      setOutcomes(draft.outcomes || "");
+      setBudgetUsed(draft.budgetUsed || "");
+      setUploadedMediaUrls(Array.isArray(draft.uploadedMediaUrls) ? draft.uploadedMediaUrls : []);
+      setUploadedMediaNames(Array.isArray(draft.uploadedMediaNames) ? draft.uploadedMediaNames : []);
+    } catch {
+      window.localStorage.removeItem(REPORT_DRAFT_STORAGE_KEY);
+    }
+  }, []);
+
   const createMutation = useMutation({
     mutationFn: () =>
       createEventReport({
@@ -239,6 +272,7 @@ export default function MediaArchive() {
       setBudgetUsed("");
       setUploadedMediaUrls([]);
       setUploadedMediaNames([]);
+      window.localStorage.removeItem(REPORT_DRAFT_STORAGE_KEY);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["event-reports"] }),
         queryClient.invalidateQueries({ queryKey: ["approved-events"] })
@@ -260,6 +294,26 @@ export default function MediaArchive() {
     }
 
     createMutation.mutate();
+  }
+
+  function handleSaveDraft() {
+    window.localStorage.setItem(
+      REPORT_DRAFT_STORAGE_KEY,
+      JSON.stringify({
+        proposalId,
+        attendanceCount,
+        summary,
+        challenges,
+        outcomes,
+        budgetUsed,
+        uploadedMediaUrls,
+        uploadedMediaNames
+      })
+    );
+
+    toast.success("Report draft saved", {
+      description: "This draft stays on this device until you submit or replace it."
+    });
   }
 
   async function handleMediaUpload(event: ChangeEvent<HTMLInputElement>) {
@@ -529,7 +583,19 @@ export default function MediaArchive() {
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground">Total media count: {totalMediaCount}/{MAX_REPORT_MEDIA_IMAGES}</p>
               </div>
-              <div className="lg:col-span-2 flex justify-end">
+              <div className="lg:col-span-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs text-muted-foreground">
+                  Drafts stay on this device and are not visible as submitted reports.
+                </p>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleSaveDraft}
+                    disabled={createMutation.isPending || isUploadingMedia}
+                  >
+                    Save Draft
+                  </Button>
                 <Button
                   type="submit"
                   disabled={createMutation.isPending || isUploadingMedia || !proposalId || totalMediaCount > MAX_REPORT_MEDIA_IMAGES}
@@ -546,6 +612,7 @@ export default function MediaArchive() {
                     </>
                   )}
                 </Button>
+                </div>
               </div>
             </form>
           </CardContent>

@@ -50,6 +50,8 @@ import { isValidStudentId, normalizeStudentId, STUDENT_ID_ERROR_MESSAGE } from "
 import { resolveStorageFileUrl, uploadStorageFile } from "@/lib/storage";
 
 const REQUEST_STATUSES = ["all", "pending", "active", "rejected", "cancelled"] as const;
+const DUES_PROOF_MAX_BYTES = 10 * 1024 * 1024;
+const DUES_PROOF_ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "application/pdf"]);
 const STUDENT_TYPES = [
   { value: "fresher", label: "Fresher" },
   { value: "returning", label: "Returning Student" }
@@ -58,6 +60,17 @@ const EVENT_FILTERS = [
   { value: "all", label: "Any event status" },
   { value: "upcoming", label: "Upcoming event available" }
 ] as const;
+
+function isAcceptedDuesProof(file: File) {
+  const lowerName = file.name.toLowerCase();
+  return (
+    DUES_PROOF_ACCEPTED_TYPES.has(file.type) ||
+    lowerName.endsWith(".jpg") ||
+    lowerName.endsWith(".jpeg") ||
+    lowerName.endsWith(".png") ||
+    lowerName.endsWith(".pdf")
+  );
+}
 const CLUB_DESCRIPTION_OVERRIDES: Record<string, string> = {
   "Nile Book Club":
     "Dive into the world of literature with fellow bookworms. Discover new genres, share your favourite reads, and engage in lively discussions that will broaden your horizons.",
@@ -586,9 +599,16 @@ function DuesConfirmationCard({
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (!isAcceptedDuesProof(file)) {
+      toast.error("Unsupported receipt file", {
+        description: "Please upload a JPG, PNG, or PDF under 10MB."
+      });
+      return;
+    }
+
+    if (file.size > DUES_PROOF_MAX_BYTES) {
       toast.error("Receipt is too large", {
-        description: "Please upload a file smaller than 5MB."
+        description: "Please upload a JPG, PNG, or PDF under 10MB."
       });
       return;
     }
@@ -771,7 +791,7 @@ function DuesConfirmationCard({
             ref={proofInputRef}
             id={`membership_proof_upload_${request.id}`}
             type="file"
-            accept="image/*,.pdf"
+            accept="image/jpeg,image/png,application/pdf,.jpg,.jpeg,.png,.pdf"
             onChange={handleReceiptUpload}
             disabled={isUploadingProof}
           />
@@ -1232,9 +1252,16 @@ function JoinClubPanel({
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (!isAcceptedDuesProof(file)) {
+      toast.error("Unsupported receipt file", {
+        description: "Please upload a JPG, PNG, or PDF under 10MB."
+      });
+      return;
+    }
+
+    if (file.size > DUES_PROOF_MAX_BYTES) {
       toast.error("Receipt is too large", {
-        description: "Please upload a file smaller than 5MB."
+        description: "Please upload a JPG, PNG, or PDF under 10MB."
       });
       return;
     }
@@ -1414,7 +1441,7 @@ function JoinClubPanel({
                     ref={proofInputRef}
                     id={`join-proof-${club.id}`}
                     type="file"
-                    accept="image/*,.pdf"
+                    accept="image/jpeg,image/png,application/pdf,.jpg,.jpeg,.png,.pdf"
                     onChange={handleReceiptUpload}
                     disabled={isUploadingProof}
                   />
