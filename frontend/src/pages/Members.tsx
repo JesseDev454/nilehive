@@ -213,11 +213,6 @@ export default function Members() {
                   <p className="text-xs text-muted-foreground md:hidden">{member.student_id}</p>
                   <p className="text-xs text-muted-foreground lg:hidden">{member.email || member.phone_number || "No contact"}</p>
                 </td>
-                <td>
-                  <Badge variant={member.dues_paid ? "default" : "outline"}>
-                    {member.dues_paid ? "Dues Paid" : member.dues_status === "submitted" ? "Under Review" : "Not Paid"}
-                  </Badge>
-                </td>
                 <td className="hidden md:table-cell text-muted-foreground">{member.student_id}</td>
                 <td className="hidden lg:table-cell text-muted-foreground">
                   <p>{member.email || "-"}</p>
@@ -277,6 +272,11 @@ export default function Members() {
                   ) : (
                     <StatusBadge status={member.membership_status} />
                   )}
+                </td>
+                <td>
+                  <Badge variant={member.dues_paid ? "default" : "outline"} className="whitespace-nowrap">
+                    {member.dues_paid ? "Dues Paid" : member.dues_status === "submitted" ? "Under Review" : "Not Paid"}
+                  </Badge>
                 </td>
               </tr>
             ))}
