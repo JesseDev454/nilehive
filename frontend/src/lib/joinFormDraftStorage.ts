@@ -1,4 +1,4 @@
-const JOIN_FORM_DRAFT_VERSION = 2;
+const JOIN_FORM_DRAFT_VERSION = 3;
 const JOIN_FORM_DRAFT_TTL_MS = 2 * 24 * 60 * 60 * 1000; // 2 days
 
 export interface JoinFormDraft {
@@ -6,7 +6,6 @@ export interface JoinFormDraft {
   userId: string;
   clubId: string;
   savedAt: string;
-  studentType: "fresher" | "returning";
   studentId: string;
   phoneNumber: string;
   department: string;

@@ -50,10 +50,6 @@ import { isValidStudentId, normalizeStudentId, STUDENT_ID_ERROR_MESSAGE } from "
 import { resolveStorageFileUrl, uploadStorageFile } from "@/lib/storage";
 
 const REQUEST_STATUSES = ["all", "pending", "active", "rejected", "cancelled"] as const;
-const STUDENT_TYPES = [
-  { value: "fresher", label: "Fresher" },
-  { value: "returning", label: "Returning Student" }
-] as const;
 const EVENT_FILTERS = [
   { value: "all", label: "Any event status" },
   { value: "upcoming", label: "Upcoming event available" }
@@ -327,10 +323,6 @@ function ReviewRequestStatusBadge({ status }: { status: MembershipRequestRecord[
   return <Badge className={config.className}>{config.label}</Badge>;
 }
 
-function getStudentTypeLabel(value: "fresher" | "returning" | null | undefined) {
-  return value === "fresher" ? "Fresher" : "Returning Student";
-}
-
 function getClubDescription(club: ClubRecord) {
   return club.description?.trim() || CLUB_DESCRIPTION_OVERRIDES[club.name] || "Learn more about this club and the kind of community it offers before you continue to the join form.";
 }
@@ -359,8 +351,15 @@ function getClubDuesLabel(club: ClubRecord) {
   return club.dues_amount > 0 ? formatCurrency(club.dues_amount) : "No dues";
 }
 
+function resolveStudentFeeAmount(
+  settings?: Pick<ClubPaymentSettingsRecord, "fresher_dues_amount" | "returning_student_dues_amount"> | null,
+  fallbackAmount = 10000
+) {
+  return settings?.fresher_dues_amount ?? settings?.returning_student_dues_amount ?? fallbackAmount;
+}
+
 function isDuesRequired(club: ClubRecord, settings?: ClubPaymentSettingsRecord | null) {
-  return club.dues_amount > 0 || Boolean(settings && (settings.fresher_dues_amount > 0 || settings.returning_student_dues_amount > 0));
+  return club.dues_amount > 0 || resolveStudentFeeAmount(settings, 0) > 0;
 }
 
 function getClubDuesRequirementLabel(club: ClubRecord, settings?: ClubPaymentSettingsRecord | null) {
@@ -369,7 +368,7 @@ function getClubDuesRequirementLabel(club: ClubRecord, settings?: ClubPaymentSet
   }
 
   if (settings) {
-    return `Required: ${formatCurrency(settings.returning_student_dues_amount)} returning / ${formatCurrency(settings.fresher_dues_amount)} freshers`;
+    return `Required: ${formatCurrency(resolveStudentFeeAmount(settings))}`;
   }
 
   return `Required: ${getClubDuesLabel(club)}`;
@@ -519,15 +518,8 @@ function getAnnouncementPriorityClass(priority: AnnouncementRecord["priority"]) 
   }[priority];
 }
 
-function resolveJoinAmount(
-  studentType: "fresher" | "returning",
-  settings?: { fresher_dues_amount: number; returning_student_dues_amount: number } | null
-) {
-  if (studentType === "fresher") {
-    return settings?.fresher_dues_amount ?? 10000;
-  }
-
-  return settings?.returning_student_dues_amount ?? 10000;
+function resolveJoinAmount(settings?: { fresher_dues_amount: number; returning_student_dues_amount: number } | null) {
+  return resolveStudentFeeAmount(settings);
 }
 
 function DuesConfirmationCard({
@@ -751,13 +743,9 @@ function DuesConfirmationCard({
               <p className="text-xs uppercase tracking-wide text-muted-foreground">Account Name</p>
               <p className="font-semibold">{settings.account_name}</p>
             </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Freshers</p>
-              <p className="font-semibold">{formatCurrency(settings.fresher_dues_amount)}</p>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Returning Students</p>
-              <p className="font-semibold">{formatCurrency(settings.returning_student_dues_amount)}</p>
+            <div className="sm:col-span-2">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Student Fee</p>
+              <p className="font-semibold">{formatCurrency(resolveStudentFeeAmount(settings))}</p>
             </div>
             {settings.payment_instructions ? (
               <p className="sm:col-span-2 text-muted-foreground">{settings.payment_instructions}</p>
@@ -1285,14 +1273,12 @@ function JoinClubPanel({
   club,
   existingRequest,
   settings,
-  defaultStudentType,
   defaultPhoneNumber,
   defaultDepartment
 }: {
   club: ClubRecord;
   existingRequest?: MembershipRequestRecord;
   settings?: ClubPaymentSettingsRecord | null;
-  defaultStudentType?: "fresher" | "returning" | null;
   defaultPhoneNumber?: string | null;
   defaultDepartment?: string | null;
 }) {
@@ -1306,9 +1292,6 @@ function JoinClubPanel({
   const userId = user?.id ?? "";
   const savedDraft = userId ? readJoinFormDraft(userId, club.id) : null;
 
-  const [studentType, setStudentType] = useState<"fresher" | "returning">(
-    savedDraft?.studentType ?? defaultStudentType ?? "returning"
-  );
   const [studentId, setStudentId] = useState(savedDraft?.studentId ?? "");
   const [phoneNumber, setPhoneNumber] = useState(savedDraft?.phoneNumber ?? defaultPhoneNumber ?? "");
   const [department, setDepartment] = useState(savedDraft?.department ?? defaultDepartment ?? "");
@@ -1328,11 +1311,10 @@ function JoinClubPanel({
       return;
     }
 
-    if (defaultStudentType) setStudentType(defaultStudentType);
     if (defaultPhoneNumber) setPhoneNumber(defaultPhoneNumber);
     if (defaultDepartment) setDepartment(defaultDepartment);
     profileDefaultsApplied.current = true;
-  }, [defaultStudentType, defaultPhoneNumber, defaultDepartment, savedDraft]);
+  }, [defaultPhoneNumber, defaultDepartment, savedDraft]);
 
   // Persist draft on every field change (debounced via useCallback identity).
   const persistDraft = useCallback(() => {
@@ -1341,7 +1323,6 @@ function JoinClubPanel({
     }
 
     writeJoinFormDraft(userId, club.id, {
-      studentType,
       studentId,
       phoneNumber,
       department,
@@ -1349,7 +1330,7 @@ function JoinClubPanel({
       accountName,
       paidAt
     });
-  }, [userId, club.id, studentType, studentId, phoneNumber, department, joinReason, accountName, paidAt]);
+  }, [userId, club.id, studentId, phoneNumber, department, joinReason, accountName, paidAt]);
 
   useEffect(() => {
     persistDraft();
@@ -1357,7 +1338,7 @@ function JoinClubPanel({
   // ── End draft persistence ────────────────────────────────────────────────
 
   const duesRequired = isDuesRequired(club, settings);
-  const joinAmount = duesRequired ? resolveJoinAmount(studentType, settings) : 0;
+  const joinAmount = duesRequired ? resolveJoinAmount(settings) : 0;
   const normalizedStudentId = normalizeStudentId(studentId);
 
   const createRequestMutation = useMutation({
@@ -1368,9 +1349,9 @@ function JoinClubPanel({
         student_id: normalizedStudentId || null,
         phone_number: phoneNumber || null,
         department: department || null,
-        student_type: studentType,
+        student_type: "returning",
         join_reason: joinReason || null,
-            payment_account_name: accountName,
+        payment_account_name: accountName,
         payment_reference: null,
         payment_paid_at: paidAt || null,
         proof_url: proofUrl || null,
@@ -1470,26 +1451,7 @@ function JoinClubPanel({
       <CardContent className="space-y-4 p-5">
         <div className="space-y-3 rounded-xl border-2 border-foreground bg-warning/10 p-4">
           <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Student type</p>
-            <Select
-              value={studentType}
-              onValueChange={(value) => setStudentType(value as "fresher" | "returning")}
-              disabled={Boolean(existingRequest)}
-            >
-              <SelectTrigger className="mt-2">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STUDENT_TYPES.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Join dues</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Student Fee</p>
             <p className="mt-1 text-lg font-bold">{duesRequired ? formatCurrency(joinAmount) : "Not required"}</p>
             <p className="mt-1 text-sm text-muted-foreground">
               {duesRequired
@@ -1712,7 +1674,6 @@ function StudentClubJoinPage({
   clubsError,
   requestsFailed,
   requestsError,
-  defaultStudentType,
   defaultPhoneNumber,
   defaultDepartment
 }: {
@@ -1725,7 +1686,6 @@ function StudentClubJoinPage({
   clubsError: unknown;
   requestsFailed: boolean;
   requestsError: unknown;
-  defaultStudentType?: "fresher" | "returning" | null;
   defaultPhoneNumber?: string | null;
   defaultDepartment?: string | null;
 }) {
@@ -1819,7 +1779,6 @@ function StudentClubJoinPage({
             club={club}
             existingRequest={existingRequest}
             settings={settings}
-            defaultStudentType={defaultStudentType}
             defaultPhoneNumber={defaultPhoneNumber}
             defaultDepartment={defaultDepartment}
           />
@@ -1946,7 +1905,6 @@ function StudentMembershipView() {
         clubsError={clubsError}
         requestsFailed={requestsFailed}
         requestsError={requestsError}
-        defaultStudentType={profile?.student_type || undefined}
         defaultPhoneNumber={profile?.phone_number ?? null}
         defaultDepartment={profile?.department ?? null}
       />
@@ -2132,7 +2090,7 @@ function StudentMembershipView() {
                   <div>
                     <p className="font-semibold">{request.club?.name || "Selected club"}</p>
                     <p className="text-sm text-muted-foreground">
-                      {getStudentTypeLabel(request.student_type)} - {formatCurrency(request.dues_amount)}
+                      Student fee - {formatCurrency(request.dues_amount)}
                     </p>
                     {request.join_reason ? (
                       <p className="mt-2 text-sm text-muted-foreground">{request.join_reason}</p>
@@ -2276,7 +2234,7 @@ function ReviewerMembershipView() {
                           <ReviewRequestStatusBadge status={request.status} />
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {request.club?.name || "Selected club"} - {getStudentTypeLabel(request.student_type)} - {formatCurrency(request.dues_amount)}
+                          {request.club?.name || "Selected club"} - Student fee - {formatCurrency(request.dues_amount)}
                         </p>
                         {request.due_payment?.payment_account_name ? (
                           <p className="text-sm text-muted-foreground">

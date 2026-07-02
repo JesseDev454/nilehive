@@ -78,8 +78,7 @@ export default function Dues() {
   const initialStatusFilter = DUE_STATUS_FILTERS.includes(requestedStatus as (typeof DUE_STATUS_FILTERS)[number])
     ? (requestedStatus as (typeof DUE_STATUS_FILTERS)[number])
     : "all";
-  const [fresherAmount, setFresherAmount] = useState("10000");
-  const [returningAmount, setReturningAmount] = useState("10000");
+  const [studentFeeAmount, setStudentFeeAmount] = useState("10000");
   const [bankName, setBankName] = useState("Providus Bank");
   const [accountNumber, setAccountNumber] = useState("1305861314");
   const [accountName, setAccountName] = useState("Nile Arts & Creative Hub");
@@ -138,8 +137,9 @@ export default function Dues() {
       return;
     }
 
-    setFresherAmount(String(sharedPaymentSettings.fresher_dues_amount ?? 10000));
-    setReturningAmount(String(sharedPaymentSettings.returning_student_dues_amount ?? 10000));
+    setStudentFeeAmount(
+      String(sharedPaymentSettings.fresher_dues_amount ?? sharedPaymentSettings.returning_student_dues_amount ?? 10000)
+    );
     setBankName(sharedPaymentSettings.bank_name);
     setAccountNumber(sharedPaymentSettings.account_number);
     setAccountName(sharedPaymentSettings.account_name);
@@ -204,8 +204,8 @@ export default function Dues() {
   const saveSharedProfileMutation = useMutation({
     mutationFn: () =>
       applyClubPaymentProfileToAll({
-        fresher_dues_amount: Number(fresherAmount),
-        returning_student_dues_amount: Number(returningAmount),
+        fresher_dues_amount: Number(studentFeeAmount),
+        returning_student_dues_amount: Number(studentFeeAmount),
         bank_name: bankName,
         account_number: accountNumber,
         account_name: accountName,
@@ -214,7 +214,7 @@ export default function Dues() {
     onSuccess: async (result) => {
       actionSuccess(
         "Shared payment profile updated",
-        `Applied the Clubly account and freshers/returning dues amounts to ${result.clubs_updated} clubs.`
+        `Applied the Clubly account and student fee amount to ${result.clubs_updated} clubs.`
       );
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["shared-club-payment-settings"] }),
@@ -462,12 +462,8 @@ export default function Dues() {
         <CardContent>
           <form onSubmit={handleSaveSharedProfile} className="clb-form-grid">
             <div className="space-y-2">
-              <Label htmlFor="fresher_dues_amount">Freshers Dues</Label>
-              <Input id="fresher_dues_amount" type="number" min="0" value={fresherAmount} readOnly required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="returning_dues_amount">Returning Students Dues</Label>
-              <Input id="returning_dues_amount" type="number" min="0" value={returningAmount} readOnly required />
+              <Label htmlFor="student_fee_amount">Student Fee</Label>
+              <Input id="student_fee_amount" type="number" min="0" value={studentFeeAmount} readOnly required />
             </div>
             <div className="space-y-2">
               <Label htmlFor="bank_name">Bank Name</Label>
@@ -530,30 +526,19 @@ export default function Dues() {
         <CardHeader>
           <CardTitle className="text-lg">Clubly Account</CardTitle>
           <p className="text-sm text-muted-foreground">
-            All clubs use one payment destination. Every student is charged ₦10,000 per session from this shared profile.
+            All clubs use one payment destination. Every student is charged one student fee per session from this shared profile.
           </p>
         </CardHeader>
         <CardContent>
           {canManageSharedProfile ? (
             <form onSubmit={handleSaveSharedProfile} className="clb-form-grid">
               <div className="space-y-2">
-                <Label htmlFor="fresher_dues_amount">Freshers Dues</Label>
+                <Label htmlFor="student_fee_amount">Student Fee</Label>
                 <Input
-                  id="fresher_dues_amount"
+                  id="student_fee_amount"
                   type="number"
                   min="0"
-                  value={fresherAmount}
-                  readOnly
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="returning_dues_amount">Returning Students Dues</Label>
-                <Input
-                  id="returning_dues_amount"
-                  type="number"
-                  min="0"
-                  value={returningAmount}
+                  value={studentFeeAmount}
                   readOnly
                   required
                 />
@@ -599,12 +584,8 @@ export default function Dues() {
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="clb-card-soft p-4">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Freshers Dues</p>
-                <p className="mt-1 font-semibold">{formatCurrency(sharedPaymentSettings?.fresher_dues_amount ?? 10000)}</p>
-              </div>
-              <div className="clb-card-soft p-4">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Returning Students Dues</p>
-                <p className="mt-1 font-semibold">{formatCurrency(sharedPaymentSettings?.returning_student_dues_amount ?? 10000)}</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Student Fee</p>
+                <p className="mt-1 font-semibold">{formatCurrency(sharedPaymentSettings?.fresher_dues_amount ?? sharedPaymentSettings?.returning_student_dues_amount ?? 10000)}</p>
               </div>
               <div className="clb-card-soft p-4">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Bank</p>
