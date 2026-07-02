@@ -33,7 +33,6 @@ const emptyForm = {
   whatsapp_group_name: "",
   whatsapp_onboarding_notes: "",
   categories: [] as string[],
-  website_url: "",
   instagram: "",
   linkedin: ""
 };
@@ -92,7 +91,6 @@ export default function Clubs() {
       whatsapp_group_name: editingClub.whatsapp_group_name || "",
       whatsapp_onboarding_notes: editingClub.whatsapp_onboarding_notes || "",
       categories: editingClub.categories || [],
-      website_url: editingClub.website_url || "",
       instagram: editingClub.social_links?.instagram || "",
       linkedin: editingClub.social_links?.linkedin || ""
     });
@@ -118,7 +116,6 @@ export default function Clubs() {
         code: form.code || null,
         whatsapp_group_name: form.whatsapp_group_name || null,
         whatsapp_onboarding_notes: form.whatsapp_onboarding_notes || null,
-        website_url: form.website_url || null,
         logo_path: logoPath,
         social_links: { ...(form.instagram ? { instagram: form.instagram } : {}), ...(form.linkedin ? { linkedin: form.linkedin } : {}) }
       };
@@ -130,7 +127,6 @@ export default function Clubs() {
               description: payload.description,
               categories: payload.categories,
               logo_path: payload.logo_path,
-              website_url: payload.website_url,
               social_links: payload.social_links,
               whatsapp_group_name: payload.whatsapp_group_name,
               whatsapp_onboarding_notes: payload.whatsapp_onboarding_notes
@@ -271,10 +267,6 @@ export default function Clubs() {
               <div className="flex flex-wrap gap-2">{CLUB_INTEREST_CATEGORIES.map((category) => <Button key={category} type="button" size="sm" variant={form.categories.includes(category) ? "default" : "outline"} onClick={() => setForm({ ...form, categories: form.categories.includes(category) ? form.categories.filter((item) => item !== category) : [...form.categories, category].slice(0, 5) })}>{category}</Button>)}</div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="club_website">Website</Label>
-              <Input id="club_website" type="url" value={form.website_url} onChange={(event) => setForm({ ...form, website_url: event.target.value })} />
-            </div>
-            <div className="space-y-2">
               <Label htmlFor="club_instagram">Instagram</Label>
               <Input id="club_instagram" type="url" value={form.instagram} onChange={(event) => setForm({ ...form, instagram: event.target.value })} placeholder="Optional Instagram URL" />
             </div>
@@ -283,7 +275,7 @@ export default function Clubs() {
               <Input id="club_linkedin" type="url" value={form.linkedin} onChange={(event) => setForm({ ...form, linkedin: event.target.value })} placeholder="Optional LinkedIn URL" />
             </div>
             <p className="text-xs font-semibold text-muted-foreground lg:col-span-2">
-              Leave website or social links blank to remove them from the public club profile.
+              Leave social links blank to remove them from the public club profile.
             </p>
             {editingClub ? (
               <>
