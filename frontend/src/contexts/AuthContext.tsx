@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import { getMyProfile, getUserFacingErrorMessage, SESSION_EXPIRED_EVENT } from "@/lib/api";
+import { ApiClientError, getMyProfile, getUserFacingErrorMessage, SESSION_EXPIRED_EVENT } from "@/lib/api";
 import {
   getCampusOneOidcAuthUrl,
   getAllowedEmailDomainLabel,
@@ -82,6 +82,10 @@ const PROFILE_FETCH_RETRY_ATTEMPTS = 5;
 const PROFILE_FETCH_RETRY_DELAY_MS = 500;
 const LAST_ACTIVITY_STORAGE_KEY = `${SUPABASE_AUTH_STORAGE_KEY}:last-activity-at`;
 const E2E_AUTH_STORAGE_KEY = "club-services:e2e-auth";
+
+function isAuthFailure(error: unknown) {
+  return error instanceof ApiClientError && (error.status === 401 || error.status === 403);
+}
 
 function readLastActivityAt() {
   if (typeof window === "undefined") {
@@ -534,10 +538,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         await loadPortalProfile();
       } catch (error) {
-        clearAuthState();
         const message = getUserFacingErrorMessage(error, "Please sign in to continue.");
+
+        if (isAuthFailure(error)) {
+          clearAuthState();
+          setProfileError(message);
+          redirectToCookieAuth("sign-in");
+          return;
+        }
+
         setProfileError(message);
-        redirectToCookieAuth("sign-in");
       } finally {
         isRefreshing = false;
       }
@@ -581,7 +591,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!session) {
+    if (!session || usesCookieAuthProvider()) {
       return;
     }
 
