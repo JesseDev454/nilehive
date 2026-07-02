@@ -197,8 +197,8 @@ export default function Members() {
           <thead>
             <tr>
               <th>Name</th>
-              <th className="hidden md:table-cell">Student ID</th>
-              <th className="hidden lg:table-cell">Contact</th>
+              <th>Student ID</th>
+              <th>Contact</th>
               <th>Club</th>
               <th>Role</th>
               <th>Status</th>
@@ -210,11 +210,9 @@ export default function Members() {
               <tr key={member.id} className="transition-colors hover:bg-accent/50">
                 <td>
                   <p className="font-medium">{member.full_name}</p>
-                  <p className="text-xs text-muted-foreground md:hidden">{member.student_id}</p>
-                  <p className="text-xs text-muted-foreground lg:hidden">{member.email || member.phone_number || "No contact"}</p>
                 </td>
-                <td className="hidden md:table-cell text-muted-foreground">{member.student_id}</td>
-                <td className="hidden lg:table-cell text-muted-foreground">
+                <td className="text-muted-foreground whitespace-nowrap">{member.student_id || "-"}</td>
+                <td className="text-muted-foreground">
                   <p>{member.email || "-"}</p>
                   <p className="text-xs">{member.phone_number || ""}</p>
                 </td>

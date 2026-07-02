@@ -88,6 +88,25 @@ test("admin opens manage access in a focused page", async ({ page }) => {
   await expect(page.getByRole("link", { name: /Back to users/i })).toHaveAttribute("href", "/user-management");
 });
 
+test("admin member database columns line up with member fields", async ({ page }) => {
+  await mockClubServicesApi(page);
+  await loginAs(page, "admin");
+
+  await page.goto("/members");
+
+  await expect(page.getByRole("heading", { name: "Member Database", exact: true })).toBeVisible();
+
+  const firstRow = page.locator("table.clb-table tbody tr").first();
+  await expect(firstRow.locator("td").nth(0)).toContainText("E2E President");
+  await expect(firstRow.locator("td").nth(1)).toContainText("123456789");
+  await expect(firstRow.locator("td").nth(2)).toContainText("e2e-president@nilehive.test");
+  await expect(firstRow.locator("td").nth(2)).toContainText("08000000000");
+  await expect(firstRow.locator("td").nth(3)).toContainText("Nile Tech Club");
+  await expect(firstRow.locator("td").nth(4)).toContainText("President");
+  await expect(firstRow.locator("td").nth(5)).toContainText("Active");
+  await expect(firstRow.locator("td").nth(6)).toContainText("Not Paid");
+});
+
 test("admin can delete a club from the focused club editor", async ({ page }) => {
   await mockClubServicesApi(page);
   await loginAs(page, "admin");
