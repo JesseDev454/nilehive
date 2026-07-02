@@ -272,7 +272,7 @@ export default function Clubs() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="club_website">Website</Label>
-              <Input id="club_website" type="url" value={form.website_url} onChange={(event) => setForm({ ...form, website_url: event.target.value })} placeholder="Optional website URL" />
+              <Input id="club_website" type="url" value={form.website_url} onChange={(event) => setForm({ ...form, website_url: event.target.value })} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="club_instagram">Instagram</Label>
