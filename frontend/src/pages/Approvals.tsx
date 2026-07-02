@@ -1,5 +1,5 @@
 import { StatusBadge } from "@/components/StatusBadge";
-import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { ClublyLoadingState, ClublyMetaChip, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -47,35 +47,37 @@ export default function Approvals() {
   }
 
   return (
-    <div className="nh-page">
-      <NeoPageHeader
+    <div className="clb-screen">
+      <ClublyPageHeader
         eyebrow="Advisor Review"
         title="Pending Approvals"
         description={`${pending.length} proposal${pending.length !== 1 ? "s" : ""} awaiting your review.`}
       />
 
       {isLoading ? (
-        <NeoLoadingState title="Loading approvals" message="We are getting proposals assigned to your club." />
+        <ClublyLoadingState title="Loading approvals" message="We are getting proposals assigned to your club." />
       ) : isError ? (
-        <NeoStateCard
+        <ClublyStateCard
           icon={Clock}
           title="Unable to load pending approvals"
           message={getAdvisorPendingProposalsErrorMessage(error)}
           tone="danger"
         />
       ) : pending.length === 0 ? (
-        <NeoStateCard icon={Clock} title="No pending approvals" message="New president-submitted proposals will appear here." />
+        <ClublyStateCard icon={Clock} title="No pending approvals" message="New president-submitted proposals will appear here." />
       ) : (
-        <div className="space-y-3">
+        <div className="grid gap-4 xl:grid-cols-2">
           {pending.map((proposal) => (
             <Card key={proposal.id} className="overflow-hidden">
-              <CardContent className="p-4 space-y-4">
+              <CardContent className="space-y-4 p-5">
                 <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-lg font-black uppercase">{proposal.title}</p>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      {proposal.location} - Event {proposal.eventDate} - Submitted {proposal.submittedAt}
-                    </p>
+                  <div className="min-w-0">
+                    <p className="truncate text-lg font-bold">{proposal.title}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <ClublyMetaChip label="Event" value={proposal.eventDate} />
+                      <ClublyMetaChip label="Venue" value={proposal.location || "TBC"} />
+                      <ClublyMetaChip label="Submitted" value={proposal.submittedAt} />
+                    </div>
                   </div>
                   <StatusBadge status={proposal.status} />
                 </div>

@@ -51,12 +51,12 @@ export default function SignUp() {
     return (
       <main className="flex min-h-screen flex-col bg-background text-foreground">
         <section className="flex flex-1 items-center justify-center p-5">
-          <div className="nh-card max-w-xl bg-card p-6 text-center md:p-10">
+          <div className="clb-card max-w-xl bg-card p-6 text-center md:p-10">
             <BrandLogo size="lg" variant="plain" className="mx-auto mb-5 h-24 w-[22rem] max-w-full" />
-            <p className="nh-eyebrow">Campus One Access</p>
+            <p className="clb-eyebrow">Campus One Access</p>
             <h1 className="mt-2 text-3xl font-black uppercase md:text-5xl">No separate signup needed</h1>
             <p className="mt-4 text-sm leading-6 text-muted-foreground">
-              Club Services uses your Nile University CampusOne account. Sign in with CampusOne, then Club Services will open or create your local club profile.
+              Clubly uses your Nile University CampusOne account. Sign in with CampusOne, then Clubly will open or create your local club profile.
             </p>
             <Button
               className="mt-6 h-14 w-full"
@@ -78,7 +78,7 @@ export default function SignUp() {
   if (cookieAuthEnabled) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background p-6">
-        <div className="nh-card max-w-md bg-card p-6 text-center">
+        <div className="clb-card max-w-md bg-card p-6 text-center">
           <BrandLogo size="lg" variant="plain" className="mx-auto mb-4 h-20 w-72 max-w-full" />
           <h1 className="text-2xl font-black uppercase">Opening signup</h1>
           <p className="mt-2 text-sm text-muted-foreground">Please wait while we send you to the shared portal.</p>
@@ -119,7 +119,7 @@ export default function SignUp() {
       }
 
       toast.success("Account created", {
-        description: "Your Club Services account is ready. Explore and join a club from Discover Clubs."
+        description: "Your Clubly account is ready. Explore and join a club from Discover Clubs."
       });
       navigate("/", { replace: true });
     } catch (error) {
@@ -145,8 +145,8 @@ export default function SignUp() {
             />
           </div>
 
-          <div className="nh-card-dark p-7">
-            <p className="nh-eyebrow text-primary-foreground/70">New Account</p>
+          <div className="clb-card-dark p-7">
+            <p className="clb-eyebrow text-primary-foreground/70">New Account</p>
             <h2 className="mt-3 text-4xl font-black uppercase leading-none md:text-5xl">Create your account first, then join a club.</h2>
             <p className="mt-4 border-l-4 border-secondary pl-4 text-primary-foreground/80">
               Signup takes under a minute. Once inside, browse the clubs directory and submit your paid membership request from the club's join page.
@@ -154,12 +154,12 @@ export default function SignUp() {
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="nh-card p-4">
+            <div className="clb-card p-4">
               <ShieldCheck className="h-7 w-7 text-secondary" />
               <h3 className="mt-3 font-black uppercase">Official access</h3>
-              <p className="mt-2 text-sm text-muted-foreground">Choose the role that matches your real university position — student or faculty advisor.</p>
+              <p className="mt-2 text-sm text-muted-foreground">Choose the role that matches your real university position: student or faculty advisor.</p>
             </div>
-            <div className="nh-card p-4">
+            <div className="clb-card p-4">
               <Users className="h-7 w-7 text-secondary" />
               <h3 className="mt-3 font-black uppercase">Join after signup</h3>
               <p className="mt-2 text-sm text-muted-foreground">Explore every club and submit your payment details from the dedicated join page at your own pace.</p>
@@ -167,9 +167,9 @@ export default function SignUp() {
           </div>
         </aside>
 
-        <form className="nh-card bg-card p-5 md:p-8" onSubmit={handleSubmit}>
+        <form className="clb-card bg-card p-5 md:p-8" onSubmit={handleSubmit}>
           <div className="mb-6 border-b-2 border-foreground pb-5">
-            <p className="nh-eyebrow">Account Creation</p>
+            <p className="clb-eyebrow">Account Creation</p>
             <h2 className="mt-2 text-3xl font-black uppercase md:text-4xl">Create Account</h2>
             <p className="mt-2 text-sm text-muted-foreground">
               Use your Nile University email. You will join a club separately after account creation.
@@ -236,7 +236,7 @@ export default function SignUp() {
               />
               <p className="text-xs text-muted-foreground">
                 {requestedRole === "advisor"
-                  ? "Advisor accounts are assigned to a club by Club Services after account creation."
+                  ? "Advisor accounts are assigned to a club by Clubly after account creation."
                   : "After signup, go to Discover Clubs to browse clubs and submit your membership payment."}
               </p>
             </div>
@@ -267,7 +267,7 @@ export default function SignUp() {
               <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-secondary" />
               <p>
                 {requestedRole === "advisor"
-                  ? "Advisor accounts use your Nile email. Club Services assigns you to the right club after your account is active."
+                  ? "Advisor accounts use your Nile email. Clubly assigns you to the right club after your account is active."
                   : "Students sign up with their Nile email, then pick a club and attach payment details from the Discover Clubs page."}
               </p>
             </div>

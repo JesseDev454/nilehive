@@ -4,21 +4,21 @@ import { getProposalStatusMeta } from "@/lib/proposalWorkflow";
 type Status = string;
 
 const statusConfig: Record<string, { label: string; className: string }> = {
-  draft: { label: "Draft", className: "border-muted-foreground bg-muted text-muted-foreground" },
-  pending: { label: "Pending", className: "border-warning bg-warning text-warning-foreground" },
-  pending_advisor_review: { label: "Awaiting Advisor Review", className: "border-warning bg-warning text-warning-foreground" },
-  pending_admin_review: { label: "Awaiting Club Services Final Review", className: "border-primary bg-primary text-primary-foreground" },
-  approved: { label: "Proposal Approved", className: "border-success bg-success text-success-foreground" },
-  advisor_approved: { label: "Advisor Approved", className: "border-success bg-success text-success-foreground" },
-  active: { label: "Active", className: "border-success bg-success text-success-foreground" },
-  paid: { label: "Paid", className: "border-success bg-success text-success-foreground" },
-  submitted: { label: "Submitted", className: "border-warning bg-warning text-warning-foreground" },
-  in_progress: { label: "In Progress", className: "border-warning bg-warning text-warning-foreground" },
-  completed: { label: "Completed", className: "border-success bg-success text-success-foreground" },
-  blocked: { label: "Blocked", className: "border-destructive bg-destructive text-destructive-foreground" },
-  rejected: { label: "Rejected", className: "border-destructive bg-destructive text-destructive-foreground" },
-  advisor_rejected: { label: "Rejected by Advisor", className: "border-destructive bg-destructive text-destructive-foreground" },
-  admin_rejected: { label: "Rejected by Club Services", className: "border-destructive bg-destructive text-destructive-foreground" },
+  draft: { label: "Draft", className: "border-muted-foreground/25 bg-muted text-muted-foreground" },
+  pending: { label: "Pending", className: "border-warning/25 bg-warning/15 text-warning" },
+  pending_advisor_review: { label: "Awaiting Advisor Review", className: "border-warning/25 bg-warning/15 text-warning" },
+  pending_admin_review: { label: "Awaiting Clubly Final Review", className: "border-primary/20 bg-primary/10 text-primary" },
+  approved: { label: "Proposal Approved", className: "border-success/25 bg-success/15 text-success" },
+  advisor_approved: { label: "Advisor Approved", className: "border-success/25 bg-success/15 text-success" },
+  active: { label: "Active", className: "border-success/25 bg-success/15 text-success" },
+  paid: { label: "Paid", className: "border-success/25 bg-success/15 text-success" },
+  submitted: { label: "Submitted", className: "border-warning/25 bg-warning/15 text-warning" },
+  in_progress: { label: "In Progress", className: "border-warning/25 bg-warning/15 text-warning" },
+  completed: { label: "Completed", className: "border-success/25 bg-success/15 text-success" },
+  blocked: { label: "Blocked", className: "border-destructive/25 bg-destructive/10 text-destructive" },
+  rejected: { label: "Rejected", className: "border-destructive/25 bg-destructive/10 text-destructive" },
+  advisor_rejected: { label: "Rejected by Advisor", className: "border-destructive/25 bg-destructive/10 text-destructive" },
+  admin_rejected: { label: "Rejected by Clubly", className: "border-destructive/25 bg-destructive/10 text-destructive" },
 };
 
 export function StatusBadge({ status, eventDate }: { status: Status; eventDate?: string | null }) {
@@ -28,7 +28,7 @@ export function StatusBadge({ status, eventDate }: { status: Status; eventDate?:
   };
 
   return (
-    <span className={cn("nh-status", config.className)}>
+    <span className={cn("clb-status", config.className)}>
       {config.label}
     </span>
   );

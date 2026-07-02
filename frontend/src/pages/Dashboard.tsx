@@ -11,7 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { NeoEmptyState, NeoErrorState, NeoLoadingState } from "@/components/NeoBrutal";
+import {
+  ClublyEmptyState,
+  ClublyErrorState,
+  ClublyLoadingState,
+  ClublyMetaChip,
+  ClublySectionHeader
+} from "@/components/Clubly";
 import {
   getAdminOperationsDashboard,
   getAnnouncements,
@@ -70,6 +76,7 @@ import {
   RefreshCw,
   Share2,
   ShieldCheck,
+  School,
   Smartphone,
   TrendingUp,
   UserPlus,
@@ -86,6 +93,7 @@ import { canViewProposalDetails } from "@/lib/roleAccess";
 import { downloadAdminPerformanceMatrixCsv } from "@/lib/exports";
 import { getStudentNextAction, type StudentNextActionKind } from "@/lib/studentActivation";
 import { buildAppUrl, shareOrCopy } from "@/lib/share";
+import { publicClubsQueryOptions } from "@/lib/publicClubsQuery";
 
 function StatCard({
   title,
@@ -212,14 +220,14 @@ function ProposalListState({
   emptyMessage?: string;
 }) {
   if (isLoading) {
-    return <NeoLoadingState title="Loading proposal records" message="We are checking the latest workflow state." compact />;
+    return <ClublyLoadingState title="Loading proposal records" message="We are checking the latest workflow state." compact />;
   }
 
   if (isError) {
-    return <NeoErrorState title="Unable to load proposals" message={getErrorMessage(error)} />;
+    return <ClublyErrorState title="Unable to load proposals" message={getErrorMessage(error)} />;
   }
 
-  return <NeoEmptyState title="No proposals found yet" message={emptyMessage || "Proposal records will appear here once work starts."} />;
+  return <ClublyEmptyState title="No proposals found yet" message={emptyMessage || "Proposal records will appear here once work starts."} />;
 }
 
 function ProposalSummaryList({
@@ -233,7 +241,7 @@ function ProposalSummaryList({
     <div className="space-y-3">
       {proposals.slice(0, 4).map((proposal) => (
         <Link key={proposal.id} to={`/proposals/${proposal.id}`} className="block">
-          <div className="nh-list-card flex items-center justify-between gap-3">
+          <div className="clb-list-card flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
               <div className="min-w-0">
@@ -264,7 +272,7 @@ function UpcomingEventsList({
     <div className="space-y-3">
       {events.slice(0, 4).map((event) => {
         const content = (
-          <div className="nh-list-card flex items-center justify-between gap-3">
+          <div className="clb-list-card flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <CalendarDays className="h-4 w-4 text-success shrink-0" />
               <div className="min-w-0">
@@ -295,7 +303,7 @@ function RecentActivityList({ activity }: { activity: DashboardActivity[] }) {
     <div className="space-y-3">
       {activity.slice(0, 5).map((item) => (
         <Link key={item.id} to={`/proposals/${item.proposal_id}`} className="block">
-          <div className="nh-list-card flex items-start gap-3">
+          <div className="clb-list-card flex items-start gap-3">
             <Activity className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
             <div className="min-w-0">
               <p className="text-sm font-medium truncate">{item.title}</p>
@@ -391,14 +399,14 @@ function PresidentAnnouncementsPreview({
       </CardHeader>
       <CardContent className="space-y-3">
         {isLoading ? (
-          <NeoLoadingState title="Loading updates" message="We are checking club announcements and notices." compact />
+          <ClublyLoadingState title="Loading updates" message="We are checking club announcements and notices." compact />
         ) : announcements.length === 0 && notifications.length === 0 ? (
-          <NeoEmptyState title="No recent updates yet" message="Announcements and role-specific notices will appear here." />
+          <ClublyEmptyState title="No recent updates yet" message="Announcements and role-specific notices will appear here." />
         ) : (
           <>
             {announcements.slice(0, 3).map((announcement) => (
               <Link key={announcement.id} to="/communications" className="block">
-                <div className="nh-list-card">
+                <div className="clb-list-card">
                   <div className="flex items-start justify-between gap-3">
                     <p className="font-semibold">{announcement.title}</p>
                     {!announcement.is_read ? <Badge>Unread</Badge> : null}
@@ -409,7 +417,7 @@ function PresidentAnnouncementsPreview({
             ))}
             {notifications.slice(0, 2).map((notification) => (
               <Link key={notification.id} to="/notifications" className="block">
-                <div className="nh-list-card">
+                <div className="clb-list-card">
                   <p className="font-semibold capitalize">{notification.type.replace(/_/g, " ")}</p>
                   <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{notification.message}</p>
                 </div>
@@ -584,7 +592,7 @@ function AdminMetricCard({
             <p className="mt-8 text-5xl font-black tracking-[-0.06em] text-primary">{value}</p>
             <p className="mt-2 text-xs leading-relaxed text-muted-foreground">{detail}</p>
           </div>
-          <div className={`rounded-[18px] border-3 border-foreground p-3 shadow-neo-sm ${variants[variant]}`}>
+          <div className={`rounded-[18px] border border-border p-3 shadow-soft-sm ${variants[variant]}`}>
             <Icon className="h-5 w-5" />
           </div>
         </div>
@@ -649,7 +657,7 @@ function AdminReviewQueueCard({
 
   return (
     <Link to={to} className="group block">
-      <div className={`nh-list-card flex h-full flex-col justify-between gap-4 transition-all hover:-translate-y-0.5 ${
+      <div className={`clb-list-card flex h-full flex-col justify-between gap-4 transition-all hover:-translate-y-0.5 ${
         count > 0 ? "border-primary bg-primary/5" : "bg-card"
       }`}>
         <div className="flex items-start justify-between gap-3">
@@ -678,8 +686,8 @@ function AdminReviewQueueCard({
 
 function AdminLoadingSkeleton() {
   return (
-    <NeoLoadingState
-      title="Loading Club Services controls"
+    <ClublyLoadingState
+      title="Loading Clubly controls"
       message="We are preparing dashboards, queues, dues records, and club health data."
     />
   );
@@ -697,7 +705,7 @@ function AdminEmptyState({
   action?: { label: string; to: string };
 }) {
   return (
-    <div className="nh-empty">
+    <div className="clb-empty">
       <Icon className="mx-auto h-8 w-8 text-muted-foreground" />
       <p className="mt-3 font-black uppercase">{title}</p>
       <p className="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">{message}</p>
@@ -976,16 +984,16 @@ function ExecutiveDashboard() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <NeoLoadingState title="Preparing task board" message="We are loading assigned work." compact />
+              <ClublyLoadingState title="Preparing task board" message="We are loading assigned work." compact />
             ) : isError ? (
-              <NeoErrorState title="Unable to load tasks" message={getErrorMessage(error)} />
+              <ClublyErrorState title="Unable to load tasks" message={getErrorMessage(error)} />
             ) : prioritizedTasks.length === 0 ? (
-              <NeoEmptyState title="No assigned tasks" message="Tasks assigned by your president will appear here." />
+              <ClublyEmptyState title="No assigned tasks" message="Tasks assigned by your president will appear here." />
             ) : (
               <div className="space-y-3">
                 {prioritizedTasks.map((task) => (
                   <Link key={task.id} to="/tasks" className="block">
-                  <div className={`nh-list-card ${task.status === "blocked" ? "border-destructive bg-destructive/5" : ""}`}>
+                  <div className={`clb-list-card ${task.status === "blocked" ? "border-destructive bg-destructive/5" : ""}`}>
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-sm font-medium">{task.title}</p>
@@ -1035,7 +1043,7 @@ function ExecutiveDashboard() {
             <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between xl:flex-col xl:items-start">
               <div>
                 <p className="text-sm font-black uppercase tracking-[0.14em] text-primary-foreground/70">Feedback</p>
-                <p className="mt-1 text-lg font-black tracking-[-0.03em]">Tell Club Services what would help your club work better.</p>
+                <p className="mt-1 text-lg font-black tracking-[-0.03em]">Tell Clubly what would help your club work better.</p>
               </div>
               <Button asChild variant="secondary" size="sm">
                 <Link to="/feedback">Submit feedback</Link>
@@ -1076,15 +1084,15 @@ function ExecutiveDashboard() {
           </CardHeader>
           <CardContent className="space-y-3">
             {isAnnouncementsLoading ? (
-              <NeoLoadingState title="Loading announcements" message="We are checking club updates." compact />
+              <ClublyLoadingState title="Loading announcements" message="We are checking club updates." compact />
             ) : isAnnouncementsError ? (
-              <NeoErrorState title="Unable to load announcements" message={getErrorMessage(announcementsError)} />
+              <ClublyErrorState title="Unable to load announcements" message={getErrorMessage(announcementsError)} />
             ) : announcementsPage.items.length === 0 ? (
-              <NeoEmptyState title="No announcements yet" message="Club announcements for your role will appear here." />
+              <ClublyEmptyState title="No announcements yet" message="Club announcements for your role will appear here." />
             ) : (
               announcementsPage.items.slice(0, 4).map((announcement) => (
                 <Link key={announcement.id} to="/communications" className="block">
-                  <div className="nh-list-card">
+                  <div className="clb-list-card">
                     <div className="flex items-start justify-between gap-3">
                       <p className="text-sm font-medium">{announcement.title}</p>
                       {!announcement.is_read ? <Badge>Unread</Badge> : null}
@@ -1106,13 +1114,13 @@ function ExecutiveDashboard() {
           </CardHeader>
           <CardContent className="space-y-3">
             {isLoading ? (
-              <NeoLoadingState title="Loading notifications" message="We are checking your latest updates." compact />
+              <ClublyLoadingState title="Loading notifications" message="We are checking your latest updates." compact />
             ) : notifications.length === 0 ? (
-              <NeoEmptyState title="No notifications" message="Task, event, and club notices will appear here." />
+              <ClublyEmptyState title="No notifications" message="Task, event, and club notices will appear here." />
             ) : (
               notifications.slice(0, 4).map((notification) => (
                 <Link key={notification.id} to="/notifications" className="block">
-                  <div className="nh-list-card">
+                  <div className="clb-list-card">
                     <p className="text-sm font-medium">{notification.message}</p>
                     <p className="text-xs text-muted-foreground mt-1">{getDateLabel(notification.created_at)}</p>
                   </div>
@@ -1224,7 +1232,7 @@ function AdvisorDashboard() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <NeoLoadingState title="Loading advisor review queue" message="We are getting proposals assigned to your club." compact />
+              <ClublyLoadingState title="Loading advisor review queue" message="We are getting proposals assigned to your club." compact />
             ) : isError ? (
               <div className="space-y-2">
                 <p className="font-medium">Unable to load advisor queue</p>
@@ -1233,12 +1241,12 @@ function AdvisorDashboard() {
                 </p>
               </div>
             ) : pending.length === 0 ? (
-              <NeoEmptyState title="No pending decisions" message="Assigned proposals that need advisor review will appear here." />
+              <ClublyEmptyState title="No pending decisions" message="Assigned proposals that need advisor review will appear here." />
             ) : (
               <div className="space-y-3">
                 {pending.slice(0, 5).map((proposal) => (
                   <Link key={proposal.id} to={`/proposals/${proposal.id}`} className="block">
-                    <div className="nh-list-card flex items-center justify-between gap-3">
+                    <div className="clb-list-card flex items-center justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-sm font-medium truncate">{proposal.title}</p>
                         <p className="text-xs text-muted-foreground">
@@ -1261,10 +1269,10 @@ function AdvisorDashboard() {
             </CardHeader>
             <CardContent className="space-y-3">
               {pending.length === 0 ? (
-                <NeoEmptyState title="Queue clear" message="No advisor decision is waiting right now." />
+                <ClublyEmptyState title="Queue clear" message="No advisor decision is waiting right now." />
               ) : (
                 <>
-                  <div className="rounded-[20px] border-3 border-foreground bg-warning/15 p-4 shadow-neo-sm">
+                  <div className="rounded-[20px] border border-border bg-warning/15 p-4 shadow-soft-sm">
                     <p className="text-3xl font-black text-warning">{formatNumber(pending.length)}</p>
                     <p className="mt-1 text-sm font-semibold">Proposal{pending.length === 1 ? "" : "s"} need advisor attention.</p>
                   </div>
@@ -1282,7 +1290,7 @@ function AdvisorDashboard() {
             </CardHeader>
             <CardContent className="space-y-3">
               {recentActivityCount === 0 ? (
-                <NeoEmptyState title="No recent activity" message="Reports, events, and assigned reviews will appear here." />
+                <ClublyEmptyState title="No recent activity" message="Reports, events, and assigned reviews will appear here." />
               ) : (
                 <>
                   <div className="flex items-center justify-between rounded-lg border border-border bg-muted/40 p-3 text-sm">
@@ -1314,16 +1322,16 @@ function AdvisorDashboard() {
           </CardHeader>
           <CardContent>
             {isReportsLoading ? (
-              <NeoLoadingState title="Loading reports" message="We are checking reports from assigned clubs." compact />
+              <ClublyLoadingState title="Loading reports" message="We are checking reports from assigned clubs." compact />
             ) : isReportsError ? (
-              <NeoErrorState title="Unable to load reports" message={getErrorMessage(reportsError)} />
+              <ClublyErrorState title="Unable to load reports" message={getErrorMessage(reportsError)} />
             ) : reports.length === 0 ? (
-              <NeoEmptyState title="No reports to check" message="Submitted reports for assigned clubs will appear here." />
+              <ClublyEmptyState title="No reports to check" message="Submitted reports for assigned clubs will appear here." />
             ) : (
               <div className="space-y-3">
                 {reports.map((report) => (
                   <Link key={report.id} to="/archive" className="block">
-                    <div className="nh-list-card">
+                    <div className="clb-list-card">
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="font-semibold">{report.proposal?.proposed_activity || report.proposal?.title || "Event report"}</p>
@@ -1350,11 +1358,11 @@ function AdvisorDashboard() {
           </CardHeader>
           <CardContent>
             {isEventsLoading ? (
-              <NeoLoadingState title="Loading events" message="We are checking upcoming club activity." compact />
+              <ClublyLoadingState title="Loading events" message="We are checking upcoming club activity." compact />
             ) : isEventsError ? (
-              <NeoErrorState title="Unable to load events" message={getErrorMessage(eventsError)} />
+              <ClublyErrorState title="Unable to load events" message={getErrorMessage(eventsError)} />
             ) : upcomingEvents.length === 0 ? (
-              <NeoEmptyState title="No upcoming events" message="Events from assigned clubs will appear here." />
+              <ClublyEmptyState title="No upcoming events" message="Events from assigned clubs will appear here." />
             ) : (
               <UpcomingEventsList events={upcomingEvents} canOpenProposal={canViewProposalDetails("advisor")} />
             )}
@@ -1379,7 +1387,7 @@ function AdminDashboard() {
       <div>
         <h1 className="text-2xl font-bold">Admin Operations</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Club Services control tower for approvals, memberships, dues, reports, and club health
+          Clubly control tower for approvals, memberships, dues, reports, and club health
         </p>
       </div>
 
@@ -1396,7 +1404,7 @@ function AdminDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard title="Clubs" value={summary?.total_clubs ?? 0} icon={Users} />
             <StatCard title="Members" value={summary?.total_members ?? 0} icon={UserPlus} />
-            <StatCard title="Club Services Reviews" value={pendingAdminCount} icon={Clock} variant="warning" />
+            <StatCard title="Clubly Reviews" value={pendingAdminCount} icon={Clock} variant="warning" />
             <StatCard title="Missing Reports" value={summary?.missing_reports ?? 0} icon={AlertTriangle} variant="destructive" />
           </div>
 
@@ -1417,13 +1425,13 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <NeoLoadingState title="Loading operations queue" message="We are checking pending Club Services actions." compact />
+                  <ClublyLoadingState title="Loading operations queue" message="We are checking pending Clubly actions." compact />
                 ) : !dashboard?.pending_actions.length ? (
                   <p className="text-sm text-muted-foreground">No pending operational actions right now.</p>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {dashboard.pending_actions.map((action) => (
-                      <div key={action.type} className="nh-list-card">
+                      <div key={action.type} className="clb-list-card">
                         <p className="text-2xl font-bold">{action.count}</p>
                         <p className="text-sm text-muted-foreground mt-1">{action.label}</p>
                       </div>
@@ -1439,7 +1447,7 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <NeoLoadingState title="Loading proposal states" message="We are checking workflow bottlenecks." compact />
+                  <ClublyLoadingState title="Loading proposal states" message="We are checking workflow bottlenecks." compact />
                 ) : (
                   <div className="space-y-3">
                     {dashboard?.proposal_bottlenecks.map((item) => (
@@ -1461,13 +1469,13 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <NeoLoadingState title="Loading club performance" message="We are calculating club activity health." compact />
+                  <ClublyLoadingState title="Loading club performance" message="We are calculating club activity health." compact />
                 ) : !dashboard?.club_performance.length ? (
                   <p className="text-sm text-muted-foreground">No club records available yet.</p>
                 ) : (
                   <div className="space-y-3">
                     {dashboard.club_performance.slice(0, 6).map((club) => (
-                      <div key={club.club_id} className="nh-list-card">
+                      <div key={club.club_id} className="clb-list-card">
                         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                           <div>
                             <p className="font-semibold">{club.club_name}</p>
@@ -1507,18 +1515,18 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {isLoading ? (
-                  <NeoLoadingState title="Loading institution snapshot" message="We are preparing the latest totals." compact />
+                  <ClublyLoadingState title="Loading institution snapshot" message="We are preparing the latest totals." compact />
                 ) : (
                   <>
-                    <div className="nh-card-soft p-3">
+                    <div className="clb-card-soft p-3">
                       <p className="text-xs text-muted-foreground">Dues collected</p>
                       <p className="text-xl font-bold">{formatCurrency(summary?.dues_collected_amount)}</p>
                     </div>
-                    <div className="nh-card-soft p-3">
+                    <div className="clb-card-soft p-3">
                       <p className="text-xs text-muted-foreground">Attendance rate</p>
                       <p className="text-xl font-bold">{formatNumber(summary?.attendance_rate)}%</p>
                     </div>
-                    <div className="nh-card-soft p-3">
+                    <div className="clb-card-soft p-3">
                       <p className="text-xs text-muted-foreground">Feedback received</p>
                       <p className="text-xl font-bold">{formatNumber(summary?.feedback_count)}</p>
                     </div>
@@ -1538,14 +1546,14 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <NeoLoadingState title="Checking report gaps" message="We are finding events that still need documentation." compact />
+                  <ClublyLoadingState title="Checking report gaps" message="We are finding events that still need documentation." compact />
                 ) : !dashboard?.missing_reports.length ? (
                   <p className="text-sm text-muted-foreground">No past events are missing reports.</p>
                 ) : (
                   <div className="space-y-3">
                     {dashboard.missing_reports.map((report) => (
                       <Link key={report.proposal_id} to={`/proposals/${report.proposal_id}`} className="block">
-                        <div className="nh-list-card transition-colors hover:bg-accent">
+                        <div className="clb-list-card transition-colors hover:bg-accent">
                           <p className="text-sm font-medium">{report.title}</p>
                           <p className="text-xs text-muted-foreground mt-1">
                             Event {getDateLabel(report.event_date)} - {report.days_since_event} day(s) overdue
@@ -1564,7 +1572,7 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <NeoLoadingState title="Loading recent movement" message="We are checking the latest operations activity." compact />
+                  <ClublyLoadingState title="Loading recent movement" message="We are checking the latest operations activity." compact />
                 ) : !dashboard?.recent_activity.length ? (
                   <p className="text-sm text-muted-foreground">No recent operations activity yet.</p>
                 ) : (
@@ -1612,6 +1620,7 @@ function PolishedAdminDashboard() {
   const upcomingEventCount = upcomingEventsPage.total;
   const totalProposalBottlenecks =
       dashboard?.proposal_bottlenecks.reduce((sum, item) => sum + item.count, 0) ?? 0;
+  const [activeAdminPanel, setActiveAdminPanel] = useState<"queues" | "health" | "activity">("queues");
 
   function handleDownloadMatrix() {
     if (!dashboard) {
@@ -1629,6 +1638,112 @@ function PolishedAdminDashboard() {
       });
     }
   }
+
+  return (
+    <div className="space-y-7 animate-slide-up">
+      <section className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h1 className="text-4xl font-bold leading-tight tracking-tight md:text-5xl">Admin Operations</h1>
+          <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
+            Summary first, then drill into the queue that needs attention.
+          </p>
+        </div>
+        <Button type="button" variant="outline" onClick={handleDownloadMatrix} disabled={!dashboard}>
+          <BarChart3 className="h-4 w-4" />
+          Export report
+        </Button>
+      </section>
+
+      {isError ? (
+        <ClublyErrorState title="We couldn't load the operations dashboard" message={getErrorMessage(error)} />
+      ) : isLoading ? (
+        <AdminLoadingSkeleton />
+      ) : (
+        <>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <AdminMetricCard title="Total Clubs" value={formatNumber(summary?.total_clubs)} detail={`${formatNumber(summary?.active_members)} active members tracked.`} icon={Users} variant="blue" to="/clubs" />
+            <AdminMetricCard title="Final Review" value={formatNumber(summary?.pending_admin_proposals)} detail="Proposals waiting for Clubly." icon={Clock} variant="gold" to="/proposals?status=pending_admin_review" />
+            <AdminMetricCard title="Dues Proofs" value={formatNumber(summary?.submitted_dues_payments)} detail="Payment proofs to verify." icon={CreditCard} variant="green" to="/dues?status=submitted" />
+            <AdminMetricCard title="Report Gaps" value={formatNumber(summary?.missing_reports)} detail="Past events missing documentation." icon={AlertTriangle} variant={(summary?.missing_reports ?? 0) > 0 ? "red" : "navy"} to="/archive" />
+          </div>
+
+          <Card>
+            <CardHeader className="space-y-4">
+              <ClublySectionHeader
+                title="Operations drill-in"
+                description="Choose one area to inspect so the dashboard stays readable."
+                action={<QuestSticker tone={totalPending > 0 ? "red" : "green"}>{totalPending > 0 ? `${formatNumber(totalPending)} open` : "Clear"}</QuestSticker>}
+              />
+              <div className="flex flex-wrap gap-2">
+                {[
+                  ["queues", "Review queues"],
+                  ["health", "Club health"],
+                  ["activity", "Activity"]
+                ].map(([value, label]) => (
+                  <Button
+                    key={value}
+                    type="button"
+                    variant={activeAdminPanel === value ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setActiveAdminPanel(value as "queues" | "health" | "activity")}
+                  >
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </CardHeader>
+            <CardContent>
+              {activeAdminPanel === "queues" ? (
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                  <AdminReviewQueueCard title="Membership" count={summary?.pending_membership_requests ?? 0} detail="Join requests waiting for review." to="/membership?status=pending" icon={UserPlus} />
+                  <AdminReviewQueueCard title="Dues proofs" count={summary?.submitted_dues_payments ?? 0} detail="Submitted payment proofs to verify." to="/dues?status=submitted" icon={CreditCard} />
+                  <AdminReviewQueueCard title="Final proposals" count={summary?.pending_admin_proposals ?? 0} detail="Clubly proposal decisions." to="/proposals?status=pending_admin_review" icon={FileText} />
+                  <AdminReviewQueueCard title="Open feedback" count={openFeedback.length} detail="Feedback waiting for review." to="/feedback?tab=feedback&status=open" icon={MessageSquare} />
+                </div>
+              ) : activeAdminPanel === "health" ? (
+                !dashboard?.club_performance.length ? (
+                  <AdminEmptyState icon={Users} title="No clubs are available yet" message="Club health appears after club records and activity are added." />
+                ) : (
+                  <div className="clb-table-wrap">
+                    <table className="clb-table text-left">
+                      <thead>
+                        <tr>
+                          <th>Club</th>
+                          <th>Members</th>
+                          <th>Pending</th>
+                          <th>Pulse</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dashboard.club_performance.slice(0, 8).map((club) => {
+                          const pulse = getClubPulse(club);
+                          return (
+                            <tr key={club.club_id} className="transition-colors hover:bg-muted/40">
+                              <td>
+                                <Link to={`/clubs/${club.club_id}/dashboard`} className="font-semibold underline-offset-4 hover:underline">{club.club_name}</Link>
+                                <p className="text-xs text-muted-foreground">{club.club_code || "No code"} - Last activity {getDateLabel(club.last_activity_at ?? undefined)}</p>
+                              </td>
+                              <td>{club.active_members}/{club.total_members}</td>
+                              <td>{club.pending_proposals} proposals, {club.open_tasks} tasks</td>
+                              <td><span className={`clb-status ${pulse.className}`}>{club.club_health_score} - {pulse.label}</span></td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )
+              ) : dashboard?.recent_activity.length ? (
+                <AdminActivityList activity={dashboard.recent_activity} />
+              ) : (
+                <AdminEmptyState icon={Activity} title="No recent activity yet" message="Club updates will appear here once operations start moving." />
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
+    </div>
+  );
 
   return (
     <div className="space-y-8 animate-slide-up">
@@ -1667,9 +1782,9 @@ function PolishedAdminDashboard() {
               to="/clubs"
             />
             <AdminMetricCard
-              title="Club Services Reviews"
+              title="Clubly Reviews"
               value={formatNumber(summary?.pending_admin_proposals)}
-              detail="Proposal decisions waiting for Club Services final verification."
+              detail="Proposal decisions waiting for Clubly final verification."
               icon={Clock}
               variant="gold"
               to="/proposals?status=pending_admin_review"
@@ -1697,7 +1812,7 @@ function PolishedAdminDashboard() {
               <div>
                 <CardTitle className="text-lg">Review Queues</CardTitle>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Jump straight into the pending work Club Services admins need to clear.
+                  Jump straight into the pending work Clubly admins need to clear.
                 </p>
               </div>
               <QuestSticker tone={totalPending > 0 ? "red" : "green"}>
@@ -1730,7 +1845,7 @@ function PolishedAdminDashboard() {
                 <AdminReviewQueueCard
                   title="Pending proposals"
                   count={summary?.pending_admin_proposals ?? 0}
-                  detail="Final Club Services proposal reviews."
+                  detail="Final Clubly proposal reviews."
                   to="/proposals?status=pending_admin_review"
                   icon={FileText}
                 />
@@ -1776,28 +1891,28 @@ function PolishedAdminDashboard() {
                 <QuestSticker tone="red">{formatNumber(totalPending)} New</QuestSticker>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="rounded-[22px] border-3 border-foreground bg-destructive/15 p-5 text-destructive shadow-neo-sm">
+                <div className="rounded-[22px] border border-border bg-destructive/15 p-5 text-destructive shadow-soft-sm">
                   <p className="font-black">Missing Reports</p>
                   <p className="mt-2 text-sm leading-6">{formatNumber(summary?.missing_reports)} approved past events still need documentation.</p>
                   <Button asChild variant="outline" size="sm" className="mt-4">
                     <Link to="/archive">Review Reports</Link>
                   </Button>
                 </div>
-                <div className="rounded-[22px] border-3 border-foreground bg-card p-5 shadow-neo-sm">
+                <div className="rounded-[22px] border border-border bg-card p-5 shadow-soft-sm">
                   <p className="font-black">Dues Queue</p>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{formatNumber(summary?.submitted_dues_payments)} payment confirmations need a human check.</p>
                   <Button asChild variant="outline" size="sm" className="mt-4">
                     <Link to="/dues?status=submitted">Review Ledger</Link>
                   </Button>
                 </div>
-                <div className="rounded-[22px] border-3 border-foreground bg-card p-5 shadow-neo-sm">
+                <div className="rounded-[22px] border border-border bg-card p-5 shadow-soft-sm">
                   <p className="font-black">Membership Requests</p>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{formatNumber(summary?.pending_membership_requests)} students are waiting for join review.</p>
                   <Button asChild variant="outline" size="sm" className="mt-4">
                     <Link to="/membership?status=pending">Open Requests</Link>
                   </Button>
                 </div>
-                <div className="rounded-[22px] border-3 border-foreground bg-card p-5 shadow-neo-sm">
+                <div className="rounded-[22px] border border-border bg-card p-5 shadow-soft-sm">
                   <p className="font-black">Open Feedback</p>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{formatNumber(openFeedback.length)} feedback item(s) still need review.</p>
                   <Button asChild variant="outline" size="sm" className="mt-4">
@@ -1833,7 +1948,7 @@ function PolishedAdminDashboard() {
                 <div>
                   <CardTitle className="text-lg">What needs attention</CardTitle>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    The quickest way to know what Club Services should handle next.
+                    The quickest way to know what Clubly should handle next.
                   </p>
                 </div>
                 <Button asChild variant="outline" size="sm">
@@ -1854,7 +1969,7 @@ function PolishedAdminDashboard() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {dashboard.pending_actions.map((action) => (
                       <Link key={action.type} to={getAdminActionLink(action.type)} className="group block">
-                        <div className="nh-list-card flex items-center justify-between gap-4 transition-all hover:-translate-y-0.5 hover:bg-accent">
+                        <div className="clb-list-card flex items-center justify-between gap-4 transition-all hover:-translate-y-0.5 hover:bg-accent">
                           <div className="flex items-center gap-4">
                             <div className="border-2 border-foreground bg-background p-3 text-primary shadow-[3px_3px_0_hsl(var(--foreground))]">
                               {(() => {
@@ -1946,8 +2061,8 @@ function PolishedAdminDashboard() {
                     />
                   </div>
                 ) : (
-                  <div className="nh-table-wrap">
-                    <table className="nh-table text-left">
+                  <div className="clb-table-wrap">
+                    <table className="clb-table text-left">
                       <thead>
                         <tr>
                           <th>Club</th>
@@ -2009,7 +2124,7 @@ function PolishedAdminDashboard() {
                               </td>
                               <td>
                                 <div className="flex flex-col gap-1">
-                                  <span className={`nh-status ${pulse.className}`}>
+                                  <span className={`clb-status ${pulse.className}`}>
                                     {club.club_health_score} - {pulse.label}
                                   </span>
                                   <div className="h-2 overflow-hidden border border-foreground bg-muted">
@@ -2036,7 +2151,7 @@ function PolishedAdminDashboard() {
                 <p className="text-sm text-muted-foreground">Numbers that help you sense the system at a glance.</p>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="nh-card-soft p-4">
+                <div className="clb-card-soft p-4">
                   <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                     <Banknote className="h-4 w-4" />
                     Dues collected
@@ -2044,7 +2159,7 @@ function PolishedAdminDashboard() {
                   <p className="text-2xl font-black text-primary">{formatCurrency(summary?.dues_collected_amount)}</p>
                   <p className="mt-1 text-xs text-muted-foreground">Across all tracked club payment records.</p>
                 </div>
-                <div className="nh-card-soft p-4">
+                <div className="clb-card-soft p-4">
                   <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                     <TrendingUp className="h-4 w-4" />
                     Attendance health
@@ -2054,7 +2169,7 @@ function PolishedAdminDashboard() {
                     {formatNumber(summary?.event_attendance_count)} attendance marks from {formatNumber(summary?.event_rsvp_count)} RSVP records.
                   </p>
                 </div>
-                <div className="nh-card-soft p-4">
+                <div className="clb-card-soft p-4">
                   <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                     <MessageSquare className="h-4 w-4" />
                     Student feedback
@@ -2062,7 +2177,7 @@ function PolishedAdminDashboard() {
                   <p className="text-2xl font-black text-primary">{formatNumber(summary?.feedback_count)}</p>
                   <p className="mt-1 text-xs text-muted-foreground">Feedback records are ready for sentiment review.</p>
                 </div>
-                <div className="nh-card-soft p-4">
+                <div className="clb-card-soft p-4">
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                       <Gauge className="h-4 w-4" />
@@ -2224,7 +2339,7 @@ function getMembershipStatusSummary(request: MembershipRequestRecord, payment?: 
   const status = resolveStudentMembershipStatus(request, payment);
 
   if (status === "active") {
-    return "Your dues have been confirmed by Club Services. This membership is now active.";
+    return "Your dues have been confirmed by Clubly. This membership is now active.";
   }
 
   if (status === "payment_under_review") {
@@ -2232,7 +2347,7 @@ function getMembershipStatusSummary(request: MembershipRequestRecord, payment?: 
   }
 
   if (status === "pending_payment") {
-    return `Pay ${formatCurrency(request.dues_amount ?? 0)} for ${request.academic_session || "this session"} to finish activation.`;
+    return `Upload proof for ${formatCurrency(request.dues_amount ?? 0)} in ${request.academic_session || "this session"} to finish activation.`;
   }
 
   if (status === "needs_new_payment_details") {
@@ -2388,10 +2503,10 @@ function StudentQuickLink({
 }) {
   return (
     <Link to={to} className="group block">
-      <div className={`flex h-full items-center gap-4 rounded-[24px] border-3 border-foreground p-5 shadow-neo transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-[2px_2px_0_hsl(var(--neo-shadow))] ${
+      <div className={`flex h-full items-center gap-4 rounded-[24px] border border-border p-5 shadow-soft transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-soft-sm ${
         featured ? "bg-secondary text-secondary-foreground" : "bg-card text-foreground"
       }`}>
-        <div className={`rounded-full border-3 border-foreground p-3 ${featured ? "bg-primary text-primary-foreground" : "bg-accent text-foreground"}`}>
+        <div className={`rounded-full border border-border p-3 ${featured ? "bg-primary text-primary-foreground" : "bg-accent text-foreground"}`}>
           <Icon className="h-5 w-5" />
         </div>
         <div className="min-w-0">
@@ -2421,12 +2536,12 @@ function StudentEventCard({
 
   return (
     <Link to="/events" className="block">
-      <div className="nh-card overflow-hidden transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-[2px_2px_0_hsl(var(--neo-shadow))]">
+      <div className="clb-card overflow-hidden transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-soft-sm">
         <div className="relative h-40 border-b-3 border-foreground bg-[linear-gradient(135deg,hsl(var(--accent)),hsl(var(--primary)/0.88))]">
-          <div className="absolute left-5 top-5 rounded-[14px] border-3 border-foreground bg-card px-4 py-2 text-sm font-black shadow-neo-sm">
+          <div className="absolute left-5 top-5 rounded-[14px] border border-border bg-card px-4 py-2 text-sm font-black shadow-soft-sm">
             {getDateLabel(event.event_date).slice(5)}
           </div>
-          <div className="absolute bottom-4 right-4 rounded-full border-3 border-foreground bg-secondary px-3 py-1 text-xs font-black uppercase shadow-neo-sm">
+          <div className="absolute bottom-4 right-4 rounded-full border border-border bg-secondary px-3 py-1 text-xs font-black uppercase shadow-soft-sm">
             {getEventTimingLabel(event)}
           </div>
         </div>
@@ -2448,7 +2563,7 @@ function StudentEventCard({
               {event.location || "Venue TBC"}
             </span>
           </div>
-          <div className="mt-5 flex items-center justify-between gap-3 rounded-[18px] border-3 border-foreground bg-muted/70 p-3">
+          <div className="mt-5 flex items-center justify-between gap-3 rounded-[18px] border border-border bg-muted/70 p-3">
             <p className="text-xs text-muted-foreground">Your event step</p>
             <Badge variant={rsvp?.status || attended ? "default" : "outline"} className="capitalize">
               {actionLabel}
@@ -2516,6 +2631,7 @@ function StudentDashboard() {
     queryFn: () => getAnnouncements({ page: 1, page_size: 8 }),
     retry: false
   });
+  const { data: publicClubs = [], isLoading: publicClubsLoading } = useQuery(publicClubsQueryOptions);
   const events = eventsPage.items;
   const { data: reminders = [] } = useQuery({
     queryKey: ["event-reminders"],
@@ -2597,7 +2713,7 @@ function StudentDashboard() {
   const NextActionIcon = STUDENT_NEXT_ACTION_ICONS[nextAction.kind];
 
   const dashboardInviteUrl = buildAppUrl("/membership");
-  const dashboardInviteText = "Hey, join Campus One Club Services and find a Nile University club that fits you.";
+  const dashboardInviteText = "Hey, join Campus One Clubly and find a Nile University club that fits you.";
   const dashboardWhatsAppShareUrl = `https://wa.me/?text=${encodeURIComponent(`${dashboardInviteText}\n${dashboardInviteUrl}`)}`;
 
   async function handleDashboardShare(successTitle = "Invite ready", fallbackTitle = "Invite copied") {
@@ -2624,6 +2740,184 @@ function StudentDashboard() {
       });
     }
   }
+
+  const nextEvent = upcomingEvents[0];
+  const clubPreview = activeMemberships.slice(0, 2);
+  const discoveryPreview = publicClubs
+    .filter((club) => !joinedClubIds.has(club.id))
+    .slice(0, 4);
+
+  return (
+    <div className="mx-auto w-full max-w-[940px] space-y-7 animate-slide-up">
+      <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-4xl font-bold leading-tight tracking-tight md:text-5xl">Hello, {firstName}</h1>
+            {paidDuesCount > 0 ? <QuestSticker tone="green">Dues cleared</QuestSticker> : null}
+          </div>
+          <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
+            {activeMemberships.length
+              ? `You are in ${activeMemberships.length} club${activeMemberships.length === 1 ? "" : "s"}. Your next useful step is below.`
+              : "Start with one club that fits your interests, then Clubly will guide the join flow."}
+          </p>
+        </div>
+        <Button asChild className="shrink-0">
+          <Link to="/membership">Discover Clubs</Link>
+        </Button>
+      </section>
+
+      <Card className="overflow-hidden">
+        <CardContent className="grid gap-5 p-5 md:grid-cols-[1fr_auto] md:items-center">
+          <div className="flex min-w-0 items-start gap-4">
+            <QuestIconBadge icon={nextEvent ? CalendarDays : NextActionIcon} tone={nextEvent ? "blue" : "navy"} />
+            <div className="min-w-0">
+              <p className="clb-eyebrow">{nextEvent ? "Your next event" : "Next best action"}</p>
+              <h2 className="mt-2 text-2xl font-bold leading-tight tracking-tight">
+                {nextEvent ? nextEvent.title : nextAction.title}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {nextEvent
+                  ? `${getDateLabel(nextEvent.event_date)} - ${nextEvent.location || "Venue TBC"}`
+                  : nextAction.description}
+              </p>
+            </div>
+          </div>
+          <Button asChild variant={nextEvent ? "outline" : "default"} className="w-full md:w-auto">
+            <Link to={nextEvent ? "/events" : nextAction.to}>{nextEvent ? "View event" : nextAction.label}</Link>
+          </Button>
+        </CardContent>
+      </Card>
+
+      {(membershipsFailed || duesFailed || eventsFailed || announcementsFailed) ? (
+        <ClublyErrorState title="Some student data could not load" message={getErrorMessage(membershipsError || duesError || eventsError || announcementsError)} />
+      ) : null}
+
+      <section className="space-y-4">
+        <ClublySectionHeader
+          title="My clubs"
+          description="A compact view of your current club memberships."
+          action={<Button asChild variant="outline" size="sm"><Link to="/membership">Manage</Link></Button>}
+        />
+        {(membershipsLoading || duesLoading) ? (
+          <AdminLoadingSkeleton />
+        ) : clubPreview.length === 0 ? (
+          <ClublyEmptyState icon={UserPlus} title="No club yet" message="Choose a club to start your membership request." />
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2">
+            {clubPreview.map((request) => {
+              const payment = request.due_payment ?? (request.due_payment_id ? duesById.get(request.due_payment_id) : undefined);
+              return (
+                <Link key={request.id} to={`/membership/clubs/${request.club_id}`} className="clb-list-card flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold">{request.club?.name || "Selected club"}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{getMembershipStatusSummary(request, payment)}</p>
+                  </div>
+                  <MembershipStatusPill request={request} payment={payment} />
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section className="space-y-4">
+        <ClublySectionHeader
+          title="Discover clubs"
+          description="A few clubs to explore. Open the full directory when you are ready."
+          action={<Button asChild variant="outline" size="sm"><Link to="/membership">Browse all</Link></Button>}
+        />
+        {publicClubsLoading ? (
+          <ClublyLoadingState title="Loading club discovery" message="We are gathering public clubs." compact />
+        ) : discoveryPreview.length === 0 ? (
+          <ClublyEmptyState icon={School} title="No new clubs to show" message="Your full directory is still available from Discover Clubs." />
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {discoveryPreview.map((club) => (
+              <Link key={club.id} to={`/membership/clubs/${club.id}`} className="clb-list-card flex items-start gap-3">
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-[16px] bg-accent text-sm font-bold text-accent-foreground">
+                  {getClubInitials(club.name)}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate font-semibold">{club.name}</p>
+                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{club.description || "Open this club profile to learn more."}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
+        <Card className="rounded-[24px]">
+          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <CardTitle className="text-lg">Announcements Preview</CardTitle>
+              <p className="mt-1 text-sm text-muted-foreground">Recent updates from your clubs and Clubly.</p>
+            </div>
+            <Button asChild variant="outline" size="sm" className="w-full shrink-0 sm:w-auto">
+              <Link to="/communications">View Announcements</Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {announcementsLoading ? (
+              <ClublyLoadingState title="Loading announcements" message="Checking your latest club updates." compact />
+            ) : announcementPreview.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Updates from your active clubs and public Clubly posts will appear here.</p>
+            ) : (
+              announcementPreview.slice(0, 2).map((announcement) => (
+                <Link key={announcement.id} to="/communications" className="clb-list-card block">
+                  <p className="font-semibold leading-5">{announcement.title}</p>
+                  <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{announcement.message}</p>
+                </Link>
+              ))
+            )}
+          </CardContent>
+        </Card>
+
+        <Dialog open={dashboardShareOpen} onOpenChange={setDashboardShareOpen}>
+          <DialogTrigger asChild>
+            <Button type="button" variant="outline" className="h-auto justify-start rounded-[24px] p-5 text-left lg:w-[260px]">
+              <Users className="mr-3 h-5 w-5" />
+              Invite a friend to discover clubs
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-md" data-testid="dashboard-share-sheet">
+            <DialogHeader>
+              <DialogTitle>Invite a friend</DialogTitle>
+              <DialogDescription>Share the Clubly directory with a classmate so they can find clubs faster.</DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Button type="button" variant="outline" className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left" onClick={() => void handleDashboardShare()}>
+                <Smartphone className="h-5 w-5 shrink-0" />
+                <span><span className="block font-semibold">Share to apps</span><span className="block text-xs text-muted-foreground">Use your device menu</span></span>
+              </Button>
+              <Button asChild type="button" variant="outline" className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left">
+                <a href={dashboardWhatsAppShareUrl} target="_blank" rel="noreferrer" onClick={() => {
+                  toast.success("WhatsApp invite ready", { description: "Choose the friend or group you want to send it to." });
+                  setDashboardShareOpen(false);
+                }}>
+                  <MessageCircle className="h-5 w-5 shrink-0" />
+                  <span><span className="block font-semibold">WhatsApp</span><span className="block text-xs text-muted-foreground">Send as a chat invite</span></span>
+                </a>
+              </Button>
+              <Button type="button" variant="outline" className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left" onClick={() => void handleDashboardShare("Snapchat invite ready", "Snapchat invite copied")}>
+                <Camera className="h-5 w-5 shrink-0" />
+                <span><span className="block font-semibold">Snapchat</span><span className="block text-xs text-muted-foreground">Share or copy for Snap</span></span>
+              </Button>
+              <Button type="button" variant="outline" className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left" onClick={() => void handleDashboardShare("Instagram invite ready", "Instagram invite copied")}>
+                <Instagram className="h-5 w-5 shrink-0" />
+                <span><span className="block font-semibold">Instagram</span><span className="block text-xs text-muted-foreground">Use share sheet or copy</span></span>
+              </Button>
+              <Button type="button" variant="outline" className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left sm:col-span-2" onClick={() => void handleCopyInviteLink()}>
+                <Copy className="h-5 w-5 shrink-0" />
+                <span><span className="block font-semibold">Copy Link</span><span className="block text-xs text-muted-foreground">Paste anywhere</span></span>
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </section>
+    </div>
+  );
 
   return (
     <div className="space-y-8 animate-slide-up">
@@ -2680,7 +2974,7 @@ function StudentDashboard() {
           <Card className="bg-primary text-primary-foreground">
             <CardContent className="p-6">
               <div className="flex items-start gap-4">
-                <div className="rounded-full border-3 border-foreground bg-secondary p-3 text-secondary-foreground shadow-neo-sm">
+                <div className="rounded-full border border-border bg-secondary p-3 text-secondary-foreground shadow-soft-sm">
                   <NextActionIcon className="h-5 w-5" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -2708,7 +3002,7 @@ function StudentDashboard() {
               <DialogHeader>
                 <DialogTitle>Invite a friend</DialogTitle>
                 <DialogDescription>
-                  Share the Club Services directory with a classmate so they can find clubs faster.
+                  Share the Clubly directory with a classmate so they can find clubs faster.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-3 sm:grid-cols-2">
@@ -2783,10 +3077,10 @@ function StudentDashboard() {
             </DialogContent>
           </Dialog>
           <Link to="/feedback" className="block">
-            <div className="rounded-[28px] border-3 border-foreground bg-primary p-8 text-center text-primary-foreground shadow-neo transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-[2px_2px_0_hsl(var(--neo-shadow))]">
+            <div className="rounded-[28px] border border-border bg-primary p-8 text-center text-primary-foreground shadow-soft transition-all hover:translate-x-1 hover:translate-y-1 hover:shadow-soft-sm">
               <MessageSquare className="mx-auto h-9 w-9" />
               <h3 className="mt-5 text-3xl font-black tracking-[-0.05em]">Help us improve!</h3>
-              <p className="mt-3 text-sm text-primary-foreground/80">Got ideas for Club Services? Drop a line.</p>
+              <p className="mt-3 text-sm text-primary-foreground/80">Got ideas for Clubly? Drop a line.</p>
             </div>
           </Link>
         </aside>
@@ -2824,7 +3118,7 @@ function StudentDashboard() {
                 <AdminEmptyState
                   icon={UserPlus}
                   title="You have not requested a club yet"
-                  message="Start by choosing a club you care about. Your paid join request will go into Club Services review."
+                  message="Start by choosing a club you care about. Your paid join request will go into Clubly review."
                   action={{ label: "Discover clubs", to: "/membership" }}
                 />
               ) : (
@@ -2855,7 +3149,7 @@ function StudentDashboard() {
                     return (
                       <div
                         key={request.id}
-                        className={`nh-list-card ${membershipActive ? "border-success/20 bg-success/5" : ""}`}
+                        className={`clb-list-card ${membershipActive ? "border-success/20 bg-success/5" : ""}`}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
@@ -2920,7 +3214,7 @@ function StudentDashboard() {
             </CardHeader>
             <CardContent>
               {eventsLoading ? (
-                <NeoLoadingState title="Loading events" message="We are preparing the student event feed." compact />
+                <ClublyLoadingState title="Loading events" message="We are preparing the student event feed." compact />
               ) : activeMemberships.length === 0 ? (
                 <AdminEmptyState
                   icon={CalendarDays}
@@ -2937,11 +3231,11 @@ function StudentDashboard() {
               ) : (
                 <div className="space-y-3">
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-[18px] border-3 border-foreground bg-success/10 p-4">
+                    <div className="rounded-[18px] border border-border bg-success/10 p-4">
                       <p className="text-xs font-black uppercase tracking-[0.14em] text-muted-foreground">Today</p>
                       <p className="mt-1 text-2xl font-black">{todayEvents.length}</p>
                     </div>
-                    <div className="rounded-[18px] border-3 border-foreground bg-accent/30 p-4">
+                    <div className="rounded-[18px] border border-border bg-accent/30 p-4">
                       <p className="text-xs font-black uppercase tracking-[0.14em] text-muted-foreground">This week</p>
                       <p className="mt-1 text-2xl font-black">{thisWeekEvents.length}</p>
                     </div>
@@ -2965,7 +3259,7 @@ function StudentDashboard() {
             <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
                 <CardTitle className="text-lg">Announcements Preview</CardTitle>
-                <p className="mt-1 text-sm text-muted-foreground">Recent updates from your clubs and Club Services.</p>
+                <p className="mt-1 text-sm text-muted-foreground">Recent updates from your clubs and Clubly.</p>
               </div>
               <Button asChild variant="outline" size="sm" className="w-full shrink-0 sm:w-auto">
                 <Link to="/communications">View Announcements</Link>
@@ -2973,19 +3267,19 @@ function StudentDashboard() {
             </CardHeader>
             <CardContent className="space-y-3">
               {announcementsLoading ? (
-                <NeoLoadingState title="Loading announcements" message="Checking your latest club updates." compact />
+                <ClublyLoadingState title="Loading announcements" message="Checking your latest club updates." compact />
               ) : announcementsFailed ? (
-                <NeoErrorState title="Announcements unavailable" message={getErrorMessage(announcementsError)} />
+                <ClublyErrorState title="Announcements unavailable" message={getErrorMessage(announcementsError)} />
               ) : announcementPreview.length === 0 ? (
-                <NeoEmptyState
+                <ClublyEmptyState
                   icon={Bell}
                   title="No announcements yet"
-                  message="Updates from your active clubs and public Club Services posts will appear here."
+                  message="Updates from your active clubs and public Clubly posts will appear here."
                 />
               ) : (
                 announcementPreview.map((announcement) => (
                   <Link key={announcement.id} to="/communications" className="block">
-                    <div className="nh-list-card transition-colors hover:bg-accent/15">
+                    <div className="clb-list-card transition-colors hover:bg-accent/15">
                       <div className="flex items-start justify-between gap-3">
                         <p className="font-semibold leading-5">{announcement.title}</p>
                         <Badge className={getAnnouncementPriorityClass(announcement.priority)}>
@@ -3008,7 +3302,7 @@ function StudentDashboard() {
             <CardContent className="flex items-center justify-between gap-4 p-5">
               <div>
                 <p className="text-sm font-black uppercase tracking-[0.14em] text-primary-foreground/70">Feedback</p>
-                <p className="mt-1 text-lg font-black tracking-[-0.03em]">Help us improve Club Services.</p>
+                <p className="mt-1 text-lg font-black tracking-[-0.03em]">Help us improve Clubly.</p>
               </div>
               <Button asChild variant="secondary" size="sm" className="shrink-0">
                 <Link to="/feedback">Submit Feedback</Link>
@@ -3025,7 +3319,7 @@ function StudentDashboard() {
                 <p className="text-sm text-muted-foreground">No event reminders yet.</p>
               ) : (
                 reminders.slice(0, 3).map((reminder: EventReminderRecord) => (
-                  <div key={reminder.id} className="nh-list-card">
+                  <div key={reminder.id} className="clb-list-card">
                     <p className="text-sm font-medium">{reminder.message}</p>
                     <p className="mt-1 text-xs text-muted-foreground">Reminder date {getDateLabel(reminder.remind_at)}</p>
                   </div>
@@ -3095,13 +3389,13 @@ function PresidentDashboard() {
     {
       label: "Complete club profile",
       done: hasClub,
-      detail: hasClub ? "Your president account is linked to a club." : "Club Services needs to link your account to a club.",
+      detail: hasClub ? "Your president account is linked to a club." : "Clubly needs to link your account to a club.",
       to: "/"
     },
     {
       label: "Add club description",
       done: hasClubDescription,
-      detail: hasClubDescription ? "Students can understand what your club offers." : "Add a useful description from Club Services club setup.",
+      detail: hasClubDescription ? "Students can understand what your club offers." : "Add a useful description from Clubly club setup.",
       to: "/"
     },
     {
@@ -3142,6 +3436,140 @@ function PresidentDashboard() {
     }
   ];
   const attentionCount = setupItems.filter((item) => !item.done).length + openTaskCount + pendingCount;
+  const openTasks = tasks.filter((task) => task.status !== "completed").slice(0, 4);
+
+  return (
+    <div className="mx-auto w-full max-w-[940px] space-y-7 animate-slide-up">
+      <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-4xl font-bold leading-tight tracking-tight md:text-5xl">
+              {dashboard?.club?.name || "President Dashboard"}
+            </h1>
+            <QuestSticker tone={attentionCount ? "blue" : "green"}>
+              {attentionCount ? `${formatNumber(attentionCount)} to review` : "Calm"}
+            </QuestSticker>
+          </div>
+          <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
+            Focus on pending proposals, open tasks, and the next useful action for your club.
+          </p>
+        </div>
+        <Button asChild>
+          <Link to="/proposals/new">
+            <Plus className="h-4 w-4" />
+            New proposal
+          </Link>
+        </Button>
+      </section>
+
+      {isError ? (
+        <ClublyErrorState title="We couldn't load the president dashboard" message={getErrorMessage(error)} />
+      ) : (
+        <>
+          <div className="grid gap-3 md:grid-cols-3">
+            <Link to={openTaskCount ? "/tasks" : "/proposals"} className="clb-list-card block">
+              <p className="clb-eyebrow">Needs Attention</p>
+              <p className="mt-1 text-2xl font-bold">{formatNumber(attentionCount)}</p>
+            </Link>
+            <Link to="/events" className="clb-list-card block">
+              <p className="clb-eyebrow">Upcoming Events</p>
+              <p className="mt-1 text-2xl font-bold">{formatNumber(upcomingCount)}</p>
+            </Link>
+            <Link to="/members" className="clb-list-card block">
+              <p className="clb-eyebrow">Members</p>
+              <p className="mt-1 text-2xl font-bold">{isLoadingMembers ? "..." : formatNumber(memberCount)}</p>
+            </Link>
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+            <Card>
+              <CardHeader>
+                <ClublySectionHeader
+                  title="Pending proposals"
+                  description={`${formatNumber(pendingCount)} proposal${pendingCount === 1 ? "" : "s"} currently need review or follow-up.`}
+                  action={<Button asChild variant="outline" size="sm"><Link to="/proposals">View all</Link></Button>}
+                />
+              </CardHeader>
+              <CardContent>
+                {isLoading || !dashboard?.pending_proposals.length ? (
+                  <ProposalListState isLoading={isLoading} isError={false} error={null} emptyMessage="No pending proposals for this club right now." />
+                ) : (
+                  <ProposalSummaryList proposals={dashboard.pending_proposals} />
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <ClublySectionHeader
+                  title="Next tasks"
+                  description={`${formatNumber(openTaskCount)} open task${openTaskCount === 1 ? "" : "s"} in the club workspace.`}
+                  action={<Button asChild variant="outline" size="sm"><Link to="/tasks">Open tasks</Link></Button>}
+                />
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {isLoadingTasks ? (
+                  <ClublyLoadingState title="Loading tasks" message="Checking open task work." compact />
+                ) : openTasks.length === 0 ? (
+                  <ClublyEmptyState icon={ClipboardList} title="No open tasks" message="Completed tasks stay out of the dashboard so your team can focus." />
+                ) : (
+                  openTasks.map((task) => (
+                    <Link key={task.id} to="/tasks" className="clb-list-card block">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold">{task.title}</p>
+                          <p className="mt-1 text-sm text-muted-foreground">{task.due_date ? `Due ${getDateLabel(task.due_date)}` : "No due date"}</p>
+                        </div>
+                        <StatusBadge status={task.status} />
+                      </div>
+                    </Link>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <h2 className="text-lg font-semibold">Club Health Score</h2>
+                <p className="text-sm text-muted-foreground">A compact pulse check for setup, events, members, and team activity.</p>
+              </CardHeader>
+              <CardContent className="flex items-end justify-between gap-4">
+                <div>
+                  <p className="text-4xl font-bold tracking-tight">{clubHealthScore}</p>
+                  <p className="mt-1 text-sm font-semibold text-muted-foreground">{clubHealthLabel}</p>
+                </div>
+                <QuestProgressBar value={clubHealthScore} className="w-36" />
+              </CardContent>
+            </Card>
+          </div>
+
+          <section className="space-y-4">
+            <ClublySectionHeader title="Quick actions" description="Common actions kept as compact links." />
+            <div className="grid gap-3 md:grid-cols-3">
+              {[
+                { label: "Create announcement", to: "/communications", icon: MessageSquare },
+                { label: "Create event", to: "/proposals/new", icon: CalendarDays },
+                { label: "Create proposal", to: "/proposals/new", icon: Plus },
+                { label: "Assign task", to: "/tasks", icon: ClipboardList },
+                { label: "View members", to: "/members", icon: Users },
+                { label: "View reports", to: "/archive", icon: FileText }
+              ].map((action) => {
+                const Icon = action.icon;
+                return (
+                  <Button key={action.label} asChild variant="outline" className="h-auto justify-start rounded-[18px] p-4">
+                    <Link to={action.to}>
+                      <Icon className="h-4 w-4" />
+                      {action.label}
+                    </Link>
+                  </Button>
+                );
+              })}
+            </div>
+          </section>
+        </>
+      )}
+    </div>
+  );
 
   return (
     <div className="space-y-8 animate-slide-up">
@@ -3215,7 +3643,7 @@ function PresidentDashboard() {
                     <QuestSticker tone="blue">Core Metric</QuestSticker>
                     <h2 className="mt-6 text-4xl font-black tracking-[-0.06em] md:text-5xl">Club Health Score</h2>
                   </div>
-                  <div className="rotate-2 rounded-[24px] border-3 border-foreground bg-primary px-7 py-5 text-6xl font-black text-primary-foreground shadow-neo">
+                  <div className="rotate-2 rounded-[24px] border border-border bg-primary px-7 py-5 text-6xl font-black text-primary-foreground shadow-soft">
                     {clubHealthScore}
                   </div>
                 </div>
@@ -3244,7 +3672,7 @@ function PresidentDashboard() {
                   <h2 className="text-2xl font-black tracking-[-0.05em]">Task Focus</h2>
                 </div>
                 <div className="space-y-4">
-                  <div className="rounded-[20px] border-3 border-foreground bg-muted p-4 shadow-neo-sm">
+                  <div className="rounded-[20px] border border-border bg-muted p-4 shadow-soft-sm">
                     <div className="flex items-center justify-between gap-4">
                       <p className="font-black">Open Tasks</p>
                       <QuestSticker tone={openTaskCount ? "navy" : "green"}>{isLoadingTasks ? "..." : formatNumber(openTaskCount)}</QuestSticker>
@@ -3264,7 +3692,7 @@ function PresidentDashboard() {
                   <h2 className="text-2xl font-black tracking-[-0.05em]">Proposals</h2>
                 </div>
                 <div className="space-y-4">
-                  <div className="rounded-[20px] border-3 border-foreground bg-muted p-4 shadow-neo-sm">
+                  <div className="rounded-[20px] border border-border bg-muted p-4 shadow-soft-sm">
                     <div className="flex items-center justify-between gap-4">
                       <p className="font-black">Pending Workflow</p>
                       <QuestSticker tone={pendingCount ? "navy" : "green"}>{formatNumber(pendingCount)}</QuestSticker>
@@ -3284,7 +3712,7 @@ function PresidentDashboard() {
                   <h2 className="text-2xl font-black tracking-[-0.05em]">Communication</h2>
                 </div>
                 <div className="space-y-4">
-                  <div className="rounded-[20px] border-3 border-foreground bg-muted p-4 shadow-neo-sm">
+                  <div className="rounded-[20px] border border-border bg-muted p-4 shadow-soft-sm">
                     <div className="flex items-center justify-between gap-4">
                       <p className="font-black">Announcements</p>
                       <QuestSticker tone={announcementCount ? "navy" : "muted"}>{isLoadingAnnouncements ? "..." : formatNumber(announcementCount)}</QuestSticker>
@@ -3344,9 +3772,9 @@ function PresidentDashboard() {
               <CardContent>
                 {isLoading || !dashboard?.executive_team.length ? (
                   isLoading ? (
-                    <NeoLoadingState title="Loading executive team" message="We are checking club leadership records." compact />
+                    <ClublyLoadingState title="Loading executive team" message="We are checking club leadership records." compact />
                   ) : (
-                    <NeoEmptyState title="No executives linked yet" message="Executives connected to this club will appear here." />
+                    <ClublyEmptyState title="No executives linked yet" message="Executives connected to this club will appear here." />
                   )
                 ) : (
                   <div className="space-y-3">
@@ -3370,9 +3798,9 @@ function PresidentDashboard() {
               <CardContent>
                 {isLoading || !dashboard?.recent_activity.length ? (
                   isLoading ? (
-                    <NeoLoadingState title="Loading recent movement" message="We are checking proposal activity." compact />
+                    <ClublyLoadingState title="Loading recent movement" message="We are checking proposal activity." compact />
                   ) : (
-                    <NeoEmptyState title="No proposal activity yet" message="Proposal updates will appear here once the club starts submitting." />
+                    <ClublyEmptyState title="No proposal activity yet" message="Proposal updates will appear here once the club starts submitting." />
                   )
                 ) : (
                   <RecentActivityList activity={dashboard.recent_activity} />
@@ -3397,7 +3825,7 @@ export default function Dashboard() {
   if (role === "student") return <StudentDashboard />;
   return (
     <div className="flex min-h-[50vh] items-center justify-center">
-      <NeoLoadingState title="Opening your Club Services workspace" message="We are loading your profile and dashboard access." />
+      <ClublyLoadingState title="Opening your Clubly workspace" message="We are loading your profile and dashboard access." />
     </div>
   );
 }

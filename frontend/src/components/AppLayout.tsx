@@ -74,7 +74,7 @@ export function AppLayout() {
         <AppSidebar />
         <GuidedOnboarding restartSignal={guideRestartSignal} />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-3 border-b border-border bg-card/80 px-3 py-3 shadow-soft-sm backdrop-blur-xl md:absolute md:right-8 md:top-8 md:min-h-0 md:rounded-[24px] md:border md:bg-card/75 md:p-2">
+          <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-3 border-b border-border/70 bg-card/85 px-3 py-3 shadow-soft-sm backdrop-blur-xl md:absolute md:right-8 md:top-8 md:min-h-0 md:rounded-[24px] md:border md:bg-card/80 md:p-2">
             <div className="flex items-center gap-3">
               <SidebarTrigger className="md:hidden" />
               <div className="hidden items-center sm:flex">
@@ -86,7 +86,7 @@ export function AppLayout() {
               </div>
             </div>
             <div className="flex min-w-0 items-center justify-end gap-2 sm:gap-3">
-              <span className="hidden rounded-full border border-primary/10 bg-accent px-3 py-1.5 text-[11px] font-semibold tracking-wide text-accent-foreground sm:inline">
+              <span className="hidden rounded-full border border-primary/10 bg-accent/70 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-accent-foreground sm:inline">
                 {role === "admin"
                   ? "Admin Access"
                   : role

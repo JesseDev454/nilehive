@@ -6,7 +6,7 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { DataPagination } from "@/components/DataPagination";
 import { NhStudentId } from "@/components/NhStudentId";
-import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { ClublyLoadingState, ClublyMetaChip, ClublyPageHeader, ClublySectionHeader, ClublyStateCard } from "@/components/Clubly";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,6 +58,14 @@ const EVENT_FILTERS = [
   { value: "all", label: "Any event status" },
   { value: "upcoming", label: "Upcoming event available" }
 ] as const;
+const SOCIAL_LINK_LABELS: Record<string, string> = {
+  instagram: "Instagram",
+  linkedin: "LinkedIn",
+  facebook: "Facebook",
+  x: "X",
+  youtube: "YouTube",
+  tiktok: "TikTok"
+};
 const CLUB_DESCRIPTION_OVERRIDES: Record<string, string> = {
   "Nile Book Club":
     "Dive into the world of literature with fellow bookworms. Discover new genres, share your favourite reads, and engage in lively discussions that will broaden your horizons.",
@@ -165,6 +173,24 @@ function GalleryImage({ path, caption }: { path: string; caption: string | null 
       {caption ? <figcaption className="mt-1 text-xs text-muted-foreground">{caption}</figcaption> : null}
     </figure>
   ) : <div className="aspect-square animate-pulse rounded-lg bg-muted" />;
+}
+
+function getClubLinkEntries(club: ClubRecord) {
+  const links: Array<{ key: string; label: string; url: string }> = [];
+  const websiteUrl = club.website_url?.trim();
+
+  if (websiteUrl) {
+    links.push({ key: "website", label: "Website", url: websiteUrl });
+  }
+
+  Object.entries(club.social_links || {}).forEach(([key, value]) => {
+    const url = value?.trim();
+    if (url) {
+      links.push({ key, label: SOCIAL_LINK_LABELS[key] || key, url });
+    }
+  });
+
+  return links;
 }
 
 function getErrorMessage(error: unknown) {
@@ -418,22 +444,22 @@ function getMembershipNextStep(status: ResolvedMembershipStatus, duesRequired: b
   }
 
   if (status === "payment_under_review") {
-    return "Wait for Club Services to verify your dues proof.";
+    return "Wait for Clubly to verify your dues proof.";
   }
 
   if (status === "pending_payment" || status === "needs_new_payment_details") {
-    return duesRequired ? "Upload or update your dues proof so verification can continue." : "Wait for Club Services to finish activation.";
+    return duesRequired ? "Upload or update your dues proof so verification can continue." : "Wait for Clubly to finish activation.";
   }
 
   if (status === "rejected") {
-    return "Review the decision note, then choose another club or contact Club Services.";
+    return "Review the decision note, then choose another club or contact Clubly.";
   }
 
   if (status === "cancelled") {
     return "This request is closed. You can return to Discover Clubs.";
   }
 
-  return "Wait for Club Services to review your join request.";
+  return "Wait for Clubly to review your join request.";
 }
 
 function getJoinFlowSteps(status: ResolvedMembershipStatus | "not_started", duesRequired: boolean) {
@@ -451,7 +477,7 @@ function getJoinFlowSteps(status: ResolvedMembershipStatus | "not_started", dues
       current: duesRequired && (status === "pending_payment" || status === "needs_new_payment_details")
     },
     {
-      label: "Club Services verification",
+      label: "Clubly verification",
       done: status === "active",
       current: status === "payment_under_review"
     },
@@ -537,7 +563,7 @@ function DuesConfirmationCard({
       }),
     onSuccess: async () => {
       toast.success("Payment details sent again", {
-        description: "Your updated payment details are back in the Club Services review queue."
+        description: "Your updated payment details are back in the Clubly review queue."
       });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["my-dues"] }),
@@ -628,7 +654,7 @@ function DuesConfirmationCard({
         <p className="font-semibold text-warning">{duesRequired ? "Dues proof not uploaded yet" : "Dues are not required"}</p>
         <p className="mt-1 text-muted-foreground">
           {duesRequired
-            ? "Club Services will show the upload step once this request is ready for payment confirmation."
+            ? "Clubly will show the upload step once this request is ready for payment confirmation."
             : "Your request can move through verification without dues proof."}
         </p>
       </div>
@@ -656,7 +682,7 @@ function DuesConfirmationCard({
       <div className="mt-4 rounded-xl border border-success/20 bg-success/5 p-4 text-sm">
         <p className="font-semibold text-success">Dues verified. You are now an active member.</p>
         <p className="mt-1 text-muted-foreground">
-          Club Services has confirmed your payment. Any extra community access instructions will be shared separately.
+          Clubly has confirmed your payment. Any extra community access instructions will be shared separately.
         </p>
       </div>
     );
@@ -667,7 +693,7 @@ function DuesConfirmationCard({
       <div className="mt-4 rounded-xl border border-warning/20 bg-warning/10 p-4 text-sm">
         <p className="font-semibold text-warning">Your join request is under review.</p>
         <p className="mt-1 text-muted-foreground">
-          Club Services is checking your request. You will see the next step here once review is complete.
+          Clubly is checking your request. You will see the next step here once review is complete.
         </p>
       </div>
     );
@@ -705,12 +731,12 @@ function DuesConfirmationCard({
         </p>
         {resolvedStatus === "needs_new_payment_details" ? (
           <p className="mt-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-destructive">
-            {request.decision_remarks || "Club Services rejected the previous proof. No detailed rejection note was provided."}
+            {request.decision_remarks || "Clubly rejected the previous proof. No detailed rejection note was provided."}
           </p>
         ) : null}
       </div>
 
-      <div className="nh-card-soft p-4">
+      <div className="clb-card-soft p-4">
         {settings ? (
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
@@ -739,7 +765,7 @@ function DuesConfirmationCard({
           </div>
         ) : (
           <p className="text-muted-foreground">
-            Shared payment details have not been published yet. Please contact Club Services.
+            Shared payment details have not been published yet. Please contact Clubly.
           </p>
         )}
       </div>
@@ -815,7 +841,7 @@ function JoinFlowStepper({
     <Card>
       <CardHeader>
         <CardTitle className="text-lg">Join Progress</CardTitle>
-        <p className="text-sm text-muted-foreground">Every club membership moves through Club Services verification before activation.</p>
+        <p className="text-sm text-muted-foreground">Every club membership moves through Clubly verification before activation.</p>
       </CardHeader>
       <CardContent className="grid gap-3 md:grid-cols-5">
         {steps.map((step, index) => (
@@ -871,6 +897,7 @@ function ClubDetailOverview({
   const inviteUrl = getClubShareUrl(club.id);
   const inviteText = `Hey, join ${club.name} on Campus One. ${inviteReason}`;
   const whatsappShareUrl = `https://wa.me/?text=${encodeURIComponent(`${inviteText}\n${inviteUrl}`)}`;
+  const clubLinkEntries = getClubLinkEntries(club);
 
   async function handleNativeShare(successTitle = "Club invite ready", fallbackTitle = "Club invite copied") {
     await shareOrCopy({
@@ -896,6 +923,144 @@ function ClubDetailOverview({
       });
     }
   }
+
+  return (
+    <div className="space-y-5">
+      <div className="space-y-5">
+        <Card className="overflow-hidden">
+          <div className="bg-primary p-6 text-primary-foreground">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="flex min-w-0 items-center gap-4">
+                <ClubLogo club={club} className="h-16 w-16" />
+                <div className="min-w-0">
+                  <p className="clb-eyebrow text-primary-foreground/70">{club.code || "Nile University club"}</p>
+                  <h2 className="mt-1 text-3xl font-bold leading-tight tracking-tight">{club.name}</h2>
+                </div>
+              </div>
+              {existingRequest ? <MembershipStatusBadge request={existingRequest} payment={payment} /> : <Badge className="bg-white/15 text-white hover:bg-white/15">Not a member</Badge>}
+            </div>
+          </div>
+          <CardContent className="space-y-5 p-5">
+            <div className="flex flex-wrap gap-2">
+              {categories.map((category) => (
+                <Badge key={category} variant="outline" className="bg-accent/25">
+                  {category}
+                </Badge>
+              ))}
+              <ClublyMetaChip label="Dues" value={getClubDuesRequirementLabel(club, settings)} />
+              <ClublyMetaChip label="Members" value={`${getClubMemberCount(club)} tracked`} />
+            </div>
+
+            <section className="space-y-3">
+              <ClublySectionHeader title="About" />
+              <p className="max-w-3xl text-sm leading-6 text-muted-foreground">{getClubDescriptionPreview(getClubDescription(club), 260)}</p>
+              {clubLinkEntries.length ? (
+                <div className="space-y-3">
+                  <ClublySectionHeader title="Club links" />
+                  <div className="flex flex-wrap gap-2">
+                    {clubLinkEntries.map((link) => (
+                      <Button key={link.key} asChild variant="outline" size="sm">
+                        <a href={link.url} target="_blank" rel="noreferrer">{link.label}</a>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </section>
+
+            <section className="space-y-3">
+              <ClublySectionHeader title="Executives" description="Leadership contacts appear here after club officers are connected." />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="clb-card-soft p-4">
+                  <p className="font-semibold">Club President</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Assigned in Clubly records</p>
+                </div>
+                <div className="clb-card-soft p-4">
+                  <p className="font-semibold">Executive Team</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Members and tasks are managed after approval.</p>
+                </div>
+              </div>
+            </section>
+
+            {club.gallery?.length ? (
+              <section className="space-y-3">
+                <ClublySectionHeader title="Gallery" />
+                <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+                  {club.gallery.slice(0, 6).map((media) => (
+                    <GalleryImage key={media.id} path={media.storage_path} caption={media.caption} />
+                  ))}
+                </div>
+              </section>
+            ) : null}
+
+            <section className="space-y-3">
+              <ClublySectionHeader title="Events" />
+              {clubEvents.length ? (
+                <div className="space-y-2">
+                  {clubEvents.slice(0, 4).map((event) => (
+                    <div key={event.proposal_id} className="clb-list-card">
+                      <p className="font-semibold">{event.title}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {formatDate(event.event_date)} - {event.event_lifecycle === "past" ? "Past event" : "Upcoming"}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No approved events have been published for this club yet.</p>
+              )}
+            </section>
+
+            <div className="flex flex-wrap gap-2 border-t border-border pt-5">
+              {canInvite ? (
+                <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+                  <DialogTrigger asChild>
+                    <Button type="button" variant="outline">
+                      <Share2 className="mr-2 h-4 w-4" />
+                      Invite Friend
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md" data-testid="club-share-sheet">
+                    <DialogHeader>
+                      <DialogTitle>Share {club.name}</DialogTitle>
+                      <DialogDescription>Send this club to a friend or copy the link for any chat app.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Button type="button" variant="outline" className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left" onClick={() => void handleNativeShare()}>
+                        <Smartphone className="h-5 w-5 shrink-0" />
+                        <span><span className="block font-semibold">Share to apps</span><span className="block text-xs text-muted-foreground">Open your device share sheet</span></span>
+                      </Button>
+                      <Button asChild type="button" variant="outline" className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left">
+                        <a href={whatsappShareUrl} target="_blank" rel="noreferrer" onClick={() => {
+                          toast.success("WhatsApp invite ready", { description: "Choose the friend or group you want to send it to." });
+                          setShareOpen(false);
+                        }}>
+                          <MessageCircle className="h-5 w-5 shrink-0" />
+                          <span><span className="block font-semibold">WhatsApp</span><span className="block text-xs text-muted-foreground">Send as a chat invite</span></span>
+                        </a>
+                      </Button>
+                      <Button type="button" variant="outline" className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left" onClick={() => void handleNativeShare("Snapchat invite ready", "Snapchat invite copied")}>
+                        <Camera className="h-5 w-5 shrink-0" />
+                        <span><span className="block font-semibold">Snapchat</span><span className="block text-xs text-muted-foreground">Share or copy for Snap</span></span>
+                      </Button>
+                      <Button type="button" variant="outline" className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left" onClick={() => void handleNativeShare("Instagram invite ready", "Instagram invite copied")}>
+                        <Instagram className="h-5 w-5 shrink-0" />
+                        <span><span className="block font-semibold">Instagram</span><span className="block text-xs text-muted-foreground">Use share sheet or copy</span></span>
+                      </Button>
+                      <Button type="button" variant="outline" className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left sm:col-span-2" onClick={() => void handleCopyClubLink()}>
+                        <Copy className="h-5 w-5 shrink-0" />
+                        <span><span className="block font-semibold">Copy Link</span><span className="block text-xs text-muted-foreground">Paste anywhere</span></span>
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              ) : null}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
 
   return (
     <div className="grid gap-4 xl:grid-cols-[1.4fr_0.8fr]">
@@ -1017,6 +1182,20 @@ function ClubDetailOverview({
         </CardHeader>
         <CardContent className="space-y-5">
           <p className="text-sm leading-6 text-muted-foreground">{getClubDescription(club)}</p>
+          {clubLinkEntries.length ? (
+            <div className="rounded-xl border border-border bg-muted/30 p-4">
+              <h3 className="mb-3 font-black">Club links</h3>
+              <div className="flex flex-wrap gap-2">
+                {clubLinkEntries.map((link) => (
+                  <Button key={link.key} asChild variant="outline" size="sm">
+                    <a href={link.url} target="_blank" rel="noreferrer">
+                      {link.label}
+                    </a>
+                  </Button>
+                ))}
+              </div>
+            </div>
+          ) : null}
           {club.gallery?.length ? (
             <div><h3 className="mb-3 font-black">Club gallery</h3><div className="grid grid-cols-2 gap-3 md:grid-cols-3">{club.gallery.map((media) => <GalleryImage key={media.id} path={media.storage_path} caption={media.caption} />)}</div></div>
           ) : null}
@@ -1076,7 +1255,7 @@ function ClubDetailOverview({
         </CardHeader>
         <CardContent className="space-y-3">
           {announcementsLoading ? (
-            <NeoLoadingState title="Loading announcements" message="Checking recent club updates." compact />
+            <ClublyLoadingState title="Loading announcements" message="Checking recent club updates." compact />
           ) : announcementsFailed ? (
             <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
               {getErrorMessage(announcementsError)}
@@ -1086,7 +1265,7 @@ function ClubDetailOverview({
           ) : (
             announcements.slice(0, 3).map((announcement) => (
               <Link key={announcement.id} to="/communications" className="block">
-                <div className="nh-list-card transition-colors hover:bg-accent/15">
+                <div className="clb-list-card transition-colors hover:bg-accent/15">
                   <div className="flex items-start justify-between gap-3">
                     <p className="font-semibold leading-5">{announcement.title}</p>
                     <Badge className={getAnnouncementPriorityClass(announcement.priority)}>{announcement.priority}</Badge>
@@ -1315,14 +1494,14 @@ function JoinClubPanel({
             <p className="mt-1 text-sm text-muted-foreground">
               {duesRequired
                 ? "Pay first, then upload your dues proof with your join request."
-                : "Submit your join request first. Club Services will review and activate it if approved."}
+                : "Submit your join request first. Clubly will review and activate it if approved."}
             </p>
           </div>
         </div>
 
         {duesRequired && settings ? (
-          <div className="nh-card-soft space-y-2 p-4 text-sm">
-            <p className="font-semibold">Club Services Account</p>
+          <div className="clb-card-soft space-y-2 p-4 text-sm">
+            <p className="font-semibold">Clubly Account</p>
             <p><span className="text-muted-foreground">Bank:</span> {settings.bank_name}</p>
             <p><span className="text-muted-foreground">Account:</span> {settings.account_number}</p>
             <p><span className="text-muted-foreground">Name:</span> {settings.account_name}</p>
@@ -1332,7 +1511,7 @@ function JoinClubPanel({
           </div>
         ) : duesRequired ? (
           <div className="rounded-xl border border-dashed p-3 text-sm text-muted-foreground">
-            Shared payment account details have not been published yet. Please contact Club Services before paying.
+            Shared payment account details have not been published yet. Please contact Clubly before paying.
           </div>
         ) : null}
 
@@ -1584,7 +1763,7 @@ function StudentClubJoinPage({
   const duesRequired = club ? isDuesRequired(club, settings) : false;
 
   return (
-    <div className="nh-page">
+    <div className="clb-screen">
       <div className="flex items-center">
         <Button asChild variant="outline" className="gap-2">
           <Link to="/membership">
@@ -1595,7 +1774,7 @@ function StudentClubJoinPage({
       </div>
 
       {isLoadingClubs || isLoadingRequests ? (
-        <NeoLoadingState title="Opening club join form" message="We are loading the club details and your current request status." compact />
+        <ClublyLoadingState title="Opening club join form" message="We are loading the club details and your current request status." compact />
       ) : clubsFailed ? (
         <Card>
           <CardContent className="p-8">
@@ -1611,14 +1790,14 @@ function StudentClubJoinPage({
           </CardContent>
         </Card>
       ) : !club ? (
-        <NeoStateCard
+        <ClublyStateCard
           icon={Users}
           title="Club not found"
           message="We couldn't find that club. Please go back to the discover page and choose another one."
         />
       ) : (
         <>
-          <NeoPageHeader
+          <ClublyPageHeader
             eyebrow="Membership"
             title={`Join ${club.name}`}
             description="Review the club profile, events, dues status, and next membership step."
@@ -1775,8 +1954,8 @@ function StudentMembershipView() {
   }
 
   return (
-    <div className="nh-page">
-      <NeoPageHeader
+    <div className="clb-screen">
+      <ClublyPageHeader
         eyebrow="Membership"
         title="Discover Clubs"
         description="Find clubs that fit your interests and next campus activity."
@@ -1855,7 +2034,7 @@ function StudentMembershipView() {
       </Card>
 
       {isLoadingClubs || isLoadingRequests ? (
-        <NeoLoadingState title="Checking club membership status" message="We are loading clubs and your current requests." compact />
+        <ClublyLoadingState title="Checking club membership status" message="We are loading clubs and your current requests." compact />
       ) : clubsFailed ? (
         <Card>
           <CardContent className="p-8">
@@ -1948,7 +2127,7 @@ function StudentMembershipView() {
           </CardHeader>
           <CardContent className="space-y-3">
             {myRequests.map((request) => (
-              <div key={request.id} className="nh-list-card">
+              <div key={request.id} className="clb-list-card">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <p className="font-semibold">{request.club?.name || "Selected club"}</p>
@@ -2021,8 +2200,8 @@ function ReviewerMembershipView() {
   });
 
   return (
-    <div className="nh-page">
-      <NeoPageHeader
+    <div className="clb-screen">
+      <ClublyPageHeader
         eyebrow="Membership"
         title="Membership Review"
         description="Students submit paid join requests first. Use the dues table to confirm the payment and activate the membership."
@@ -2071,14 +2250,14 @@ function ReviewerMembershipView() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <NeoLoadingState title="Loading membership requests" message="We are preparing the payment-backed join queue." compact />
+            <ClublyLoadingState title="Loading membership requests" message="We are preparing the payment-backed join queue." compact />
           ) : isError ? (
-            <div className="nh-empty border-destructive bg-destructive/5">
+            <div className="clb-empty border-destructive bg-destructive/5">
               <p className="font-medium">Unable to load membership requests</p>
               <p className="mt-1 text-sm text-muted-foreground">{getErrorMessage(error)}</p>
             </div>
           ) : visibleRequests.length === 0 ? (
-            <div className="nh-empty">
+            <div className="clb-empty">
               <ShieldCheck className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
               <p className="font-medium">No join requests match this view</p>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -2089,7 +2268,7 @@ function ReviewerMembershipView() {
             <div>
               <div className="space-y-3">
                 {visibleRequests.map((request) => (
-                  <div key={request.id} className="nh-list-card">
+                  <div key={request.id} className="clb-list-card">
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
@@ -2148,8 +2327,8 @@ export default function Membership() {
   }
 
   return (
-    <div className="nh-page">
-      <NeoStateCard
+    <div className="clb-screen">
+      <ClublyStateCard
         icon={Users}
         title="Membership tools are not available here"
         message="This role does not use the membership workflow."
