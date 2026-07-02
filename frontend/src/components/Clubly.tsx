@@ -397,15 +397,18 @@ export function ClublyLoadingState({
   message = "Preparing the latest workspace data.",
   compact = false,
   delayedMessage,
-  delayedMessageDelayMs = 8000
+  delayedMessageDelayMs = 8000,
+  progress
 }: {
   title?: string;
   message?: string;
   compact?: boolean;
   delayedMessage?: string;
   delayedMessageDelayMs?: number;
+  progress?: number;
 }) {
   const [showDelayedMessage, setShowDelayedMessage] = useState(false);
+  const [estimatedProgress, setEstimatedProgress] = useState(8);
 
   useEffect(() => {
     if (!delayedMessage) {
@@ -418,10 +421,57 @@ export function ClublyLoadingState({
     return () => window.clearTimeout(timer);
   }, [delayedMessage, delayedMessageDelayMs]);
 
+  useEffect(() => {
+    if (typeof progress === "number") {
+      return undefined;
+    }
+
+    setEstimatedProgress(8);
+    const milestones = [
+      { delay: 120, value: 18 },
+      { delay: 450, value: 32 },
+      { delay: 900, value: 46 },
+      { delay: 1600, value: 61 },
+      { delay: 2600, value: 74 },
+      { delay: 4200, value: 84 },
+      { delay: 6200, value: 91 }
+    ];
+    const timers = milestones.map((milestone) =>
+      window.setTimeout(() => setEstimatedProgress((current) => Math.max(current, milestone.value)), milestone.delay)
+    );
+    const interval = window.setInterval(() => {
+      setEstimatedProgress((current) => {
+        if (current >= 94) {
+          return current;
+        }
+
+        const remaining = 94 - current;
+        return Math.min(94, current + Math.max(1, Math.round(remaining * 0.12)));
+      });
+    }, 1400);
+
+    return () => {
+      timers.forEach((timer) => window.clearTimeout(timer));
+      window.clearInterval(interval);
+    };
+  }, [progress]);
+
+  const safeProgress = Math.max(0, Math.min(100, progress ?? estimatedProgress));
+
   return (
     <div className={cn("clb-card overflow-hidden bg-card/90", compact ? "p-5" : "p-8")}>
-      <div className="mb-5 h-2 overflow-hidden rounded-full bg-primary/15">
-        <div className="h-full w-1/3 animate-[clbProgress_1.4s_ease-in-out_infinite] rounded-full bg-primary" />
+      <div
+        className="mb-5 h-2 overflow-hidden rounded-full bg-primary/15"
+        role="progressbar"
+        aria-label={title}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(safeProgress)}
+      >
+        <div
+          className="h-full rounded-full bg-primary transition-[width] duration-700 ease-out"
+          style={{ width: `${safeProgress}%` }}
+        />
       </div>
       <div className="flex flex-col gap-5 md:flex-row md:items-center">
         <div className="grid h-14 w-14 place-items-center rounded-[18px] bg-accent text-accent-foreground">
