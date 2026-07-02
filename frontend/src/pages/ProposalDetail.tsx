@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Clock, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { ApprovalStepper } from "@/components/ApprovalStepper";
-import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
+import { ClublyLoadingState, ClublyMetaChip, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -112,7 +112,7 @@ function buildApprovalSteps(proposal: ProposalRecord) {
       timestamp: getDateTimeLabel(advisorDecision?.decided_at ?? proposal.advisor_decided_at)
     },
     {
-      label: "Club Services Final Review",
+      label: "Clubly Final Review",
       status: adminStepStatus as "completed" | "current" | "pending" | "rejected",
       remarks: adminDecision?.remarks ?? proposal.admin_remarks ?? undefined,
       timestamp: getDateTimeLabel(adminDecision?.decided_at ?? proposal.admin_decided_at)
@@ -163,7 +163,7 @@ export default function ProposalDetail() {
         <ClublyStateCard
           icon={FileText}
           title="Proposal access is restricted"
-          message="This area is for club presidents, advisors, and Club Services reviewers. Executives can keep up with club work through tasks and events."
+          message="This area is for club presidents, advisors, and Clubly reviewers. Executives can keep up with club work through tasks and events."
         />
       </div>
     );
@@ -178,7 +178,7 @@ export default function ProposalDetail() {
 
     if (isRejectedOverride && !adminRemarks.trim()) {
       toast.error("Add override remarks", {
-        description: "Explain why Club Services is approving this rejected proposal."
+        description: "Explain why Clubly is approving this rejected proposal."
       });
       return;
     }
@@ -256,7 +256,7 @@ export default function ProposalDetail() {
       ) : (
         <>
           <ClublyPageHeader
-            eyebrow={role === "admin" ? "Club Services Review" : role === "advisor" ? "Advisor Review" : "Club Proposal"}
+            eyebrow={role === "admin" ? "Clubly Review" : role === "advisor" ? "Advisor Review" : "Club Proposal"}
             title={proposal.title}
             description={`${
               role === "admin" || role === "advisor"
@@ -266,30 +266,17 @@ export default function ProposalDetail() {
             actions={<StatusBadge status={proposal.status} eventDate={proposal.event_date} />}
           />
 
-          <Card className="clb-card bg-primary text-primary-foreground text-white">
-            <CardHeader>
-              <CardTitle className="clb-panel-title text-white">Where this proposal stands</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-white/50">Current Status</p>
-                <p className="mt-1 font-semibold">{getProposalStatusMeta(proposal.status, proposal.event_date).label}</p>
+          <Card>
+            <CardContent className="space-y-4 p-5">
+              <div className="flex flex-wrap gap-2">
+                <ClublyMetaChip label="Status" value={getProposalStatusMeta(proposal.status, proposal.event_date).label} />
+                <ClublyMetaChip label="Waiting on" value={getProposalOwnerLabel(proposal.current_owner_role)} />
+                <ClublyMetaChip label="Updated" value={getDateLabel(proposal.updated_at)} />
+                <ClublyMetaChip label="Resubmissions" value={getResubmissionLabel(proposal.revision_count)} />
               </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-white/50">Waiting On</p>
-                <p className="mt-1 font-semibold">{getProposalOwnerLabel(proposal.current_owner_role)}</p>
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-white/50">Resubmissions After Rejection</p>
-                <p className="mt-1 font-semibold">{getResubmissionLabel(proposal.revision_count)}</p>
-              </div>
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-white/50">Last Updated</p>
-                <p className="mt-1 font-semibold">{getDateLabel(proposal.updated_at)}</p>
-              </div>
-              <div className="border border-primary-foreground/30 bg-white/10 p-4 sm:col-span-2 lg:col-span-4">
-                <p className="text-xs font-bold uppercase tracking-wide text-[#D4A437]">Next Action</p>
-                <p className="mt-1 text-white/90">{getProposalNextAction(proposal.status, proposal.event_date)}</p>
+              <div className="rounded-[18px] border border-primary/15 bg-primary/5 p-4">
+                <p className="clb-eyebrow text-primary">Next action</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{getProposalNextAction(proposal.status, proposal.event_date)}</p>
               </div>
             </CardContent>
           </Card>
@@ -333,60 +320,14 @@ export default function ProposalDetail() {
                     <span className="text-muted-foreground">Description</span>
                     <p className="mt-1">{proposal.description}</p>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-muted-foreground">Event Date</span>
-                      <p className="font-medium mt-1">{getDateLabel(proposal.event_date)}</p>
-                    </div>
-                    {proposal.event_time && (
-                      <div>
-                        <span className="text-muted-foreground">Event Time</span>
-                        <p className="font-medium mt-1">{proposal.event_time.slice(0, 5)}</p>
-                      </div>
-                    )}
-                    <div>
-                      <span className="text-muted-foreground">Venue</span>
-                      <p className="font-medium mt-1">{proposal.location ?? "-"}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Participants</span>
-                      <p className="font-medium mt-1">{proposal.number_of_participants ?? "-"}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Budget Estimate</span>
-                      <p className="font-medium mt-1">{formatCurrency(proposal.budget_estimate)}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Review Step</span>
-                      <p className="font-medium mt-1">{getProposalStatusMeta(proposal.status, proposal.event_date).label}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Waiting On</span>
-                      <p className="font-medium mt-1">{getProposalOwnerLabel(proposal.current_owner_role)}</p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Resubmissions After Rejection</span>
-                      <p className="font-medium mt-1">{getResubmissionLabel(proposal.revision_count)}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        This only counts when a rejected proposal is corrected and submitted again.
-                      </p>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Updated</span>
-                      <p className="font-medium mt-1">{getDateLabel(proposal.updated_at)}</p>
-                    </div>
-                    {proposal.resubmitted_at && (
-                      <div>
-                        <span className="text-muted-foreground">Last Resubmitted</span>
-                        <p className="font-medium mt-1">{getDateLabel(proposal.resubmitted_at)}</p>
-                      </div>
-                    )}
-                    {proposal.advisor_decided_at && (
-                      <div>
-                        <span className="text-muted-foreground">Advisor Decision</span>
-                        <p className="font-medium mt-1">{getDateLabel(proposal.advisor_decided_at)}</p>
-                      </div>
-                    )}
+                  <div className="flex flex-wrap gap-2">
+                    <ClublyMetaChip label="Date" value={getDateLabel(proposal.event_date)} />
+                    {proposal.event_time ? <ClublyMetaChip label="Time" value={proposal.event_time.slice(0, 5)} /> : null}
+                    <ClublyMetaChip label="Venue" value={proposal.location ?? "-"} />
+                    <ClublyMetaChip label="Participants" value={proposal.number_of_participants ?? "-"} />
+                    <ClublyMetaChip label="Budget" value={formatCurrency(proposal.budget_estimate)} />
+                    {proposal.resubmitted_at ? <ClublyMetaChip label="Resubmitted" value={getDateLabel(proposal.resubmitted_at)} /> : null}
+                    {proposal.advisor_decided_at ? <ClublyMetaChip label="Advisor decision" value={getDateLabel(proposal.advisor_decided_at)} /> : null}
                   </div>
                 </CardContent>
               </Card>
@@ -420,7 +361,7 @@ export default function ProposalDetail() {
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm">
                     {proposal.budget_line_items.map((item, index) => (
-                      <div key={`${item.item}-${index}`} className="border border-border bg-muted p-3">
+                      <div key={`${item.item}-${index}`} className="border-2 border-foreground bg-muted p-3">
                         <div className="flex items-center justify-between gap-3">
                           <p className="font-medium">{item.item}</p>
                           <p className="font-mono font-semibold">{formatCurrency(item.amount)}</p>
@@ -440,7 +381,7 @@ export default function ProposalDetail() {
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm">
                     {proposal.responsible_members.map((member, index) => (
-                      <div key={`${member.student_id}-${index}`} className="border border-border bg-muted p-3">
+                      <div key={`${member.student_id}-${index}`} className="border-2 border-foreground bg-muted p-3">
                         <p className="font-medium">{member.name}</p>
                         <p className="text-muted-foreground mt-1">
                           {member.position} - {member.student_id}
@@ -456,7 +397,7 @@ export default function ProposalDetail() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base">
-                      {proposal.status === "pending_admin_review" ? "Club Services Decision" : "Approve Rejected Proposal"}
+                      {proposal.status === "pending_admin_review" ? "Clubly Decision" : "Approve Rejected Proposal"}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -492,7 +433,7 @@ export default function ProposalDetail() {
                   </CardHeader>
                   <CardContent className="space-y-3 text-sm">
                     {proposal.advisor_remarks && (
-                      <div className="border border-border bg-muted p-3">
+                      <div className="border-2 border-foreground bg-muted p-3">
                         <span className="font-medium">Advisor remarks</span>
                         <p className="mt-1">{proposal.advisor_remarks}</p>
                         {proposal.advisor_decided_at && (
@@ -501,8 +442,8 @@ export default function ProposalDetail() {
                       </div>
                     )}
                     {proposal.admin_remarks && (
-                      <div className="border border-border bg-muted p-3">
-                        <span className="font-medium">Club Services admin remarks</span>
+                      <div className="border-2 border-foreground bg-muted p-3">
+                        <span className="font-medium">Clubly admin remarks</span>
                         <p className="mt-1">{proposal.admin_remarks}</p>
                         {proposal.admin_decided_at && (
                           <p className="mt-2 text-xs text-muted-foreground">{getDateTimeLabel(proposal.admin_decided_at)}</p>
@@ -510,7 +451,7 @@ export default function ProposalDetail() {
                       </div>
                     )}
                     {proposal.latest_approval && (
-                      <div className="border border-border p-3">
+                      <div className="border-2 border-foreground p-3">
                         <span className="font-medium">Most recent decision</span>
                         <p className="mt-1">
                           {proposal.latest_approval.reviewer_role} {proposal.latest_approval.decision} on{" "}

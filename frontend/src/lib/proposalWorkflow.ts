@@ -9,19 +9,19 @@ function isPastProposalEventDate(eventDate?: string | null) {
 }
 
 export const PROPOSAL_STATUS_META: Record<string, { label: string; className: string }> = {
-  draft: { label: "Draft", className: "border-muted-foreground bg-muted text-muted-foreground" },
-  pending_advisor_review: { label: "Awaiting Advisor Review", className: "border-warning bg-warning text-warning-foreground" },
-  pending_admin_review: { label: "Awaiting Club Services Final Review", className: "border-primary bg-primary text-primary-foreground" },
-  approved: { label: "Proposal Approved", className: "border-success bg-success text-success-foreground" },
-  advisor_rejected: { label: "Rejected by Advisor", className: "border-destructive bg-destructive text-destructive-foreground" },
-  admin_rejected: { label: "Rejected by Club Services", className: "border-destructive bg-destructive text-destructive-foreground" }
+  draft: { label: "Draft", className: "border-muted-foreground/25 bg-muted text-muted-foreground" },
+  pending_advisor_review: { label: "Awaiting Advisor Review", className: "border-warning/25 bg-warning/15 text-warning" },
+  pending_admin_review: { label: "Awaiting Clubly Final Review", className: "border-primary/20 bg-primary/10 text-primary" },
+  approved: { label: "Proposal Approved", className: "border-success/25 bg-success/15 text-success" },
+  advisor_rejected: { label: "Rejected by Advisor", className: "border-destructive/25 bg-destructive/10 text-destructive" },
+  admin_rejected: { label: "Rejected by Clubly", className: "border-destructive/25 bg-destructive/10 text-destructive" }
 };
 
 export function getProposalStatusMeta(status: string, eventDate?: string | null) {
   if (status === "approved") {
     return {
       label: isPastProposalEventDate(eventDate) ? "Event Held" : "Proposal Approved",
-      className: "border-success bg-success text-success-foreground"
+      className: "border-success/25 bg-success/15 text-success"
     };
   }
 
@@ -35,7 +35,7 @@ export function getProposalOwnerLabel(owner?: string | null) {
   const labels: Record<string, string> = {
     president: "With President",
     advisor: "With Advisor",
-    admin: "With Club Services Admin",
+    admin: "With Clubly Admin",
     completed: "Completed"
   };
 
@@ -46,9 +46,9 @@ export function getProposalNextAction(status: string, eventDate?: string | null)
   const actions: Record<string, string> = {
     draft: "Complete the form and submit it for advisor review.",
     pending_advisor_review: "Waiting for the club advisor to review this proposal.",
-    pending_admin_review: "Waiting for Club Services to give the final decision.",
+    pending_admin_review: "Waiting for Clubly to give the final decision.",
     advisor_rejected: "Review the advisor remarks, edit the proposal, then resubmit.",
-    admin_rejected: "Review the Club Services remarks, edit the proposal, then resubmit.",
+    admin_rejected: "Review the Clubly remarks, edit the proposal, then resubmit.",
     approved: isPastProposalEventDate(eventDate)
       ? "This event has already been held."
       : "This proposal is approved and waiting for the event date."

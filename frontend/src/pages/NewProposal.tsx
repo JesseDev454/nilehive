@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
+import { ClublyMetaChip, ClublyPageHeader, ClublyStateCard, ClublyStepIndicator } from "@/components/Clubly";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/contexts/RoleContext";
 import {
@@ -642,12 +642,220 @@ export default function NewProposal() {
         <ClublyStateCard
           icon={Building2}
           title="Your club assignment is still needed"
-          message="Your president profile is not linked to a club yet. Club Services needs to assign your club before you can create or edit proposals."
+          message="Your president profile is not linked to a club yet. Clubly needs to assign your club before you can create or edit proposals."
           tone="warning"
         />
       </div>
     );
   }
+
+  const wizardSteps = ["Basics", "Details", "Review"];
+  const wizardStep = Math.min(step, wizardSteps.length - 1);
+  const primaryDate = form.eventDates[0] || "";
+  const selectedVenue = form.venue === "other" ? form.venueOther : form.venue;
+  const canContinueBasics = Boolean(form.proposedActivity.trim() && primaryDate);
+  const canContinueDetails = Boolean(selectedVenue.trim() && form.description.trim());
+
+  function updatePrimaryDate(value: string) {
+    setForm((current) => ({
+      ...current,
+      eventDates: [value, ...current.eventDates.slice(1)]
+    }));
+  }
+
+  function handleWizardContinue() {
+    if (wizardStep === 0 && !canContinueBasics) {
+      toast.error("Add the proposal basics", {
+        description: "Event title and date are required before continuing."
+      });
+      return;
+    }
+
+    if (wizardStep === 1 && !canContinueDetails) {
+      toast.error("Add the event details", {
+        description: "Venue and summary are required before review."
+      });
+      return;
+    }
+
+    setStep((current) => Math.min(current + 1, wizardSteps.length - 1));
+  }
+
+  return (
+    <div className="clb-screen max-w-[720px]">
+      <ClublyPageHeader
+        eyebrow="Event Proposal"
+        title={isEditMode ? "Edit Proposal" : "Create Proposal"}
+        description="Three focused steps. Clubly sends the proposal to your advisor first, then to final review."
+        actions={lastLocalSaveAt ? (
+          <span className="clb-status border-border bg-card text-muted-foreground">
+            Saved {formatProposalDraftSavedAt(lastLocalSaveAt)}
+          </span>
+        ) : null}
+      />
+
+      <Card>
+        <CardHeader className="space-y-5">
+          <ClublyStepIndicator steps={wizardSteps} currentStep={wizardStep} />
+          <CardTitle className="text-xl">
+            {wizardStep === 0 ? "Basics" : wizardStep === 1 ? "Details" : "Review and submit"}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {wizardStep === 0 ? (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="proposal_title">Event title</Label>
+                <Input
+                  id="proposal_title"
+                  value={form.proposedActivity}
+                  onChange={(event) => setForm({ ...form, proposedActivity: event.target.value })}
+                  placeholder="Annual Debate Championship"
+                />
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="proposal_date">Event date</Label>
+                  <Input
+                    id="proposal_date"
+                    type="date"
+                    value={primaryDate}
+                    onChange={(event) => updatePrimaryDate(event.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="proposal_participants">Expected participants</Label>
+                  <Input
+                    id="proposal_participants"
+                    type="number"
+                    min={0}
+                    value={form.numberOfParticipants}
+                    onChange={(event) => setForm({ ...form, numberOfParticipants: event.target.value })}
+                    placeholder="120"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="proposal_goals">Purpose and goals</Label>
+                <Textarea
+                  id="proposal_goals"
+                  value={form.aimObjectives}
+                  onChange={(event) => setForm({ ...form, aimObjectives: event.target.value })}
+                  rows={3}
+                  placeholder="What should this event achieve for students and the club?"
+                />
+              </div>
+            </>
+          ) : wizardStep === 1 ? (
+            <>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="proposal_venue">Venue</Label>
+                  <Select value={form.venue} onValueChange={(venue) => setForm({ ...form, venue })}>
+                    <SelectTrigger id="proposal_venue">
+                      <SelectValue placeholder="Select venue" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PRESET_VENUES.map((venue) => (
+                        <SelectItem key={venue} value={venue}>{venue}</SelectItem>
+                      ))}
+                      <SelectItem value="other">Other venue</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="proposal_room">Room number</Label>
+                  <Input
+                    id="proposal_room"
+                    value={form.roomNumber}
+                    onChange={(event) => setForm({ ...form, roomNumber: event.target.value })}
+                    placeholder="B12"
+                  />
+                </div>
+              </div>
+              {form.venue === "other" ? (
+                <div className="space-y-2">
+                  <Label htmlFor="proposal_venue_other">Venue name</Label>
+                  <Input
+                    id="proposal_venue_other"
+                    value={form.venueOther}
+                    onChange={(event) => setForm({ ...form, venueOther: event.target.value })}
+                    placeholder="Enter venue"
+                  />
+                </div>
+              ) : null}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="proposal_start">Start time</Label>
+                  <Select value={form.eventTime} onValueChange={(eventTime) => setForm({ ...form, eventTime })}>
+                    <SelectTrigger id="proposal_start"><SelectValue placeholder="Start time" /></SelectTrigger>
+                    <SelectContent>{TIME_OPTIONS.map((time) => <SelectItem key={time} value={time}>{time}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="proposal_end">End time</Label>
+                  <Select value={form.eventEndTime} onValueChange={(eventEndTime) => setForm({ ...form, eventEndTime })}>
+                    <SelectTrigger id="proposal_end"><SelectValue placeholder="End time" /></SelectTrigger>
+                    <SelectContent>{TIME_OPTIONS.map((time) => <SelectItem key={time} value={time}>{time}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="proposal_summary">Summary</Label>
+                <Textarea
+                  id="proposal_summary"
+                  value={form.description}
+                  onChange={(event) => setForm({ ...form, description: event.target.value })}
+                  rows={5}
+                  placeholder="Summarize the activity, audience, and logistics."
+                />
+              </div>
+            </>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                <ClublyMetaChip label="Club" value={clubContextName || "-"} />
+                <ClublyMetaChip label="Date" value={primaryDate || "-"} />
+                <ClublyMetaChip label="Venue" value={[selectedVenue, form.roomNumber ? `Room ${form.roomNumber}` : ""].filter(Boolean).join(", ") || "-"} />
+                <ClublyMetaChip label="Participants" value={form.numberOfParticipants || "-"} />
+              </div>
+              <div className="clb-card-soft p-4">
+                <p className="clb-eyebrow">Event title</p>
+                <p className="mt-2 text-lg font-semibold">{form.proposedActivity || "-"}</p>
+              </div>
+              <div className="clb-card-soft p-4">
+                <p className="clb-eyebrow">Summary</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{form.description || "-"}</p>
+              </div>
+              <p className="rounded-[18px] border border-primary/15 bg-primary/5 p-4 text-sm leading-6 text-muted-foreground">
+                After submission, the proposal moves to advisor review. You can still save a draft if you are not ready.
+              </p>
+            </div>
+          )}
+
+          <div className="flex flex-col-reverse gap-2 border-t border-border pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <Button type="button" variant="outline" onClick={() => setStep((current) => Math.max(current - 1, 0))} disabled={wizardStep === 0 || isSubmitting}>
+              Back
+            </Button>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button type="button" variant="outline" onClick={() => submit({ saveAsDraft: true })} disabled={isSubmitting || isSavingDraft}>
+                {isSavingDraft ? "Saving..." : "Save draft"}
+              </Button>
+              {wizardStep < wizardSteps.length - 1 ? (
+                <Button type="button" onClick={handleWizardContinue} disabled={isSubmitting}>
+                  Continue
+                </Button>
+              ) : (
+                <Button type="button" onClick={() => submit()} disabled={isSubmitting || isSavingDraft}>
+                  {isSubmitting ? "Submitting..." : isEditMode ? "Save changes" : "Submit for review"}
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 
   return (
     <div className="clb-screen max-w-6xl">
@@ -662,7 +870,7 @@ export default function NewProposal() {
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {lastLocalSaveAt ? (
-              <span className="clb-status border-border bg-background text-foreground">
+              <span className="clb-status border-foreground bg-background text-foreground">
                 Saved locally {formatProposalDraftSavedAt(lastLocalSaveAt)}
               </span>
             ) : null}
@@ -689,15 +897,15 @@ export default function NewProposal() {
             >
               <span
                 className={cn(
-                  "flex h-10 w-10 items-center justify-center border border-border text-sm font-bold transition-colors",
+                  "flex h-10 w-10 items-center justify-center border-2 border-foreground text-sm font-black transition-colors",
                   index < step && "bg-secondary text-secondary-foreground",
-                  index === step && "bg-primary text-primary-foreground shadow-soft-sm",
+                  index === step && "bg-primary text-primary-foreground shadow-[4px_4px_0_hsl(var(--foreground))]",
                   index > step && "bg-muted text-muted-foreground"
                 )}
               >
                 {index < step ? <Check className="h-4 w-4" /> : index + 1}
               </span>
-              <span className="hidden text-xs font-bold tracking-[0.12em] text-foreground sm:block">{label}</span>
+              <span className="hidden text-xs font-black uppercase tracking-[0.12em] text-foreground sm:block">{label}</span>
             </button>
           ))}
         </div>
@@ -716,10 +924,10 @@ export default function NewProposal() {
               <CardContent className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <div className="space-y-3 md:col-span-2">
                   <Label>Club</Label>
-                  <div className="clb-card rounded-xl p-4">
+                  <div className="clb-card-soft rounded-xl p-4">
                     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                       <div>
-                        <p className="text-lg font-bold text-[#163B7A]">{clubContextName}</p>
+                        <p className="text-lg font-black uppercase text-[#163B7A]">{clubContextName}</p>
                         <p className="text-sm text-muted-foreground">
                           {clubContextCode ? `Club code: ${clubContextCode}` : "Club code will appear here when available."}
                         </p>
@@ -949,7 +1157,7 @@ export default function NewProposal() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {budgetItems.map((item, index) => (
-                  <div key={item.id} className="clb-card grid grid-cols-1 gap-3 p-4 md:grid-cols-12">
+                  <div key={item.id} className="clb-card-soft grid grid-cols-1 gap-3 p-4 md:grid-cols-12">
                     <div className="space-y-2 md:col-span-3">
                       <Label>Item</Label>
                       <Input
@@ -1031,7 +1239,7 @@ export default function NewProposal() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {responsibleMembers.map((member, index) => (
-                  <div key={member.id} className="clb-card p-4">
+                  <div key={member.id} className="clb-card-soft p-4">
                     <div className="mb-4 flex items-center justify-between">
                       <p className="font-bold text-[#163B7A]">Responsible Member {index + 1}</p>
                       <Button
@@ -1143,7 +1351,7 @@ export default function NewProposal() {
                     <ReviewItem label="Club" value={clubContextName || "-"} />
                     <ReviewItem label="Club Code" value={clubContextCode || "-"} />
                   </div>
-                  <div className="clb-card mt-3 p-4">
+                  <div className="clb-card-soft mt-3 p-4">
                     <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Purpose and goals</p>
                     <p className="mt-2 leading-relaxed">{form.aimObjectives || "-"}</p>
                   </div>
@@ -1181,7 +1389,7 @@ export default function NewProposal() {
                     />
                     <ReviewItem label="Expected Participants" value={form.numberOfParticipants || "-"} />
                   </div>
-                  <div className="clb-card mt-3 p-4">
+                  <div className="clb-card-soft mt-3 p-4">
                     <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Detailed Description</p>
                     <p className="mt-2 leading-relaxed">{form.description || "-"}</p>
                   </div>
@@ -1216,9 +1424,9 @@ export default function NewProposal() {
                           ))}
                         </tbody>
                         <tfoot>
-                          <tr className="border-t border-border/70 bg-[#EEF3FB]">
+                          <tr className="border-t-2 border-[#1D4DA1]/20 bg-[#EEF3FB]">
                             <td colSpan={4} className="p-3 font-bold text-[#163B7A]">Total Budget Request</td>
-                            <td className="p-3 text-right font-bold text-[#1D4DA1] font-mono">{formatCurrency(budgetTotal)}</td>
+                            <td className="p-3 text-right font-black text-[#1D4DA1] font-mono">{formatCurrency(budgetTotal)}</td>
                           </tr>
                         </tfoot>
                       </table>
@@ -1236,7 +1444,7 @@ export default function NewProposal() {
                   {toResponsibleMembers(responsibleMembers).length > 0 ? (
                     <div className="space-y-3">
                       {toResponsibleMembers(responsibleMembers).map((member, i) => (
-                        <div key={i} className="clb-card p-4">
+                        <div key={i} className="clb-card-soft p-4">
                           <p className="font-bold text-[#163B7A] mb-2">Team Member {i + 1}</p>
                           <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
                             <span className="text-muted-foreground">Name</span>
@@ -1264,8 +1472,8 @@ export default function NewProposal() {
         <aside className="lg:col-span-4 space-y-5">
           <Card className="overflow-hidden bg-[#163B7A] text-white">
             <CardContent className="relative p-7">
-              <div className="absolute -right-8 -top-8 h-32 w-32 border border-white/20 bg-[#D4A437]/20" />
-              <p className="text-xs font-bold tracking-wide text-[#D4A437]">Budget Summary</p>
+              <div className="absolute -right-8 -top-8 h-32 w-32 border-2 border-white/20 bg-[#D4A437]/20" />
+              <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#D4A437]">Budget Summary</p>
               <div className="mt-6 space-y-3">
                 {toBudgetLineItems(budgetItems).slice(0, 4).map((item) => (
                   <div key={`${item.item}-${item.description}`} className="flex justify-between border-b border-white/10 pb-2">
@@ -1276,7 +1484,7 @@ export default function NewProposal() {
                 <div className="flex items-end justify-between pt-4">
                   <div>
                     <p className="text-xs font-bold uppercase text-white/50">Total Request</p>
-                    <p className="text-3xl font-bold">{formatCurrency(budgetTotal)}</p>
+                    <p className="text-3xl font-black">{formatCurrency(budgetTotal)}</p>
                   </div>
                   <WalletCards className="h-10 w-10 text-[#D4A437]" />
                 </div>
@@ -1291,7 +1499,7 @@ export default function NewProposal() {
                 <div>
                   <p className="font-semibold text-[#163B7A]">Pro Tip</p>
                   <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                    Clear budget lines and correct student IDs make advisor and Club Services review much faster.
+                    Clear budget lines and correct student IDs make advisor and Clubly review much faster.
                   </p>
                 </div>
               </div>
@@ -1333,7 +1541,7 @@ export default function NewProposal() {
 
 function ReviewItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="clb-card p-4">
+    <div className="clb-card-soft p-4">
       <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
       <p className="mt-2 font-semibold text-[#163B7A]">{value}</p>
     </div>
