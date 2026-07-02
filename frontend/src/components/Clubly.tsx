@@ -434,19 +434,20 @@ export function ClublyLoadingState({
       { delay: 1600, value: 61 },
       { delay: 2600, value: 74 },
       { delay: 4200, value: 84 },
-      { delay: 6200, value: 91 }
+      { delay: 6200, value: 94 },
+      { delay: 7600, value: 100 }
     ];
     const timers = milestones.map((milestone) =>
       window.setTimeout(() => setEstimatedProgress((current) => Math.max(current, milestone.value)), milestone.delay)
     );
     const interval = window.setInterval(() => {
       setEstimatedProgress((current) => {
-        if (current >= 94) {
+        if (current >= 100) {
           return current;
         }
 
-        const remaining = 94 - current;
-        return Math.min(94, current + Math.max(1, Math.round(remaining * 0.12)));
+        const remaining = 100 - current;
+        return Math.min(100, current + Math.max(1, Math.round(remaining * 0.16)));
       });
     }, 1400);
 
