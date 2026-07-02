@@ -8,6 +8,7 @@ import { useRole } from "@/contexts/RoleContext";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DataPagination } from "@/components/DataPagination";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -94,6 +95,8 @@ import { downloadAdminPerformanceMatrixCsv } from "@/lib/exports";
 import { getStudentNextAction, type StudentNextActionKind } from "@/lib/studentActivation";
 import { buildAppUrl, shareOrCopy } from "@/lib/share";
 import { publicClubsQueryOptions } from "@/lib/publicClubsQuery";
+
+const ADMIN_HEALTH_PAGE_SIZE = 8;
 
 function StatCard({
   title,
@@ -1621,6 +1624,14 @@ function PolishedAdminDashboard() {
   const totalProposalBottlenecks =
       dashboard?.proposal_bottlenecks.reduce((sum, item) => sum + item.count, 0) ?? 0;
   const [activeAdminPanel, setActiveAdminPanel] = useState<"queues" | "health" | "activity">("queues");
+  const [healthPage, setHealthPage] = useState(1);
+  const clubHealthTotal = dashboard?.club_performance.length ?? 0;
+  const healthPageCount = Math.max(1, Math.ceil(clubHealthTotal / ADMIN_HEALTH_PAGE_SIZE));
+  const safeHealthPage = Math.min(healthPage, healthPageCount);
+  const visibleClubHealth = (dashboard?.club_performance ?? []).slice(
+    (safeHealthPage - 1) * ADMIN_HEALTH_PAGE_SIZE,
+    safeHealthPage * ADMIN_HEALTH_PAGE_SIZE
+  );
 
   function handleDownloadMatrix() {
     if (!dashboard) {
@@ -1715,7 +1726,7 @@ function PolishedAdminDashboard() {
                         </tr>
                       </thead>
                       <tbody>
-                        {dashboard.club_performance.slice(0, 8).map((club) => {
+                        {visibleClubHealth.map((club) => {
                           const pulse = getClubPulse(club);
                           return (
                             <tr key={club.club_id} className="transition-colors hover:bg-muted/40">
@@ -1731,6 +1742,13 @@ function PolishedAdminDashboard() {
                         })}
                       </tbody>
                     </table>
+                    <DataPagination
+                      page={safeHealthPage}
+                      pageSize={ADMIN_HEALTH_PAGE_SIZE}
+                      total={clubHealthTotal}
+                      hasNext={safeHealthPage < healthPageCount}
+                      onPageChange={setHealthPage}
+                    />
                   </div>
                 )
               ) : dashboard?.recent_activity.length ? (
