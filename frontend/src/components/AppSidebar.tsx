@@ -70,7 +70,7 @@ export function AppSidebar() {
                   <School className="h-6 w-6" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold leading-none tracking-tight text-sidebar-foreground">Clubly</h2>
+                  <h2 className="text-2xl font-bold leading-none tracking-tight text-sidebar-foreground">Campus One</h2>
                   <p className="mt-2 text-sm font-medium leading-6 text-sidebar-foreground/60">Club Services workspace</p>
                 </div>
               </div>

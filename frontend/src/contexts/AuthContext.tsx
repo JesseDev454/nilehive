@@ -38,6 +38,18 @@ export interface AppProfile {
   updated_at?: string;
 }
 
+export function resolveEffectiveRole(profile: AppProfile | null | undefined): EffectiveRole | null {
+  if (!profile) {
+    return null;
+  }
+
+  if (profile.portal_role === "admin" || profile.app_role === "admin" || profile.role === "admin") {
+    return "admin";
+  }
+
+  return profile.effective_role ?? profile.app_role ?? profile.role ?? null;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -218,7 +230,7 @@ function createPortalSession(input: {
       user_metadata: {
         full_name: input.profile?.full_name ?? null,
         portal_role: input.user.role ?? input.profile?.portal_role ?? "student",
-        effective_role: input.profile?.effective_role ?? input.profile?.role ?? "student"
+        effective_role: resolveEffectiveRole(input.profile) ?? "student"
       },
       created_at: input.profile?.created_at ?? new Date().toISOString(),
       updated_at: input.profile?.updated_at ?? new Date().toISOString()
@@ -655,7 +667,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user: session?.user ?? null,
       session,
       profile,
-      role: profile?.effective_role ?? profile?.role ?? null,
+      role: resolveEffectiveRole(profile),
       appRole: profile?.app_role ?? profile?.role ?? null,
       portalRole: profile?.portal_role ?? null,
       accessPending: Boolean(profile?.access_pending),

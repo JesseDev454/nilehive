@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { AuthProvider, resolveEffectiveRole, useAuth } from "@/contexts/AuthContext";
 import { RoleProvider } from "@/contexts/RoleContext";
 import { AppLayout } from "@/components/AppLayout";
 import { ClublyLoadingState, ClublyStateCard } from "@/components/Clubly";
@@ -83,7 +83,7 @@ function ProtectedRoutes() {
     return <ProfileSetup />;
   }
 
-  const effectiveRole = profile.effective_role ?? profile.role;
+  const effectiveRole = resolveEffectiveRole(profile);
 
   if (effectiveRole === "feedback_manager" && !["/feedback", "/notifications"].includes(location.pathname)) {
     return <Navigate to="/feedback" replace />;
