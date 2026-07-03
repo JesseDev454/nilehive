@@ -83,7 +83,7 @@ export default function Dues() {
   const [accountNumber, setAccountNumber] = useState("1305861314");
   const [accountName, setAccountName] = useState("Nile Arts & Creative Hub");
   const [paymentInstructions, setPaymentInstructions] = useState(
-    "All students pay N10,000 per session. Submit the payment reference and proof used for Clubly review."
+    "All students pay N10,000 per session. Submit a receipt or proof of payment for Clubly review."
   );
   const [duesPage, setDuesPage] = useState(1);
   const [selectedClubId, setSelectedClubId] = useState("all");
@@ -240,7 +240,8 @@ export default function Dues() {
         queryClient.invalidateQueries({ queryKey: ["membership-requests"] }),
         queryClient.invalidateQueries({ queryKey: ["club-members"] }),
         queryClient.invalidateQueries({ queryKey: ["my-membership-requests"] }),
-        queryClient.invalidateQueries({ queryKey: ["my-dues"] })
+        queryClient.invalidateQueries({ queryKey: ["my-dues"] }),
+        queryClient.invalidateQueries({ queryKey: ["navigation-counts"] })
       ]);
     },
     onError: (mutationError) => {

@@ -365,6 +365,7 @@ export default function Notifications() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["announcements"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["navigation-counts"] });
     },
     onError: (mutationError) => {
       actionError("Could not mark announcement as read", mutationError, getErrorMessage(mutationError));

@@ -16,13 +16,11 @@ import { useUsageTracking } from "@/hooks/useUsageTracking";
 import {
   AnnouncementRecord,
   ApiClientError,
-  ApprovedEventRecord,
   CreateAnnouncementPayload,
   FeedbackRecord,
   createAnnouncement,
   createFeedback,
   getAnnouncements,
-  getApprovedEvents,
   getClubs,
   getFeedback,
   markAllAnnouncementsRead,
@@ -45,7 +43,6 @@ type FeedbackFormCategory =
   | "confusing_experience"
   | "missing_feature"
   | "payment_dues"
-  | "event_check_in"
   | "other";
 type FeedbackImpact = "low" | "medium" | "high" | "urgent";
 type FeedbackRoleFilter = "all" | "student" | "executive" | "president" | "advisor" | "admin" | "feedback_manager" | "unknown";
@@ -59,7 +56,6 @@ const feedbackCategoryOptions: Array<{ value: FeedbackCategory; label: string }>
   { value: "club_joining", label: "Club joining" },
   { value: "dues_payment", label: "Payment/dues" },
   { value: "login_access", label: "Login/access" },
-  { value: "event", label: "Event/check-in" },
   { value: "club", label: "Club" },
   { value: "general", label: "General / other" }
 ];
@@ -69,7 +65,6 @@ const feedbackFormCategoryOptions: Array<{ value: FeedbackFormCategory; label: s
   { value: "confusing_experience", label: "Confusing experience" },
   { value: "missing_feature", label: "Missing feature" },
   { value: "payment_dues", label: "Payment/dues issue" },
-  { value: "event_check_in", label: "Event/check-in issue" },
   { value: "other", label: "Other" }
 ];
 const feedbackImpactOptions: Array<{ value: FeedbackImpact; label: string }> = [
@@ -208,10 +203,6 @@ function mapFeedbackFormCategoryToApiCategory(category: FeedbackFormCategory): F
     return "dues_payment";
   }
 
-  if (category === "event_check_in") {
-    return "event";
-  }
-
   return "general";
 }
 
@@ -297,12 +288,8 @@ export default function Communications({ defaultTab = "announcements" }: { defau
   const [searchParams] = useSearchParams();
   const isFeedbackManager = role === "feedback_manager";
   const canCreateAnnouncement = role === "admin" || role === "president";
-  const canSubmitFeedback = Boolean(role);
+  const canSubmitFeedback = Boolean(role) && role !== "admin" && !isFeedbackManager;
   const canViewFeedback = role === "admin" || isFeedbackManager;
-  const requestedFeedbackStatus = searchParams.get("status");
-  const initialFeedbackStatus = ["all", "open", "reviewed", "archived"].includes(requestedFeedbackStatus || "")
-    ? requestedFeedbackStatus || "all"
-    : "all";
   const [activeTab, setActiveTab] = useState<HubTab>(
     isFeedbackManager || searchParams.get("tab") === "feedback" ? "feedback" : defaultTab
   );
@@ -325,9 +312,7 @@ export default function Communications({ defaultTab = "announcements" }: { defau
   const [feedbackSuggestions, setFeedbackSuggestions] = useState("");
   const [feedbackCanContact, setFeedbackCanContact] = useState("yes");
   const [feedbackClubFilter, setFeedbackClubFilter] = useState("all");
-  const [feedbackProposalFilter, setFeedbackProposalFilter] = useState("all");
   const [feedbackCategoryFilter, setFeedbackCategoryFilter] = useState("all");
-  const [feedbackStatusFilter, setFeedbackStatusFilter] = useState(initialFeedbackStatus);
   const [feedbackRoleFilter, setFeedbackRoleFilter] = useState<FeedbackRoleFilter>("all");
   const [feedbackDateFilter, setFeedbackDateFilter] = useState<FeedbackDateFilter>("all");
   useEffect(() => {
@@ -335,16 +320,8 @@ export default function Communications({ defaultTab = "announcements" }: { defau
   }, [defaultTab, isFeedbackManager, searchParams]);
 
   useEffect(() => {
-    setFeedbackStatusFilter(initialFeedbackStatus);
-  }, [initialFeedbackStatus]);
-
-  useEffect(() => {
     setAnnouncementPage(1);
   }, [announcementFilter]);
-
-  useEffect(() => {
-    setFeedbackProposalFilter("all");
-  }, [feedbackClubFilter]);
 
   const {
     data: announcementsPage = emptyPaginatedResponse<AnnouncementRecord>(),
@@ -382,25 +359,13 @@ export default function Communications({ defaultTab = "announcements" }: { defau
     isError: isFeedbackError,
     error: feedbackError
   } = useQuery({
-    queryKey: ["feedback", feedbackClubFilter, feedbackProposalFilter, feedbackCategoryFilter, feedbackStatusFilter, role],
+    queryKey: ["feedback", feedbackClubFilter, feedbackCategoryFilter, role],
     queryFn: () =>
       getFeedback({
         club_id: role === "admin" && feedbackClubFilter !== "all" ? feedbackClubFilter : undefined,
-        proposal_id: feedbackProposalFilter !== "all" ? feedbackProposalFilter : undefined,
-        category: feedbackCategoryFilter !== "all" ? (feedbackCategoryFilter as FeedbackCategory) : undefined,
-        status: feedbackStatusFilter !== "all" ? feedbackStatusFilter : undefined
+        category: feedbackCategoryFilter !== "all" ? (feedbackCategoryFilter as FeedbackCategory) : undefined
       }),
     enabled: activeTab === "feedback" && canViewFeedback,
-    retry: false
-  });
-
-  const {
-    data: approvedEventsPage = emptyPaginatedResponse<ApprovedEventRecord>(),
-    isLoading: isLoadingEvents
-  } = useQuery({
-    queryKey: ["feedback-events", feedbackClubFilter],
-    queryFn: () => getApprovedEvents({ page: 1, page_size: 100 }),
-    enabled: activeTab === "feedback" && canViewFeedback && !isFeedbackManager,
     retry: false
   });
 
@@ -408,18 +373,13 @@ export default function Communications({ defaultTab = "announcements" }: { defau
     () => new Map(clubs.map((club) => [club.id, club.name])),
     [clubs]
   );
-  const feedbackEventOptions = useMemo(
-    () =>
-      approvedEventsPage.items.filter((event) =>
-        role === "admin" && feedbackClubFilter !== "all"
-          ? event.club_id === feedbackClubFilter
-          : true
-      ),
-    [approvedEventsPage.items, feedbackClubFilter, role]
-  );
   const visibleFeedback = useMemo(
     () =>
       feedback.filter((entry) => {
+        if (entry.category === "event" || entry.proposal_id) {
+          return false;
+        }
+
         if (!matchesFeedbackDateFilter(entry.created_at, feedbackDateFilter)) {
           return false;
         }
@@ -465,6 +425,7 @@ export default function Communications({ defaultTab = "announcements" }: { defau
       setAnnouncementTargetRole("student");
       queryClient.invalidateQueries({ queryKey: ["announcements"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["navigation-counts"] });
     },
     onError: (error) => {
       actionError("Announcement failed", error, getErrorMessage(error));
@@ -476,6 +437,7 @@ export default function Communications({ defaultTab = "announcements" }: { defau
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["announcements"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["navigation-counts"] });
     },
     onError: (error) => {
       actionError("Could not mark announcement as read", error, getErrorMessage(error));
@@ -488,6 +450,7 @@ export default function Communications({ defaultTab = "announcements" }: { defau
       actionSuccess(result.marked_read ? "Announcements marked as read" : "No unread announcements");
       queryClient.invalidateQueries({ queryKey: ["announcements"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["navigation-counts"] });
     },
     onError: (error) => {
       actionError("Could not update announcements", error, getErrorMessage(error));
@@ -521,6 +484,7 @@ export default function Communications({ defaultTab = "announcements" }: { defau
       setFeedbackSuggestions("");
       setFeedbackCanContact("yes");
       queryClient.invalidateQueries({ queryKey: ["feedback"] });
+      queryClient.invalidateQueries({ queryKey: ["navigation-counts"] });
     },
     onError: (error) => {
       actionError("Feedback failed", error, getErrorMessage(error));
@@ -942,7 +906,7 @@ export default function Communications({ defaultTab = "announcements" }: { defau
                       id="feedback-goal"
                       value={feedbackTryingToDo}
                       onChange={(event) => setFeedbackTryingToDo(event.target.value)}
-                      placeholder="e.g. Join a club, upload dues proof, check an event"
+                      placeholder="e.g. Join a club, upload dues proof, find an announcement"
                       required
                     />
                   </div>
@@ -1006,7 +970,7 @@ export default function Communications({ defaultTab = "announcements" }: { defau
           ) : !isFeedbackManager ? (
             <Card>
               <CardContent className="pt-6 text-sm text-muted-foreground">
-                Sign in to send feedback about onboarding, club joining, dues, login access, or events.
+                Sign in to send feedback about onboarding, club joining, dues, or login access.
               </CardContent>
             </Card>
           ) : null}
@@ -1032,12 +996,9 @@ export default function Communications({ defaultTab = "announcements" }: { defau
                         clubNameById,
                         filenameSuffix: isFeedbackManager
                           ? "App-Feedback"
-                          :
-                          feedbackProposalFilter !== "all"
-                            ? "Event"
-                            : feedbackClubFilter !== "all"
-                              ? clubNameById.get(feedbackClubFilter) || "Club"
-                              : "All"
+                          : feedbackClubFilter !== "all"
+                            ? clubNameById.get(feedbackClubFilter) || "Club"
+                            : "All"
                       })
                     }
                     disabled={visibleFeedback.length === 0}
@@ -1047,7 +1008,7 @@ export default function Communications({ defaultTab = "announcements" }: { defau
                   </Button>
                 ) : null}
               </div>
-              <div className="grid gap-3 md:grid-cols-4">
+              <div className="grid gap-3 md:grid-cols-3">
                 <div className="space-y-2">
                   <Label>Category</Label>
                   <Select value={feedbackCategoryFilter} onValueChange={setFeedbackCategoryFilter}>
@@ -1061,20 +1022,6 @@ export default function Communications({ defaultTab = "announcements" }: { defau
                           {option.label}
                         </SelectItem>
                       ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Status</Label>
-                  <Select value={feedbackStatusFilter} onValueChange={setFeedbackStatusFilter}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All statuses</SelectItem>
-                      <SelectItem value="open">Open</SelectItem>
-                      <SelectItem value="reviewed">Reviewed</SelectItem>
-                      <SelectItem value="archived">Archived</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1135,24 +1082,6 @@ export default function Communications({ defaultTab = "announcements" }: { defau
                       </Select>
                     </div>
                   ) : null}
-                  <div className="space-y-2">
-                    <Label>Event</Label>
-                    <Select value={feedbackProposalFilter} onValueChange={setFeedbackProposalFilter}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={isLoadingEvents ? "Loading events..." : "All events"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All events</SelectItem>
-                        {feedbackEventOptions.map((event) => (
-                          <SelectItem key={event.proposal_id} value={event.proposal_id}>
-                            {role === "admin" && feedbackClubFilter === "all"
-                              ? `${event.title} - ${clubNameById.get(event.club_id) || "Club"}`
-                              : event.title}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
                 </div>
               ) : null}
             </CardHeader>
@@ -1179,7 +1108,6 @@ export default function Communications({ defaultTab = "announcements" }: { defau
                       )}
                       <div className="mt-2 flex flex-wrap gap-2">
                         <Badge variant="secondary">{getFeedbackCategoryLabel(entry.category)}</Badge>
-                        <Badge variant="outline">{entry.status}</Badge>
                         <Badge variant="outline">{getFeedbackRoleLabel(submitterRole)}</Badge>
                         {impact ? <Badge variant="outline">Impact: {getFeedbackImpactLabel(impact)}</Badge> : null}
                         {entry.rating ? <Badge variant="outline">Rating: {entry.rating}/5</Badge> : null}

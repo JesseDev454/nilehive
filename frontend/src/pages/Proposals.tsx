@@ -74,9 +74,9 @@ export default function Proposals() {
   const pageCopy = useMemo(() => {
     if (isAdmin) {
       return {
-        eyebrow: "Club Services Review",
+        eyebrow: "Clubly Review",
         title: "Final Review",
-        description: "See what each club has submitted and step in when Club Services review is needed."
+        description: "See what each club has submitted and step in when Clubly review is needed."
       };
     }
 
@@ -123,7 +123,7 @@ export default function Proposals() {
               <SelectItem value="all">All statuses</SelectItem>
               <SelectItem value="draft">Draft</SelectItem>
               <SelectItem value="pending_advisor_review">Pending advisor review</SelectItem>
-              <SelectItem value="pending_admin_review">Awaiting Club Services final review</SelectItem>
+              <SelectItem value="pending_admin_review">Awaiting Clubly final review</SelectItem>
               <SelectItem value="advisor_rejected">Advisor rejected</SelectItem>
               <SelectItem value="admin_rejected">Admin rejected</SelectItem>
               <SelectItem value="approved">Approved</SelectItem>
@@ -136,7 +136,7 @@ export default function Proposals() {
         <ClublyStateCard
           icon={FileText}
           title="Proposal access is restricted"
-          message="Presidents create proposals here, while advisors and Club Services review them. Executives can follow club work through tasks and events."
+          message="Presidents create proposals here, while advisors and Clubly review them. Executives can follow club work through tasks and events."
         />
       ) : isLoading ? (
         <ClublyLoadingState title="Loading proposals" message="We are getting the latest proposal updates." />

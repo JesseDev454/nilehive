@@ -469,10 +469,14 @@ export function ClublyLoadingState({
         aria-valuemax={100}
         aria-valuenow={Math.round(safeProgress)}
       >
-        <div
-          className="h-full rounded-full bg-primary transition-[width] duration-700 ease-out"
-          style={{ width: `${safeProgress}%` }}
-        />
+        {typeof progress === "number" ? (
+          <div
+            className="h-full rounded-full bg-primary transition-[width] duration-700 ease-out"
+            style={{ width: `${safeProgress}%` }}
+          />
+        ) : (
+          <div className="h-full w-1/2 rounded-full bg-primary animate-clubly-progress" />
+        )}
       </div>
       <div className="flex flex-col gap-5 md:flex-row md:items-center">
         <div className="grid h-14 w-14 place-items-center rounded-[18px] bg-accent text-accent-foreground">

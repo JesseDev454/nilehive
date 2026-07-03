@@ -1,10 +1,12 @@
 import { PanelLeftClose, PanelLeftOpen, School } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/contexts/RoleContext";
 import { getRoleNavItems, roleLabels } from "@/lib/appNavigation";
+import { getNavigationCounts } from "@/lib/api";
 
 function useIdentity() {
   const { profile } = useAuth();
@@ -38,14 +40,27 @@ function useIdentity() {
 export function AppSidebar() {
   const { role } = useRole();
   const { setOpen, state } = useSidebar();
-  const { pathname } = useLocation();
+  const { pathname, search } = useLocation();
   const collapsed = state === "collapsed";
   const items = getRoleNavItems(role);
   const { displayName, identityLabel, initials } = useIdentity();
+  const searchParams = new URLSearchParams(search);
+  const { data: navigationCounts } = useQuery({
+    queryKey: ["navigation-counts", role],
+    queryFn: () => getNavigationCounts(),
+    enabled: Boolean(role),
+    refetchInterval: 15_000,
+    refetchIntervalInBackground: true,
+    retry: false
+  });
 
   function getActiveOverride(url: string) {
-    if (role !== "president") {
-      return undefined;
+    if (url === "/feedback") {
+      return pathname.startsWith("/feedback") || searchParams.get("tab") === "feedback";
+    }
+
+    if (url === "/communications") {
+      return pathname === "/communications" && searchParams.get("tab") !== "feedback";
     }
 
     if (url === "/proposals/new") {
@@ -57,6 +72,15 @@ export function AppSidebar() {
     }
 
     return undefined;
+  }
+
+  function getBadgeCount(badgeKey: typeof items[number]["badgeKey"]) {
+    if (!badgeKey) {
+      return null;
+    }
+
+    const count = navigationCounts?.counts?.[badgeKey] ?? 0;
+    return count > 0 ? count : null;
   }
 
   return (
@@ -104,28 +128,32 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-1.5">
-              {items.map((item) => (
-                <SidebarMenuItem key={`${item.title}-${item.url}`}>
-                  <SidebarMenuButton asChild tooltip={item.title}>
-                    <NavLink
-                      to={item.url}
-                      end={item.url === "/"}
-                      activeOverride={getActiveOverride(item.url)}
-                      data-onboarding-target={item.onboardingTarget}
-                      className="relative flex min-w-0 items-center rounded-[16px] px-3 py-3 text-sm font-semibold tracking-[-0.01em] text-sidebar-foreground/70 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground shadow-soft-sm"
-                    >
-                      <item.icon className="mr-3 h-5 w-5 shrink-0" />
-                      {!collapsed && <span className="min-w-0 flex-1 truncate">{item.title}</span>}
-                      {!collapsed && item.badge ? (
-                        <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">
-                          {item.badge}
-                        </span>
-                      ) : null}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {items.map((item) => {
+                const badgeCount = getBadgeCount(item.badgeKey);
+
+                return (
+                  <SidebarMenuItem key={`${item.title}-${item.url}`}>
+                    <SidebarMenuButton asChild tooltip={item.title}>
+                      <NavLink
+                        to={item.url}
+                        end={item.url === "/"}
+                        activeOverride={getActiveOverride(item.url)}
+                        data-onboarding-target={item.onboardingTarget}
+                        className="relative flex min-w-0 items-center rounded-[16px] px-3 py-3 text-sm font-semibold tracking-[-0.01em] text-sidebar-foreground/70 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground shadow-soft-sm"
+                      >
+                        <item.icon className="mr-3 h-5 w-5 shrink-0" />
+                        {!collapsed && <span className="min-w-0 flex-1 truncate">{item.title}</span>}
+                        {!collapsed && badgeCount ? (
+                          <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">
+                            {badgeCount}
+                          </span>
+                        ) : null}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

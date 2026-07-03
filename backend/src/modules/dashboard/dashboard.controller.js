@@ -3,6 +3,7 @@ const {
   getAdminClubDashboard,
   getAdminOperationsDashboard,
   getExecutiveDashboard,
+  getNavigationCounts,
   getPresidentDashboard
 } = require("./dashboard.service");
 
@@ -35,6 +36,15 @@ function createDashboardController(options = {}) {
       });
 
       res.status(200).json({ data: dashboard });
+    }),
+
+    getNavigationCounts: asyncHandler(async (req, res) => {
+      const counts = await getNavigationCounts({
+        actor: req.user,
+        database
+      });
+
+      res.status(200).json({ data: counts });
     }),
 
     getAdminClubDashboard: asyncHandler(async (req, res) => {

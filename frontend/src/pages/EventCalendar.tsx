@@ -2,14 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import QRCode from "qrcode";
-import { Bell, CalendarDays, CheckCircle2, Clock, Copy, Loader2, MapPin, MessageSquare, Printer, QrCode, Share2, Users } from "lucide-react";
+import { Bell, CalendarDays, CheckCircle2, Clock, Copy, Loader2, MapPin, Printer, QrCode, Share2, Users } from "lucide-react";
 import { ClublyLoadingState, ClublyPageHeader } from "@/components/Clubly";
 import { DataPagination } from "@/components/DataPagination";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRole } from "@/contexts/RoleContext";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
@@ -20,7 +19,6 @@ import { buildAppUrl, shareOrCopy } from "@/lib/share";
 import {
   getAnnouncements,
   ApiClientError,
-  createFeedback,
   getClubs,
   getPublicClubs,
   getApprovedEvents,
@@ -344,8 +342,6 @@ function EventQrDialog({
 function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
   const { role } = useRole();
   const queryClient = useQueryClient();
-  const [feedback, setFeedback] = useState("");
-  const [rating, setRating] = useState("5");
   const [showQrDialog, setShowQrDialog] = useState(false);
   const isStudent = role === "student";
   const canManageAttendance = ["admin", "president"].includes(role);
@@ -384,33 +380,10 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
       actionError("Could not mark attendance", mutationError, getErrorMessage(mutationError));
     }
   });
-  const feedbackMutation = useMutation({
-    mutationFn: () =>
-      createFeedback({
-        club_id: event.club_id,
-        proposal_id: event.proposal_id,
-        category: "event",
-        rating: Number(rating),
-        comment: feedback
-      }),
-    onSuccess: async () => {
-      actionSuccess("Feedback submitted", "Thank you for helping improve club events.");
-      setFeedback("");
-      setRating("5");
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["event-engagement", event.proposal_id] }),
-        queryClient.invalidateQueries({ queryKey: ["approved-events"] })
-      ]);
-    },
-    onError: (mutationError) => {
-      actionError("Could not submit feedback", mutationError, getErrorMessage(mutationError));
-    }
-  });
   const attendanceUserIds = new Set((engagement?.attendance || []).filter((record) => record.attended).map((record) => record.user_id));
   const selectedRsvpStatus = engagement?.current_user_rsvp?.status;
   const effectiveEvent = engagement?.event || event;
   const isPast = isPastEvent(effectiveEvent);
-  const canSubmitFeedback = Boolean(effectiveEvent.can_submit_feedback);
 
   function getRsvpButtonVariant(status: EventRsvpRecord["status"]) {
     return selectedRsvpStatus === status ? "default" : "outline";
@@ -437,7 +410,7 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
   }
 
   if (isLoading) {
-    return <ClublyLoadingState title="Loading event engagement" message="We are checking RSVPs and feedback." compact />;
+    return <ClublyLoadingState title="Loading event engagement" message="We are checking RSVPs and attendance." compact />;
   }
 
   if (isError) {
@@ -513,56 +486,13 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
                   Not Going
                 </Button>
               </div>
-              <p className="text-xs font-semibold tracking-wide text-muted-foreground">
-                Feedback opens after the event for students marked attended.
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                Attendance is confirmed through the secure event check-in QR.
               </p>
             </>
-          ) : canSubmitFeedback ? (
-            <form
-              className="space-y-3"
-              onSubmit={(submitEvent) => {
-                submitEvent.preventDefault();
-                feedbackMutation.mutate();
-              }}
-            >
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <MessageSquare className="h-4 w-4" />
-                Event feedback
-              </div>
-              <div className="grid gap-2 sm:grid-cols-[140px_1fr]">
-                <Select value={rating} onValueChange={setRating}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5 stars</SelectItem>
-                    <SelectItem value="4">4 stars</SelectItem>
-                    <SelectItem value="3">3 stars</SelectItem>
-                    <SelectItem value="2">2 stars</SelectItem>
-                    <SelectItem value="1">1 star</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Textarea
-                  value={feedback}
-                  onChange={(feedbackEvent) => setFeedback(feedbackEvent.target.value)}
-                  placeholder="Share what worked, what could improve, or what made the event memorable."
-                  rows={2}
-                />
-              </div>
-              <Button type="submit" size="sm" disabled={feedbackMutation.isPending || !feedback.trim()}>
-                {feedbackMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  "Submit Feedback"
-                )}
-              </Button>
-            </form>
           ) : (
             <p className="text-sm font-semibold text-muted-foreground">
-              Feedback is available for students marked as attended.
+              This event has ended. Your attendance record stays available through secure check-in history.
             </p>
           )}
         </div>
@@ -1061,7 +991,7 @@ export default function EventCalendar() {
                       <h3 className="text-sm font-bold tracking-[0.12em]">Upcoming Events</h3>
                       <p className="text-sm text-muted-foreground">Plan ahead and RSVP before event day.</p>
                     </div>
-                    {renderEventList(upcomingOnlyEvents, "No upcoming events", "Past events are still available below for memories and feedback.")}
+                    {renderEventList(upcomingOnlyEvents, "No upcoming events", "Past events are still available below for attendance history.")}
                     {activeEvents.length > 0 ? (
                       <DataPagination
                         page={upcomingEventsPage.page}
@@ -1076,7 +1006,7 @@ export default function EventCalendar() {
                   <section className="space-y-3">
                     <div>
                       <h3 className="text-sm font-bold tracking-[0.12em]">Past Events</h3>
-                      <p className="text-sm text-muted-foreground">Look back on completed events and leave feedback if you attended.</p>
+                      <p className="text-sm text-muted-foreground">Look back on completed events and secure attendance records.</p>
                     </div>
                     {pastEvents.length === 0 ? renderEventList([], "No past events yet", "Completed events will appear here after their event date passes.") : (
                       <>

@@ -231,7 +231,7 @@ export default function EventCheckIn() {
         <ClublyStateCard
           icon={QrCode}
           title="Check-in unavailable right now"
-          message={`Attendance for ${event.title} can only be recorded while Club Services check-in is active for the event date.`}
+          message={`Attendance for ${event.title} can only be recorded while Clubly check-in is active for the event date.`}
         >
           <div className="space-y-3 text-sm text-muted-foreground">
             <p>{getEventLifecycleLabel(event)}</p>

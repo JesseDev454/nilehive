@@ -521,7 +521,7 @@ test("admin can save and fetch the shared Club Services payment profile", async 
         bank_name: "Zenith Bank",
         account_number: "1234567890",
         account_name: "Nile Innovators Club",
-        payment_instructions: "Use your student ID as narration.",
+        payment_instructions: "Use your student ID as payment reference.",
         fresher_dues_amount: 10000,
         returning_student_dues_amount: 5000,
         created_at: "2026-04-15T10:00:00.000Z",
@@ -557,6 +557,7 @@ test("admin can save and fetch the shared Club Services payment profile", async 
   assert.equal(settings.bank_name, "Zenith Bank");
   assert.equal(settings.fresher_dues_amount, 10000);
   assert.equal(fetchedSettings.account_number, "1234567890");
+  assert.equal(fetchedSettings.payment_instructions, "Upload your receipt or proof of payment after paying.");
 });
 
 test("admin can apply one dues amount to all clubs", async () => {
@@ -603,7 +604,7 @@ test("admin can apply one payment account to all clubs", async () => {
       bank_name: "Zenith Bank",
       account_number: "1234567890",
       account_name: "Club Services Account",
-      payment_instructions: "Use your student ID as payment reference."
+      payment_instructions: "Upload your receipt after payment."
     },
     database: fakeDatabase
   });
@@ -634,7 +635,7 @@ test("admin can apply one dues amount and payment account profile to all clubs",
       bank_name: "Zenith Bank",
       account_number: "1234567890",
       account_name: "Club Services Account",
-      payment_instructions: "Use your student ID as payment reference."
+      payment_instructions: "Upload your receipt after payment."
     },
     database: fakeDatabase
   });

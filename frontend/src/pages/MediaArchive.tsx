@@ -275,7 +275,8 @@ export default function MediaArchive() {
       window.localStorage.removeItem(REPORT_DRAFT_STORAGE_KEY);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["event-reports"] }),
-        queryClient.invalidateQueries({ queryKey: ["approved-events"] })
+        queryClient.invalidateQueries({ queryKey: ["approved-events"] }),
+        queryClient.invalidateQueries({ queryKey: ["navigation-counts"] })
       ]);
     },
     onError: (mutationError) => {

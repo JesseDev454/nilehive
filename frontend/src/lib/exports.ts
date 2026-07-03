@@ -268,7 +268,7 @@ async function buildEventReportPdf(report: EventReportRecord) {
   const mediaCount = report.media_urls.length;
   const firstMediaUrl = report.media_urls[0];
 
-  builder.drawTextLine("Club Services", {
+  builder.drawTextLine("Clubly", {
     font: builder.boldFont,
     size: TITLE_FONT_SIZE,
     color: rgb(0.08, 0.29, 0.56)
@@ -513,7 +513,7 @@ export async function downloadAdminClubPerformancePdf(dashboard: AdminClubDashbo
   const currentLabel = dashboard.dues_comparison.current_academic_session;
   const previousLabel = dashboard.dues_comparison.previous_academic_session || "Previous session";
 
-  builder.drawTextLine("Club Services", {
+  builder.drawTextLine("Clubly", {
     font: builder.boldFont,
     size: TITLE_FONT_SIZE,
     color: rgb(0.08, 0.29, 0.56)

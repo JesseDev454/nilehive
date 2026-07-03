@@ -13,7 +13,6 @@ export type StudentNextActionKind =
   | "check_in"
   | "rsvp_event"
   | "read_announcement"
-  | "submit_feedback"
   | "see_updates"
   | "track_request";
 
@@ -32,8 +31,7 @@ export function getStudentNextAction({
   hasRsvp,
   isProfileComplete = true,
   hasTodayCheckIn = false,
-  hasUnreadAnnouncement = false,
-  hasFeedbackOpportunity = false
+  hasUnreadAnnouncement = false
 }: {
   membershipRequests: MembershipSnapshot[];
   duePayments: DuePaymentSnapshot[];
@@ -42,7 +40,6 @@ export function getStudentNextAction({
   isProfileComplete?: boolean;
   hasTodayCheckIn?: boolean;
   hasUnreadAnnouncement?: boolean;
-  hasFeedbackOpportunity?: boolean;
 }): StudentNextAction {
   const paymentNeedingAttention = duePayments.find((payment) => payment.status === "unpaid" || payment.status === "rejected");
   const paymentUnderReview = duePayments.find((payment) => payment.status === "submitted");
@@ -72,7 +69,7 @@ export function getStudentNextAction({
     return {
       kind: "update_payment",
       title: "Finish your dues step",
-      description: "Upload or update your payment proof so Club Services can activate your membership.",
+      description: "Upload or update your payment proof so Clubly can activate your membership.",
       label: "Upload Dues Proof",
       to: "/membership"
     };
@@ -82,7 +79,7 @@ export function getStudentNextAction({
     return {
       kind: "payment_review",
       title: "Payment is being checked",
-      description: "Your proof is with Club Services. You can keep an eye on the status from membership.",
+      description: "Your proof is with Clubly. You can keep an eye on the status from membership.",
       label: "View status",
       to: "/membership"
     };
@@ -112,19 +109,9 @@ export function getStudentNextAction({
     return {
       kind: "read_announcement",
       title: "Read the latest announcement",
-      description: "There are new club or Club Services updates waiting for you.",
+      description: "There are new club or Clubly updates waiting for you.",
       label: "Read announcements",
       to: "/communications"
-    };
-  }
-
-  if (activeMembership && hasFeedbackOpportunity) {
-    return {
-      kind: "submit_feedback",
-      title: "Submit event feedback",
-      description: "You attended an event recently. Share what worked and what should improve.",
-      label: "Give feedback",
-      to: "/events"
     };
   }
 

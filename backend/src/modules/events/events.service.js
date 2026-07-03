@@ -33,15 +33,9 @@ async function getVisibleClubIds(actor, database) {
   return [];
 }
 
-function formatApprovedEvent(proposal, context = {}) {
+function formatApprovedEvent(proposal) {
   const lifecycle = getEventLifecycle(proposal.event_date);
   const canRsvp = canRsvpToEvent(proposal.event_date);
-  const canSubmitFeedback = Boolean(
-    context.actor?.role === "student" &&
-    lifecycle === "past" &&
-    context.attendedProposalIds?.has(proposal.id) &&
-    !context.submittedFeedbackProposalIds?.has(proposal.id)
-  );
 
   return {
     id: proposal.id,
@@ -59,7 +53,6 @@ function formatApprovedEvent(proposal, context = {}) {
     current_stage: "approved",
     event_lifecycle: lifecycle,
     can_rsvp: canRsvp,
-    can_submit_feedback: canSubmitFeedback,
     approved_at: proposal.admin_decided_at,
     created_at: proposal.created_at,
     updated_at: proposal.updated_at
@@ -177,28 +170,8 @@ async function listApprovedEvents(options) {
 
   const clubIds = await getVisibleClubIds(actor, database);
   const proposals = await database.listApprovedProposals({ clubIds });
-  const attendance = actor.role === "student" && database.listEventAttendance
-    ? await database.listEventAttendance({ userId: actor.id })
-    : [];
-  const feedback = actor.role === "student" && database.listFeedback
-    ? await database.listFeedback({ submittedBy: actor.id })
-    : [];
-  const attendedProposalIds = new Set(
-    attendance
-      .filter((record) => record.attended)
-      .map((record) => record.proposal_id)
-  );
-  const submittedFeedbackProposalIds = new Set(
-    feedback
-      .filter((record) => record.category === "event")
-      .map((record) => record.proposal_id)
-  );
 
-  let events = proposals.map((proposal) => formatApprovedEvent(proposal, {
-    actor,
-    attendedProposalIds,
-    submittedFeedbackProposalIds
-  }));
+  let events = proposals.map(formatApprovedEvent);
 
   if (lifecycleFilter === "upcoming") {
     events = events.filter((event) => event.event_lifecycle !== "past");
@@ -257,9 +230,6 @@ async function getEventEngagement(options) {
     database.listEventRsvps({ proposalId: proposal.id }),
     database.listEventAttendance({ proposalId: proposal.id })
   ]);
-  const feedback = actor.role === "student" && database.listFeedback
-    ? await database.listFeedback({ proposalId: proposal.id, submittedBy: actor.id })
-    : [];
   const formattedRsvps = rsvps.map(formatRsvp);
   const formattedAttendance = attendance.map(formatAttendance);
   const canManage = ["admin", "president"].includes(actor.role);
@@ -269,15 +239,7 @@ async function getEventEngagement(options) {
   }
 
   return {
-    event: formatApprovedEvent(proposal, {
-      actor,
-      attendedProposalIds: new Set(
-        formattedAttendance
-          .filter((record) => record.attended && record.user_id === actor.id)
-          .map((record) => record.proposal_id)
-      ),
-      submittedFeedbackProposalIds: new Set(feedback.map((record) => record.proposal_id))
-    }),
+    event: formatApprovedEvent(proposal),
     summary: summarizeEngagement(formattedRsvps, formattedAttendance),
     current_user_rsvp: formattedRsvps.find((rsvp) => rsvp.user_id === actor.id) || null,
     current_user_attendance: formattedAttendance.find((record) => record.user_id === actor.id) || null,

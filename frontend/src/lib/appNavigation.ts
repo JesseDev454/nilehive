@@ -16,6 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { Role } from "@/contexts/RoleContext";
+import type { NavigationCountsRecord } from "@/lib/api";
 
 export type AppNavItem = {
   title: string;
@@ -23,7 +24,7 @@ export type AppNavItem = {
   url: string;
   icon: LucideIcon;
   onboardingTarget: string;
-  badge?: number;
+  badgeKey?: keyof NavigationCountsRecord["counts"];
 };
 
 export const roleLabels: Record<NonNullable<Role>, string> = {
@@ -41,17 +42,17 @@ const executiveItems: AppNavItem[] = [
   { title: "Announcements", shortTitle: "Updates", url: "/communications", icon: MessageSquare, onboardingTarget: "nav-communications" },
   { title: "Events", url: "/events", icon: CalendarDays, onboardingTarget: "nav-events" },
   { title: "Feedback", url: "/feedback", icon: MessageSquare, onboardingTarget: "nav-feedback" },
-  { title: "Notifications", shortTitle: "Alerts", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications" },
+  { title: "Notifications", shortTitle: "Alerts", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications", badgeKey: "notifications" },
 ];
 
 const advisorItems: AppNavItem[] = [
   { title: "Dashboard", shortTitle: "Home", url: "/", icon: Home, onboardingTarget: "nav-dashboard" },
-  { title: "Pending Approvals", shortTitle: "Approvals", url: "/approvals", icon: Clock, onboardingTarget: "nav-approvals", badge: 4 },
+  { title: "Pending Approvals", shortTitle: "Approvals", url: "/approvals", icon: Clock, onboardingTarget: "nav-approvals", badgeKey: "pending_approvals" },
   { title: "Announcements", shortTitle: "Updates", url: "/communications", icon: MessageSquare, onboardingTarget: "nav-communications" },
   { title: "Events", url: "/events", icon: CalendarDays, onboardingTarget: "nav-events" },
   { title: "Reports Archive", shortTitle: "Reports", url: "/archive", icon: FileText, onboardingTarget: "nav-archive" },
   { title: "Feedback", url: "/feedback", icon: MessageSquare, onboardingTarget: "nav-feedback" },
-  { title: "Notifications", shortTitle: "Alerts", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications" },
+  { title: "Notifications", shortTitle: "Alerts", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications", badgeKey: "notifications" },
 ];
 
 const adminItems: AppNavItem[] = [
@@ -59,16 +60,16 @@ const adminItems: AppNavItem[] = [
   { title: "Analytics", url: "/analytics", icon: BarChart3, onboardingTarget: "nav-analytics" },
   { title: "User Management", shortTitle: "Users", url: "/user-management", icon: UserCog, onboardingTarget: "nav-user-management" },
   { title: "Clubs", url: "/clubs", icon: School, onboardingTarget: "nav-clubs" },
-  { title: "Final Review", shortTitle: "Review", url: "/proposals", icon: FileText, onboardingTarget: "nav-proposals", badge: 6 },
+  { title: "Final Review", shortTitle: "Review", url: "/proposals", icon: FileText, onboardingTarget: "nav-proposals", badgeKey: "final_review" },
   { title: "Membership", shortTitle: "Members", url: "/membership", icon: UserPlus, onboardingTarget: "nav-membership" },
   { title: "Members", url: "/members", icon: Users, onboardingTarget: "nav-members" },
-  { title: "Tasks", url: "/tasks", icon: ClipboardList, onboardingTarget: "nav-tasks" },
-  { title: "Dues", url: "/dues", icon: CreditCard, onboardingTarget: "nav-dues" },
+  { title: "Tasks", url: "/tasks", icon: ClipboardList, onboardingTarget: "nav-tasks", badgeKey: "tasks" },
+  { title: "Dues", url: "/dues", icon: CreditCard, onboardingTarget: "nav-dues", badgeKey: "dues" },
   { title: "Announcements", shortTitle: "Updates", url: "/communications", icon: MessageSquare, onboardingTarget: "nav-communications" },
-  { title: "Events", url: "/events", icon: CalendarDays, onboardingTarget: "nav-events" },
-  { title: "Reports Archive", shortTitle: "Reports", url: "/archive", icon: FileText, onboardingTarget: "nav-archive" },
+  { title: "Events", url: "/events", icon: CalendarDays, onboardingTarget: "nav-events", badgeKey: "events" },
+  { title: "Reports Archive", shortTitle: "Reports", url: "/archive", icon: FileText, onboardingTarget: "nav-archive", badgeKey: "reports_archive" },
   { title: "Feedback", url: "/feedback", icon: MessageSquare, onboardingTarget: "nav-feedback" },
-  { title: "Notifications", shortTitle: "Alerts", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications" },
+  { title: "Notifications", shortTitle: "Alerts", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications", badgeKey: "notifications" },
 ];
 
 const presidentItems: AppNavItem[] = [
@@ -82,7 +83,7 @@ const presidentItems: AppNavItem[] = [
   { title: "Events", url: "/events", icon: CalendarDays, onboardingTarget: "nav-events" },
   { title: "Reports Archive", shortTitle: "Reports", url: "/archive", icon: FileText, onboardingTarget: "nav-archive" },
   { title: "Feedback", url: "/feedback", icon: MessageSquare, onboardingTarget: "nav-feedback" },
-  { title: "Notifications", shortTitle: "Alerts", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications" },
+  { title: "Notifications", shortTitle: "Alerts", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications", badgeKey: "notifications" },
 ];
 
 const studentItems: AppNavItem[] = [
@@ -95,7 +96,7 @@ const studentItems: AppNavItem[] = [
 
 const feedbackManagerItems: AppNavItem[] = [
   { title: "App Feedback", shortTitle: "Feedback", url: "/feedback", icon: MessageSquare, onboardingTarget: "nav-feedback" },
-  { title: "Notifications", shortTitle: "Alerts", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications" },
+  { title: "Notifications", shortTitle: "Alerts", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications", badgeKey: "notifications" },
 ];
 
 export function getRoleNavItems(role: Role | null): AppNavItem[] {

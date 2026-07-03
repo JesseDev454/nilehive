@@ -177,7 +177,8 @@ export default function Tasks() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["tasks"] }),
         queryClient.invalidateQueries({ queryKey: ["president-dashboard"] }),
-        queryClient.invalidateQueries({ queryKey: ["executive-dashboard"] })
+        queryClient.invalidateQueries({ queryKey: ["executive-dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: ["navigation-counts"] })
       ]);
     },
     onError: (mutationError) => {
@@ -195,7 +196,8 @@ export default function Tasks() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["tasks"] }),
         queryClient.invalidateQueries({ queryKey: ["president-dashboard"] }),
-        queryClient.invalidateQueries({ queryKey: ["executive-dashboard"] })
+        queryClient.invalidateQueries({ queryKey: ["executive-dashboard"] }),
+        queryClient.invalidateQueries({ queryKey: ["navigation-counts"] })
       ]);
     },
     onError: (mutationError) => {
@@ -222,7 +224,7 @@ export default function Tasks() {
         <ClublyPageHeader
           eyebrow="Operations"
           title="Tasks"
-          description="Task delegation is available to club presidents, executives, and Club Services oversight."
+          description="Task delegation is available to club presidents, executives, and Clubly oversight."
         />
         <ClublyStateCard
           icon={ClipboardList}
@@ -339,7 +341,7 @@ export default function Tasks() {
           <CardHeader>
             <CardTitle className="text-lg">Club Filter</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Filter task oversight by club. This board is view-only for Club Services admins.
+              Filter task oversight by club. This board is view-only for Clubly admins.
             </p>
           </CardHeader>
           <CardContent>
@@ -376,7 +378,7 @@ export default function Tasks() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">
-            {role === "admin" ? "Club Services Task Oversight" : role === "president" ? "Club Task Board" : "Assigned Tasks"}
+            {role === "admin" ? "Clubly Task Oversight" : role === "president" ? "Club Task Board" : "Assigned Tasks"}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
