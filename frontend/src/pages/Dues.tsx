@@ -323,7 +323,6 @@ export default function Dues() {
                       {clubNameById.get(payment.club_id) || "Unknown club"} - {formatCurrency(payment.amount)}
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <ClublyMetaChip label="Ref" value={payment.payment_reference || "No reference"} />
                       <ClublyMetaChip label="Session" value={payment.academic_session} />
                       {proofLinksByPaymentId[payment.id] ? (
                         <a className="inline-flex min-h-9 items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary" href={proofLinksByPaymentId[payment.id]} target="_blank" rel="noreferrer">
@@ -687,7 +686,6 @@ export default function Dues() {
                       </td>
                       <td className="p-3">
                         <p className="font-medium">{payment.payment_account_name || "Name on account not submitted"}</p>
-                        <p className="text-xs text-muted-foreground">{payment.payment_reference || "No reference yet"}</p>
                         {payment.payer_note ? (
                           <p className="text-xs text-muted-foreground">{payment.payer_note}</p>
                         ) : null}

@@ -39,7 +39,7 @@ update public.club_payment_settings
 set
   fresher_dues_amount = 10000,
   returning_student_dues_amount = 10000,
-  payment_instructions = 'All students pay N10,000 per session. Submit the payment reference and receipt used for Club Services review.',
+  payment_instructions = 'All students pay N10,000 per session. Submit a receipt or proof of payment for Club Services review.',
   updated_at = timezone('utc', now());
 
 update public.due_payments

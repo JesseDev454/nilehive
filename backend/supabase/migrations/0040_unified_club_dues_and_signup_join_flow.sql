@@ -53,7 +53,7 @@ select
   'Providus Bank',
   '1305861314',
   'Nile Arts & Creative Hub',
-  'Freshers pay N10,000. Returning students pay N5,000. Submit the payment reference and proof used for Club Services review.',
+  'All students pay N10,000 per session. Submit a receipt or proof of payment for Club Services review.',
   10000,
   5000
 from public.clubs

@@ -388,9 +388,7 @@ export default function UserManagement() {
       total: usersPage.total,
       students: users.filter((user) => user.role === "student").length,
       presidents: users.filter((user) => user.role === "president").length,
-      executives: users.filter((user) => user.role === "executive").length,
-      advisors: users.filter((user) => user.role === "advisor").length,
-      advisorRequests: users.filter((user) => user.requested_role === "advisor").length
+      advisors: users.filter((user) => user.role === "advisor").length
     }),
     [users, usersPage.total]
   );
@@ -436,8 +434,8 @@ export default function UserManagement() {
       <div className="clb-metric-grid">
         <ClublyMetricCard title="Users" value={summary.total} icon={Users} tone="navy" />
         <ClublyMetricCard title="Students" value={summary.students} icon={UserCog} tone="gold" />
-        <ClublyMetricCard title="Presidents / Executives" value={`${summary.presidents} / ${summary.executives}`} icon={ShieldCheck} tone="green" />
-        <ClublyMetricCard title="Advisors / Requests" value={`${summary.advisors} / ${summary.advisorRequests}`} icon={Users} />
+        <ClublyMetricCard title="Presidents" value={summary.presidents} icon={ShieldCheck} tone="green" />
+        <ClublyMetricCard title="Advisors" value={summary.advisors} icon={Users} />
       </div>
 
       <Card>
@@ -460,7 +458,7 @@ export default function UserManagement() {
             <div className="clb-card p-4">
               <p className="font-semibold">3. They log in with the new role</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Presidents can then choose executives from active club members. Local role changes appear after the next refresh, focus, or sign-in.
+                Presidents can then choose executives from active club members. Local role changes appear after the user signs in again or reloads Clubly.
               </p>
             </div>
         </CardContent>

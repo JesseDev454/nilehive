@@ -51,7 +51,6 @@ The join form currently captures:
 - student type
 - join reason
 - payment account name
-- payment reference
 - payment date if provided
 - receipt upload
 
