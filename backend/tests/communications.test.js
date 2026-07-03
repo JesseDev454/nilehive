@@ -560,51 +560,25 @@ test("executive, advisor, and student cannot create announcements", async () => 
   }
 });
 
-test("student marked attended can submit post-event feedback", async () => {
-  let createdFeedback;
-  const fakeDatabase = {
-    async getApprovedProposalById(proposalId) {
-      assert.equal(proposalId, "proposal-1");
-      return {
-        id: "proposal-1",
-        club_id: "club-1",
-        status: "approved",
-        event_date: "2000-01-01"
-      };
-    },
-    async listEventAttendance(filters) {
-      assert.deepEqual(filters, { proposalId: "proposal-1", userId: "student-1" });
-      return [{ proposal_id: "proposal-1", user_id: "student-1", attended: true }];
-    },
-    async listFeedback(filters) {
-      assert.deepEqual(filters, { proposalId: "proposal-1", submittedBy: "student-1" });
-      return [];
-    },
-    async createFeedback(feedback) {
-      createdFeedback = feedback;
-      return createFeedbackRecord(feedback);
-    }
-  };
-
-  const feedback = await createFeedback({
-    actor: {
-      id: "student-1",
-      role: "student",
-      clubId: "club-1"
-    },
-    payload: {
-      proposal_id: "proposal-1",
-      category: "event",
-      rating: 4,
-      comment: "The event went well."
-    },
-    database: fakeDatabase
-  });
-
-  assert.equal(createdFeedback.club_id, "club-1");
-  assert.equal(createdFeedback.submitted_by, "student-1");
-  assert.equal(createdFeedback.status, "open");
-  assert.equal(feedback.rating, 4);
+test("event feedback creation is disabled in favor of secure attendance check-in", async () => {
+  await assert.rejects(
+    () =>
+      createFeedback({
+        actor: {
+          id: "student-1",
+          role: "student",
+          clubId: "club-1"
+        },
+        payload: {
+          proposal_id: "proposal-1",
+          category: "event",
+          rating: 4,
+          comment: "The event went well."
+        },
+        database: {}
+      }),
+    (error) => error.statusCode === 410 && error.code === "EVENT_FEEDBACK_DISABLED"
+  );
 });
 
 test("student without a club can submit onboarding feedback", async () => {
@@ -783,111 +757,6 @@ test("feedback save database failures return a friendly app message", async () =
       error.statusCode === 500 &&
       error.code === "FEEDBACK_SAVE_FAILED" &&
       error.message === "Feedback could not be saved. Please try again or contact Club Services."
-  );
-});
-
-test("student cannot submit event feedback without attendance", async () => {
-  const fakeDatabase = {
-    async getApprovedProposalById() {
-      return {
-        id: "proposal-1",
-        club_id: "club-1",
-        status: "approved",
-        event_date: "2000-01-01"
-      };
-    },
-    async listEventAttendance() {
-      return [];
-    }
-  };
-
-  await assert.rejects(
-    () =>
-      createFeedback({
-        actor: {
-          id: "student-1",
-          role: "student",
-          clubId: "club-1"
-        },
-        payload: {
-          proposal_id: "proposal-1",
-          category: "event",
-          rating: 4,
-          comment: "I enjoyed the event."
-        },
-        database: fakeDatabase
-      }),
-    (error) => error.statusCode === 403 && error.code === "ATTENDANCE_REQUIRED"
-  );
-});
-
-test("student cannot submit event feedback before event has ended", async () => {
-  const fakeDatabase = {
-    async getApprovedProposalById() {
-      return {
-        id: "proposal-1",
-        club_id: "club-1",
-        status: "approved",
-        event_date: "2999-01-01"
-      };
-    }
-  };
-
-  await assert.rejects(
-    () =>
-      createFeedback({
-        actor: {
-          id: "student-1",
-          role: "student",
-          clubId: "club-1"
-        },
-        payload: {
-          proposal_id: "proposal-1",
-          category: "event",
-          rating: 4,
-          comment: "Too early."
-        },
-        database: fakeDatabase
-      }),
-    (error) => error.statusCode === 409 && error.code === "EVENT_FEEDBACK_NOT_OPEN"
-  );
-});
-
-test("student cannot submit duplicate event feedback", async () => {
-  const fakeDatabase = {
-    async getApprovedProposalById() {
-      return {
-        id: "proposal-1",
-        club_id: "club-1",
-        status: "approved",
-        event_date: "2000-01-01"
-      };
-    },
-    async listEventAttendance() {
-      return [{ proposal_id: "proposal-1", user_id: "student-1", attended: true }];
-    },
-    async listFeedback() {
-      return [createFeedbackRecord({ submitted_by: "student-1" })];
-    }
-  };
-
-  await assert.rejects(
-    () =>
-      createFeedback({
-        actor: {
-          id: "student-1",
-          role: "student",
-          clubId: "club-1"
-        },
-        payload: {
-          proposal_id: "proposal-1",
-          category: "event",
-          rating: 4,
-          comment: "Submitting again."
-        },
-        database: fakeDatabase
-      }),
-    (error) => error.statusCode === 409 && error.code === "FEEDBACK_ALREADY_SUBMITTED"
   );
 });
 

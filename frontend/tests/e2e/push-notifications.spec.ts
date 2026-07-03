@@ -12,7 +12,7 @@ test("student can open notification settings and see optional browser alerts", a
 
   await expect(page.getByRole("heading", { name: "Notification Center" })).toBeVisible();
   await expect(page.getByText("Optional phone alerts")).toBeVisible();
-  await expect(page.getByText("Enable alerts for important Club Services updates on this device.")).toBeVisible();
+  await expect(page.getByText("Enable alerts for important Clubly updates on this device.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Enable on this device" })).toBeVisible();
 });
 
@@ -50,7 +50,7 @@ test("student can disable browser alerts and remove the saved subscription", asy
 
   await page.getByRole("button", { name: "Disable on this device" }).click();
 
-  await expect(page.getByText("Enable alerts for important Club Services updates on this device.")).toBeVisible();
+  await expect(page.getByText("Enable alerts for important Clubly updates on this device.")).toBeVisible();
   await expect(page.getByRole("button", { name: "Enable on this device" })).toBeVisible();
   await expect(page.getByText("Phone notifications disabled")).toBeVisible();
   await expect

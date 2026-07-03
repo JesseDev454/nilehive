@@ -1,25 +1,19 @@
-import { Link, useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { Link } from "react-router-dom";
 import { CalendarDays, Compass, Home, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ClublyPanel } from "@/components/Clubly";
 
 const NotFound = () => {
-  const location = useLocation();
-
-  useEffect(() => {
-    console.error("404 Error: User attempted to access non-existent route:", location.pathname);
-  }, [location.pathname]);
-
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-6">
-      <div className="nh-card relative w-full max-w-2xl overflow-hidden bg-card p-8 text-center md:p-12">
-        <div className="absolute -bottom-12 -right-4 text-[10rem] font-black leading-none text-muted/70">404</div>
+    <div className="clb-screen flex min-h-screen items-center justify-center p-6">
+      <ClublyPanel className="relative w-full max-w-2xl overflow-hidden p-8 text-center md:p-12">
+        <div className="absolute -bottom-12 -right-4 text-[10rem] font-black leading-none text-muted/50">404</div>
         <div className="relative z-10">
-          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full border-3 border-foreground bg-accent shadow-neo-sm">
+          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-primary shadow-soft-sm">
             <Compass className="h-10 w-10" />
           </div>
-          <p className="nh-eyebrow">Page not found</p>
-          <h1 className="mt-2 text-4xl font-black tracking-normal md:text-5xl">That page is not available.</h1>
+          <p className="clb-eyebrow">Page not found</p>
+          <h1 className="clb-title mt-2 text-4xl md:text-5xl">That page is not available.</h1>
           <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-muted-foreground">
             The link may be old, or your role may not use this page. Choose a safe place to continue.
           </p>
@@ -44,7 +38,7 @@ const NotFound = () => {
             </Button>
           </div>
         </div>
-      </div>
+      </ClublyPanel>
     </div>
   );
 };

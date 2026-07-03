@@ -56,7 +56,7 @@ const stepsByRole: Record<AppRole, OnboardingStep[]> = {
       id: "admin-dashboard",
       route: "/",
       target: "nav-dashboard",
-      title: "Monitor Club Services",
+      title: "Monitor Clubly",
       body: "The admin dashboard gives you the operational overview for clubs, proposals, dues, reports, and activity."
     },
     {
@@ -64,7 +64,7 @@ const stepsByRole: Record<AppRole, OnboardingStep[]> = {
       route: "/user-management",
       target: "nav-user-management",
       title: "Manage local app roles",
-      body: "Assign Club Services roles like advisor, president, executive, and student. Campus One still controls admin access."
+      body: "Assign Clubly roles like advisor, president, executive, and student. Campus One still controls admin access."
     },
     {
       id: "admin-membership",
@@ -101,7 +101,7 @@ const stepsByRole: Record<AppRole, OnboardingStep[]> = {
       route: "/proposals/new",
       target: "nav-create-proposal",
       title: "Create proposals",
-      body: "Start event proposals here. They move through advisor review and then Club Services final review."
+      body: "Start event proposals here. They move through advisor review and then Clubly final review."
     },
     {
       id: "president-events",
@@ -168,7 +168,7 @@ const stepsByRole: Record<AppRole, OnboardingStep[]> = {
       route: "/communications",
       target: "nav-communications",
       title: "Read announcements",
-      body: "Announcements keep you updated on club instructions, reminders, and official Club Services messages."
+      body: "Announcements keep you updated on club instructions, reminders, and official Clubly messages."
     },
     {
       id: "executive-events",

@@ -66,9 +66,9 @@ export default function ResetPassword() {
     return (
       <main className="flex min-h-screen flex-col bg-background text-foreground">
         <section className="flex flex-1 items-center justify-center p-5">
-          <div className="nh-card max-w-xl bg-card p-6 text-center md:p-10">
+          <div className="clb-card max-w-xl bg-card p-6 text-center md:p-10">
             <BrandLogo size="lg" variant="plain" className="mx-auto mb-5 h-24 w-[22rem] max-w-full" />
-            <p className="nh-eyebrow">Account Recovery</p>
+            <p className="clb-eyebrow">Account Recovery</p>
             <h1 className="mt-2 text-3xl font-black uppercase md:text-5xl">Campus One manages passwords</h1>
             <p className="mt-4 text-sm leading-6 text-muted-foreground">
               This recovery link is only for local test accounts. For live Campus One access, continue with your Nile University account.
@@ -93,7 +93,7 @@ export default function ResetPassword() {
   if (cookieAuthEnabled) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background p-6">
-        <div className="nh-card max-w-md bg-card p-6 text-center">
+        <div className="clb-card max-w-md bg-card p-6 text-center">
           <BrandLogo size="lg" variant="plain" className="mx-auto mb-4 h-20 w-72 max-w-full" />
           <h1 className="text-2xl font-black uppercase">Opening account recovery</h1>
           <p className="mt-2 text-sm text-muted-foreground">Please wait while we send you to the shared portal.</p>
@@ -157,14 +157,14 @@ export default function ResetPassword() {
               variant="plain"
               className="mx-auto mb-4 h-24 w-[22rem] max-w-full sm:h-28 sm:w-[24rem]"
             />
-            <p className="nh-eyebrow">Account Recovery</p>
-            <h1 className="nh-title mt-2">Set New Password</h1>
+            <p className="clb-eyebrow">Account Recovery</p>
+            <h1 className="clb-title mt-2">Set New Password</h1>
           </div>
 
-        <form className="nh-card bg-card p-6 md:p-10" onSubmit={handleSubmit}>
+        <form className="clb-card bg-card p-6 md:p-10" onSubmit={handleSubmit}>
           <div className="mb-8 pb-6">
             <p className="mt-2 text-sm text-muted-foreground">
-              Choose a new password for your Club Services account.
+              Choose a new password for your Clubly account.
             </p>
           </div>
 

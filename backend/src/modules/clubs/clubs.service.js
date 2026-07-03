@@ -8,6 +8,19 @@ const {
 } = require("./clubs.validation");
 
 const DEMO_PUBLIC_CLUB_NAMES = new Set(["nile innovators club"]);
+const DEFAULT_PAYMENT_INSTRUCTIONS =
+  "All students pay N10,000 per session. Submit a receipt or proof of payment for Clubly review.";
+
+function normalizePaymentInstructions(instructions) {
+  if (!instructions) {
+    return DEFAULT_PAYMENT_INSTRUCTIONS;
+  }
+
+  return instructions
+    .replace(/payment reference and receipt used/gi, "receipt or proof of payment used")
+    .replace(/payment reference and proof used/gi, "receipt or proof of payment used")
+    .replace(/Club Services review/g, "Clubly review");
+}
 
 function filterPublicSignupClubs(clubs) {
   return (clubs ?? []).filter((club) => !DEMO_PUBLIC_CLUB_NAMES.has(String(club.name ?? "").trim().toLowerCase()));
@@ -141,9 +154,7 @@ async function createClub(options) {
       bank_name: sharedSettings?.bank_name || "Providus Bank",
       account_number: sharedSettings?.account_number || "1305861314",
       account_name: sharedSettings?.account_name || "Nile Arts & Creative Hub",
-      payment_instructions:
-        sharedSettings?.payment_instructions ||
-        "All students pay N10,000 per session. Submit the payment reference and receipt used for Club Services review.",
+      payment_instructions: normalizePaymentInstructions(sharedSettings?.payment_instructions),
       fresher_dues_amount: 10000,
       returning_student_dues_amount: 10000
     });

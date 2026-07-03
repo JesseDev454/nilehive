@@ -3,7 +3,7 @@ import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Loader2, Pencil, Plus, School, Trash2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,9 +34,50 @@ const emptyForm = {
   whatsapp_onboarding_notes: "",
   categories: [] as string[],
   website_url: "",
-  instagram: "",
-  linkedin: ""
+  socialLinks: [] as SocialLinkRow[]
 };
+
+const SOCIAL_LINK_OPTIONS = [
+  { key: "instagram", label: "Instagram" },
+  { key: "linkedin", label: "LinkedIn" },
+  { key: "facebook", label: "Facebook" },
+  { key: "x", label: "X" },
+  { key: "youtube", label: "YouTube" },
+  { key: "tiktok", label: "TikTok" }
+] as const;
+
+type SocialLinkKey = (typeof SOCIAL_LINK_OPTIONS)[number]["key"];
+
+interface SocialLinkRow {
+  id: string;
+  platform: SocialLinkKey;
+  url: string;
+}
+
+function createSocialLinkRow(platform: SocialLinkKey, url = ""): SocialLinkRow {
+  return {
+    id: `${platform}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    platform,
+    url
+  };
+}
+
+function getSocialLinkRows(links?: Record<string, string>): SocialLinkRow[] {
+  return SOCIAL_LINK_OPTIONS.flatMap((option) => {
+    const url = links?.[option.key]?.trim();
+    return url ? [createSocialLinkRow(option.key, url)] : [];
+  });
+}
+
+function buildSocialLinksPayload(rows: SocialLinkRow[]) {
+  return rows.reduce<Record<string, string>>((links, row) => {
+    const url = row.url.trim();
+    if (url) {
+      links[row.platform] = url;
+    }
+    return links;
+  }, {});
+}
 
 function getErrorMessage(error: unknown) {
   return error instanceof ApiClientError || error instanceof Error
@@ -79,8 +120,7 @@ export default function Clubs() {
       whatsapp_onboarding_notes: editingClub.whatsapp_onboarding_notes || "",
       categories: editingClub.categories || [],
       website_url: editingClub.website_url || "",
-      instagram: editingClub.social_links?.instagram || "",
-      linkedin: editingClub.social_links?.linkedin || ""
+      socialLinks: getSocialLinkRows(editingClub.social_links)
     });
   }, [editingClub]);
 
@@ -106,7 +146,7 @@ export default function Clubs() {
         whatsapp_onboarding_notes: form.whatsapp_onboarding_notes || null,
         website_url: form.website_url || null,
         logo_path: logoPath,
-        social_links: { ...(form.instagram ? { instagram: form.instagram } : {}), ...(form.linkedin ? { linkedin: form.linkedin } : {}) }
+        social_links: buildSocialLinksPayload(form.socialLinks)
       };
       let club: ClubRecord;
       if (editingClub) {
@@ -156,7 +196,7 @@ export default function Clubs() {
       await deleteClub(editingClub.id);
     },
     onSuccess: async () => {
-      actionSuccess("Club deleted", `${editingClub?.name || "Club"} has been removed from Club Services.`);
+      actionSuccess("Club deleted", `${editingClub?.name || "Club"} has been removed from Clubly.`);
       setDeleteConfirmOpen(false);
       setEditingClub(null);
       await Promise.all([
@@ -175,18 +215,46 @@ export default function Clubs() {
     saveMutation.mutate();
   }
 
+  function addSocialLink() {
+    const usedPlatforms = new Set(form.socialLinks.map((row) => row.platform));
+    const nextPlatform = SOCIAL_LINK_OPTIONS.find((option) => !usedPlatforms.has(option.key))?.key;
+
+    if (!nextPlatform) {
+      return;
+    }
+
+    setForm({
+      ...form,
+      socialLinks: [...form.socialLinks, createSocialLinkRow(nextPlatform)]
+    });
+  }
+
+  function updateSocialLink(rowId: string, patch: Partial<Pick<SocialLinkRow, "platform" | "url">>) {
+    setForm({
+      ...form,
+      socialLinks: form.socialLinks.map((row) => row.id === rowId ? { ...row, ...patch } : row)
+    });
+  }
+
+  function removeSocialLink(rowId: string) {
+    setForm({
+      ...form,
+      socialLinks: form.socialLinks.filter((row) => row.id !== rowId)
+    });
+  }
+
   if (!canManageClubs) {
     return (
-      <div className="nh-page">
-        <NeoStateCard icon={School} title="Club management is restricted" message="Only Club Services admins and assigned presidents can edit club content." />
+      <div className="clb-screen">
+        <ClublyStateCard icon={School} title="Club management is restricted" message="Only Clubly admins and assigned presidents can edit club content." />
       </div>
     );
   }
 
   return (
-    <div className="nh-page">
-      <NeoPageHeader
-        eyebrow="Club Services"
+    <div className="clb-screen">
+      <ClublyPageHeader
+        eyebrow="Clubly"
         title={isFocusedEdit ? "Edit Club Profile" : "Clubs"}
         description={isFocusedEdit ? "Update this club profile in a focused editor." : role === "president" ? "Maintain the public profile for your assigned club." : "Create and maintain the clubs students discover in the app."}
       />
@@ -201,16 +269,16 @@ export default function Clubs() {
       ) : null}
 
       {isFocusedEdit && isLoading ? (
-        <NeoLoadingState title="Opening club editor" message="We are loading the selected club profile." compact />
+        <ClublyLoadingState title="Opening club editor" message="We are loading the selected club profile." compact />
       ) : isFocusedEdit && !editingClub ? (
-        <NeoStateCard icon={School} title="Club editor unavailable" message="This club is not available for your role, or it no longer exists." />
+        <ClublyStateCard icon={School} title="Club editor unavailable" message="This club is not available for your role, or it no longer exists." />
       ) : (canCreateClubs || editingClub) ? (
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">{editingClub ? `Edit ${editingClub.name}` : "Add a new club"}</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="nh-form-grid">
+            <form onSubmit={handleSubmit} className="clb-form-grid">
             <div className="space-y-2">
               <Label htmlFor="club_name">Club Name</Label>
               <Input id="club_name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required disabled={role === "president"} />
@@ -233,15 +301,67 @@ export default function Clubs() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="club_website">Website</Label>
-              <Input id="club_website" type="url" value={form.website_url} onChange={(event) => setForm({ ...form, website_url: event.target.value })} placeholder="Optional website URL" />
+              <Input id="club_website" type="url" value={form.website_url} onChange={(event) => setForm({ ...form, website_url: event.target.value })} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="club_instagram">Instagram</Label>
-              <Input id="club_instagram" type="url" value={form.instagram} onChange={(event) => setForm({ ...form, instagram: event.target.value })} placeholder="Optional Instagram URL" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="club_linkedin">LinkedIn</Label>
-              <Input id="club_linkedin" type="url" value={form.linkedin} onChange={(event) => setForm({ ...form, linkedin: event.target.value })} placeholder="Optional LinkedIn URL" />
+            <div className="space-y-3 lg:col-span-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <Label>Club links</Label>
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    Add real public links for this club. Leave links blank or remove rows to hide them.
+                  </p>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={addSocialLink} disabled={form.socialLinks.length >= SOCIAL_LINK_OPTIONS.length}>
+                  <Plus className="h-4 w-4" />
+                  Add link
+                </Button>
+              </div>
+              {form.socialLinks.length ? (
+                <div className="space-y-3">
+                  {form.socialLinks.map((row, index) => {
+                    const label = SOCIAL_LINK_OPTIONS.find((option) => option.key === row.platform)?.label || row.platform;
+                    const usedByOtherRows = new Set(form.socialLinks.filter((item) => item.id !== row.id).map((item) => item.platform));
+
+                    return (
+                      <div key={row.id} className="grid gap-3 rounded-xl border-2 border-border bg-muted/30 p-3 md:grid-cols-[180px_1fr_auto] md:items-end">
+                        <div className="space-y-2">
+                          <Label htmlFor={`club_social_${row.id}_platform`}>Platform</Label>
+                          <select
+                            id={`club_social_${row.id}_platform`}
+                            aria-label={`Link type ${index + 1}`}
+                            className="flex h-11 w-full rounded-[18px] border border-input bg-card px-4 py-2 text-sm font-semibold ring-offset-background transition-all focus:border-secondary focus:outline-none focus:ring-4 focus:ring-ring/30 focus:ring-offset-2"
+                            value={row.platform}
+                            onChange={(event) => updateSocialLink(row.id, { platform: event.target.value as SocialLinkKey })}
+                          >
+                            {SOCIAL_LINK_OPTIONS.map((option) => (
+                              <option key={option.key} value={option.key} disabled={usedByOtherRows.has(option.key)}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`club_social_${row.id}_url`}>{label} URL</Label>
+                          <Input
+                            id={`club_social_${row.id}_url`}
+                            type="url"
+                            value={row.url}
+                            onChange={(event) => updateSocialLink(row.id, { url: event.target.value })}
+                          />
+                        </div>
+                        <Button type="button" variant="outline" onClick={() => removeSocialLink(row.id)} aria-label={`Remove ${label} link`}>
+                          <Trash2 className="h-4 w-4" />
+                          Remove
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="rounded-xl border-2 border-dashed border-border p-4 text-sm font-semibold text-muted-foreground">
+                  No club links added yet.
+                </p>
+              )}
             </div>
             <p className="text-xs font-semibold text-muted-foreground lg:col-span-2">
               Leave website or social links blank to remove them from the public club profile.
@@ -275,7 +395,7 @@ export default function Clubs() {
           <DialogHeader>
             <DialogTitle>Delete {editingClub?.name || "club"}?</DialogTitle>
             <DialogDescription>
-              This removes the club and connected club records from Club Services. This action is only available to admins.
+              This removes the club and connected club records from Clubly. This action is only available to admins.
             </DialogDescription>
           </DialogHeader>
           <div className="rounded-xl border-2 border-destructive bg-destructive/5 p-4 text-sm">
@@ -296,18 +416,18 @@ export default function Clubs() {
       {!isFocusedEdit ? <Card>
         <CardHeader><CardTitle className="text-lg">Configured clubs</CardTitle></CardHeader>
         <CardContent>
-          {isLoading ? <NeoLoadingState title="Loading clubs" message="We are gathering the current club directory." compact /> : isError ? (
-            <NeoStateCard icon={School} title="Could not load clubs" message={getErrorMessage(error)} tone="danger" />
+          {isLoading ? <ClublyLoadingState title="Loading clubs" message="We are gathering the current club directory." compact /> : isError ? (
+            <ClublyStateCard icon={School} title="Could not load clubs" message={getErrorMessage(error)} tone="danger" />
           ) : !clubs.length ? (
-            <NeoStateCard
+            <ClublyStateCard
               icon={School}
               title={role === "president" ? "No assigned club found" : "No clubs configured yet"}
-              message={role === "president" ? "Ask a Club Services admin to assign your president profile to a club." : "Admins can add a club from the form above."}
+              message={role === "president" ? "Ask a Clubly admin to assign your president profile to a club." : "Admins can add a club from the form above."}
             />
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {clubs.map((club) => (
-                <div key={club.id} className="nh-list-card space-y-3">
+                <div key={club.id} className="clb-list-card space-y-3">
                   <div className="flex items-start justify-between gap-3">
                     <div><p className="font-black">{club.name}</p><p className="text-xs text-muted-foreground">{club.code || "No short code"}</p></div>
                     <Badge>{club.is_public_signup === false ? "Hidden" : "Public"}</Badge>

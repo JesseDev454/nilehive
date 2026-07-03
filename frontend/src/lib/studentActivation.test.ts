@@ -77,17 +77,16 @@ describe("getStudentNextAction", () => {
     expect(action.to).toBe("/communications");
   });
 
-  it("offers feedback after higher-priority student actions are done", () => {
+  it("keeps active students in updates after higher-priority actions are done", () => {
     const action = getStudentNextAction({
       membershipRequests: [{ status: "active" }],
       duePayments: [{ status: "paid" }],
       upcomingEvents: [],
-      hasRsvp: true,
-      hasFeedbackOpportunity: true
+      hasRsvp: true
     });
 
-    expect(action.kind).toBe("submit_feedback");
-    expect(action.to).toBe("/events");
+    expect(action.kind).toBe("see_updates");
+    expect(action.to).toBe("/communications");
   });
 
   it("keeps active students with no urgent action connected to announcements", () => {

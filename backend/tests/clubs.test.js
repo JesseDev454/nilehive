@@ -299,6 +299,7 @@ test("admin can set and clear optional club links", async () => {
     payload: {
       website_url: "https://robotics.example.com",
       social_links: {
+        facebook: "https://facebook.com/robotics",
         instagram: "https://instagram.com/robotics"
       }
     },
@@ -306,7 +307,10 @@ test("admin can set and clear optional club links", async () => {
   });
 
   assert.equal(linkedClub.website_url, "https://robotics.example.com/");
-  assert.deepEqual(linkedClub.social_links, { instagram: "https://instagram.com/robotics" });
+  assert.deepEqual(linkedClub.social_links, {
+    facebook: "https://facebook.com/robotics",
+    instagram: "https://instagram.com/robotics"
+  });
 
   const clearedClub = await updateClub({
     actor: { id: "admin-1", role: "admin" },
@@ -321,6 +325,29 @@ test("admin can set and clear optional club links", async () => {
   assert.equal(clearedClub.website_url, null);
   assert.deepEqual(clearedClub.social_links, {});
   assert.equal(updates.length, 2);
+});
+
+test("unsupported club social links are rejected", async () => {
+  await assert.rejects(
+    () => updateClub({
+      actor: { id: "admin-1", role: "admin" },
+      clubId: "club-1",
+      payload: {
+        social_links: {
+          snapchat: "https://snapchat.com/add/robotics"
+        }
+      },
+      database: {
+        async getClubById() {
+          return { id: "club-1", name: "Robotics Club" };
+        },
+        async updateClub() {
+          throw new Error("updateClub should not be called for invalid social links");
+        }
+      }
+    }),
+    (error) => error.statusCode === 400 && error.code === "VALIDATION_ERROR"
+  );
 });
 
 test("assigned president can update club content without changing operational fields", async () => {

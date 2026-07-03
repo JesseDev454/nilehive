@@ -19,7 +19,6 @@ const {
   validateCreateAnnouncementPayload,
   validateCreateFeedbackPayload
 } = require("./communications.validation");
-const { getEventLifecycle } = require("../events/event-lifecycle");
 const { sendPushForNotifications } = require("../notifications/push.service");
 
 function requireActor(actor) {
@@ -439,43 +438,11 @@ async function createFeedback(options) {
     ? (validatedPayload.club_id ?? null)
     : (actor.clubId ?? null);
 
-  if (validatedPayload.category === "event" && validatedPayload.proposal_id) {
-    if (actor.role !== "student") {
-      throw new ApiError(403, "Only students who attended can submit post-event feedback", "FORBIDDEN");
-    }
+  if (validatedPayload.category === "event") {
+    throw new ApiError(410, "Event feedback has been replaced by secure attendance check-in.", "EVENT_FEEDBACK_DISABLED");
+  }
 
-    const proposal = database.getApprovedProposalById
-      ? await database.getApprovedProposalById(validatedPayload.proposal_id)
-      : await database.getProposalById(validatedPayload.proposal_id);
-
-    if (!proposal || proposal.status !== "approved") {
-      throw new ApiError(404, "Approved event not found", "APPROVED_EVENT_NOT_FOUND");
-    }
-
-    if (getEventLifecycle(proposal.event_date) !== "past") {
-      throw new ApiError(409, "Feedback opens after the event has ended.", "EVENT_FEEDBACK_NOT_OPEN");
-    }
-
-    const attendance = database.listEventAttendance
-      ? await database.listEventAttendance({ proposalId: proposal.id, userId: actor.id })
-      : [];
-    const attended = attendance.some((record) => record.attended);
-
-    if (!attended) {
-      throw new ApiError(403, "Feedback is available for students marked as attended.", "ATTENDANCE_REQUIRED");
-    }
-
-    const existingFeedback = database.listFeedback
-      ? await database.listFeedback({ proposalId: proposal.id, submittedBy: actor.id })
-      : [];
-    const alreadySubmitted = existingFeedback.some((feedback) => feedback.submitted_by === actor.id);
-
-    if (alreadySubmitted) {
-      throw new ApiError(409, "You have already submitted feedback for this event.", "FEEDBACK_ALREADY_SUBMITTED");
-    }
-
-    clubId = proposal.club_id;
-  } else {
+  {
     if (validatedPayload.category === "club" && !clubId) {
       throw new ApiError(400, "Feedback requires a club_id", "VALIDATION_ERROR", {
         field: "club_id"

@@ -12,6 +12,20 @@ const {
 const { activateMembershipAfterPaidDues } = require("../membership-requests/membership-requests.service");
 const { syncMemberStatusFromDuePayment } = require("../members/member-status");
 
+const DEFAULT_PAYMENT_INSTRUCTIONS = "Upload your receipt or proof of payment after paying.";
+
+function normalizePaymentInstructions(instructions) {
+  if (!instructions) {
+    return instructions;
+  }
+
+  return String(instructions)
+    .replace(/use your student id as (?:a )?payment reference\.?/gi, DEFAULT_PAYMENT_INSTRUCTIONS)
+    .replace(/payment reference/gi, "payment receipt")
+    .replace(/reference code/gi, "receipt or proof")
+    .trim();
+}
+
 function requireActor(actor) {
   if (!actor) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
@@ -78,7 +92,7 @@ function formatPaymentSettings(settings) {
     bank_name: settings.bank_name,
     account_number: settings.account_number,
     account_name: settings.account_name,
-    payment_instructions: settings.payment_instructions,
+    payment_instructions: normalizePaymentInstructions(settings.payment_instructions),
     fresher_dues_amount:
       settings.fresher_dues_amount === null || settings.fresher_dues_amount === undefined
         ? 10000
@@ -327,11 +341,12 @@ async function upsertPaymentSettings(options) {
   }
 
   const validatedPayload = validatePaymentSettingsPayload(payload);
+  const paymentInstructions = normalizePaymentInstructions(validatedPayload.payment_instructions);
   const settings = await database.upsertAllClubPaymentSettings({
     bank_name: validatedPayload.bank_name,
     account_number: validatedPayload.account_number,
     account_name: validatedPayload.account_name,
-    payment_instructions: validatedPayload.payment_instructions,
+    payment_instructions: paymentInstructions,
     fresher_dues_amount: 10000,
     returning_student_dues_amount: 10000
   });
@@ -370,18 +385,22 @@ async function applyPaymentSettingsToAllClubs(options) {
   }
 
   const validatedPayload = validateBulkPaymentSettingsPayload(payload);
+  const paymentInstructions = normalizePaymentInstructions(validatedPayload.payment_instructions);
 
   if (typeof database.upsertAllClubPaymentSettings !== "function") {
     throw new ApiError(500, "Bulk payment settings updates are not available", "DATABASE_UNAVAILABLE");
   }
 
-  const settings = await database.upsertAllClubPaymentSettings(validatedPayload);
+  const settings = await database.upsertAllClubPaymentSettings({
+    ...validatedPayload,
+    payment_instructions: paymentInstructions
+  });
 
   return {
     bank_name: validatedPayload.bank_name,
     account_number: validatedPayload.account_number,
     account_name: validatedPayload.account_name,
-    payment_instructions: validatedPayload.payment_instructions,
+    payment_instructions: paymentInstructions,
     fresher_dues_amount: validatedPayload.fresher_dues_amount,
     returning_student_dues_amount: validatedPayload.returning_student_dues_amount,
     clubs_updated: settings.length
@@ -397,6 +416,7 @@ async function applyClubPaymentProfileToAllClubs(options) {
   }
 
   const validatedPayload = validateBulkClubPaymentProfilePayload(payload);
+  const paymentInstructions = normalizePaymentInstructions(validatedPayload.payment_instructions);
 
   if (typeof database.upsertAllClubPaymentSettings !== "function") {
     throw new ApiError(500, "Bulk club payment profile updates are not available", "DATABASE_UNAVAILABLE");
@@ -406,7 +426,7 @@ async function applyClubPaymentProfileToAllClubs(options) {
     bank_name: validatedPayload.bank_name,
     account_number: validatedPayload.account_number,
     account_name: validatedPayload.account_name,
-    payment_instructions: validatedPayload.payment_instructions,
+    payment_instructions: paymentInstructions,
     fresher_dues_amount: 10000,
     returning_student_dues_amount: 10000
   });
@@ -415,7 +435,7 @@ async function applyClubPaymentProfileToAllClubs(options) {
     bank_name: validatedPayload.bank_name,
     account_number: validatedPayload.account_number,
     account_name: validatedPayload.account_name,
-    payment_instructions: validatedPayload.payment_instructions,
+    payment_instructions: paymentInstructions,
     fresher_dues_amount: 10000,
     returning_student_dues_amount: 10000,
     clubs_updated: settings.length

@@ -506,51 +506,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!usesCookieAuthProvider() || !session || isE2EAuthEnabled()) {
-      return;
-    }
-
-    let isRefreshing = false;
-
-    async function syncPortalRoleState() {
-      if (isRefreshing || document.visibilityState === "hidden") {
-        return;
-      }
-
-      isRefreshing = true;
-
-      try {
-        await loadPortalProfile();
-      } catch (error) {
-        clearAuthState();
-        const message = getUserFacingErrorMessage(error, "Please sign in to continue.");
-        setProfileError(message);
-        redirectToCookieAuth("sign-in");
-      } finally {
-        isRefreshing = false;
-      }
-    }
-
-    function handleFocus() {
-      void syncPortalRoleState();
-    }
-
-    function handleVisibilityChange() {
-      if (document.visibilityState === "visible") {
-        void syncPortalRoleState();
-      }
-    }
-
-    window.addEventListener("focus", handleFocus);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener("focus", handleFocus);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [session]);
-
-  useEffect(() => {
     function handleSessionExpired() {
       clearAuthState();
       if (usesCookieAuthProvider()) {
@@ -569,7 +524,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!session) {
+    if (!session || usesCookieAuthProvider()) {
       return;
     }
 

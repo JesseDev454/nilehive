@@ -12,7 +12,7 @@ export default function SignupConfirmation() {
     <main className="flex min-h-screen flex-col bg-background text-foreground">
       <section className="flex flex-1 items-center justify-center p-5">
         <div className="w-full max-w-2xl">
-        <div className="nh-card bg-card p-6 md:p-10">
+        <div className="clb-card bg-card p-6 md:p-10">
           <BrandLogo
             size="lg"
             variant="plain"
@@ -20,10 +20,10 @@ export default function SignupConfirmation() {
           />
 
           <div className="mb-8 border-b-2 border-foreground pb-6">
-            <p className="nh-eyebrow">Email Confirmation</p>
+            <p className="clb-eyebrow">Email Confirmation</p>
             <h1 className="mt-2 text-4xl font-black uppercase">Check Your Inbox</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              We sent a Nile University verification link so your Club Services account can open safely.
+              We sent a Nile University verification link so your Clubly account can open safely.
             </p>
           </div>
 

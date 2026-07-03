@@ -230,6 +230,21 @@ export interface NotificationRecord {
   created_at: string;
 }
 
+export interface NavigationCountsRecord {
+  role: EffectiveRole;
+  generated_at: string;
+  counts: Partial<Record<
+    | "pending_approvals"
+    | "final_review"
+    | "notifications"
+    | "events"
+    | "reports_archive"
+    | "dues"
+    | "tasks",
+    number
+  >>;
+}
+
 export interface PushConfigRecord {
   enabled: boolean;
   public_key: string | null;
@@ -263,7 +278,6 @@ export interface ApprovedEventRecord {
   current_stage: string;
   event_lifecycle: "upcoming" | "happening_today" | "past";
   can_rsvp: boolean;
-  can_submit_feedback: boolean;
   approved_at?: string | null;
   created_at: string;
   updated_at: string;
@@ -1693,6 +1707,18 @@ export async function getExecutiveDashboard(token?: string) {
 export async function getPresidentDashboard(token?: string) {
   const response = await request<ApiEnvelope<PresidentDashboardRecord>>(
     "/api/v1/dashboard/president",
+    {
+      method: "GET",
+      token
+    }
+  );
+
+  return response.data;
+}
+
+export async function getNavigationCounts(token?: string) {
+  const response = await request<ApiEnvelope<NavigationCountsRecord>>(
+    "/api/v1/dashboard/nav-counts",
     {
       method: "GET",
       token

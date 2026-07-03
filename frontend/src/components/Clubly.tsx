@@ -421,7 +421,7 @@ export function ClublyLoadingState({
   return (
     <div className={cn("clb-card overflow-hidden bg-card/90", compact ? "p-5" : "p-8")}>
       <div className="mb-5 h-2 overflow-hidden rounded-full bg-primary/15">
-        <div className="h-full w-1/3 animate-[clbProgress_1.4s_ease-in-out_infinite] rounded-full bg-primary" />
+        <div className="h-full w-full origin-left animate-[clbProgress_1.35s_ease-in-out_infinite] rounded-full bg-primary" />
       </div>
       <div className="flex flex-col gap-5 md:flex-row md:items-center">
         <div className="grid h-14 w-14 place-items-center rounded-[18px] bg-accent text-accent-foreground">

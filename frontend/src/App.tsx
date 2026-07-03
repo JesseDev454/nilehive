@@ -7,14 +7,18 @@ import { Button } from "@/components/ui/button";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { RoleProvider } from "@/contexts/RoleContext";
 import { AppLayout } from "@/components/AppLayout";
-import { NeoLoadingState, NeoStateCard } from "@/components/NeoBrutal";
+import { ClublyLoadingState, ClublyStateCard } from "@/components/Clubly";
 import Dashboard from "@/pages/Dashboard";
+import AuthCallback from "@/pages/AuthCallback";
 import ForgotPassword from "@/pages/ForgotPassword";
+import ErrorPage from "@/pages/ErrorPage";
 import Login from "@/pages/Login";
 import ProfileSetup from "@/pages/ProfileSetup";
 import ResetPassword from "@/pages/ResetPassword";
+import ReportSubmission from "@/pages/ReportSubmission";
 import SignUp from "@/pages/SignUp";
 import SignupConfirmation from "@/pages/SignupConfirmation";
+import Unauthorized from "@/pages/Unauthorized";
 import NewProposal from "@/pages/NewProposal";
 import Proposals from "@/pages/Proposals";
 import ProposalDetail from "@/pages/ProposalDetail";
@@ -43,9 +47,9 @@ function ProtectedRoutes() {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background p-6">
         <div className="w-full max-w-xl">
-          <NeoLoadingState
+          <ClublyLoadingState
             title="Getting your account ready"
-            message="Please wait while we open your Club Services workspace."
+            message="Please wait while we open your Clubly workspace."
             delayedMessage="This is taking longer than usual. Please check your network connection."
           />
         </div>
@@ -66,7 +70,7 @@ function ProtectedRoutes() {
       return (
         <div className="flex min-h-screen items-center justify-center bg-background p-6">
           <div className="w-full max-w-xl">
-            <NeoStateCard
+            <ClublyStateCard
               title="We couldn't open your workspace yet"
               message={profileError}
               tone="danger"
@@ -74,7 +78,7 @@ function ProtectedRoutes() {
               <Button onClick={() => void signOut()} variant="outline">
                 Sign out
               </Button>
-            </NeoStateCard>
+            </ClublyStateCard>
           </div>
         </div>
       );
@@ -85,7 +89,10 @@ function ProtectedRoutes() {
 
   const effectiveRole = profile.effective_role ?? profile.role;
 
-  if (effectiveRole === "feedback_manager" && location.pathname !== "/feedback") {
+  if (
+    effectiveRole === "feedback_manager" &&
+    !["/feedback", "/notifications", "/settings/notifications"].includes(location.pathname)
+  ) {
     return <Navigate to="/feedback" replace />;
   }
 
@@ -106,13 +113,18 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/signup" element={<SignUp />} />
               <Route path="/signup/confirm" element={<SignupConfirmation />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/unauthorized" element={<Unauthorized />} />
+              <Route path="/error" element={<ErrorPage />} />
+              <Route path="/404" element={<NotFound />} />
               <Route path="/api/v1/*" element={<FrontendApiRouteFallback />} />
               <Route element={<ProtectedRoutes />}>
                 <Route path="/events/:proposalId/check-in" element={<EventCheckIn />} />
+                <Route path="/profile-setup" element={<ProfileSetup />} />
                 <Route element={<AppLayout />}>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/proposals/new" element={<NewProposal />} />
@@ -120,11 +132,14 @@ const App = () => (
                   <Route path="/proposals/:id" element={<ProposalDetail />} />
                   <Route path="/approvals" element={<Approvals />} />
                   <Route path="/notifications" element={<Notifications />} />
+                  <Route path="/settings/notifications" element={<Notifications />} />
                   <Route path="/events" element={<EventCalendar />} />
                   <Route path="/membership" element={<Membership />} />
+                  <Route path="/membership/dues" element={<Membership />} />
                   <Route path="/membership/clubs/:clubId" element={<Membership />} />
                   <Route path="/members" element={<Members />} />
                   <Route path="/dues" element={<Dues />} />
+                  <Route path="/admin/dues-review" element={<Dues />} />
                   <Route path="/communications" element={<Communications />} />
                   <Route path="/clubs" element={<Clubs />} />
                   <Route path="/clubs/:clubId/edit" element={<Clubs />} />
@@ -135,6 +150,7 @@ const App = () => (
                   <Route path="/user-management/:userId" element={<UserManagement />} />
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/archive" element={<MediaArchive />} />
+                  <Route path="/archive/report/new" element={<ReportSubmission />} />
                 </Route>
               </Route>
               <Route path="*" element={<NotFound />} />

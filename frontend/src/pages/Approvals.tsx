@@ -39,6 +39,7 @@ export default function Approvals() {
 
       actionSuccess(decision === "approve" ? "Proposal approved" : "Proposal rejected", "The proposal queue has been updated.");
       await queryClient.invalidateQueries({ queryKey: ["advisor-pending-proposals"] });
+      await queryClient.invalidateQueries({ queryKey: ["navigation-counts"] });
     } catch (decisionError) {
       actionError("Decision failed", decisionError, getDecisionErrorMessage(decisionError));
     } finally {

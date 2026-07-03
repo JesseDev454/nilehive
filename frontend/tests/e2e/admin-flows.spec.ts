@@ -116,7 +116,12 @@ test("admin can add and clear optional club website and social links", async ({ 
   await expect(page.getByRole("heading", { name: "Edit Nile Tech Club" })).toBeVisible();
   await expect(page.getByText("Leave website or social links blank to remove them from the public club profile.")).toBeVisible();
   await page.getByLabel("Website").fill("https://robotics.example.com");
-  await page.getByLabel("Instagram").fill("https://instagram.com/robotics");
+  await expect(page.getByPlaceholder("Optional website URL")).toHaveCount(0);
+  await page.getByRole("button", { name: "Add link" }).click();
+  await page.getByLabel("Link type 1").selectOption("facebook");
+  await page.getByLabel("Facebook URL").fill("https://facebook.com/robotics");
+  await page.getByRole("button", { name: "Add link" }).click();
+  await page.getByLabel("Instagram URL").fill("https://instagram.com/robotics");
   await page.getByRole("button", { name: "Save Changes" }).click();
 
   await expect(page.getByText("Club updated")).toBeVisible();
@@ -124,14 +129,16 @@ test("admin can add and clear optional club website and social links", async ({ 
 
   await page.goto("/clubs/club-tech/edit");
   await expect(page.getByLabel("Website")).toHaveValue("https://robotics.example.com");
-  await expect(page.getByLabel("Instagram")).toHaveValue("https://instagram.com/robotics");
+  await expect(page.getByLabel("Facebook URL")).toHaveValue("https://facebook.com/robotics");
+  await expect(page.getByLabel("Instagram URL")).toHaveValue("https://instagram.com/robotics");
 
   await page.getByLabel("Website").fill("");
-  await page.getByLabel("Instagram").fill("");
+  await page.getByRole("button", { name: "Remove Instagram link" }).click();
   await page.getByRole("button", { name: "Save Changes" }).click();
 
   await expect(page.getByText("Club updated")).toBeVisible();
   await page.goto("/clubs/club-tech/edit");
   await expect(page.getByLabel("Website")).toHaveValue("");
-  await expect(page.getByLabel("Instagram")).toHaveValue("");
+  await expect(page.getByLabel("Facebook URL")).toHaveValue("https://facebook.com/robotics");
+  await expect(page.getByLabel("Instagram URL")).toHaveCount(0);
 });

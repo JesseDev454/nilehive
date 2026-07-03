@@ -84,7 +84,7 @@ export default function Dues() {
   const [accountNumber, setAccountNumber] = useState("1305861314");
   const [accountName, setAccountName] = useState("Nile Arts & Creative Hub");
   const [paymentInstructions, setPaymentInstructions] = useState(
-    "All students pay N10,000 per session. Submit the payment reference and proof used for Clubly review."
+    "All students pay N10,000 per session. Submit a receipt or proof of payment for Clubly review."
   );
   const [duesPage, setDuesPage] = useState(1);
   const [selectedClubId, setSelectedClubId] = useState("all");
@@ -240,7 +240,8 @@ export default function Dues() {
         queryClient.invalidateQueries({ queryKey: ["membership-requests"] }),
         queryClient.invalidateQueries({ queryKey: ["club-members"] }),
         queryClient.invalidateQueries({ queryKey: ["my-membership-requests"] }),
-        queryClient.invalidateQueries({ queryKey: ["my-dues"] })
+        queryClient.invalidateQueries({ queryKey: ["my-dues"] }),
+        queryClient.invalidateQueries({ queryKey: ["navigation-counts"] })
       ]);
     },
     onError: (mutationError) => {
@@ -322,7 +323,6 @@ export default function Dues() {
                       {clubNameById.get(payment.club_id) || "Unknown club"} - {formatCurrency(payment.amount)}
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <ClublyMetaChip label="Ref" value={payment.payment_reference || "No reference"} />
                       <ClublyMetaChip label="Session" value={payment.academic_session} />
                       {proofLinksByPaymentId[payment.id] ? (
                         <a className="inline-flex min-h-9 items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary" href={proofLinksByPaymentId[payment.id]} target="_blank" rel="noreferrer">
@@ -705,7 +705,7 @@ export default function Dues() {
                       </td>
                       <td className="p-3">
                         <p className="font-medium">{payment.payment_account_name || "Name on account not submitted"}</p>
-                        <p className="text-xs text-muted-foreground">{payment.payment_reference || "No reference yet"}</p>
+                        <p className="text-xs text-muted-foreground">Receipt or proof is used for verification.</p>
                         {payment.payer_note ? (
                           <p className="text-xs text-muted-foreground">{payment.payer_note}</p>
                         ) : null}

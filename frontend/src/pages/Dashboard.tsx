@@ -2447,10 +2447,6 @@ function getStudentEventActionLabel({
     return "RSVP needed";
   }
 
-  if (event.can_submit_feedback) {
-    return "Feedback open";
-  }
-
   return "View event";
 }
 
@@ -2583,7 +2579,6 @@ const STUDENT_NEXT_ACTION_ICONS: Record<StudentNextActionKind, ElementType> = {
   check_in: QrCode,
   rsvp_event: CalendarDays,
   read_announcement: Bell,
-  submit_feedback: MessageSquare,
   see_updates: MessageSquare,
   track_request: ListChecks
 };
@@ -2698,7 +2693,6 @@ function StudentDashboard() {
     return !engagement?.current_user_attendance?.attended;
   });
   const hasUnreadAnnouncement = announcementPreview.some((announcement) => !announcement.is_read);
-  const hasFeedbackOpportunity = joinedClubEvents.some((event) => event.can_submit_feedback);
   const isProfileComplete = isStudentProfileComplete(profile);
   const nextAction = getStudentNextAction({
     membershipRequests,
@@ -2707,8 +2701,7 @@ function StudentDashboard() {
     hasRsvp,
     isProfileComplete,
     hasTodayCheckIn,
-    hasUnreadAnnouncement,
-    hasFeedbackOpportunity
+    hasUnreadAnnouncement
   });
   const NextActionIcon = STUDENT_NEXT_ACTION_ICONS[nextAction.kind];
 

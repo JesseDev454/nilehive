@@ -38,12 +38,12 @@ export default function ForgotPassword() {
     return (
       <main className="flex min-h-screen flex-col bg-background text-foreground">
         <section className="flex flex-1 items-center justify-center p-5">
-          <div className="nh-card max-w-xl bg-card p-6 text-center md:p-10">
+          <div className="clb-card max-w-xl bg-card p-6 text-center md:p-10">
             <BrandLogo size="lg" variant="plain" className="mx-auto mb-5 h-24 w-[22rem] max-w-full" />
-            <p className="nh-eyebrow">Account Recovery</p>
+            <p className="clb-eyebrow">Account Recovery</p>
             <h1 className="mt-2 text-3xl font-black uppercase md:text-5xl">Use Campus One recovery</h1>
             <p className="mt-4 text-sm leading-6 text-muted-foreground">
-              Club Services does not manage your Campus One password. Use Campus One or your Nile University account recovery options to restore access.
+              Clubly does not manage your Campus One password. Use Campus One or your Nile University account recovery options to restore access.
             </p>
             <Button
               className="mt-6 h-14 w-full"
@@ -65,7 +65,7 @@ export default function ForgotPassword() {
   if (cookieAuthEnabled) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background p-6">
-        <div className="nh-card max-w-md bg-card p-6 text-center">
+        <div className="clb-card max-w-md bg-card p-6 text-center">
           <BrandLogo size="lg" variant="plain" className="mx-auto mb-4 h-20 w-72 max-w-full" />
           <h1 className="text-2xl font-black uppercase">Opening account recovery</h1>
           <p className="mt-2 text-sm text-muted-foreground">Please wait while we send you to the shared portal.</p>
@@ -125,12 +125,12 @@ export default function ForgotPassword() {
               variant="plain"
               className="mx-auto mb-4 h-24 w-[22rem] max-w-full sm:h-28 sm:w-[24rem]"
             />
-            <p className="nh-eyebrow">Account Recovery</p>
+            <p className="clb-eyebrow">Account Recovery</p>
           </div>
 
-          <div className="nh-card bg-card p-6 md:p-10">
+          <div className="clb-card bg-card p-6 md:p-10">
             <div className="mb-8 border-b-2 border-foreground pb-6">
-              <h1 className="nh-title">Reset Password</h1>
+              <h1 className="clb-title">Reset Password</h1>
               <p className="mt-2 text-sm text-muted-foreground">
                 Enter your Nile University email and we will send a secure reset link.
               </p>

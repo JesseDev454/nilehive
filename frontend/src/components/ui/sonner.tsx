@@ -6,7 +6,7 @@ type ToasterProps = React.ComponentProps<typeof Sonner>;
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = "system" } = useTheme();
   const baseToastClass =
-    "group toast group-[.toaster]:rounded-[24px] group-[.toaster]:border-3 group-[.toaster]:border-foreground group-[.toaster]:text-foreground group-[.toaster]:shadow-neo";
+    "group toast group-[.toaster]:rounded-[20px] group-[.toaster]:border group-[.toaster]:border-border group-[.toaster]:text-foreground group-[.toaster]:shadow-soft";
   const successToastClass =
     "group-[.toaster]:bg-success group-[.toaster]:text-success-foreground group-[.toast]:bg-success group-[.toast]:text-success-foreground";
   const errorToastClass =
@@ -25,12 +25,12 @@ const Toaster = ({ ...props }: ToasterProps) => {
           warning: successToastClass,
           loading: successToastClass,
           error: errorToastClass,
-          title: "group-[.toast]:font-black group-[.toast]:uppercase group-[.toast]:tracking-[0.08em]",
+          title: "group-[.toast]:font-semibold",
           description: `group-[.toast]:font-medium ${subtleTextClass}`,
           actionButton:
-            "group-[.toast]:border-2 group-[.toast]:border-foreground group-[.toast]:bg-white/15 group-[.toast]:text-current",
+            "group-[.toast]:border group-[.toast]:border-current/20 group-[.toast]:bg-white/15 group-[.toast]:text-current",
           cancelButton:
-            "group-[.toast]:border-2 group-[.toast]:border-foreground group-[.toast]:bg-white/10 group-[.toast]:text-current",
+            "group-[.toast]:border group-[.toast]:border-current/20 group-[.toast]:bg-white/10 group-[.toast]:text-current",
         },
       }}
       {...props}

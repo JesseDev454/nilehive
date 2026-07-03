@@ -12,6 +12,20 @@ function isRejectedStatus(status) {
   return status === "advisor_rejected" || status === "admin_rejected";
 }
 
+function isUnreadNavigationNotification(notification) {
+  const status = String(notification.delivery_status || "").toLowerCase();
+
+  return !(status.includes("read") || status.includes("seen") || status.includes("archived"));
+}
+
+function countMissingEventReports({ approvedEvents, reports }) {
+  const approvedEventIdsWithReports = new Set(reports.map((report) => report.proposal_id));
+
+  return approvedEvents
+    .filter((event) => isPastEvent(event))
+    .filter((event) => !approvedEventIdsWithReports.has(event.id)).length;
+}
+
 function summarizeProposals(proposals) {
   const total = proposals.length;
   const approved = proposals.filter((proposal) => proposal.status === "approved").length;
@@ -314,7 +328,7 @@ function buildRecentActivity({
     type: "feedback",
     club_id: item.club_id,
     club_name: null,
-    title: "Event feedback",
+    title: "Feedback received",
     message: item.rating ? `Feedback received with ${item.rating}/5 rating.` : "Feedback received.",
     created_at: item.updated_at || item.created_at
   }));
@@ -645,6 +659,68 @@ async function getPresidentDashboard(options) {
   };
 }
 
+async function getNavigationCounts(options) {
+  const { actor, database = db } = options;
+
+  if (!actor) {
+    throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
+  }
+
+  const notifications = typeof database.listNotificationsByUserId === "function"
+    ? await database.listNotificationsByUserId(actor.id)
+    : [];
+  const counts = {
+    notifications: notifications.filter(isUnreadNavigationNotification).length
+  };
+
+  if (actor.role === "admin") {
+    const [proposals, duePayments, reports, approvedEvents, tasks] = await Promise.all([
+      database.listAdminProposals ? database.listAdminProposals() : [],
+      database.listDuePayments ? database.listDuePayments() : [],
+      database.listEventReports ? database.listEventReports() : [],
+      database.listApprovedProposals ? database.listApprovedProposals() : [],
+      database.listTasks ? database.listTasks() : []
+    ]);
+
+    return {
+      role: "admin",
+      generated_at: new Date().toISOString(),
+      counts: {
+        ...counts,
+        final_review: proposals.filter((proposal) => proposal.status === "pending_admin_review").length,
+        events: approvedEvents.filter((event) => isSupportableEvent(event)).length,
+        reports_archive: countMissingEventReports({ approvedEvents, reports }),
+        dues: duePayments.filter((payment) => payment.status === "submitted").length,
+        tasks: tasks.filter((task) => task.status !== "completed").length
+      }
+    };
+  }
+
+  if (actor.role === "advisor") {
+    const clubIds = typeof database.getAdvisorClubIds === "function"
+      ? await database.getAdvisorClubIds(actor.id)
+      : [];
+    const pendingApprovals = clubIds.length && typeof database.listPendingProposalsByClubIds === "function"
+      ? await database.listPendingProposalsByClubIds(clubIds)
+      : [];
+
+    return {
+      role: "advisor",
+      generated_at: new Date().toISOString(),
+      counts: {
+        ...counts,
+        pending_approvals: pendingApprovals.length
+      }
+    };
+  }
+
+  return {
+    role: actor.role,
+    generated_at: new Date().toISOString(),
+    counts
+  };
+}
+
 async function getAdminOperationsDashboard(options) {
   const { actor, database = db } = options;
 
@@ -929,6 +1005,7 @@ module.exports = {
   getAdminClubDashboard,
   getAdminOperationsDashboard,
   getExecutiveDashboard,
+  getNavigationCounts,
   getPresidentDashboard,
   summarizeProposals
 };

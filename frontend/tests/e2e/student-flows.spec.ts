@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { loginAs } from "./helpers/auth";
-import { mockClubServicesApi } from "./helpers/mock-api";
+import { createE2EState, mockClubServicesApi } from "./helpers/mock-api";
 
 test("student discovers a club, uploads dues proof, and submits a join request", async ({ page }) => {
   await mockClubServicesApi(page);
@@ -52,6 +52,24 @@ test("student can RSVP for an upcoming event", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Build Night" }).first()).toBeVisible();
   await page.getByRole("button", { name: "RSVP" }).first().click();
   await expect(page.getByRole("button", { name: "RSVP Saved" }).first()).toBeVisible();
+});
+
+test("student sees club links only when real links exist", async ({ page }) => {
+  const state = createE2EState();
+  state.clubs[0].website_url = "https://robotics.example.com";
+  state.clubs[0].social_links = {
+    facebook: "https://facebook.com/robotics",
+    instagram: "https://instagram.com/robotics"
+  };
+  await mockClubServicesApi(page, state);
+  await loginAs(page, "student");
+
+  await page.goto("/membership/clubs/club-tech");
+
+  await expect(page.getByRole("heading", { name: "Club links" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Website" })).toHaveAttribute("href", /https:\/\/robotics\.example\.com\/?/);
+  await expect(page.getByRole("link", { name: "Facebook" })).toHaveAttribute("href", /https:\/\/facebook\.com\/robotics\/?/);
+  await expect(page.getByRole("link", { name: "Instagram" })).toHaveAttribute("href", /https:\/\/instagram\.com\/robotics\/?/);
 });
 
 test("student home shows discover quick access, dashboard share sheet, and contained announcements", async ({ page }) => {

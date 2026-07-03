@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Users } from "lucide-react";
 import { DataPagination } from "@/components/DataPagination";
-import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -192,13 +192,13 @@ export default function Members() {
 
   function renderMembersTable(memberList: ClubMemberRecord[]) {
     return (
-      <div className="nh-table-wrap">
-        <table className="nh-table">
+      <div className="clb-table-wrap">
+        <table className="clb-table">
           <thead>
             <tr>
               <th>Name</th>
-              <th className="hidden md:table-cell">Student ID</th>
-              <th className="hidden lg:table-cell">Contact</th>
+              <th>Student ID</th>
+              <th>Contact</th>
               <th>Club</th>
               <th>Role</th>
               <th>Status</th>
@@ -210,16 +210,9 @@ export default function Members() {
               <tr key={member.id} className="transition-colors hover:bg-accent/50">
                 <td>
                   <p className="font-medium">{member.full_name}</p>
-                  <p className="text-xs text-muted-foreground md:hidden">{member.student_id}</p>
-                  <p className="text-xs text-muted-foreground lg:hidden">{member.email || member.phone_number || "No contact"}</p>
                 </td>
-                <td>
-                  <Badge variant={member.dues_paid ? "default" : "outline"}>
-                    {member.dues_paid ? "Dues Paid" : member.dues_status === "submitted" ? "Under Review" : "Not Paid"}
-                  </Badge>
-                </td>
-                <td className="hidden md:table-cell text-muted-foreground">{member.student_id}</td>
-                <td className="hidden lg:table-cell text-muted-foreground">
+                <td className="text-muted-foreground whitespace-nowrap">{member.student_id || "-"}</td>
+                <td className="text-muted-foreground">
                   <p>{member.email || "-"}</p>
                   <p className="text-xs">{member.phone_number || ""}</p>
                 </td>
@@ -278,6 +271,11 @@ export default function Members() {
                     <StatusBadge status={member.membership_status} />
                   )}
                 </td>
+                <td>
+                  <Badge variant={member.dues_paid ? "default" : "outline"} className="whitespace-nowrap">
+                    {member.dues_paid ? "Dues Paid" : member.dues_status === "submitted" ? "Under Review" : "Not Paid"}
+                  </Badge>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -288,13 +286,13 @@ export default function Members() {
 
   if (!canViewMembers) {
     return (
-      <div className="nh-page">
-        <NeoPageHeader
+      <div className="clb-screen">
+        <ClublyPageHeader
           eyebrow="Club Records"
           title="Member Database"
-          description="Member records are available to executives, presidents, and Club Services admins."
+          description="Member records are available to executives, presidents, and Clubly admins."
         />
-        <NeoStateCard icon={Users} title="Member access is restricted" message="This role does not use the member database yet." />
+        <ClublyStateCard icon={Users} title="Member access is restricted" message="This role does not use the member database yet." />
       </div>
     );
   }
@@ -306,8 +304,8 @@ export default function Members() {
 
   return (
     <>
-      <div className="nh-page">
-        <NeoPageHeader
+      <div className="clb-screen">
+        <ClublyPageHeader
           eyebrow="Club Records"
           title="Member Database"
           description="View signed-up members, track club roles, and keep your club records organized."
@@ -316,7 +314,7 @@ export default function Members() {
         {role === "admin" ? (
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg">Club Services Member View</CardTitle>
+              <CardTitle className="text-lg">Clubly Member View</CardTitle>
               <p className="text-sm text-muted-foreground">
                 Filter and review members across all registered clubs.
               </p>
@@ -340,16 +338,16 @@ export default function Members() {
                   </Select>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="nh-card-soft p-3">
-                    <p className="nh-panel-title text-muted-foreground">Members</p>
+                  <div className="clb-card-soft p-3">
+                    <p className="clb-panel-title text-muted-foreground">Members</p>
                     <p className="mt-1 text-2xl font-black">{members.length}</p>
                   </div>
-                  <div className="nh-card-soft p-3">
-                    <p className="nh-panel-title text-muted-foreground">Active</p>
+                  <div className="clb-card-soft p-3">
+                    <p className="clb-panel-title text-muted-foreground">Active</p>
                     <p className="mt-1 text-2xl font-black">{members.filter((member) => member.membership_status === "active").length}</p>
                   </div>
-                  <div className="nh-card-soft p-3">
-                    <p className="nh-panel-title text-muted-foreground">Clubs Shown</p>
+                  <div className="clb-card-soft p-3">
+                    <p className="clb-panel-title text-muted-foreground">Clubs Shown</p>
                     <p className="mt-1 text-2xl font-black">{groupedMembers.length}</p>
                   </div>
                 </div>
@@ -364,14 +362,14 @@ export default function Members() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <NeoLoadingState title="Loading member database" message="We are organizing club member records." compact />
+              <ClublyLoadingState title="Loading member database" message="We are organizing club member records." compact />
             ) : isError ? (
-              <div className="nh-empty border-destructive bg-destructive/5">
+              <div className="clb-empty border-destructive bg-destructive/5">
                 <p className="font-medium">Unable to load members</p>
                 <p className="text-sm text-muted-foreground mt-1">{getErrorMessage(error)}</p>
               </div>
             ) : members.length === 0 ? (
-              <div className="nh-empty">
+              <div className="clb-empty">
                 <Users className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
                 <p className="font-medium">No member records yet</p>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -388,7 +386,7 @@ export default function Members() {
                       <section key={group.id} className="space-y-3">
                         <div className="flex flex-col gap-2 border-2 border-foreground bg-primary p-4 text-primary-foreground shadow-[4px_4px_0_hsl(var(--foreground))] sm:flex-row sm:items-center sm:justify-between">
                           <div>
-                            <p className="nh-panel-title text-primary-foreground/70">{group.code || "No code"}</p>
+                            <p className="clb-panel-title text-primary-foreground/70">{group.code || "No code"}</p>
                             <h3 className="text-xl font-black uppercase">{group.name}</h3>
                           </div>
                           <div className="flex gap-3 text-sm font-black uppercase tracking-[0.12em]">
@@ -450,7 +448,7 @@ export default function Members() {
               {replacementMemberLabel}
             </p>
             <p className="text-muted-foreground">
-              {currentPresidentLabel} will be demoted to a regular member record and lose local president access in Club Services.
+              {currentPresidentLabel} will be demoted to a regular member record and lose local president access in Clubly.
             </p>
           </div>
           <DialogFooter>

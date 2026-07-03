@@ -276,7 +276,6 @@ test("admin can fetch all approved events", async (t) => {
   assert.ok(payload.data.items.every((event) => event.status === "approved"));
   assert.ok(payload.data.items.every((event) => ["upcoming", "happening_today", "past"].includes(event.event_lifecycle)));
   assert.ok(payload.data.items.every((event) => typeof event.can_rsvp === "boolean"));
-  assert.ok(payload.data.items.every((event) => typeof event.can_submit_feedback === "boolean"));
 });
 
 test("executive can fetch approved events for their club", async (t) => {

@@ -204,6 +204,7 @@ export default function ProposalDetail() {
           queryClient.invalidateQueries({ queryKey: ["admin-dashboard-proposals"] }),
           queryClient.invalidateQueries({ queryKey: ["admin-operations-dashboard"] }),
           queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+          queryClient.invalidateQueries({ queryKey: ["navigation-counts"] }),
           queryClient.invalidateQueries({ queryKey: ["approved-events"] }),
           queryClient.invalidateQueries({ queryKey: ["event-reminders"] })
         ]);
@@ -232,7 +233,8 @@ export default function ProposalDetail() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["proposal-detail", role, id] }),
         queryClient.invalidateQueries({ queryKey: ["proposals"] }),
-        queryClient.invalidateQueries({ queryKey: ["notifications"] })
+        queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+        queryClient.invalidateQueries({ queryKey: ["navigation-counts"] })
       ]);
     } catch (resubmitError) {
       toast.error("Resubmission failed", {

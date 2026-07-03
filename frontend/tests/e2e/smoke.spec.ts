@@ -3,9 +3,12 @@ import { loginAs } from "./helpers/auth";
 import { mockClubServicesApi } from "./helpers/mock-api";
 
 test("app loads from the local dev server", async ({ page }) => {
+  await mockClubServicesApi(page);
+  await loginAs(page, "student");
+
   await page.goto("/");
 
-  await expect(page.locator("body")).toContainText("Club Services");
+  await expect(page.locator("body")).toContainText("Clubly");
 });
 
 test("student can open the dashboard without CampusOne SSO", async ({ page }) => {

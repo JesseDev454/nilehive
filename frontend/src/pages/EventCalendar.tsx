@@ -2,15 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import QRCode from "qrcode";
-import { Bell, CalendarDays, CheckCircle2, Clock, Copy, Loader2, MapPin, MessageSquare, Printer, QrCode, Share2, Users } from "lucide-react";
-import { NeoLoadingState, NeoPageHeader } from "@/components/NeoBrutal";
+import { Bell, CalendarDays, CheckCircle2, Clock, Copy, Loader2, MapPin, Printer, QrCode, Share2, Users } from "lucide-react";
+import { ClublyLoadingState, ClublyPageHeader } from "@/components/Clubly";
 import { DataPagination } from "@/components/DataPagination";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRole } from "@/contexts/RoleContext";
 import { useUsageTracking } from "@/hooks/useUsageTracking";
 import { getEventLifecycleLabel, isPastEvent } from "@/lib/eventLifecycle";
@@ -20,7 +18,6 @@ import { buildAppUrl, shareOrCopy } from "@/lib/share";
 import {
   getAnnouncements,
   ApiClientError,
-  createFeedback,
   getClubs,
   getPublicClubs,
   getApprovedEvents,
@@ -99,7 +96,7 @@ function getEventRequirementText(event: ApprovedEventRecord) {
   }
 
   if (event.event_lifecycle === "happening_today") {
-    return "Check-in is available on the event date when allowed by Club Services.";
+    return "Check-in is available on the event date when allowed by Clubly.";
   }
 
   return "No special event requirements have been published.";
@@ -249,9 +246,9 @@ function EventQrDialog({
   </head>
   <body>
     <div class="sheet">
-      <p class="eyebrow">Club Services Event Check-In</p>
+      <p class="eyebrow">Clubly Event Check-In</p>
       <h1>${event.title}</h1>
-      <p>Students should sign in to Club Services and scan this QR on the event date to record attendance.</p>
+      <p>Students should sign in to Clubly and scan this QR on the event date to record attendance.</p>
       <img src="${qrCodeUrl}" alt="QR code for ${event.title}" />
       <p class="meta">${getDateLabel(event.event_date)} - ${getTimeLabel(event.event_time)} - ${event.location || "Venue TBC"}</p>
       <p class="link">${checkInUrl}</p>
@@ -298,7 +295,7 @@ function EventQrDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
-          <div className="nh-card-soft space-y-2 p-4 text-sm">
+          <div className="clb-card-soft space-y-2 p-4 text-sm">
             <p className="text-lg font-black uppercase">{event.title}</p>
             <p className="text-muted-foreground">
               {getDateLabel(event.event_date)} - {getTimeLabel(event.event_time)} - {event.location || "Venue TBC"}
@@ -344,8 +341,6 @@ function EventQrDialog({
 function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
   const { role } = useRole();
   const queryClient = useQueryClient();
-  const [feedback, setFeedback] = useState("");
-  const [rating, setRating] = useState("5");
   const [showQrDialog, setShowQrDialog] = useState(false);
   const isStudent = role === "student";
   const canManageAttendance = ["admin", "president"].includes(role);
@@ -384,33 +379,10 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
       actionError("Could not mark attendance", mutationError, getErrorMessage(mutationError));
     }
   });
-  const feedbackMutation = useMutation({
-    mutationFn: () =>
-      createFeedback({
-        club_id: event.club_id,
-        proposal_id: event.proposal_id,
-        category: "event",
-        rating: Number(rating),
-        comment: feedback
-      }),
-    onSuccess: async () => {
-      actionSuccess("Feedback submitted", "Thank you for helping improve club events.");
-      setFeedback("");
-      setRating("5");
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["event-engagement", event.proposal_id] }),
-        queryClient.invalidateQueries({ queryKey: ["approved-events"] })
-      ]);
-    },
-    onError: (mutationError) => {
-      actionError("Could not submit feedback", mutationError, getErrorMessage(mutationError));
-    }
-  });
   const attendanceUserIds = new Set((engagement?.attendance || []).filter((record) => record.attended).map((record) => record.user_id));
   const selectedRsvpStatus = engagement?.current_user_rsvp?.status;
   const effectiveEvent = engagement?.event || event;
   const isPast = isPastEvent(effectiveEvent);
-  const canSubmitFeedback = Boolean(effectiveEvent.can_submit_feedback);
 
   function getRsvpButtonVariant(status: EventRsvpRecord["status"]) {
     return selectedRsvpStatus === status ? "default" : "outline";
@@ -437,7 +409,7 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
   }
 
   if (isLoading) {
-    return <NeoLoadingState title="Loading event engagement" message="We are checking RSVPs and feedback." compact />;
+    return <ClublyLoadingState title="Loading event engagement" message="We are checking RSVPs and attendance." compact />;
   }
 
   if (isError) {
@@ -452,28 +424,28 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
   return (
     <div className="space-y-4 border-t pt-4">
       <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-        <div className="nh-card-soft p-3">
+        <div className="clb-card-soft p-3">
           <p className="text-muted-foreground">Going</p>
           <p className="text-lg font-bold">{engagement?.summary.going ?? 0}</p>
         </div>
-        <div className="nh-card-soft p-3">
+        <div className="clb-card-soft p-3">
           <p className="text-muted-foreground">Interested</p>
           <p className="text-lg font-bold">{engagement?.summary.interested ?? 0}</p>
         </div>
         {canManageAttendance ? (
-          <div className="nh-card-soft p-3">
+          <div className="clb-card-soft p-3">
             <p className="text-muted-foreground">Attendance</p>
             <p className="text-lg font-bold">{engagement?.summary.attended ?? 0}</p>
           </div>
         ) : null}
-        <div className="nh-card-soft p-3">
+        <div className="clb-card-soft p-3">
           <p className="text-muted-foreground">My RSVP</p>
           <div className="mt-1">
             <RsvpBadge status={engagement?.current_user_rsvp?.status} />
           </div>
         </div>
         {isStudent ? (
-          <div className="nh-card-soft p-3">
+          <div className="clb-card-soft p-3">
             <p className="text-muted-foreground">My check-in</p>
             <p className="mt-1 text-sm font-semibold">{getCheckInAvailabilityLabel(effectiveEvent, engagement?.current_user_attendance?.attended)}</p>
           </div>
@@ -514,55 +486,12 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
                 </Button>
               </div>
               <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-                Feedback opens after the event for students marked attended.
+                Attendance is confirmed through the secure event check-in QR.
               </p>
             </>
-          ) : canSubmitFeedback ? (
-            <form
-              className="space-y-3"
-              onSubmit={(submitEvent) => {
-                submitEvent.preventDefault();
-                feedbackMutation.mutate();
-              }}
-            >
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <MessageSquare className="h-4 w-4" />
-                Event feedback
-              </div>
-              <div className="grid gap-2 sm:grid-cols-[140px_1fr]">
-                <Select value={rating} onValueChange={setRating}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="5">5 stars</SelectItem>
-                    <SelectItem value="4">4 stars</SelectItem>
-                    <SelectItem value="3">3 stars</SelectItem>
-                    <SelectItem value="2">2 stars</SelectItem>
-                    <SelectItem value="1">1 star</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Textarea
-                  value={feedback}
-                  onChange={(feedbackEvent) => setFeedback(feedbackEvent.target.value)}
-                  placeholder="Share what worked, what could improve, or what made the event memorable."
-                  rows={2}
-                />
-              </div>
-              <Button type="submit" size="sm" disabled={feedbackMutation.isPending || !feedback.trim()}>
-                {feedbackMutation.isPending ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  "Submit Feedback"
-                )}
-              </Button>
-            </form>
           ) : (
             <p className="text-sm font-semibold text-muted-foreground">
-              Feedback is available for students marked as attended.
+              This event has ended. Your attendance record stays available through secure check-in history.
             </p>
           )}
         </div>
@@ -582,7 +511,7 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
           ) : (
             <div className="space-y-2">
               {engagement.rsvps.map((rsvp) => (
-                <div key={rsvp.id} className="nh-list-card flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div key={rsvp.id} className="clb-list-card flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="font-medium">{rsvp.profile?.full_name || "Student"}</p>
                     <p className="text-xs text-muted-foreground">{rsvp.profile?.student_id || "No student ID"}</p>
@@ -672,7 +601,7 @@ function EventDetailDialog({
           <div className="space-y-3">
             <p className="text-sm font-semibold">Related announcements</p>
             {announcementsLoading ? (
-              <NeoLoadingState title="Loading announcements" message="Checking recent club updates." compact />
+              <ClublyLoadingState title="Loading announcements" message="Checking recent club updates." compact />
             ) : announcementsError ? (
               <p className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
                 {getErrorMessage(announcementsErrorValue)}
@@ -684,7 +613,7 @@ function EventDetailDialog({
             ) : (
               announcementsPage.items.map((announcement) => (
                 <Link key={announcement.id} to="/communications" className="block">
-                  <div className="nh-list-card">
+                  <div className="clb-list-card">
                     <div className="flex items-start justify-between gap-3">
                       <p className="font-semibold">{announcement.title}</p>
                       {!announcement.is_read ? <Badge>Unread</Badge> : null}
@@ -868,7 +797,7 @@ function EventCard({
 
 function ReminderCard({ reminder }: { reminder: EventReminderRecord }) {
   return (
-    <div className="nh-list-card">
+    <div className="clb-list-card">
       <div className="flex items-start gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center border-2 border-foreground bg-accent text-accent-foreground">
           <Bell className="h-4 w-4" />
@@ -966,7 +895,7 @@ export default function EventCalendar() {
   function renderEventList(events: ApprovedEventRecord[], emptyTitle: string, emptyMessage: string) {
     if (events.length === 0) {
       return (
-        <div className="nh-empty">
+        <div className="clb-empty">
           <p className="font-medium">{emptyTitle}</p>
           <p className="mt-1 text-sm text-muted-foreground">{emptyMessage}</p>
         </div>
@@ -985,8 +914,8 @@ export default function EventCalendar() {
   }
 
   return (
-    <div className="nh-page">
-      <NeoPageHeader
+    <div className="clb-screen">
+      <ClublyPageHeader
         eyebrow="Events"
         title="Events"
         description="Find today's events, RSVP for what is coming up, and check in when an event is live."
@@ -1019,21 +948,21 @@ export default function EventCalendar() {
             </CardHeader>
             <CardContent className="space-y-3">
               {eventsLoading ? (
-                <NeoLoadingState
+                <ClublyLoadingState
                   title="Getting events ready"
                   message="Please wait while we load the events you can see."
                   delayedMessage="This is taking longer than usual. Please check your network connection."
                   compact
                 />
               ) : eventsError ? (
-                <div className="nh-empty border-destructive bg-destructive/5">
+                <div className="clb-empty border-destructive bg-destructive/5">
                   <p className="font-medium">We couldn't load events right now</p>
                   <p className="text-sm text-muted-foreground mt-1">
                     {getErrorMessage(eventsErrorValue)}
                   </p>
                 </div>
               ) : activeEvents.length === 0 && pastEvents.length === 0 ? (
-                <div className="nh-empty">
+                <div className="clb-empty">
                   <CalendarDays className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
                   <p className="font-medium">No events yet</p>
                   <p className="text-sm text-muted-foreground mt-1">Events will appear here once they are ready.</p>
@@ -1061,7 +990,7 @@ export default function EventCalendar() {
                       <h3 className="text-sm font-black uppercase tracking-[0.12em]">Upcoming Events</h3>
                       <p className="text-sm text-muted-foreground">Plan ahead and RSVP before event day.</p>
                     </div>
-                    {renderEventList(upcomingOnlyEvents, "No upcoming events", "Past events are still available below for memories and feedback.")}
+                    {renderEventList(upcomingOnlyEvents, "No upcoming events", "Past events are still available below for attendance history.")}
                     {activeEvents.length > 0 ? (
                       <DataPagination
                         page={upcomingEventsPage.page}
@@ -1076,7 +1005,7 @@ export default function EventCalendar() {
                   <section className="space-y-3">
                     <div>
                       <h3 className="text-sm font-black uppercase tracking-[0.12em]">Past Events</h3>
-                      <p className="text-sm text-muted-foreground">Look back on completed events and leave feedback if you attended.</p>
+                      <p className="text-sm text-muted-foreground">Look back on completed events and confirmed attendance.</p>
                     </div>
                     {pastEvents.length === 0 ? renderEventList([], "No past events yet", "Completed events will appear here after their event date passes.") : (
                       <>
@@ -1111,14 +1040,14 @@ export default function EventCalendar() {
           </CardHeader>
           <CardContent className="space-y-3">
             {remindersLoading ? (
-              <NeoLoadingState
+              <ClublyLoadingState
                 title="Getting reminders ready"
                 message="Please wait while we load your event reminders."
                 delayedMessage="This is taking longer than usual. Please check your network connection."
                 compact
               />
             ) : remindersError ? (
-              <div className="nh-empty border-destructive bg-destructive/5">
+              <div className="clb-empty border-destructive bg-destructive/5">
                 <p className="font-medium">We couldn't load reminders right now</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   {getErrorMessage(remindersErrorValue)}

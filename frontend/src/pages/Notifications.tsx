@@ -23,7 +23,7 @@ import { DataPagination } from "@/components/DataPagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { NeoLoadingState, NeoPageHeader, NeoStateCard } from "@/components/NeoBrutal";
+import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   ApiClientError,
@@ -145,7 +145,7 @@ function getNotificationMeta(notification: NotificationRecord): NotificationMeta
     return {
       category: "feedback",
       label: "Feedback update",
-      description: "Club Services feedback",
+      description: "Clubly feedback",
       icon: MessageSquare,
       toneClass: "bg-fuchsia-100 text-fuchsia-900"
     };
@@ -344,7 +344,7 @@ export default function Notifications() {
     mutationFn: enablePushNotifications,
     onSuccess: () => {
       setPushEnabled(true);
-      actionSuccess("Phone notifications enabled", "This device can now receive Club Services alerts.");
+      actionSuccess("Phone notifications enabled", "This device can now receive Clubly alerts.");
     },
     onError: (mutationError) => {
       actionError("Could not enable notifications", mutationError, getErrorMessage(mutationError));
@@ -365,6 +365,7 @@ export default function Notifications() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["announcements"] });
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["navigation-counts"] });
     },
     onError: (mutationError) => {
       actionError("Could not mark announcement as read", mutationError, getErrorMessage(mutationError));
@@ -398,8 +399,8 @@ export default function Notifications() {
   }, []);
 
   return (
-    <div className="nh-page">
-      <NeoPageHeader
+    <div className="clb-screen">
+      <ClublyPageHeader
         eyebrow="Inbox"
         title="Notification Center"
         description={
@@ -421,7 +422,7 @@ export default function Notifications() {
                 {pushSupported
                   ? pushEnabled
                     ? "Enabled on this device."
-                    : "Enable alerts for important Club Services updates on this device."
+                    : "Enable alerts for important Clubly updates on this device."
                   : "This browser does not support web push notifications."}
               </p>
             </div>
@@ -504,9 +505,9 @@ export default function Notifications() {
       </div>
 
       {isLoading ? (
-        <NeoLoadingState title="Loading notifications" message="We are getting your latest updates." />
+        <ClublyLoadingState title="Loading notifications" message="We are getting your latest updates." />
       ) : isError ? (
-        <NeoStateCard icon={Bell} title="Unable to load notifications" message={getErrorMessage(error)} tone="danger" />
+        <ClublyStateCard icon={Bell} title="Unable to load notifications" message={getErrorMessage(error)} tone="danger" />
       ) : (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div className="space-y-4">
@@ -541,7 +542,7 @@ export default function Notifications() {
             </div>
 
             {filteredNotifications.length === 0 ? (
-              <NeoStateCard
+              <ClublyStateCard
                 icon={Bell}
                 title={activeFilter === "all" ? "No notifications yet" : "Nothing in this view"}
                 message={getFilteredEmptyMessage(activeFilter)}
@@ -623,15 +624,15 @@ export default function Notifications() {
               </div>
 
               {isLoadingAnnouncements ? (
-                <NeoLoadingState title="Loading announcements" message="Checking recent club updates." compact />
+                <ClublyLoadingState title="Loading announcements" message="Checking recent club updates." compact />
               ) : isAnnouncementsError ? (
                 <p className="text-sm text-destructive">Unable to load announcements right now.</p>
               ) : announcementsPage.items.length === 0 ? (
-                <div className="nh-empty">
+                <div className="clb-empty">
                   <Megaphone className="mx-auto h-8 w-8 text-muted-foreground" />
                   <p className="mt-3 font-medium">No announcements yet.</p>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Updates from clubs and Club Services will show up here.
+                    Updates from clubs and Clubly will show up here.
                   </p>
                 </div>
               ) : (
@@ -639,7 +640,7 @@ export default function Notifications() {
                   {announcementsPage.items.map((announcement) => (
                     <div
                       key={announcement.id}
-                      className={cn("nh-list-card", announcement.is_read ? "bg-card" : "border-primary bg-primary/5")}
+                      className={cn("clb-list-card", announcement.is_read ? "bg-card" : "border-primary bg-primary/5")}
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <p className="font-semibold">{announcement.title}</p>

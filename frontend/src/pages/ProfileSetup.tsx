@@ -69,7 +69,7 @@ export default function ProfileSetup() {
 
     if (!clubId) {
       toast.error("Select your club", {
-        description: "Your Club Services profile must be linked to a club."
+        description: "Your Clubly profile must be linked to a club."
       });
       return;
     }
@@ -119,7 +119,7 @@ export default function ProfileSetup() {
               Legacy Profile Recovery
             </p>
             <h1 className="mt-3 text-4xl font-extrabold leading-tight text-foreground md:text-5xl">
-              Recover an older Club Services account.
+              Recover an older Clubly account.
             </h1>
             <p className="mt-4 text-base leading-relaxed text-muted-foreground">
               New accounts should enter the app directly after signup. Use this recovery form only if your older account signed in successfully before automatic profile provisioning was added.
@@ -138,7 +138,7 @@ export default function ProfileSetup() {
               <p>
                 {requestedRole === "advisor"
                   ? "Advisor onboarding links you to a specific club without asking for a student ID."
-                  : "Club Services assigns presidents, and presidents choose executives from active members."}
+                  : "Clubly assigns presidents, and presidents choose executives from active members."}
               </p>
             </CardContent>
           </Card>
@@ -181,7 +181,7 @@ export default function ProfileSetup() {
                 <p className="text-xs text-muted-foreground">
                   {requestedRole === "advisor"
                     ? "Advisor access opens with the club you selected."
-                    : "Club Services assigns presidents, and presidents choose executives from active members."}
+                    : "Clubly assigns presidents, and presidents choose executives from active members."}
                 </p>
               </div>
 
@@ -213,8 +213,8 @@ export default function ProfileSetup() {
                     : clubsFailed
                       ? (clubsError instanceof Error ? clubsError.message : "We could not load clubs right now. Please refresh and try again.")
                       : clubs.length === 0
-                        ? "No clubs are available yet. Ask Club Services to add the official clubs for production."
-                        : "Official clubs appear here automatically. If no clubs are marked public yet, Club Services falls back to the current club directory."}
+                        ? "No clubs are available yet. Ask Clubly to add the official clubs for production."
+                        : "Official clubs appear here automatically. If no clubs are marked public yet, Clubly falls back to the current club directory."}
                 </p>
               </div>
             </div>
