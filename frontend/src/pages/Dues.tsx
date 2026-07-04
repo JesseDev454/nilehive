@@ -16,6 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -35,6 +36,7 @@ import { resolveStorageFileUrl } from "@/lib/storage";
 
 const DUES_PAGE_SIZE = 10;
 const DUE_STATUS_FILTERS = ["all", "unpaid", "submitted", "paid", "rejected"] as const;
+type ProofPreview = { url: string; title: string };
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -89,6 +91,8 @@ export default function Dues() {
   const [selectedClubId, setSelectedClubId] = useState("all");
   const [statusFilter, setStatusFilter] = useState<(typeof DUE_STATUS_FILTERS)[number]>(initialStatusFilter);
   const [proofLinksByPaymentId, setProofLinksByPaymentId] = useState<Record<string, string>>({});
+  const [viewedProofIds, setViewedProofIds] = useState<Record<string, boolean>>({});
+  const [proofPreview, setProofPreview] = useState<ProofPreview | null>(null);
   const canViewDues = role === "admin";
   const canManageSharedProfile = role === "admin";
   const duesClubFilter = role === "admin" && selectedClubId !== "all" ? selectedClubId : undefined;
@@ -200,6 +204,20 @@ export default function Dues() {
     [clubs]
   );
   const visiblePayments = duesData?.payments.items || [];
+
+  function openProofPreview(payment: DuePaymentRecord) {
+    const proofUrl = proofLinksByPaymentId[payment.id];
+
+    if (!proofUrl) {
+      return;
+    }
+
+    setViewedProofIds((current) => ({ ...current, [payment.id]: true }));
+    setProofPreview({
+      url: proofUrl,
+      title: `${clubNameById.get(payment.club_id) || "Club"} receipt proof`
+    });
+  }
 
   const saveSharedProfileMutation = useMutation({
     mutationFn: () =>
@@ -325,9 +343,9 @@ export default function Dues() {
                     <div className="mt-3 flex flex-wrap gap-2">
                       <ClublyMetaChip label="Session" value={payment.academic_session} />
                       {proofLinksByPaymentId[payment.id] ? (
-                        <a className="inline-flex min-h-9 items-center rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary" href={proofLinksByPaymentId[payment.id]} target="_blank" rel="noreferrer">
-                          View proof
-                        </a>
+                        <Button type="button" size="sm" variant="outline" onClick={() => openProofPreview(payment)}>
+                          View receipt
+                        </Button>
                       ) : null}
                     </div>
                   </div>
@@ -335,7 +353,8 @@ export default function Dues() {
                     <Button
                       type="button"
                       size="sm"
-                      disabled={updateMutation.isPending}
+                      disabled={updateMutation.isPending || !viewedProofIds[payment.id]}
+                      title={!viewedProofIds[payment.id] ? "View the uploaded receipt before verifying." : undefined}
                       onClick={() => updateMutation.mutate({ payment, nextStatus: "paid" })}
                     >
                       Verify
@@ -344,7 +363,8 @@ export default function Dues() {
                       type="button"
                       size="sm"
                       variant="outline"
-                      disabled={updateMutation.isPending}
+                      disabled={updateMutation.isPending || !viewedProofIds[payment.id]}
+                      title={!viewedProofIds[payment.id] ? "View the uploaded receipt before rejecting." : undefined}
                       onClick={() => updateMutation.mutate({ payment, nextStatus: "rejected" })}
                     >
                       Reject
@@ -690,14 +710,9 @@ export default function Dues() {
                           <p className="text-xs text-muted-foreground">{payment.payer_note}</p>
                         ) : null}
                         {proofLinksByPaymentId[payment.id] ? (
-                          <a
-                            className="text-xs text-primary underline"
-                            href={proofLinksByPaymentId[payment.id]}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            View proof
-                          </a>
+                          <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => openProofPreview(payment)}>
+                            View receipt
+                          </Button>
                         ) : null}
                       </td>
                       <td className="p-3 font-medium">{formatCurrency(payment.amount)}</td>
@@ -711,7 +726,8 @@ export default function Dues() {
                             <Button
                               type="button"
                               size="sm"
-                              disabled={updateMutation.isPending}
+                              disabled={updateMutation.isPending || !viewedProofIds[payment.id]}
+                              title={!viewedProofIds[payment.id] ? "View the uploaded receipt before marking paid." : undefined}
                               onClick={() =>
                                 updateMutation.mutate({
                                   payment,
@@ -727,7 +743,8 @@ export default function Dues() {
                               type="button"
                               size="sm"
                               variant="outline"
-                              disabled={updateMutation.isPending}
+                              disabled={updateMutation.isPending || !viewedProofIds[payment.id]}
+                              title={!viewedProofIds[payment.id] ? "View the uploaded receipt before rejecting." : undefined}
                               onClick={() =>
                                 updateMutation.mutate({
                                   payment,
@@ -755,6 +772,26 @@ export default function Dues() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={Boolean(proofPreview)} onOpenChange={(open) => !open && setProofPreview(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Payment receipt</DialogTitle>
+            <DialogDescription>
+              Review the uploaded receipt image before changing the dues status.
+            </DialogDescription>
+          </DialogHeader>
+          {proofPreview ? (
+            <div className="overflow-hidden rounded-[18px] border border-border bg-muted/40">
+              <img
+                src={proofPreview.url}
+                alt={proofPreview.title}
+                className="max-h-[70vh] w-full object-contain"
+              />
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

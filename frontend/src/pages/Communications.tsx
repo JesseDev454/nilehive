@@ -967,12 +967,6 @@ export default function Communications({ defaultTab = "announcements" }: { defau
                 </form>
               </CardContent>
             </Card>
-          ) : !isFeedbackManager ? (
-            <Card>
-              <CardContent className="pt-6 text-sm text-muted-foreground">
-                Sign in to send feedback about onboarding, club joining, dues, or login access.
-              </CardContent>
-            </Card>
           ) : null}
 
           {canViewFeedback ? (

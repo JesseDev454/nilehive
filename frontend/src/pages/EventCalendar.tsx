@@ -37,6 +37,8 @@ import {
 import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 import { actionError, actionSuccess } from "@/lib/notify";
 
+type EventFeedFilter = "today" | "upcoming" | "past";
+
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
     return error.message;
@@ -822,6 +824,7 @@ export default function EventCalendar() {
   const deepLinkPageSize = sharedEventId ? 100 : DEFAULT_PAGE_SIZE;
   const [upcomingPage, setUpcomingPage] = useState(1);
   const [pastPage, setPastPage] = useState(1);
+  const [eventFeedFilter, setEventFeedFilter] = useState<EventFeedFilter>("today");
   const {
     data: upcomingEventsPage = emptyPaginatedResponse<ApprovedEventRecord>(),
     isLoading: upcomingLoading,
@@ -889,6 +892,29 @@ export default function EventCalendar() {
   const todayEvents = activeEvents.filter((event) => event.event_lifecycle === "happening_today");
   const thisWeekEvents = activeEvents.filter((event) => event.event_lifecycle !== "happening_today" && isEventThisWeek(event));
   const upcomingOnlyEvents = activeEvents.filter((event) => event.event_lifecycle !== "happening_today" && !isEventThisWeek(event));
+  const upcomingAdminEvents = activeEvents.filter((event) => event.event_lifecycle !== "happening_today");
+  const selectedAdminEvents =
+    eventFeedFilter === "today" ? todayEvents : eventFeedFilter === "upcoming" ? upcomingAdminEvents : pastEvents;
+  const eventFeedFilterCopy = {
+    today: {
+      title: "Today's Events",
+      description: "Events happening today with check-in support.",
+      emptyTitle: "No events happening today",
+      emptyMessage: "No approved events are scheduled for today."
+    },
+    upcoming: {
+      title: "Upcoming Events",
+      description: "Approved events scheduled after today.",
+      emptyTitle: "No upcoming events",
+      emptyMessage: "Approved upcoming events will appear here."
+    },
+    past: {
+      title: "Past Events",
+      description: "Completed events and attendance history.",
+      emptyTitle: "No past events yet",
+      emptyMessage: "Completed events will appear here after their event date passes."
+    }
+  }[eventFeedFilter];
   function isSharedEvent(event: ApprovedEventRecord) {
     return sharedEventId === event.proposal_id || sharedEventId === event.id;
   }
@@ -928,23 +954,28 @@ export default function EventCalendar() {
             <CardHeader>
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div>
-                  <CardTitle className="text-lg">Student Event Feed</CardTitle>
-                  <p className="mt-1 text-sm text-muted-foreground">Events from your joined clubs are highlighted, while public campus club events remain discoverable.</p>
+                  <CardTitle className="text-lg">{role === "admin" ? "Admin Event Feed" : "Student Event Feed"}</CardTitle>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {role === "admin"
+                      ? "Filter approved events by timing and open the attendance tools when needed."
+                      : "Events from your joined clubs are highlighted, while public campus club events remain discoverable."}
+                  </p>
                 </div>
-                <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="rounded-xl border border-border bg-muted/40 p-3">
-                    <p className="text-lg font-bold">{todayEvents.length}</p>
-                    <p className="text-muted-foreground">Today</p>
+                {role === "admin" ? (
+                  <div className="flex flex-wrap gap-2">
+                    {(["today", "upcoming", "past"] as const).map((filter) => (
+                      <Button
+                        key={filter}
+                        type="button"
+                        size="sm"
+                        variant={eventFeedFilter === filter ? "default" : "outline"}
+                        onClick={() => setEventFeedFilter(filter)}
+                      >
+                        {filter === "today" ? "Today" : filter === "upcoming" ? "Upcoming" : "Past"}
+                      </Button>
+                    ))}
                   </div>
-                  <div className="rounded-xl border border-border bg-muted/40 p-3">
-                    <p className="text-lg font-bold">{activeEvents.filter((event) => joinedClubIds.has(event.club_id)).length}</p>
-                    <p className="text-muted-foreground">My clubs</p>
-                  </div>
-                  <div className="rounded-xl border border-border bg-muted/40 p-3">
-                    <p className="text-lg font-bold">{activeEvents.filter((event) => !joinedClubIds.has(event.club_id)).length}</p>
-                    <p className="text-muted-foreground">Campus</p>
-                  </div>
-                </div>
+                ) : null}
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -969,30 +1000,14 @@ export default function EventCalendar() {
                   <p className="text-sm text-muted-foreground mt-1">Events will appear here once they are ready.</p>
                 </div>
               ) : (
-                <div className="space-y-8">
+                role === "admin" ? (
                   <section className="space-y-3">
                     <div>
-                      <h3 className="text-sm font-bold tracking-[0.12em]">Today's Events</h3>
-                      <p className="text-sm text-muted-foreground">Check in here when the event is active.</p>
+                      <h3 className="text-sm font-bold tracking-[0.12em]">{eventFeedFilterCopy.title}</h3>
+                      <p className="text-sm text-muted-foreground">{eventFeedFilterCopy.description}</p>
                     </div>
-                    {renderEventList(todayEvents, "No events happening today", "This is a quiet day. Check this week and upcoming events below.")}
-                  </section>
-
-                  <section className="space-y-3">
-                    <div>
-                      <h3 className="text-sm font-bold tracking-[0.12em]">This Week</h3>
-                      <p className="text-sm text-muted-foreground">Events coming soon from clubs you can follow or join.</p>
-                    </div>
-                    {renderEventList(thisWeekEvents, "No events this week", "Upcoming events beyond this week are listed below.")}
-                  </section>
-
-                  <section className="space-y-3">
-                    <div>
-                      <h3 className="text-sm font-bold tracking-[0.12em]">Upcoming Events</h3>
-                      <p className="text-sm text-muted-foreground">Plan ahead and RSVP before event day.</p>
-                    </div>
-                    {renderEventList(upcomingOnlyEvents, "No upcoming events", "Past events are still available below for attendance history.")}
-                    {activeEvents.length > 0 ? (
+                    {renderEventList(selectedAdminEvents, eventFeedFilterCopy.emptyTitle, eventFeedFilterCopy.emptyMessage)}
+                    {eventFeedFilter === "upcoming" && activeEvents.length > 0 ? (
                       <DataPagination
                         page={upcomingEventsPage.page}
                         pageSize={upcomingEventsPage.page_size}
@@ -1001,24 +1016,58 @@ export default function EventCalendar() {
                         onPageChange={setUpcomingPage}
                       />
                     ) : null}
+                    {eventFeedFilter === "past" && pastEvents.length > 0 ? (
+                      <DataPagination
+                        page={pastEventsPage.page}
+                        pageSize={pastEventsPage.page_size}
+                        total={pastEventsPage.total}
+                        hasNext={pastEventsPage.has_next}
+                        onPageChange={setPastPage}
+                      />
+                    ) : null}
                   </section>
+                ) : (
+                  <div className="space-y-8">
+                    <section className="space-y-3">
+                      <div>
+                        <h3 className="text-sm font-bold tracking-[0.12em]">Today's Events</h3>
+                        <p className="text-sm text-muted-foreground">Check in here when the event is active.</p>
+                      </div>
+                      {renderEventList(todayEvents, "No events happening today", "This is a quiet day. Check this week and upcoming events below.")}
+                    </section>
 
-                  <section className="space-y-3">
-                    <div>
-                      <h3 className="text-sm font-bold tracking-[0.12em]">Past Events</h3>
-                      <p className="text-sm text-muted-foreground">Look back on completed events and secure attendance records.</p>
-                    </div>
-                    {pastEvents.length === 0 ? renderEventList([], "No past events yet", "Completed events will appear here after their event date passes.") : (
-                      <>
-                        {pastEvents.map((event) => (
-                          <EventCard
-                            key={event.id}
-                            event={event}
-                            clubName={clubNameById.get(event.club_id) || "Campus club"}
-                            isJoinedClub={joinedClubIds.has(event.club_id)}
-                            isDeepLinked={isSharedEvent(event)}
-                          />
-                        ))}
+                    <section className="space-y-3">
+                      <div>
+                        <h3 className="text-sm font-bold tracking-[0.12em]">This Week</h3>
+                        <p className="text-sm text-muted-foreground">Events coming soon from clubs you can follow or join.</p>
+                      </div>
+                      {renderEventList(thisWeekEvents, "No events this week", "Upcoming events beyond this week are listed below.")}
+                    </section>
+
+                    <section className="space-y-3">
+                      <div>
+                        <h3 className="text-sm font-bold tracking-[0.12em]">Upcoming Events</h3>
+                        <p className="text-sm text-muted-foreground">Plan ahead and RSVP before event day.</p>
+                      </div>
+                      {renderEventList(upcomingOnlyEvents, "No upcoming events", "Past events are still available below for attendance history.")}
+                      {activeEvents.length > 0 ? (
+                        <DataPagination
+                          page={upcomingEventsPage.page}
+                          pageSize={upcomingEventsPage.page_size}
+                          total={upcomingEventsPage.total}
+                          hasNext={upcomingEventsPage.has_next}
+                          onPageChange={setUpcomingPage}
+                        />
+                      ) : null}
+                    </section>
+
+                    <section className="space-y-3">
+                      <div>
+                        <h3 className="text-sm font-bold tracking-[0.12em]">Past Events</h3>
+                        <p className="text-sm text-muted-foreground">Look back on completed events and secure attendance records.</p>
+                      </div>
+                      {renderEventList(pastEvents, "No past events yet", "Completed events will appear here after their event date passes.")}
+                      {pastEvents.length > 0 ? (
                         <DataPagination
                           page={pastEventsPage.page}
                           pageSize={pastEventsPage.page_size}
@@ -1026,10 +1075,10 @@ export default function EventCalendar() {
                           hasNext={pastEventsPage.has_next}
                           onPageChange={setPastPage}
                         />
-                      </>
-                    )}
-                  </section>
-                </div>
+                      ) : null}
+                    </section>
+                  </div>
+                )
               )}
             </CardContent>
           </Card>
