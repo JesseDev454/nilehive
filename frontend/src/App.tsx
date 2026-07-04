@@ -24,6 +24,7 @@ import AdminClubDashboard from "@/pages/AdminClubDashboard";
 import Communications from "@/pages/Communications";
 import Clubs from "@/pages/Clubs";
 import Dues from "@/pages/Dues";
+import DuesProofReview from "@/pages/DuesProofReview";
 import EventCalendar from "@/pages/EventCalendar";
 import EventCheckIn from "@/pages/EventCheckIn";
 import MediaArchive from "@/pages/MediaArchive";
@@ -125,6 +126,7 @@ const App = () => (
                   <Route path="/membership/clubs/:clubId" element={<Membership />} />
                   <Route path="/members" element={<Members />} />
                   <Route path="/dues" element={<Dues />} />
+                  <Route path="/dues/:paymentId/proof" element={<DuesProofReview />} />
                   <Route path="/communications" element={<Communications />} />
                   <Route path="/clubs" element={<Clubs />} />
                   <Route path="/clubs/:clubId/edit" element={<Clubs />} />

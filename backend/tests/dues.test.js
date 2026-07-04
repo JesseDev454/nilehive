@@ -6,6 +6,7 @@ const {
   applyPaymentSettingsToAllClubs,
   applyDuesAmountToAllClubs,
   createDuePayment,
+  getDuePayment,
   getPaymentSettings,
   listDuePayments,
   listMyDuePayments,
@@ -140,6 +141,84 @@ test("paginated dues listing keeps full summary totals", async () => {
   assert.equal(result.payments.page, 2);
   assert.equal(result.payments.total, 3);
   assert.equal(result.payments.has_next, true);
+});
+
+test("admin can fetch a due payment with member and club details", async () => {
+  const fakeDatabase = {
+    async getDuePaymentById(paymentId) {
+      assert.equal(paymentId, "payment-1");
+      return createPayment({
+        status: "submitted",
+        club: {
+          id: "club-1",
+          name: "Nile Charity Club",
+          code: "NCC"
+        },
+        member: {
+          id: "member-1",
+          full_name: "Ada Student",
+          student_id: "020233344",
+          email: "ada@nile.test",
+          phone_number: "08077754433",
+          club_role: "member",
+          membership_status: "inactive"
+        }
+      });
+    }
+  };
+
+  const payment = await getDuePayment({
+    actor: {
+      id: "admin-1",
+      role: "admin",
+      clubId: null
+    },
+    paymentId: "payment-1",
+    database: fakeDatabase
+  });
+
+  assert.equal(payment.id, "payment-1");
+  assert.equal(payment.status, "submitted");
+  assert.equal(payment.club.name, "Nile Charity Club");
+  assert.equal(payment.member.full_name, "Ada Student");
+  assert.equal(payment.member.student_id, "020233344");
+});
+
+test("non-admin cannot fetch a due payment by id", async () => {
+  await assert.rejects(
+    () =>
+      getDuePayment({
+        actor: {
+          id: "student-1",
+          role: "student"
+        },
+        paymentId: "payment-1",
+        database: {}
+      }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
+});
+
+test("fetching a missing due payment returns not found", async () => {
+  const fakeDatabase = {
+    async getDuePaymentById() {
+      return null;
+    }
+  };
+
+  await assert.rejects(
+    () =>
+      getDuePayment({
+        actor: {
+          id: "admin-1",
+          role: "admin",
+          clubId: null
+        },
+        paymentId: "missing-payment",
+        database: fakeDatabase
+      }),
+    (error) => error.statusCode === 404 && error.code === "DUE_PAYMENT_NOT_FOUND"
+  );
 });
 
 test("admin can verify a submitted payment as paid", async () => {
@@ -704,6 +783,12 @@ test("dues summary calculates collection rate and amounts", () => {
 
 function createRouteDatabase() {
   const profiles = {
+    "admin-1": {
+      id: "admin-1",
+      full_name: "Admin User",
+      role: "admin",
+      club_id: null
+    },
     "executive-1": {
       id: "executive-1",
       full_name: "Amina Executive",
@@ -714,20 +799,51 @@ function createRouteDatabase() {
 
   return {
     async getUserByAccessToken(accessToken) {
-      if (accessToken !== "executive-token") {
-        return null;
+      if (accessToken === "admin-token") {
+        return {
+          id: "admin-1",
+          email: "admin@nilehive.test"
+        };
       }
 
-      return {
-        id: "executive-1",
-        email: "executive@nilehive.test"
-      };
+      if (accessToken === "executive-token") {
+        return {
+          id: "executive-1",
+          email: "executive@nilehive.test"
+        };
+      }
+
+      return null;
     },
     async getProfileById(profileId) {
       return profiles[profileId] ?? null;
     },
     async listDuePayments() {
       return [createPayment()];
+    },
+    async getDuePaymentById(paymentId) {
+      if (paymentId !== "payment-1") {
+        return null;
+      }
+
+      return createPayment({
+        id: "payment-1",
+        status: "submitted",
+        club: {
+          id: "club-1",
+          name: "Nile Charity Club",
+          code: "NCC"
+        },
+        member: {
+          id: "member-1",
+          full_name: "Ada Student",
+          student_id: "020233344",
+          email: "ada@nilehive.test",
+          phone_number: "08077754433",
+          club_role: "member",
+          membership_status: "inactive"
+        }
+      });
     }
   };
 }
@@ -766,4 +882,22 @@ test("missing-token access is blocked for dues", async (t) => {
 
   assert.equal(response.status, 401);
   assert.equal(payload.error.code, "AUTH_REQUIRED");
+});
+
+test("admin can fetch one due payment through the route", async (t) => {
+  const server = await createTestServer(createRouteDatabase());
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/dues/payment-1`, {
+    headers: {
+      Authorization: "Bearer admin-token"
+    }
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.id, "payment-1");
+  assert.equal(payload.data.status, "submitted");
+  assert.equal(payload.data.club.name, "Nile Charity Club");
+  assert.equal(payload.data.member.student_id, "020233344");
 });

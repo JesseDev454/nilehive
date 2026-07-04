@@ -78,7 +78,25 @@ function formatDuePayment(payment) {
     verified_by: payment.verified_by,
     verified_at: payment.verified_at,
     created_at: payment.created_at,
-    updated_at: payment.updated_at
+    updated_at: payment.updated_at,
+    club: payment.club
+      ? {
+          id: payment.club.id,
+          name: payment.club.name,
+          code: payment.club.code
+        }
+      : null,
+    member: payment.member
+      ? {
+          id: payment.member.id,
+          full_name: payment.member.full_name,
+          student_id: payment.member.student_id,
+          email: payment.member.email,
+          phone_number: payment.member.phone_number,
+          club_role: payment.member.club_role,
+          membership_status: payment.member.membership_status
+        }
+      : null
   };
 }
 
@@ -199,6 +217,22 @@ async function listMyDuePayments(options) {
   return {
     payments: currentPayments.map(formatStudentDuePayment)
   };
+}
+
+async function getDuePayment(options) {
+  const { actor, paymentId, database = db } = options;
+  requireActor(actor);
+  requireSupportedRole(actor);
+
+  const payment = await database.getDuePaymentById(paymentId);
+
+  if (!payment) {
+    throw new ApiError(404, "Due payment not found", "DUE_PAYMENT_NOT_FOUND");
+  }
+
+  getScopedClubId(actor, payment.club_id);
+
+  return formatDuePayment(payment);
 }
 
 async function createDuePayment(options) {
@@ -485,6 +519,7 @@ module.exports = {
   applyPaymentSettingsToAllClubs,
   applyDuesAmountToAllClubs,
   createDuePayment,
+  getDuePayment,
   getPaymentSettings,
   listDuePayments,
   listMyDuePayments,

@@ -26,7 +26,7 @@ const clubMemberSelect =
 const clubMemberStatusHistorySelect =
   "id, member_id, club_id, profile_id, previous_status, new_status, changed_by, reason, created_at";
 const duePaymentSelect =
-  "id, club_id, member_id, amount, academic_session, payment_reference, payment_account_name, payment_paid_at, payer_note, proof_url, submitted_at, status, verified_by, verified_at, created_at, updated_at";
+  "id, club_id, member_id, amount, academic_session, payment_reference, payment_account_name, payment_paid_at, payer_note, proof_url, submitted_at, status, verified_by, verified_at, created_at, updated_at, club:clubs!due_payments_club_id_fkey(id, name, code), member:club_members!due_payments_member_id_fkey(id, full_name, student_id, email, phone_number, club_role, membership_status)";
 const clubPaymentSettingsSelect =
   "id, club_id, bank_name, account_number, account_name, payment_instructions, fresher_dues_amount, returning_student_dues_amount, created_at, updated_at";
 const eventReportSelect =

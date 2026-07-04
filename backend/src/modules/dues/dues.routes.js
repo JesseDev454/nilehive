@@ -24,6 +24,7 @@ function createDuesRouter(options = {}) {
   router.post("/payment-settings/apply-all", auth, controller.applyDuesAmountToAllClubs);
   router.post("/payment-settings/apply-account-all", auth, controller.applyPaymentSettingsToAllClubs);
   router.get("/", auth, controller.listDuePayments);
+  router.get("/:paymentId", auth, controller.getDuePayment);
   router.post("/", auth, controller.createDuePayment);
   router.post("/:paymentId/submit-confirmation", auth, controller.submitDuePaymentConfirmation);
   router.post("/:paymentId", auth, duesDecisionLimit, controller.updateDuePayment);

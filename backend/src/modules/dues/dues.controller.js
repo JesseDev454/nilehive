@@ -5,6 +5,7 @@ const {
   applyPaymentSettingsToAllClubs,
   applyDuesAmountToAllClubs,
   createDuePayment,
+  getDuePayment,
   getPaymentSettings,
   listDuePayments,
   listMyDuePayments,
@@ -43,6 +44,16 @@ function createDuesController(options = {}) {
       });
 
       res.status(200).json({ data: result });
+    }),
+
+    getDuePayment: asyncHandler(async (req, res) => {
+      const payment = await getDuePayment({
+        actor: req.user,
+        paymentId: req.params.paymentId,
+        database
+      });
+
+      res.status(200).json({ data: payment });
     }),
 
     getPaymentSettings: asyncHandler(async (req, res) => {

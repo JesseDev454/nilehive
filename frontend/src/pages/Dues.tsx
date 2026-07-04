@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
-import { CreditCard, Landmark, Loader2, Receipt, TrendingUp } from "lucide-react";
-import { CounterUp } from "@/components/CounterUp";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { CreditCard, Receipt } from "lucide-react";
 import { DataPagination } from "@/components/DataPagination";
 import {
   ClublyLoadingState,
@@ -16,7 +15,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -28,15 +26,12 @@ import {
   getClubPaymentSettings,
   getClubs,
   getDuePayments,
-  updateDuePayment,
   type DuePaymentRecord
 } from "@/lib/api";
 import { actionError, actionSuccess } from "@/lib/notify";
-import { resolveStorageFileUrl } from "@/lib/storage";
 
 const DUES_PAGE_SIZE = 10;
 const DUE_STATUS_FILTERS = ["all", "unpaid", "submitted", "paid", "rejected"] as const;
-type ProofPreview = { url: string; title: string };
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -72,9 +67,14 @@ function getPaymentStatusClassName(status: DuePaymentRecord["status"]) {
   }[status];
 }
 
+function getSubmittedName(payment: DuePaymentRecord) {
+  return payment.member?.full_name || payment.payment_account_name || "Name not submitted";
+}
+
 export default function Dues() {
   const { role } = useRole();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const requestedStatus = searchParams.get("status");
   const initialStatusFilter = DUE_STATUS_FILTERS.includes(requestedStatus as (typeof DUE_STATUS_FILTERS)[number])
@@ -90,13 +90,11 @@ export default function Dues() {
   const [duesPage, setDuesPage] = useState(1);
   const [selectedClubId, setSelectedClubId] = useState("all");
   const [statusFilter, setStatusFilter] = useState<(typeof DUE_STATUS_FILTERS)[number]>(initialStatusFilter);
-  const [proofLinksByPaymentId, setProofLinksByPaymentId] = useState<Record<string, string>>({});
-  const [viewedProofIds, setViewedProofIds] = useState<Record<string, boolean>>({});
-  const [proofPreview, setProofPreview] = useState<ProofPreview | null>(null);
   const canViewDues = role === "admin";
-  const canManageSharedProfile = role === "admin";
   const duesClubFilter = role === "admin" && selectedClubId !== "all" ? selectedClubId : undefined;
   const duesStatusFilter = statusFilter === "all" ? undefined : statusFilter;
+  const returnTo = `${location.pathname}${location.search}`;
+  const submittedProofsReturnTo = "/dues?status=submitted";
 
   const {
     data: duesData,
@@ -151,73 +149,17 @@ export default function Dues() {
   }, [sharedPaymentSettings]);
 
   useEffect(() => {
-    const payments = duesData?.payments.items || [];
-
-    if (!payments.length) {
-      setProofLinksByPaymentId({});
-      return;
-    }
-
-    let cancelled = false;
-
-    async function hydrateProofLinks() {
-      const nextEntries = await Promise.all(
-        payments.map(async (payment) => {
-          const resolvedUrl = await resolveStorageFileUrl("dues-receipts", payment.proof_url);
-          return [payment.id, resolvedUrl] as const;
-        })
-      );
-
-      if (cancelled) {
-        return;
-      }
-
-      setProofLinksByPaymentId(
-        nextEntries.reduce<Record<string, string>>((acc, [paymentId, url]) => {
-          if (url) {
-            acc[paymentId] = url;
-          }
-          return acc;
-        }, {})
-      );
-    }
-
-    hydrateProofLinks();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [duesData?.payments.items]);
-
-  useEffect(() => {
     if (duesPage > 1 && duesData && duesData.payments.total > 0 && duesData.payments.items.length === 0) {
       setDuesPage(duesPage - 1);
     }
   }, [duesData, duesPage]);
-
-  useEffect(() => {
-    setDuesPage(1);
-  }, [duesClubFilter]);
 
   const clubNameById = useMemo(
     () => new Map(clubs.map((club) => [club.id, club.name])),
     [clubs]
   );
   const visiblePayments = duesData?.payments.items || [];
-
-  function openProofPreview(payment: DuePaymentRecord) {
-    const proofUrl = proofLinksByPaymentId[payment.id];
-
-    if (!proofUrl) {
-      return;
-    }
-
-    setViewedProofIds((current) => ({ ...current, [payment.id]: true }));
-    setProofPreview({
-      url: proofUrl,
-      title: `${clubNameById.get(payment.club_id) || "Club"} receipt proof`
-    });
-  }
+  const pendingProofs = visiblePayments.filter((payment) => payment.status === "submitted");
 
   const saveSharedProfileMutation = useMutation({
     mutationFn: () =>
@@ -243,27 +185,6 @@ export default function Dues() {
     },
     onError: (mutationError) => {
       actionError("Could not update the shared payment profile", mutationError, getErrorMessage(mutationError));
-    }
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: ({ payment, nextStatus }: { payment: DuePaymentRecord; nextStatus: DuePaymentRecord["status"] }) =>
-      updateDuePayment(payment.id, {
-        status: nextStatus
-      }),
-    onSuccess: async () => {
-      actionSuccess("Dues status updated", "The dues review has been saved.");
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["dues"] }),
-        queryClient.invalidateQueries({ queryKey: ["membership-requests"] }),
-        queryClient.invalidateQueries({ queryKey: ["club-members"] }),
-        queryClient.invalidateQueries({ queryKey: ["my-membership-requests"] }),
-        queryClient.invalidateQueries({ queryKey: ["my-dues"] }),
-        queryClient.invalidateQueries({ queryKey: ["navigation-counts"] })
-      ]);
-    },
-    onError: (mutationError) => {
-      actionError("Could not update dues status", mutationError, getErrorMessage(mutationError));
     }
   });
 
@@ -293,14 +214,13 @@ export default function Dues() {
   const expectedAmount = summary?.expected_amount ?? 0;
   const collectedAmount = summary?.collected_amount ?? 0;
   const collectionRate = summary?.collection_rate ?? 0;
-  const pendingProofs = visiblePayments.filter((payment) => payment.status === "submitted");
 
   return (
     <div className="clb-screen">
       <ClublyPageHeader
         eyebrow="Finance"
         title="Dues & Payment Review"
-        description="Verify submitted proofs first, then scan the full dues roster."
+        description="Open each submitted receipt, review the image, then verify or reject the payment."
       />
 
       <ClublyProgressHero
@@ -308,7 +228,7 @@ export default function Dues() {
         title="Semester dues"
         value={`${formatCurrency(collectedAmount)} / ${formatCurrency(expectedAmount)}`}
         progress={collectionRate}
-        detail="Submitted proofs are surfaced below so admins can clear the queue with fewer clicks."
+        detail="Submitted proofs are surfaced below so admins can clear the queue from the full-page proof viewer."
         stats={[
           { label: "collected", value: `${Math.round(collectionRate)}%` },
           { label: "to verify", value: pendingProofs.length },
@@ -321,7 +241,7 @@ export default function Dues() {
         <CardHeader>
           <ClublySectionHeader
             title="Pending proofs"
-            description="The primary finance task: review submitted payment evidence and mark it paid or rejected."
+            description="Open a student's uploaded receipt before changing their dues status."
           />
         </CardHeader>
         <CardContent>
@@ -333,42 +253,29 @@ export default function Dues() {
             <ClublyStateCard icon={Receipt} title="No submitted proofs" message="Submitted dues proofs will appear here before they enter the full ledger." />
           ) : (
             <div className="space-y-3">
-              {pendingProofs.slice(0, 5).map((payment) => (
+              {pendingProofs.map((payment) => (
                 <div key={payment.id} className="clb-list-card flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div className="min-w-0">
-                    <p className="font-semibold">Submitted proof</p>
+                    <p className="font-semibold">{getSubmittedName(payment)}</p>
                     <p className="mt-1 text-sm text-muted-foreground">
-                      {clubNameById.get(payment.club_id) || "Unknown club"} - {formatCurrency(payment.amount)}
+                      {payment.club?.name || clubNameById.get(payment.club_id) || "Unknown club"} - {formatCurrency(payment.amount)}
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <ClublyMetaChip label="Session" value={payment.academic_session} />
-                      {proofLinksByPaymentId[payment.id] ? (
-                        <Button type="button" size="sm" variant="outline" onClick={() => openProofPreview(payment)}>
-                          View receipt
-                        </Button>
-                      ) : null}
+                      {payment.member?.student_id ? <ClublyMetaChip label="Student ID" value={payment.member.student_id} /> : null}
+                      <Badge className={getPaymentStatusClassName(payment.status)}>{getPaymentStatusLabel(payment.status)}</Badge>
                     </div>
                   </div>
                   <div className="flex gap-2 md:shrink-0">
-                    <Button
-                      type="button"
-                      size="sm"
-                      disabled={updateMutation.isPending || !viewedProofIds[payment.id]}
-                      title={!viewedProofIds[payment.id] ? "View the uploaded receipt before verifying." : undefined}
-                      onClick={() => updateMutation.mutate({ payment, nextStatus: "paid" })}
-                    >
-                      Verify
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      disabled={updateMutation.isPending || !viewedProofIds[payment.id]}
-                      title={!viewedProofIds[payment.id] ? "View the uploaded receipt before rejecting." : undefined}
-                      onClick={() => updateMutation.mutate({ payment, nextStatus: "rejected" })}
-                    >
-                      Reject
-                    </Button>
+                    {payment.proof_url ? (
+                      <Button asChild size="sm">
+                        <Link to={`/dues/${payment.id}/proof`} state={{ returnTo: submittedProofsReturnTo }}>
+                          View Proof
+                        </Link>
+                      </Button>
+                    ) : (
+                      <Badge variant="outline">No proof file</Badge>
+                    )}
                   </div>
                 </div>
               ))}
@@ -385,33 +292,31 @@ export default function Dues() {
           />
         </CardHeader>
         <CardContent>
-          {role === "admin" ? (
-            <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:max-w-2xl">
-              <div className="space-y-2">
-                <Label htmlFor="dues_club_filter">Club</Label>
-                <Select value={selectedClubId} onValueChange={setSelectedClubId}>
-                  <SelectTrigger id="dues_club_filter"><SelectValue placeholder="All clubs" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All clubs</SelectItem>
-                    {clubs.map((club) => <SelectItem key={club.id} value={club.id}>{club.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="dues_status_filter">Status</Label>
-                <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as (typeof DUE_STATUS_FILTERS)[number])}>
-                  <SelectTrigger id="dues_status_filter"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All statuses</SelectItem>
-                    <SelectItem value="submitted">Submitted proofs</SelectItem>
-                    <SelectItem value="rejected">Rejected proofs</SelectItem>
-                    <SelectItem value="unpaid">Unpaid</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+          <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:max-w-2xl">
+            <div className="space-y-2">
+              <Label htmlFor="dues_club_filter">Club</Label>
+              <Select value={selectedClubId} onValueChange={setSelectedClubId}>
+                <SelectTrigger id="dues_club_filter"><SelectValue placeholder="All clubs" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All clubs</SelectItem>
+                  {clubs.map((club) => <SelectItem key={club.id} value={club.id}>{club.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
             </div>
-          ) : null}
+            <div className="space-y-2">
+              <Label htmlFor="dues_status_filter">Status</Label>
+              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as (typeof DUE_STATUS_FILTERS)[number])}>
+                <SelectTrigger id="dues_status_filter"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All statuses</SelectItem>
+                  <SelectItem value="submitted">Submitted proofs</SelectItem>
+                  <SelectItem value="rejected">Rejected proofs</SelectItem>
+                  <SelectItem value="unpaid">Unpaid</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
           {isLoading ? (
             <ClublyLoadingState title="Loading dues records" message="We are checking payment status and receipts." compact />
           ) : isError ? (
@@ -424,37 +329,42 @@ export default function Dues() {
                 <thead>
                   <tr>
                     <th>Member</th>
+                    <th>Club</th>
                     <th>Amount</th>
+                    <th className="hidden md:table-cell">Session</th>
                     <th>Status</th>
-                    <th>Action</th>
+                    <th>Proof</th>
                   </tr>
                 </thead>
                 <tbody>
                   {visiblePayments.map((payment) => (
                     <tr key={payment.id} className="transition-colors hover:bg-accent/50">
-                      <td>
-                        <p className="font-medium">{payment.payment_account_name || "Name not submitted"}</p>
-                        <p className="text-xs text-muted-foreground">{clubNameById.get(payment.club_id) || "Unknown club"} - {payment.academic_session}</p>
+                      <td className="p-3">
+                        <p className="font-medium">{getSubmittedName(payment)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {payment.member?.student_id || payment.member?.phone_number || payment.payment_paid_at || "No student details"}
+                        </p>
                       </td>
-                      <td className="font-medium">{formatCurrency(payment.amount)}</td>
-                      <td>
+                      <td className="p-3">
+                        <p className="font-medium">{payment.club?.name || clubNameById.get(payment.club_id) || "Unknown club"}</p>
+                      </td>
+                      <td className="p-3 font-medium">{formatCurrency(payment.amount)}</td>
+                      <td className="p-3 hidden md:table-cell text-muted-foreground">{payment.academic_session}</td>
+                      <td className="p-3">
                         <Badge className={`${getPaymentStatusClassName(payment.status)} capitalize`}>
                           {getPaymentStatusLabel(payment.status)}
                         </Badge>
                       </td>
-                      <td>
-                        <div className="flex flex-wrap gap-2">
-                          {payment.status !== "paid" ? (
-                            <Button type="button" size="sm" disabled={updateMutation.isPending} onClick={() => updateMutation.mutate({ payment, nextStatus: "paid" })}>
-                              Mark paid
-                            </Button>
-                          ) : null}
-                          {payment.status !== "rejected" ? (
-                            <Button type="button" size="sm" variant="outline" disabled={updateMutation.isPending} onClick={() => updateMutation.mutate({ payment, nextStatus: "rejected" })}>
-                              Reject
-                            </Button>
-                          ) : null}
-                        </div>
+                      <td className="p-3">
+                        {payment.proof_url ? (
+                          <Button asChild size="sm" variant="outline">
+                            <Link to={`/dues/${payment.id}/proof`} state={{ returnTo }}>
+                              View Proof
+                            </Link>
+                          </Button>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">No proof</span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -493,6 +403,10 @@ export default function Dues() {
               <Label htmlFor="account_number">Account Number</Label>
               <Input id="account_number" value={accountNumber} onChange={(event) => setAccountNumber(event.target.value)} required />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="account_name">Account Name</Label>
+              <Input id="account_name" value={accountName} onChange={(event) => setAccountName(event.target.value)} required />
+            </div>
             <div className="space-y-2 lg:col-span-2">
               <Label htmlFor="payment_instructions">Payment Instructions</Label>
               <Textarea id="payment_instructions" value={paymentInstructions} onChange={(event) => setPaymentInstructions(event.target.value)} rows={3} />
@@ -505,293 +419,6 @@ export default function Dues() {
           </form>
         </CardContent>
       </Card>
-    </div>
-  );
-
-  return (
-    <div className="clb-screen">
-      <ClublyPageHeader
-        eyebrow="Finance"
-        title="Dues & Payment Review"
-        description="Students attach payment details when they join a club. Clubly verifies those records here."
-      />
-
-      <div className="clb-metric-grid">
-        <ClublyMetricCard
-          title="Expected"
-          value={<CounterUp value={duesData?.summary.expected_amount ?? 0} format={(nextValue) => formatCurrency(Math.round(nextValue))} />}
-          icon={CreditCard}
-          tone="navy"
-        />
-        <ClublyMetricCard
-          title="Collected"
-          value={<CounterUp value={duesData?.summary.collected_amount ?? 0} format={(nextValue) => formatCurrency(Math.round(nextValue))} />}
-          icon={Receipt}
-          tone="green"
-        />
-        <ClublyMetricCard
-          title="Paid"
-          value={<CounterUp value={duesData?.summary.paid ?? 0} format={(nextValue) => Math.round(nextValue).toLocaleString("en-NG")} />}
-          icon={Landmark}
-          tone="gold"
-        />
-        <ClublyMetricCard
-          title="Collection Rate"
-          value={<CounterUp value={duesData?.summary.collection_rate ?? 0} format={(nextValue) => `${Math.round(nextValue)}%`} />}
-          icon={TrendingUp}
-        />
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Clubly Account</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            All clubs use one payment destination. Every student is charged one student fee per session from this shared profile.
-          </p>
-        </CardHeader>
-        <CardContent>
-          {canManageSharedProfile ? (
-            <form onSubmit={handleSaveSharedProfile} className="clb-form-grid">
-              <div className="space-y-2">
-                <Label htmlFor="student_fee_amount">Student Fee</Label>
-                <Input
-                  id="student_fee_amount"
-                  type="number"
-                  min="0"
-                  value={studentFeeAmount}
-                  readOnly
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bank_name">Bank Name</Label>
-                <Input id="bank_name" value={bankName} onChange={(event) => setBankName(event.target.value)} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="account_number">Account Number</Label>
-                <Input id="account_number" value={accountNumber} onChange={(event) => setAccountNumber(event.target.value)} required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="account_name">Account Name</Label>
-                <Input id="account_name" value={accountName} onChange={(event) => setAccountName(event.target.value)} required />
-              </div>
-              <div className="space-y-2 lg:col-span-2">
-                <Label htmlFor="payment_instructions">Payment Instructions</Label>
-                <Textarea
-                  id="payment_instructions"
-                  value={paymentInstructions}
-                  onChange={(event) => setPaymentInstructions(event.target.value)}
-                  rows={3}
-                />
-              </div>
-              <div className="flex lg:col-span-2 justify-stretch sm:justify-end">
-                <Button
-                  type="submit"
-                  disabled={saveSharedProfileMutation.isPending}
-                  className="w-full max-w-full whitespace-normal break-words text-center sm:w-auto"
-                >
-                  {saveSharedProfileMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Applying...
-                    </>
-                  ) : (
-                    "Apply to all clubs"
-                  )}
-                </Button>
-              </div>
-            </form>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="clb-card-soft p-4">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Student Fee</p>
-                <p className="mt-1 font-semibold">{formatCurrency(sharedPaymentSettings?.fresher_dues_amount ?? sharedPaymentSettings?.returning_student_dues_amount ?? 10000)}</p>
-              </div>
-              <div className="clb-card-soft p-4">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Bank</p>
-                <p className="mt-1 font-semibold">{sharedPaymentSettings?.bank_name || "Not set yet"}</p>
-              </div>
-              <div className="clb-card-soft p-4">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Account Number</p>
-                <p className="mt-1 font-semibold">{sharedPaymentSettings?.account_number || "Not set yet"}</p>
-              </div>
-              <div className="clb-card-soft p-4 sm:col-span-2">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Account Name</p>
-                <p className="mt-1 font-semibold">{sharedPaymentSettings?.account_name || "Not set yet"}</p>
-                {sharedPaymentSettings?.payment_instructions ? (
-                  <p className="mt-2 text-sm text-muted-foreground">{sharedPaymentSettings.payment_instructions}</p>
-                ) : null}
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Dues Records</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Review the submitted payment details here. Mark paid when the transfer is confirmed. Mark rejected when the details need correction.
-          </p>
-        </CardHeader>
-        <CardContent>
-          {role === "admin" ? (
-            <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:max-w-2xl">
-              <div className="space-y-2">
-                <Label htmlFor="dues_club_filter">Club</Label>
-                <Select value={selectedClubId} onValueChange={setSelectedClubId}>
-                  <SelectTrigger id="dues_club_filter">
-                    <SelectValue placeholder="All clubs" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All clubs</SelectItem>
-                    {clubs.map((club) => (
-                      <SelectItem key={club.id} value={club.id}>
-                        {club.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="dues_status_filter">Status</Label>
-                <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as (typeof DUE_STATUS_FILTERS)[number])}>
-                  <SelectTrigger id="dues_status_filter">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All statuses</SelectItem>
-                    <SelectItem value="submitted">Submitted proofs</SelectItem>
-                    <SelectItem value="rejected">Rejected proofs</SelectItem>
-                    <SelectItem value="unpaid">Unpaid</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          ) : null}
-          {isLoading ? (
-            <ClublyLoadingState title="Loading dues records" message="We are checking payment status and receipts." compact />
-          ) : isError ? (
-            <div className="clb-empty border-destructive bg-destructive/5">
-              <p className="font-medium">Unable to load dues</p>
-              <p className="text-sm text-muted-foreground mt-1">{getErrorMessage(error)}</p>
-            </div>
-          ) : !visiblePayments.length ? (
-            <div className="clb-empty">
-              <CreditCard className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-              <p className="font-medium">No dues records yet</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                New student joins and signups will create dues records automatically.
-              </p>
-            </div>
-          ) : (
-            <div className="clb-table-wrap">
-              <table className="clb-table">
-                <thead>
-                  <tr>
-                    <th>Club</th>
-                    <th>Payment Details</th>
-                    <th>Amount</th>
-                    <th className="hidden md:table-cell">Session</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visiblePayments.map((payment) => (
-                    <tr key={payment.id} className="transition-colors hover:bg-accent/50">
-                      <td className="p-3">
-                        <p className="font-medium">{clubNameById.get(payment.club_id) || "Unknown club"}</p>
-                        <p className="text-xs text-muted-foreground">{payment.payment_paid_at || payment.created_at}</p>
-                      </td>
-                      <td className="p-3">
-                        <p className="font-medium">{payment.payment_account_name || "Name on account not submitted"}</p>
-                        {payment.payer_note ? (
-                          <p className="text-xs text-muted-foreground">{payment.payer_note}</p>
-                        ) : null}
-                        {proofLinksByPaymentId[payment.id] ? (
-                          <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => openProofPreview(payment)}>
-                            View receipt
-                          </Button>
-                        ) : null}
-                      </td>
-                      <td className="p-3 font-medium">{formatCurrency(payment.amount)}</td>
-                      <td className="p-3 hidden md:table-cell text-muted-foreground">{payment.academic_session}</td>
-                      <td className="p-3">
-                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                          <Badge className={`${getPaymentStatusClassName(payment.status)} capitalize`}>
-                            {getPaymentStatusLabel(payment.status)}
-                          </Badge>
-                          {payment.status !== "paid" ? (
-                            <Button
-                              type="button"
-                              size="sm"
-                              disabled={updateMutation.isPending || !viewedProofIds[payment.id]}
-                              title={!viewedProofIds[payment.id] ? "View the uploaded receipt before marking paid." : undefined}
-                              onClick={() =>
-                                updateMutation.mutate({
-                                  payment,
-                                  nextStatus: "paid"
-                                })
-                              }
-                            >
-                              Mark Paid
-                            </Button>
-                          ) : null}
-                          {payment.status !== "rejected" ? (
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              disabled={updateMutation.isPending || !viewedProofIds[payment.id]}
-                              title={!viewedProofIds[payment.id] ? "View the uploaded receipt before rejecting." : undefined}
-                              onClick={() =>
-                                updateMutation.mutate({
-                                  payment,
-                                  nextStatus: "rejected"
-                                })
-                              }
-                            >
-                              Reject
-                            </Button>
-                          ) : null}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              <DataPagination
-                page={duesData?.payments.page ?? 1}
-                pageSize={duesData?.payments.page_size ?? DUES_PAGE_SIZE}
-                total={duesData?.payments.total ?? 0}
-                hasNext={duesData?.payments.has_next ?? false}
-                onPageChange={setDuesPage}
-              />
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Dialog open={Boolean(proofPreview)} onOpenChange={(open) => !open && setProofPreview(null)}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Payment receipt</DialogTitle>
-            <DialogDescription>
-              Review the uploaded receipt image before changing the dues status.
-            </DialogDescription>
-          </DialogHeader>
-          {proofPreview ? (
-            <div className="overflow-hidden rounded-[18px] border border-border bg-muted/40">
-              <img
-                src={proofPreview.url}
-                alt={proofPreview.title}
-                className="max-h-[70vh] w-full object-contain"
-              />
-            </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

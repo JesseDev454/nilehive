@@ -656,6 +656,20 @@ export interface DuePaymentRecord {
   verified_at?: string | null;
   created_at: string;
   updated_at: string;
+  club?: {
+    id: string;
+    name: string;
+    code: string | null;
+  } | null;
+  member?: {
+    id: string;
+    full_name: string | null;
+    student_id: string | null;
+    email: string | null;
+    phone_number: string | null;
+    club_role: "member" | "executive" | "president";
+    membership_status: "active" | "inactive" | "alumni";
+  } | null;
 }
 
 export interface ClubPaymentSettingsRecord {
@@ -2107,6 +2121,15 @@ export async function getDuePayments(
 
 export async function getMyDuePayments(token?: string) {
   const response = await request<ApiEnvelope<DuesResponse>>("/api/v1/dues/me", {
+    method: "GET",
+    token
+  });
+
+  return response.data;
+}
+
+export async function getDuePayment(paymentId: string, token?: string) {
+  const response = await request<ApiEnvelope<DuePaymentRecord>>(`/api/v1/dues/${paymentId}`, {
     method: "GET",
     token
   });
