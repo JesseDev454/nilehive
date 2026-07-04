@@ -577,12 +577,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       scheduleTimeout(timestamp);
     }
 
-    function handleVisibilityChange() {
-      if (document.visibilityState === "visible") {
-        handleActivity();
-      }
-    }
-
     function handleStorage(event: StorageEvent) {
       if (event.key !== LAST_ACTIVITY_STORAGE_KEY) {
         return;
@@ -606,18 +600,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     ACTIVITY_EVENTS.forEach((eventName) => {
       window.addEventListener(eventName, handleActivity, { passive: true });
     });
-    window.addEventListener("focus", handleActivity);
     window.addEventListener("storage", handleStorage);
-    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       window.clearTimeout(timeoutId);
       ACTIVITY_EVENTS.forEach((eventName) => {
         window.removeEventListener(eventName, handleActivity);
       });
-      window.removeEventListener("focus", handleActivity);
       window.removeEventListener("storage", handleStorage);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [session]);
 

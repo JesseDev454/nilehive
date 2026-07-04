@@ -50,7 +50,7 @@ export function AppSidebar() {
     queryFn: () => getNavigationCounts(),
     enabled: Boolean(role),
     refetchInterval: 15_000,
-    refetchIntervalInBackground: true,
+    refetchIntervalInBackground: false,
     retry: false
   });
 
