@@ -15,6 +15,8 @@ type ReturnLocationState = {
   returnTo?: string;
 };
 
+type ProofKind = "image" | "pdf" | "document";
+
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
     return error.message;
@@ -53,6 +55,20 @@ function getPaymentStatusClassName(status: DuePaymentRecord["status"]) {
   }[status];
 }
 
+function getProofKind(value?: string | null): ProofKind {
+  const proofPath = (value || "").split("?")[0].toLowerCase();
+
+  if (/\.(png|jpe?g|webp|gif|bmp|svg)$/i.test(proofPath)) {
+    return "image";
+  }
+
+  if (/\.pdf$/i.test(proofPath)) {
+    return "pdf";
+  }
+
+  return "document";
+}
+
 function DetailRow({ label, value }: { label: string; value: string | number | null | undefined }) {
   return (
     <div className="rounded-xl border border-border bg-muted/35 p-3">
@@ -70,7 +86,7 @@ export default function DuesProofReview() {
   const queryClient = useQueryClient();
   const [proofUrl, setProofUrl] = useState<string | null>(null);
   const [proofLoadError, setProofLoadError] = useState<string | null>(null);
-  const [proofImageLoaded, setProofImageLoaded] = useState(false);
+  const [proofLoaded, setProofLoaded] = useState(false);
   const returnTo = useMemo(() => {
     const state = location.state as ReturnLocationState | null;
     return state?.returnTo?.startsWith("/dues") ? state.returnTo : "/dues?status=submitted";
@@ -93,7 +109,7 @@ export default function DuesProofReview() {
 
     setProofUrl(null);
     setProofLoadError(null);
-    setProofImageLoaded(false);
+    setProofLoaded(false);
 
     if (!payment?.proof_url) {
       if (payment) {
@@ -112,7 +128,7 @@ export default function DuesProofReview() {
       }
 
       if (!resolvedUrl) {
-        setProofLoadError("We could not prepare the uploaded proof image.");
+        setProofLoadError("We could not prepare the uploaded proof document.");
         return;
       }
 
@@ -200,8 +216,9 @@ export default function DuesProofReview() {
   }
 
   const studentName = payment.member?.full_name || payment.payment_account_name || "Name not submitted";
-  const canVerify = Boolean(proofUrl) && proofImageLoaded && !proofLoadError && payment.status !== "paid";
-  const canReject = Boolean(proofUrl) && proofImageLoaded && !proofLoadError && payment.status !== "rejected";
+  const proofKind = getProofKind(payment.proof_url);
+  const canVerify = Boolean(proofUrl) && proofLoaded && !proofLoadError && payment.status !== "paid";
+  const canReject = Boolean(proofUrl) && proofLoaded && !proofLoadError && payment.status !== "rejected";
 
   return (
     <div className="clb-screen">
@@ -209,7 +226,7 @@ export default function DuesProofReview() {
         <ClublyPageHeader
           eyebrow="Finance"
           title="Payment Proof Review"
-          description="Review the uploaded receipt image, then verify or reject this student's dues payment."
+          description="Review the uploaded receipt document, then verify or reject this student's dues payment."
         />
         <Button asChild variant="outline" className="w-full sm:w-auto">
           <Link to={returnTo}>
@@ -238,22 +255,43 @@ export default function DuesProofReview() {
             {proofLoadError ? (
               <div className="clb-empty w-full max-w-xl border-destructive bg-destructive/5">
                 <Receipt className="mx-auto h-10 w-10 text-destructive" />
-                <p className="mt-3 font-medium">Proof image unavailable</p>
+                <p className="mt-3 font-medium">Proof document unavailable</p>
                 <p className="mt-1 text-sm text-muted-foreground">{proofLoadError}</p>
               </div>
-            ) : proofUrl ? (
+            ) : proofUrl && proofKind === "image" ? (
               <img
                 src={proofUrl}
                 alt={`${studentName} dues payment proof`}
                 className="max-h-[72vh] w-full rounded-xl object-contain"
-                onLoad={() => setProofImageLoaded(true)}
+                onLoad={() => setProofLoaded(true)}
                 onError={() => {
-                  setProofImageLoaded(false);
+                  setProofLoaded(false);
                   setProofLoadError("The uploaded proof image could not be displayed.");
                 }}
               />
+            ) : proofUrl ? (
+              <div className="flex h-[72vh] w-full flex-col overflow-hidden rounded-xl border border-border bg-background">
+                <iframe
+                  title={`${studentName} dues payment proof`}
+                  src={proofUrl}
+                  className="min-h-0 flex-1 border-0"
+                  onLoad={() => setProofLoaded(true)}
+                />
+                <div className="flex flex-col gap-2 border-t border-border bg-background p-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+                  <span>
+                    {proofKind === "pdf"
+                      ? "PDF receipt loaded. If the preview is blank, open it in a new tab."
+                      : "Document preview loaded. If it does not display, open it in a new tab."}
+                  </span>
+                  <Button asChild size="sm" variant="outline">
+                    <a href={proofUrl} target="_blank" rel="noreferrer" onClick={() => setProofLoaded(true)}>
+                      Open Proof
+                    </a>
+                  </Button>
+                </div>
+              </div>
             ) : (
-              <ClublyLoadingState title="Preparing proof image" message="We are creating a secure image view." compact />
+              <ClublyLoadingState title="Preparing proof document" message="We are creating a secure proof view." compact />
             )}
           </CardContent>
         </Card>
@@ -263,7 +301,7 @@ export default function DuesProofReview() {
             <CardHeader>
               <CardTitle className="text-lg">Review decision</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Buttons unlock after the receipt image has loaded.
+                Buttons unlock after the receipt document has loaded.
               </p>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -297,9 +335,9 @@ export default function DuesProofReview() {
                 </Button>
               </div>
 
-              {!proofImageLoaded && !proofLoadError ? (
+              {!proofLoaded && !proofLoadError ? (
                 <p className="text-xs text-muted-foreground">
-                  The review actions will become available once the proof image finishes loading.
+                  The review actions will become available once the proof document finishes loading.
                 </p>
               ) : null}
               {proofLoadError ? (
