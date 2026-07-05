@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Clock, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { AccessDenied } from "@/components/AccessDenied";
 import { ApprovalStepper } from "@/components/ApprovalStepper";
 import { ClublyLoadingState, ClublyMetaChip, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -26,6 +27,11 @@ import {
   getProposalStatusMeta,
   isProposalEditable
 } from "@/lib/proposalWorkflow";
+
+type ReturnLocationState = {
+  returnTo?: string;
+  returnLabel?: string;
+};
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -129,13 +135,27 @@ function buildApprovalSteps(proposal: ProposalRecord) {
 
 export default function ProposalDetail() {
   const { id = "" } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { role } = useRole();
   const queryClient = useQueryClient();
   const [adminRemarks, setAdminRemarks] = useState("");
+  const [adminRemarksError, setAdminRemarksError] = useState("");
   const [adminDecision, setAdminDecision] = useState<"approve" | "reject" | null>(null);
   const [isResubmitting, setIsResubmitting] = useState(false);
   const isUnsupportedRole = role !== "president" && role !== "admin" && role !== "advisor";
+  const returnState = location.state as ReturnLocationState | null;
+  const safeReturnTo = returnState?.returnTo?.startsWith("/") ? returnState.returnTo : null;
+  const fallbackReturn =
+    role === "advisor"
+      ? { to: "/approvals", label: "Back to Approvals" }
+      : role === "admin"
+        ? { to: "/proposals?status=pending_admin_review", label: "Back to Final Review" }
+        : { to: "/proposals", label: "Back to Proposals" };
+  const backLink = {
+    to: safeReturnTo || fallbackReturn.to,
+    label: returnState?.returnLabel || fallbackReturn.label
+  };
 
   const { data: proposal, isLoading, isError, error } = useQuery({
     queryKey: ["proposal-detail", role, id],
@@ -157,13 +177,15 @@ export default function ProposalDetail() {
   if (isUnsupportedRole) {
     return (
       <div className="clb-screen max-w-4xl">
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-muted-foreground">
-          <ArrowLeft className="h-4 w-4 mr-1" /> Back
+        <Button asChild variant="ghost" size="sm" className="text-muted-foreground">
+          <Link to="/proposals">
+            <ArrowLeft className="mr-1 h-4 w-4" /> Back to Proposals
+          </Link>
         </Button>
-        <ClublyStateCard
+        <AccessDenied
           icon={FileText}
           title="Proposal access is restricted"
-          message="This area is for club presidents, advisors, and Clubly reviewers. Executives can keep up with club work through tasks and events."
+          reason="This area is for club presidents, advisors, and Clubly reviewers. Executives can keep up with club work through tasks and events."
         />
       </div>
     );
@@ -174,9 +196,16 @@ export default function ProposalDetail() {
       return;
     }
 
-    const isRejectedOverride = ["advisor_rejected", "admin_rejected"].includes(proposal.status);
+    const trimmedRemarks = adminRemarks.trim();
+    const isRejectedOverride = decision === "approve" && ["advisor_rejected", "admin_rejected"].includes(proposal.status);
 
-    if (isRejectedOverride && !adminRemarks.trim()) {
+    if (decision === "reject" && !trimmedRemarks) {
+      setAdminRemarksError("Add rejection remarks before rejecting this proposal.");
+      return;
+    }
+
+    if (isRejectedOverride && !trimmedRemarks) {
+      setAdminRemarksError("Explain why Clubly is approving this rejected proposal.");
       toast.error("Add override remarks", {
         description: "Explain why Clubly is approving this rejected proposal."
       });
@@ -192,7 +221,7 @@ export default function ProposalDetail() {
     try {
       await submitAdminDecision(proposal.id, {
         decision,
-        remarks: adminRemarks.trim() || undefined
+        remarks: trimmedRemarks || undefined
       });
 
       toast.success(decision === "approve" ? "Proposal approved" : "Proposal rejected", {
@@ -209,6 +238,7 @@ export default function ProposalDetail() {
           queryClient.invalidateQueries({ queryKey: ["event-reminders"] })
         ]);
       setAdminRemarks("");
+      setAdminRemarksError("");
     } catch (decisionError) {
       toast.error("Admin decision failed", {
         description: getErrorMessage(decisionError)
@@ -247,8 +277,10 @@ export default function ProposalDetail() {
 
   return (
     <div className="clb-screen">
-      <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-muted-foreground">
-        <ArrowLeft className="h-4 w-4 mr-1" /> Back
+      <Button asChild variant="ghost" size="sm" className="w-fit text-muted-foreground">
+        <Link to={backLink.to}>
+          <ArrowLeft className="mr-1 h-4 w-4" /> {backLink.label}
+        </Link>
       </Button>
 
       {isLoading ? (
@@ -412,8 +444,14 @@ export default function ProposalDetail() {
                       placeholder={proposal.status === "pending_admin_review" ? "Add notes for the club president or advisor..." : "Required: explain why this rejected proposal should now be approved..."}
                       rows={3}
                       value={adminRemarks}
-                      onChange={(event) => setAdminRemarks(event.target.value)}
+                      onChange={(event) => {
+                        setAdminRemarks(event.target.value);
+                        setAdminRemarksError("");
+                      }}
                     />
+                    {adminRemarksError ? (
+                      <p className="text-sm font-medium text-destructive">{adminRemarksError}</p>
+                    ) : null}
                     <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
                       <Button variant="secondary" disabled={adminDecision !== null} onClick={() => handleAdminDecision("approve")}>
                         {adminDecision === "approve" ? "Approving..." : proposal.status === "pending_admin_review" ? "Approve Proposal" : "Approve Rejected Proposal"}

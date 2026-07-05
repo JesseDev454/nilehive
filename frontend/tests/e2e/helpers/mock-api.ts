@@ -38,7 +38,7 @@ export function createE2EState() {
     name: "Nile Business Club",
     code: "NBUC",
     description: "A club for entrepreneurship, finance, startups, and business leadership.",
-    dues_amount: 10000,
+    dues_amount: 0,
     is_public_signup: true,
     whatsapp_group_name: null,
     whatsapp_onboarding_notes: null,
@@ -268,6 +268,18 @@ export function createE2EState() {
     created_at: now,
     updated_at: now
   };
+  const reviewedFeedback = {
+    ...feedback,
+    id: "feedback-reviewed-1",
+    comment: "Role: president\nIssue type: Confusing experience\nImpact: low\nTrying to do: track proposal status\nCompleted task: partially\nConfusing or broken: Timeline labels were unclear\nImprovement suggestion: Show current owner more clearly\nCan contact for follow-up: No",
+    status: "reviewed"
+  };
+  const archivedFeedback = {
+    ...feedback,
+    id: "feedback-archived-1",
+    comment: "Role: executive\nIssue type: Bug\nImpact: medium\nTrying to do: update task status\nCompleted task: yes\nConfusing or broken: Old resolved issue\nImprovement suggestion: Already handled\nCan contact for follow-up: Yes",
+    status: "archived"
+  };
   const adminUsers = [
     {
       id: "e2e-student",
@@ -311,8 +323,17 @@ export function createE2EState() {
     tasks: [task],
     announcements: [announcement],
     notifications,
-    feedback: [feedback],
+    feedback: [feedback, reviewedFeedback, archivedFeedback],
     adminUsers,
+    presidentExecutives: [
+      {
+        id: "e2e-executive",
+        full_name: "E2E Executive",
+        role: "executive",
+        club_id: club.id,
+        created_at: now
+      }
+    ],
     studentMemberships: [] as typeof membership[],
     adminMemberships: [membership],
     studentDues: [] as typeof duePayment[],
@@ -335,7 +356,8 @@ export function createE2EState() {
       last_used_at: string | null;
     }>,
     pushSubscriptionRequests: [] as unknown[],
-    removedPushEndpoints: [] as string[]
+    removedPushEndpoints: [] as string[],
+    paymentProfileApplyRequests: [] as unknown[]
   };
 }
 
@@ -455,6 +477,7 @@ function getAdminDashboard(state: E2EState) {
 
 function getPresidentDashboard(state: E2EState) {
   const club = state.clubs[0];
+  const executiveTeam = state.presidentExecutives;
 
   return {
     role: "president",
@@ -468,7 +491,7 @@ function getPresidentDashboard(state: E2EState) {
       approval_rate: 50,
       upcoming_events: state.events.length,
       reminders: 1,
-      executive_count: 1,
+      executive_count: executiveTeam.length,
       club_health_score: 76,
       club_health_label: "Healthy",
       club_health_breakdown: { dues: 75, membership: 80, events: 90, reports: 70, tasks: 60, feedback: 65 }
@@ -496,15 +519,7 @@ function getPresidentDashboard(state: E2EState) {
       updated_at: proposal.updated_at
     })),
     upcoming_events: state.events,
-    executive_team: [
-      {
-        id: "e2e-executive",
-        full_name: "E2E Executive",
-        role: "executive",
-        club_id: club.id,
-        created_at: now
-      }
-    ],
+    executive_team: executiveTeam,
     notifications: state.notifications
   };
 }
@@ -719,7 +734,7 @@ export async function mockClubServicesApi(page: Page, state = createE2EState()) 
 
     if (method === "POST" && path === "/storage/signed-url") {
       return ok(route, {
-        url: "https://example.test/proof.png"
+        url: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII="
       });
     }
 
@@ -792,7 +807,17 @@ export async function mockClubServicesApi(page: Page, state = createE2EState()) 
     }
 
     if (method === "GET" && path === "/communications/feedback") {
-      return ok(route, state.feedback);
+      const url = new URL(request.url());
+      const status = url.searchParams.get("status");
+      const category = url.searchParams.get("category");
+      const feedback = state.feedback.filter((item) => {
+        const matchesStatus = !status || item.status === status;
+        const matchesCategory = !category || item.category === category;
+
+        return matchesStatus && matchesCategory;
+      });
+
+      return ok(route, feedback);
     }
 
     if (method === "POST" && path === "/communications/feedback") {
@@ -899,6 +924,38 @@ export async function mockClubServicesApi(page: Page, state = createE2EState()) 
       return ok(route, paginated(state.proposals, 10));
     }
 
+    if (method === "GET" && path === "/proposals/admin") {
+      const url = new URL(request.url());
+      const status = url.searchParams.get("status");
+      const proposals = state.proposals.filter((proposal) => !status || proposal.status === status);
+
+      return ok(route, paginated(proposals, 10));
+    }
+
+    if (method === "GET" && path.match(/^\/proposals\/admin\/[^/]+$/)) {
+      const proposalId = path.split("/")[3];
+      return ok(route, state.proposals.find((proposal) => proposal.id === proposalId) || state.proposals[0]);
+    }
+
+    if (method === "POST" && path.match(/^\/proposals\/admin\/[^/]+\/decision$/)) {
+      const proposalId = path.split("/")[3];
+      const body = request.postDataJSON() as { decision?: "approve" | "reject"; remarks?: string };
+      state.proposals = state.proposals.map((proposal) =>
+        proposal.id === proposalId
+          ? {
+              ...proposal,
+              status: body.decision === "approve" ? "approved" : "admin_rejected",
+              current_stage: body.decision === "approve" ? "approved" : "closed",
+              current_owner_role: body.decision === "approve" ? "none" : "president",
+              admin_remarks: body.remarks || null,
+              admin_decided_at: now,
+              updated_at: now
+            }
+          : proposal
+      );
+      return ok(route, state.proposals.find((proposal) => proposal.id === proposalId) || state.proposals[0]);
+    }
+
     if (method === "GET" && path.match(/^\/proposals\/[^/]+$/)) {
       const proposalId = path.split("/")[2];
       return ok(route, state.proposals.find((proposal) => proposal.id === proposalId) || state.proposals[0]);
@@ -918,7 +975,9 @@ export async function mockClubServicesApi(page: Page, state = createE2EState()) 
     }
 
     if (method === "GET" && path === "/members") {
-      return ok(route, paginated([
+      const url = new URL(request.url());
+      const clubId = url.searchParams.get("club_id");
+      const members = [
         {
           id: "member-tech-president",
           club_id: "club-tech",
@@ -946,8 +1005,24 @@ export async function mockClubServicesApi(page: Page, state = createE2EState()) 
           club: { id: "club-tech", name: "Nile Tech Club", code: "NTC" },
           created_at: now,
           updated_at: now
+        },
+        {
+          id: "member-business-president",
+          club_id: "club-business",
+          profile_id: "e2e-business-president",
+          full_name: "E2E Business President",
+          student_id: "987654321",
+          email: "business-president@nilehive.test",
+          phone_number: "08000000001",
+          club_role: "president",
+          membership_status: "active",
+          club: { id: "club-business", name: "Nile Business Club", code: "NBUC" },
+          created_at: now,
+          updated_at: now
         }
-      ], 10));
+      ].filter((member) => !clubId || member.club_id === clubId);
+
+      return ok(route, paginated(members, 10));
     }
 
     if (method === "GET" && path === "/reports") {
@@ -1002,6 +1077,11 @@ export async function mockClubServicesApi(page: Page, state = createE2EState()) 
       });
     }
 
+    if (method === "GET" && path.match(/^\/dues\/[^/]+$/)) {
+      const paymentId = path.split("/")[2];
+      return ok(route, state.adminDues.find((payment) => payment.id === paymentId) || state.adminDues[0]);
+    }
+
     if (method === "POST" && path.match(/^\/dues\/[^/]+$/)) {
       const paymentId = path.split("/")[2];
       const body = request.postDataJSON() as { status?: "paid" | "rejected" | "submitted" | "unpaid" };
@@ -1011,6 +1091,16 @@ export async function mockClubServicesApi(page: Page, state = createE2EState()) 
           : payment
       );
       return ok(route, state.adminDues.find((payment) => payment.id === paymentId) || state.adminDues[0]);
+    }
+
+    if (method === "POST" && path === "/dues/payment-settings/apply-club-profile-all") {
+      const body = request.postDataJSON();
+      state.paymentProfileApplyRequests.push(body);
+
+      return ok(route, {
+        ...body,
+        clubs_updated: state.clubs.length
+      });
     }
 
     if (method === "GET" && path === "/notifications") {

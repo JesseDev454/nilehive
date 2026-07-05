@@ -76,7 +76,10 @@ export function AppLayout() {
         <div className="flex-1 flex flex-col min-w-0">
           <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-3 border-b border-border/70 bg-card/85 px-3 py-3 shadow-soft-sm backdrop-blur-xl md:absolute md:right-8 md:top-8 md:min-h-0 md:rounded-[24px] md:border md:bg-card/80 md:p-2">
             <div className="flex items-center gap-3">
-              <SidebarTrigger className="md:hidden" />
+              <div className="flex items-center gap-1 md:hidden">
+                <SidebarTrigger />
+                <span className="text-sm font-semibold text-muted-foreground">Menu</span>
+              </div>
               <div className="hidden items-center sm:flex">
                 <BrandLogo
                   size="md"

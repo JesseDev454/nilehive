@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { CreditCard, Receipt } from "lucide-react";
+import { AccessDenied } from "@/components/AccessDenied";
 import { DataPagination } from "@/components/DataPagination";
 import {
   ClublyLoadingState,
@@ -15,6 +16,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -90,6 +99,7 @@ export default function Dues() {
   const [duesPage, setDuesPage] = useState(1);
   const [selectedClubId, setSelectedClubId] = useState("all");
   const [statusFilter, setStatusFilter] = useState<(typeof DUE_STATUS_FILTERS)[number]>(initialStatusFilter);
+  const [isApplyDialogOpen, setIsApplyDialogOpen] = useState(false);
   const canViewDues = role === "admin";
   const duesClubFilter = role === "admin" && selectedClubId !== "all" ? selectedClubId : undefined;
   const duesStatusFilter = statusFilter === "all" ? undefined : statusFilter;
@@ -172,6 +182,7 @@ export default function Dues() {
         payment_instructions: paymentInstructions || null
       }),
     onSuccess: async (result) => {
+      setIsApplyDialogOpen(false);
       actionSuccess(
         "Shared payment profile updated",
         `Applied the Clubly account and student fee amount to ${result.clubs_updated} clubs.`
@@ -190,7 +201,7 @@ export default function Dues() {
 
   function handleSaveSharedProfile(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    saveSharedProfileMutation.mutate();
+    setIsApplyDialogOpen(true);
   }
 
   if (!canViewDues) {
@@ -201,10 +212,10 @@ export default function Dues() {
           title="Dues & Payments"
           description="Dues tracking is available only to Clubly admins."
         />
-        <ClublyStateCard
+        <AccessDenied
           icon={CreditCard}
           title="Dues access is restricted"
-          message="This role does not use dues tracking yet."
+          reason="Dues tracking is available only to Clubly admins."
         />
       </div>
     );
@@ -214,6 +225,7 @@ export default function Dues() {
   const expectedAmount = summary?.expected_amount ?? 0;
   const collectedAmount = summary?.collected_amount ?? 0;
   const collectionRate = summary?.collection_rate ?? 0;
+  const affectedClubLabel = clubs.length === 1 ? "1 club" : clubs.length > 1 ? `${clubs.length} clubs` : "all configured clubs";
 
   return (
     <div className="clb-screen">
@@ -419,6 +431,41 @@ export default function Dues() {
           </form>
         </CardContent>
       </Card>
+
+      <Dialog open={isApplyDialogOpen} onOpenChange={setIsApplyDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Apply payment profile to all clubs?</DialogTitle>
+            <DialogDescription>
+              This will update the shared bank details, student fee amount, and payment instructions for {affectedClubLabel}.
+              Club-specific payment settings will use this profile after you confirm.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="rounded-xl border border-border bg-muted/40 p-4 text-sm">
+            <p className="font-semibold">{formatCurrency(Number(studentFeeAmount))}</p>
+            <p className="mt-1 text-muted-foreground">
+              {bankName} - {accountNumber} - {accountName}
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsApplyDialogOpen(false)}
+              disabled={saveSharedProfileMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => saveSharedProfileMutation.mutate()}
+              disabled={saveSharedProfileMutation.isPending}
+            >
+              {saveSharedProfileMutation.isPending ? "Applying..." : "Apply to all clubs"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

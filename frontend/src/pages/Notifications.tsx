@@ -209,6 +209,10 @@ function canOpenFeedback(role: string | null) {
 }
 
 function getNotificationLink(notification: NotificationRecord, role: string | null, meta: NotificationMeta) {
+  if (role === "feedback_manager") {
+    return meta.category === "feedback" || isActionNeeded(notification) ? "/feedback" : "/notifications";
+  }
+
   if (meta.category === "announcement") {
     return "/communications";
   }
@@ -555,6 +559,12 @@ export default function Notifications() {
                   const isLinked = target !== "/notifications";
                   const deliveryLabel = getDeliveryLabel(notification.delivery_status);
                   const needsAction = isActionNeeded(notification);
+                  const feedbackManagerRouteCopy =
+                    role === "feedback_manager" && meta.category !== "feedback"
+                      ? target === "/feedback"
+                        ? "Feedback Managers can only open app-feedback workflows. This action opens the feedback workspace."
+                        : "Feedback Managers can view this update here; the linked workflow is outside app-feedback access."
+                      : null;
 
                   const card = (
                     <Card className={cn("transition hover:-translate-y-0.5", needsAction && "border-primary bg-primary/5")}>
@@ -574,6 +584,9 @@ export default function Notifications() {
                               </div>
                               <p className="mt-1 text-sm text-muted-foreground">{notification.message}</p>
                               <p className="mt-2 text-xs text-muted-foreground">{meta.description}</p>
+                              {feedbackManagerRouteCopy ? (
+                                <p className="mt-2 text-xs font-medium text-primary">{feedbackManagerRouteCopy}</p>
+                              ) : null}
                             </div>
                           </div>
                           <div className="flex shrink-0 items-center gap-2 sm:justify-end">
@@ -619,7 +632,9 @@ export default function Notifications() {
                   </p>
                 </div>
                 <Button asChild size="sm" variant="outline">
-                  <Link to="/communications">Open</Link>
+                  <Link to={role === "feedback_manager" ? "/feedback" : "/communications"}>
+                    {role === "feedback_manager" ? "Open Feedback" : "Open"}
+                  </Link>
                 </Button>
               </div>
 

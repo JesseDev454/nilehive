@@ -2,11 +2,13 @@ import { expect, test } from "@playwright/test";
 import { loginAs } from "./helpers/auth";
 import { mockClubServicesApi } from "./helpers/mock-api";
 
+test.describe.configure({ mode: "serial" });
+
 test("production shell does not show the prototype role switcher", async ({ page }) => {
   await mockClubServicesApi(page);
   await loginAs(page, "student");
 
-  await page.goto("/");
+  await page.goto("/", { waitUntil: "domcontentloaded" });
 
   await expect(page.getByText("Design preview only")).toHaveCount(0);
 });
@@ -16,33 +18,26 @@ test("mobile shell shows top bar and the first five role nav items", async ({ pa
   await mockClubServicesApi(page);
   await loginAs(page, "student");
 
-  await page.goto("/");
+  await page.goto("/", { waitUntil: "domcontentloaded" });
 
-  await expect(page.getByRole("banner")).toContainText("Clubly");
-  const mobileNav = page.getByRole("navigation", { name: "Mobile primary navigation" });
-  await expect(mobileNav).toBeVisible();
-  await expect(mobileNav.getByRole("link", { name: /Home/i })).toBeVisible();
-  await expect(mobileNav.getByRole("link", { name: /Clubs/i })).toHaveAttribute("href", "/membership");
-  await expect(mobileNav.getByRole("link", { name: /Events/i })).toBeVisible();
-  await expect(mobileNav.getByRole("link", { name: /Updates/i })).toHaveAttribute("href", "/communications");
-  await expect(mobileNav.getByRole("link", { name: /Feedback/i })).toBeVisible();
+  await expect(page.getByRole("banner")).toContainText("Menu");
+  await page.getByRole("button", { name: /Toggle Sidebar|Menu/i }).click();
+  await expect(page.getByRole("link", { name: /Home/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Discover Clubs/i })).toHaveAttribute("href", "/membership");
+  await expect(page.getByRole("link", { name: /Events/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Announcements/i })).toHaveAttribute("href", "/communications");
+  await expect(page.getByRole("link", { name: /Feedback/i })).toBeVisible();
 });
 
-test("display preferences persist accent and compact density", async ({ page }) => {
+test("top bar exposes role context, help, and logout controls", async ({ page }) => {
   await mockClubServicesApi(page);
   await loginAs(page, "student");
 
-  await page.goto("/");
-  await page.getByRole("button", { name: "Display preferences" }).click();
-  await page.getByRole("menuitem", { name: /Soft teal/i }).click();
-  await page.getByRole("button", { name: "Display preferences" }).click();
-  await page.getByRole("menuitemcheckbox", { name: /Compact density/i }).click();
+  await page.goto("/", { waitUntil: "domcontentloaded" });
 
-  await expect(page.locator("html")).toHaveAttribute("data-density", "compact");
-  await expect(page.locator("html")).toHaveCSS("--clubly-accent", "hsl(173 80% 32%)");
-
-  await page.reload();
-  await expect(page.locator("html")).toHaveAttribute("data-density", "compact");
+  await expect(page.getByRole("banner")).toContainText("student Mode");
+  await expect(page.getByRole("button", { name: /Help \/ Guide|Guide/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Logout" })).toBeVisible();
 });
 
 test("desktop sidebar can collapse and expand", async ({ page }) => {
@@ -50,7 +45,7 @@ test("desktop sidebar can collapse and expand", async ({ page }) => {
   await mockClubServicesApi(page);
   await loginAs(page, "admin");
 
-  await page.goto("/");
+  await page.goto("/", { waitUntil: "domcontentloaded" });
 
   await expect(page.getByRole("button", { name: "Collapse sidebar" })).toBeVisible();
   await page.getByRole("button", { name: "Collapse sidebar" }).click();

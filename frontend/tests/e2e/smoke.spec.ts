@@ -20,7 +20,7 @@ test("student can open the dashboard without CampusOne SSO", async ({ page }) =>
   await expect(page.getByRole("heading", { name: /Hello, E2E/i })).toBeVisible();
   await expect(page.getByRole("link", { name: /Discover Clubs/i }).first()).toHaveAttribute("href", "/membership");
   await expect(page.getByRole("link", { name: /Announcements/i }).first()).toBeVisible();
-  await expect(page.getByRole("link", { name: "Submit Feedback" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Feedback", exact: true })).toHaveAttribute("href", "/feedback");
 });
 
 test("admin can open the operations dashboard", async ({ page }) => {
@@ -30,8 +30,9 @@ test("admin can open the operations dashboard", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.getByRole("heading", { name: /Admin Operations/i })).toBeVisible();
-  await expect(page.getByText("Pending membership", { exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Pending dues proofs Submitted payment proofs/i })).toBeVisible();
+  await expect(page.getByText("Needs Action Today")).toBeVisible();
+  await expect(page.getByRole("link", { name: /Review Members/i })).toHaveAttribute("href", "/membership?status=pending");
+  await expect(page.getByRole("link", { name: /Review Payments/i })).toHaveAttribute("href", "/dues?status=submitted");
 });
 
 test("feedback manager is routed to feedback tools only", async ({ page }) => {

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, CheckCircle2, CreditCard, Receipt, XCircle } from "lucide-react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { AccessDenied } from "@/components/AccessDenied";
 import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -89,8 +90,13 @@ export default function DuesProofReview() {
   const [proofLoaded, setProofLoaded] = useState(false);
   const returnTo = useMemo(() => {
     const state = location.state as ReturnLocationState | null;
-    return state?.returnTo?.startsWith("/dues") ? state.returnTo : "/dues?status=submitted";
+    const requestedReturnTo = state?.returnTo;
+
+    return requestedReturnTo?.startsWith("/dues") || requestedReturnTo === "/membership"
+      ? requestedReturnTo
+      : "/dues?status=submitted";
   }, [location.state]);
+  const returnLabel = returnTo === "/membership" ? "Back to Membership Review" : "Back to Dues";
 
   const {
     data: payment,
@@ -176,10 +182,10 @@ export default function DuesProofReview() {
           title="Dues Proof"
           description="Dues proof review is available only to Clubly admins."
         />
-        <ClublyStateCard
+        <AccessDenied
           icon={CreditCard}
           title="Dues proof access is restricted"
-          message="This role cannot review payment proofs."
+          reason="This role cannot review payment proofs."
         />
       </div>
     );
@@ -208,7 +214,7 @@ export default function DuesProofReview() {
           tone="danger"
         >
           <Button asChild variant="outline">
-            <Link to={returnTo}>Back to Dues</Link>
+            <Link to={returnTo}>{returnLabel}</Link>
           </Button>
         </ClublyStateCard>
       </div>
@@ -231,7 +237,7 @@ export default function DuesProofReview() {
         <Button asChild variant="outline" className="w-full sm:w-auto">
           <Link to={returnTo}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dues
+            {returnLabel}
           </Link>
         </Button>
       </div>

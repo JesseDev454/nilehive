@@ -38,7 +38,9 @@ export const roleLabels: Record<NonNullable<Role>, string> = {
 
 const executiveItems: AppNavItem[] = [
   { title: "Dashboard", shortTitle: "Home", url: "/", icon: Home, onboardingTarget: "nav-dashboard" },
+  { title: "Discover Clubs", shortTitle: "Clubs", url: "/membership", icon: UserPlus, onboardingTarget: "nav-membership" },
   { title: "My Tasks", shortTitle: "Tasks", url: "/tasks", icon: ClipboardList, onboardingTarget: "nav-tasks" },
+  { title: "Members", url: "/members", icon: Users, onboardingTarget: "nav-members" },
   { title: "Announcements", shortTitle: "Updates", url: "/communications", icon: MessageSquare, onboardingTarget: "nav-communications" },
   { title: "Events", url: "/events", icon: CalendarDays, onboardingTarget: "nav-events" },
   { title: "Feedback", url: "/feedback", icon: MessageSquare, onboardingTarget: "nav-feedback" },
@@ -75,7 +77,7 @@ const adminItems: AppNavItem[] = [
 const presidentItems: AppNavItem[] = [
   { title: "Dashboard", shortTitle: "Home", url: "/", icon: Home, onboardingTarget: "nav-dashboard" },
   { title: "Club Profile", shortTitle: "Profile", url: "/clubs", icon: School, onboardingTarget: "nav-clubs" },
-  { title: "Create Proposal", shortTitle: "Create", url: "/proposals/new", icon: Plus, onboardingTarget: "nav-create-proposal" },
+  { title: "Create Event Proposal", shortTitle: "Create", url: "/proposals/new", icon: Plus, onboardingTarget: "nav-create-proposal" },
   { title: "Club Proposals", shortTitle: "Proposals", url: "/proposals", icon: FileText, onboardingTarget: "nav-proposals" },
   { title: "Task Delegation", shortTitle: "Tasks", url: "/tasks", icon: ClipboardList, onboardingTarget: "nav-tasks" },
   { title: "Members", url: "/members", icon: Users, onboardingTarget: "nav-members" },
@@ -92,6 +94,7 @@ const studentItems: AppNavItem[] = [
   { title: "Events", url: "/events", icon: CalendarDays, onboardingTarget: "nav-events" },
   { title: "Announcements", shortTitle: "Updates", url: "/communications", icon: MessageSquare, onboardingTarget: "nav-communications" },
   { title: "Feedback", url: "/feedback", icon: MessageSquare, onboardingTarget: "nav-feedback" },
+  { title: "Notifications", shortTitle: "Alerts", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications", badgeKey: "notifications" },
 ];
 
 const feedbackManagerItems: AppNavItem[] = [

@@ -8,7 +8,7 @@ test("student can open notification settings and see optional browser alerts", a
   await mockClubServicesApi(page);
   await loginAs(page, "student");
 
-  await page.goto("/notifications");
+  await page.goto("/notifications", { waitUntil: "domcontentloaded" });
 
   await expect(page.getByRole("heading", { name: "Notification Center" })).toBeVisible();
   await expect(page.getByText("Optional browser/device alerts", { exact: true })).toBeVisible();
@@ -16,20 +16,20 @@ test("student can open notification settings and see optional browser alerts", a
   await expect(page.getByRole("button", { name: "Enable on this device" })).toBeVisible();
 });
 
-test("optional browser alerts are available to all roles", async ({ page }) => {
-  const roles: TestRole[] = ["student", "president", "executive", "advisor", "admin", "feedback_manager"];
+const notificationRoles: TestRole[] = ["student", "president", "executive", "advisor", "admin", "feedback_manager"];
 
-  for (const role of roles) {
+for (const role of notificationRoles) {
+  test(`optional browser alerts are available to ${role}`, async ({ page }) => {
     await mockBrowserPushSupport(page);
     await mockClubServicesApi(page);
     await loginAs(page, role);
 
-    await page.goto("/notifications");
+    await page.goto("/notifications", { waitUntil: "domcontentloaded" });
 
     await expect(page.getByText("Optional browser/device alerts", { exact: true })).toBeVisible();
     await expect(page.getByText(/not SMS or WhatsApp/i)).toBeVisible();
-  }
-});
+  });
+}
 
 test("student can enable browser alerts and save a push subscription", async ({ page }) => {
   const state = createE2EState();
@@ -37,7 +37,7 @@ test("student can enable browser alerts and save a push subscription", async ({ 
   await mockClubServicesApi(page, state);
   await loginAs(page, "student");
 
-  await page.goto("/notifications");
+  await page.goto("/notifications", { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: "Enable on this device" }).click();
 
   await expect(page.getByText(/Enabled on this device/i)).toBeVisible();
@@ -60,7 +60,7 @@ test("student can disable browser alerts and remove the saved subscription", asy
   await mockClubServicesApi(page, state);
   await loginAs(page, "student");
 
-  await page.goto("/notifications");
+  await page.goto("/notifications", { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("button", { name: "Disable on this device" })).toBeVisible();
 
   await page.getByRole("button", { name: "Disable on this device" }).click();
@@ -79,7 +79,7 @@ test("permission denied shows a helpful browser alerts message", async ({ page }
   await mockClubServicesApi(page, state);
   await loginAs(page, "student");
 
-  await page.goto("/notifications");
+  await page.goto("/notifications", { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: "Enable on this device" }).click();
 
   await expect(page.getByText("Could not enable notifications")).toBeVisible();
@@ -92,7 +92,7 @@ test("unsupported browser state shows a fallback instead of push controls", asyn
   await mockClubServicesApi(page);
   await loginAs(page, "student");
 
-  await page.goto("/notifications");
+  await page.goto("/notifications", { waitUntil: "domcontentloaded" });
 
   await expect(page.getByText("Optional browser/device alerts", { exact: true })).toBeVisible();
   await expect(page.getByText("This browser does not support web push notifications. You will still receive in-app updates.")).toBeVisible();

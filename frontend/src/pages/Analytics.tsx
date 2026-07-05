@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Activity, BarChart3, ShieldCheck } from "lucide-react";
+import { AccessDenied } from "@/components/AccessDenied";
 import { ClublyLoadingState, ClublyMetricCard, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -35,7 +36,7 @@ export default function Analytics() {
   });
 
   if (role !== "admin") {
-    return <div className="clb-screen"><ClublyPageHeader eyebrow="Operations" title="Analytics" description="Privacy-safe Club Services usage insights." /><ClublyStateCard icon={ShieldCheck} title="Analytics access is restricted" message="Your workspace does not include admin analytics." /></div>;
+    return <div className="clb-screen"><ClublyPageHeader eyebrow="Operations" title="Analytics" description="Privacy-safe Club Services usage insights." /><AccessDenied icon={ShieldCheck} title="Analytics access is restricted" reason="Your workspace does not include admin analytics." /></div>;
   }
 
   const errorMessage = query.error instanceof ApiClientError || query.error instanceof Error

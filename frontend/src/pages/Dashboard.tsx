@@ -355,12 +355,10 @@ function PresidentActionCard({
 
 function PresidentQuickActions() {
   const actions = [
-    { label: "Create announcement", to: "/communications", icon: MessageSquare },
-    { label: "Create event", to: "/proposals/new", icon: CalendarDays },
-    { label: "Create proposal", to: "/proposals/new", icon: Plus },
-    { label: "Assign task", to: "/tasks", icon: ClipboardList },
-    { label: "View members", to: "/members", icon: Users },
-    { label: "View reports", to: "/archive", icon: FileText }
+    { label: "Track Proposal Status", to: "/proposals", icon: FileText },
+    { label: "Assign Tasks", to: "/tasks", icon: ClipboardList },
+    { label: "Manage Members", to: "/members", icon: Users },
+    { label: "Submit Event Report", to: "/archive", icon: FileText }
   ];
 
   return (
@@ -684,6 +682,41 @@ function AdminReviewQueueCard({
         </div>
       </div>
     </Link>
+  );
+}
+
+function AdminTodayQueueCard({
+  title,
+  count,
+  detail,
+  actionLabel,
+  to,
+  icon: Icon
+}: {
+  title: string;
+  count: number;
+  detail: string;
+  actionLabel: string;
+  to: string;
+  icon: ElementType;
+}) {
+  return (
+    <Card className={count > 0 ? "border-primary bg-primary/5" : undefined}>
+      <CardContent className="flex h-full flex-col justify-between gap-4 p-5">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-foreground bg-background text-primary shadow-[3px_3px_0_hsl(var(--foreground))]">
+            <Icon className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-2xl font-bold leading-tight">{formatNumber(count)} {title}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{detail}</p>
+          </div>
+        </div>
+        <Button asChild variant={count > 0 ? "default" : "outline"} className="w-full justify-center">
+          <Link to={to}>{actionLabel}</Link>
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -1632,6 +1665,49 @@ function PolishedAdminDashboard() {
     (safeHealthPage - 1) * ADMIN_HEALTH_PAGE_SIZE,
     safeHealthPage * ADMIN_HEALTH_PAGE_SIZE
   );
+  const todayQueues = [
+    {
+      title: "Proposals Pending",
+      count: summary?.pending_admin_proposals ?? 0,
+      detail: "Event proposals waiting for Clubly final review.",
+      actionLabel: "Review Proposals",
+      to: "/proposals?status=pending_admin_review",
+      icon: FileText
+    },
+    {
+      title: "Dues Proofs Pending",
+      count: summary?.submitted_dues_payments ?? 0,
+      detail: "Submitted payment proofs awaiting verification.",
+      actionLabel: "Review Payments",
+      to: "/dues?status=submitted",
+      icon: CreditCard
+    },
+    {
+      title: "Membership Requests",
+      count: summary?.pending_membership_requests ?? 0,
+      detail: "Students waiting for membership review.",
+      actionLabel: "Review Members",
+      to: "/membership?status=pending",
+      icon: UserPlus
+    },
+    {
+      title: "Event Reports Pending",
+      count: summary?.missing_reports ?? 0,
+      detail: "Past events that still need report review.",
+      actionLabel: "Review Reports",
+      to: "/archive",
+      icon: ClipboardList
+    },
+    {
+      title: "New Feedback",
+      count: openFeedback.length,
+      detail: "Open app feedback waiting for review.",
+      actionLabel: "Review Feedback",
+      to: "/feedback?tab=feedback&status=open",
+      icon: MessageSquare
+    }
+  ];
+  const todayQueueTotal = todayQueues.reduce((sum, queue) => sum + queue.count, 0);
 
   function handleDownloadMatrix() {
     if (!dashboard) {
@@ -1671,6 +1747,34 @@ function PolishedAdminDashboard() {
         <AdminLoadingSkeleton />
       ) : (
         <>
+          <Card>
+            <CardHeader className="space-y-3">
+              <ClublySectionHeader
+                title="Needs Action Today"
+                description="Start with the operational queues that block students, clubs, or reviewers."
+                action={<QuestSticker tone={todayQueueTotal > 0 ? "red" : "green"}>{todayQueueTotal > 0 ? `${formatNumber(todayQueueTotal)} open` : "All clear"}</QuestSticker>}
+              />
+            </CardHeader>
+            <CardContent>
+              {todayQueueTotal === 0 ? (
+                <div className="clb-empty">
+                  <CheckCircle className="mx-auto mb-3 h-10 w-10 text-success" />
+                  <p className="font-medium">All queues are clear</p>
+                  <p className="mt-1 text-sm text-muted-foreground">No final reviews, payment proofs, membership requests, report gaps, or new feedback need action right now.</p>
+                  <Button type="button" variant="outline" className="mt-4" onClick={() => setActiveAdminPanel("activity")}>
+                    View Activity
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+                  {todayQueues.map((queue) => (
+                    <AdminTodayQueueCard key={queue.title} {...queue} />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <AdminMetricCard title="Total Clubs" value={formatNumber(summary?.total_clubs)} detail={`${formatNumber(summary?.active_members)} active members tracked.`} icon={Users} variant="blue" to="/clubs" />
             <AdminMetricCard title="Final Review" value={formatNumber(summary?.pending_admin_proposals)} detail="Proposals waiting for Clubly." icon={Clock} variant="gold" to="/proposals?status=pending_admin_review" />
@@ -3428,7 +3532,7 @@ function PresidentDashboard() {
       to: "/communications"
     },
     {
-      label: "Create first event",
+      label: "Create first event proposal",
       done: hasEvent,
       detail: hasEvent ? "Your club has event activity in the system." : "Start with an event proposal so students have a reason to return.",
       to: "/proposals/new"
@@ -3438,12 +3542,6 @@ function PresidentDashboard() {
       done: memberCount > 1 || executiveCount > 0,
       detail: memberCount > 0 ? `${formatNumber(memberCount)} active member${memberCount === 1 ? "" : "s"} visible.` : "Use members and club sharing to grow the club.",
       to: "/members"
-    },
-    {
-      label: "Submit proposal if needed",
-      done: hasProposal,
-      detail: hasProposal ? `${formatNumber(summary?.total_proposals)} proposal${summary?.total_proposals === 1 ? "" : "s"} created.` : "Submit a proposal when your club needs approval for an activity.",
-      to: "/proposals/new"
     }
   ];
   const attentionCount = setupItems.filter((item) => !item.done).length + openTaskCount + pendingCount;
@@ -3468,7 +3566,7 @@ function PresidentDashboard() {
         <Button asChild>
           <Link to="/proposals/new">
             <Plus className="h-4 w-4" />
-            New proposal
+            Create Event Proposal
           </Link>
         </Button>
       </section>
@@ -3558,12 +3656,10 @@ function PresidentDashboard() {
             <ClublySectionHeader title="Quick actions" description="Common actions kept as compact links." />
             <div className="grid gap-3 md:grid-cols-3">
               {[
-                { label: "Create announcement", to: "/communications", icon: MessageSquare },
-                { label: "Create event", to: "/proposals/new", icon: CalendarDays },
-                { label: "Create proposal", to: "/proposals/new", icon: Plus },
-                { label: "Assign task", to: "/tasks", icon: ClipboardList },
-                { label: "View members", to: "/members", icon: Users },
-                { label: "View reports", to: "/archive", icon: FileText }
+                { label: "Track Proposal Status", to: "/proposals", icon: FileText },
+                { label: "Assign Tasks", to: "/tasks", icon: ClipboardList },
+                { label: "Manage Members", to: "/members", icon: Users },
+                { label: "Submit Event Report", to: "/archive", icon: FileText }
               ].map((action) => {
                 const Icon = action.icon;
                 return (
@@ -3576,6 +3672,21 @@ function PresidentDashboard() {
                 );
               })}
             </div>
+            {!isLoading && executiveCount === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="font-semibold">No executives linked yet</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Assign an executive from Members before creating tasks for your team.
+                    </p>
+                  </div>
+                  <Button asChild variant="outline">
+                    <Link to="/members">Manage Members</Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : null}
           </section>
         </>
       )}

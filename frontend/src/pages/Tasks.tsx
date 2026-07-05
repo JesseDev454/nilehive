@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ClipboardList, Loader2, Target, UserCheck } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { AccessDenied } from "@/components/AccessDenied";
 import { DataPagination } from "@/components/DataPagination";
 import { ClublyLoadingState, ClublyMetricCard, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { Badge } from "@/components/ui/badge";
@@ -151,12 +152,15 @@ export default function Tasks() {
     enabled: role === "admin",
     retry: false
   });
-  const { data: presidentDashboard } = useQuery({
+  const { data: presidentDashboard, isLoading: isLoadingPresidentDashboard } = useQuery({
     queryKey: ["president-dashboard"],
     queryFn: () => getPresidentDashboard(),
     enabled: role === "president",
     retry: false
   });
+  const executiveTeam = presidentDashboard?.executive_team ?? [];
+  const hasExecutives = executiveTeam.length > 0;
+  const hasLoadedExecutiveTeam = role !== "president" || !isLoadingPresidentDashboard;
 
   const createMutation = useMutation({
     mutationFn: () =>
@@ -207,6 +211,10 @@ export default function Tasks() {
 
   function handleCreateTask(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!hasLoadedExecutiveTeam || !hasExecutives) {
+      return;
+    }
+
     createMutation.mutate();
   }
 
@@ -226,10 +234,10 @@ export default function Tasks() {
           title="Tasks"
           description="Task delegation is available to club presidents, executives, and Clubly oversight."
         />
-        <ClublyStateCard
+        <AccessDenied
           icon={ClipboardList}
           title="Task access is restricted"
-          message="This role does not use task delegation yet."
+          reason="Task delegation is available to club presidents, executives, and Clubly oversight."
         />
       </div>
     );
@@ -264,18 +272,26 @@ export default function Tasks() {
             <form onSubmit={handleCreateTask} className="clb-form-grid">
               <div className="space-y-2">
                 <Label htmlFor="assigned_to">Executive</Label>
-                <Select value={assignedTo} onValueChange={setAssignedTo}>
+                <Select value={assignedTo} onValueChange={setAssignedTo} disabled={!hasLoadedExecutiveTeam || !hasExecutives}>
                   <SelectTrigger id="assigned_to">
-                    <SelectValue placeholder="Select an executive" />
+                    <SelectValue placeholder={isLoadingPresidentDashboard ? "Loading executives" : "Select an executive"} />
                   </SelectTrigger>
                   <SelectContent>
-                    {presidentDashboard?.executive_team.map((executive) => (
+                    {executiveTeam.map((executive) => (
                       <SelectItem key={executive.id} value={executive.id}>
                         {executive.full_name || "Unnamed executive"}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {hasLoadedExecutiveTeam && !hasExecutives ? (
+                  <div className="rounded-xl border border-warning/25 bg-warning/10 p-3 text-sm">
+                    <p className="font-medium">No executives available yet. Assign an executive from Members before creating tasks.</p>
+                    <Button asChild size="sm" variant="outline" className="mt-3">
+                      <Link to="/members">Go to Members</Link>
+                    </Button>
+                  </div>
+                ) : null}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="title">Task Title</Label>
@@ -320,7 +336,7 @@ export default function Tasks() {
                 />
               </div>
               <div className="lg:col-span-2 flex justify-end">
-                <Button type="submit" disabled={createMutation.isPending}>
+                <Button type="submit" disabled={createMutation.isPending || !hasLoadedExecutiveTeam || !hasExecutives}>
                   {createMutation.isPending ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />

@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { AccessDenied } from "@/components/AccessDenied";
 import { ClublyPageHeader, ClublyPanel, ClublyStateCard } from "@/components/Clubly";
 import { useRole } from "@/contexts/RoleContext";
 import { toast } from "@/components/ui/use-toast";
@@ -25,11 +26,10 @@ export default function ReportSubmission() {
   if (role !== "president" && role !== "admin") {
     return (
       <div className="clb-screen">
-        <ClublyStateCard
+        <AccessDenied
           icon={Archive}
           title="Reports are restricted"
-          message="Post-event report submission is available to club presidents. Advisors and admins can review reports from the archive."
-          tone="warning"
+          reason="Post-event report submission is available to club presidents. Advisors and admins can review reports from the archive."
         />
       </div>
     );

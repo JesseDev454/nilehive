@@ -47,6 +47,7 @@ type FeedbackFormCategory =
 type FeedbackImpact = "low" | "medium" | "high" | "urgent";
 type FeedbackRoleFilter = "all" | "student" | "executive" | "president" | "advisor" | "admin" | "feedback_manager" | "unknown";
 type FeedbackDateFilter = "all" | "today" | "7d" | "30d";
+type FeedbackStatusFilter = "all" | FeedbackRecord["status"];
 
 const priorityOptions: AnnouncementPriority[] = ["low", "normal", "high", "urgent"];
 const adminRoleOptions: TargetRole[] = ["student", "executive", "president", "advisor", "admin"];
@@ -93,6 +94,12 @@ const feedbackDateFilterOptions: Array<{ value: FeedbackDateFilter; label: strin
   { value: "today", label: "Today" },
   { value: "7d", label: "Last 7 days" },
   { value: "30d", label: "Last 30 days" }
+];
+const feedbackStatusFilterOptions: Array<{ value: FeedbackStatusFilter; label: string }> = [
+  { value: "all", label: "All statuses" },
+  { value: "open", label: "New / Open" },
+  { value: "reviewed", label: "Reviewed" },
+  { value: "archived", label: "Archived" }
 ];
 
 function getErrorMessage(error: unknown) {
@@ -236,6 +243,18 @@ function getFeedbackImpactLabel(value: string) {
   return feedbackImpactOptions.find((option) => option.value === value)?.label ?? value;
 }
 
+function getFeedbackStatusLabel(status: FeedbackRecord["status"]) {
+  return feedbackStatusFilterOptions.find((option) => option.value === status)?.label ?? status;
+}
+
+function getFeedbackStatusClass(status: FeedbackRecord["status"]) {
+  return {
+    open: "bg-primary/15 text-primary hover:bg-primary/15",
+    reviewed: "bg-success/15 text-success hover:bg-success/15",
+    archived: "bg-muted text-muted-foreground hover:bg-muted"
+  }[status];
+}
+
 function matchesFeedbackDateFilter(createdAt: string, filter: FeedbackDateFilter) {
   if (filter === "all") {
     return true;
@@ -313,11 +332,24 @@ export default function Communications({ defaultTab = "announcements" }: { defau
   const [feedbackCanContact, setFeedbackCanContact] = useState("yes");
   const [feedbackClubFilter, setFeedbackClubFilter] = useState("all");
   const [feedbackCategoryFilter, setFeedbackCategoryFilter] = useState("all");
+  const [feedbackStatusFilter, setFeedbackStatusFilter] = useState<FeedbackStatusFilter>(
+    feedbackStatusFilterOptions.some((option) => option.value === searchParams.get("status"))
+      ? (searchParams.get("status") as FeedbackStatusFilter)
+      : "all"
+  );
   const [feedbackRoleFilter, setFeedbackRoleFilter] = useState<FeedbackRoleFilter>("all");
   const [feedbackDateFilter, setFeedbackDateFilter] = useState<FeedbackDateFilter>("all");
   useEffect(() => {
     setActiveTab(isFeedbackManager || searchParams.get("tab") === "feedback" ? "feedback" : defaultTab);
   }, [defaultTab, isFeedbackManager, searchParams]);
+
+  useEffect(() => {
+    const requestedStatus = searchParams.get("status");
+
+    if (feedbackStatusFilterOptions.some((option) => option.value === requestedStatus)) {
+      setFeedbackStatusFilter(requestedStatus as FeedbackStatusFilter);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     setAnnouncementPage(1);
@@ -359,11 +391,12 @@ export default function Communications({ defaultTab = "announcements" }: { defau
     isError: isFeedbackError,
     error: feedbackError
   } = useQuery({
-    queryKey: ["feedback", feedbackClubFilter, feedbackCategoryFilter, role],
+    queryKey: ["feedback", feedbackClubFilter, feedbackCategoryFilter, feedbackStatusFilter, role],
     queryFn: () =>
       getFeedback({
         club_id: role === "admin" && feedbackClubFilter !== "all" ? feedbackClubFilter : undefined,
-        category: feedbackCategoryFilter !== "all" ? (feedbackCategoryFilter as FeedbackCategory) : undefined
+        category: feedbackCategoryFilter !== "all" ? (feedbackCategoryFilter as FeedbackCategory) : undefined,
+        status: feedbackStatusFilter !== "all" ? feedbackStatusFilter : undefined
       }),
     enabled: activeTab === "feedback" && canViewFeedback,
     retry: false
@@ -395,6 +428,20 @@ export default function Communications({ defaultTab = "announcements" }: { defau
 
   const unreadCount = announcements.filter((announcement) => !announcement.is_read).length;
   const urgentCount = announcements.filter((announcement) => ["high", "urgent"].includes(announcement.priority)).length;
+  const feedbackFiltersActive =
+    feedbackClubFilter !== "all" ||
+    feedbackCategoryFilter !== "all" ||
+    feedbackStatusFilter !== "all" ||
+    feedbackRoleFilter !== "all" ||
+    feedbackDateFilter !== "all";
+
+  function clearFeedbackFilters() {
+    setFeedbackClubFilter("all");
+    setFeedbackCategoryFilter("all");
+    setFeedbackStatusFilter("all");
+    setFeedbackRoleFilter("all");
+    setFeedbackDateFilter("all");
+  }
 
   const createAnnouncementMutation = useMutation({
     mutationFn: () => {
@@ -1002,7 +1049,7 @@ export default function Communications({ defaultTab = "announcements" }: { defau
                   </Button>
                 ) : null}
               </div>
-              <div className="grid gap-3 md:grid-cols-3">
+              <div className="grid gap-3 md:grid-cols-4">
                 <div className="space-y-2">
                   <Label>Category</Label>
                   <Select value={feedbackCategoryFilter} onValueChange={setFeedbackCategoryFilter}>
@@ -1012,6 +1059,24 @@ export default function Communications({ defaultTab = "announcements" }: { defau
                     <SelectContent>
                       <SelectItem value="all">All categories</SelectItem>
                       {feedbackCategoryOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select
+                    value={feedbackStatusFilter}
+                    onValueChange={(value) => setFeedbackStatusFilter(value as FeedbackStatusFilter)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {feedbackStatusFilterOptions.map((option) => (
                         <SelectItem key={option.value} value={option.value}>
                           {option.label}
                         </SelectItem>
@@ -1085,22 +1150,43 @@ export default function Communications({ defaultTab = "announcements" }: { defau
               ) : isFeedbackError ? (
                 <p className="text-sm text-destructive">{getErrorMessage(feedbackError)}</p>
               ) : feedback.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No feedback yet.</p>
+                <div className="clb-empty">
+                  <MessageSquare className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+                  <p className="font-medium">No feedback in this status yet</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    New feedback from students and staff will appear here when it matches the selected status.
+                  </p>
+                  {feedbackFiltersActive ? (
+                    <Button type="button" variant="outline" className="mt-4" onClick={clearFeedbackFilters}>
+                      Clear filters
+                    </Button>
+                  ) : null}
+                </div>
               ) : visibleFeedback.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No feedback matches these filters.</p>
+                <div className="clb-empty">
+                  <Filter className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+                  <p className="font-medium">No feedback matches these filters</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Try a different role, date, category, status, or club filter.
+                  </p>
+                  <Button type="button" variant="outline" className="mt-4" onClick={clearFeedbackFilters}>
+                    Clear filters
+                  </Button>
+                </div>
               ) : (
                 visibleFeedback.map((entry) => {
                   const submitterRole = getFeedbackSubmitterRole(entry.comment);
                   const impact = getStructuredFeedbackValue(entry.comment, "Impact");
 
                   return (
-                    <div key={entry.id} className="clb-list-card">
+                    <div key={entry.id} className={`clb-list-card ${entry.status === "open" ? "border-primary bg-primary/5" : ""}`}>
                       {getFeedbackEventLabel(entry) ? (
                         <p className="text-sm font-semibold">{getFeedbackEventLabel(entry)}</p>
                       ) : (
                         <p className="text-sm font-semibold">{getFeedbackCategoryLabel(entry.category)} feedback</p>
                       )}
                       <div className="mt-2 flex flex-wrap gap-2">
+                        <Badge className={getFeedbackStatusClass(entry.status)}>{getFeedbackStatusLabel(entry.status)}</Badge>
                         <Badge variant="secondary">{getFeedbackCategoryLabel(entry.category)}</Badge>
                         <Badge variant="outline">{getFeedbackRoleLabel(submitterRole)}</Badge>
                         {impact ? <Badge variant="outline">Impact: {getFeedbackImpactLabel(impact)}</Badge> : null}

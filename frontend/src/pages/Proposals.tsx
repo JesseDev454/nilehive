@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { FileText, Plus } from "lucide-react";
+import { AccessDenied } from "@/components/AccessDenied";
 import { DataPagination } from "@/components/DataPagination";
 import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -106,7 +107,7 @@ export default function Proposals() {
             <Button asChild>
               <Link to="/proposals/new">
                 <Plus className="h-4 w-4" />
-                Create Proposal
+                Create Event Proposal
               </Link>
             </Button>
           ) : null
@@ -133,17 +134,26 @@ export default function Proposals() {
       </div>
 
       {!canFetch ? (
-        <ClublyStateCard
+        <AccessDenied
           icon={FileText}
           title="Proposal access is restricted"
-          message="Presidents create proposals here, while advisors and Clubly review them. Executives can follow club work through tasks and events."
+          reason="Presidents create proposals here, while advisors and Clubly review them. Executives can follow club work through tasks and events."
         />
       ) : isLoading ? (
         <ClublyLoadingState title="Loading proposals" message="We are getting the latest proposal updates." />
       ) : isError ? (
         <ClublyStateCard icon={FileText} title="Unable to load proposals" message={getErrorMessage(error)} tone="danger" />
       ) : proposals.length === 0 ? (
-        <ClublyStateCard icon={FileText} title="No proposals yet" message="Your club's proposals will appear here once one has been started." />
+        <ClublyStateCard icon={FileText} title="No proposals yet" message="Your club's proposals will appear here once one has been started.">
+          {isPresident ? (
+            <Button asChild>
+              <Link to="/proposals/new">
+                <Plus className="h-4 w-4" />
+                Create Event Proposal
+              </Link>
+            </Button>
+          ) : null}
+        </ClublyStateCard>
       ) : (
         <Card>
           <CardContent className="p-0">
@@ -164,7 +174,14 @@ export default function Proposals() {
                   {proposals.map((proposal: ProposalRecord) => (
                     <tr key={proposal.id} className="border-b border-border/70 transition-colors hover:bg-accent/25">
                       <td className="p-4">
-                        <Link to={`/proposals/${proposal.id}`} className="font-bold hover:underline">
+                        <Link
+                          to={`/proposals/${proposal.id}`}
+                          state={{
+                            returnTo: isAdmin ? `/proposals?status=${statusFilter}` : "/proposals",
+                            returnLabel: isAdmin ? "Back to Final Review" : "Back to Proposals"
+                          }}
+                          className="font-bold hover:underline"
+                        >
                           {proposal.title}
                         </Link>
                       </td>
@@ -185,6 +202,14 @@ export default function Proposals() {
                                 ? `/proposals/new?edit=${proposal.id}`
                                 : `/proposals/${proposal.id}`
                             }
+                            state={
+                              isPresident && isProposalEditable(proposal.status)
+                                ? undefined
+                                : {
+                                    returnTo: isAdmin ? `/proposals?status=${statusFilter}` : "/proposals",
+                                    returnLabel: isAdmin ? "Back to Final Review" : "Back to Proposals"
+                                  }
+                            }
                           >
                             {isPresident ? getProposalPrimaryActionLabel(proposal.status) : "View"}
                           </Link>
@@ -203,7 +228,14 @@ export default function Proposals() {
                       <p className="text-xs font-bold tracking-[0.16em] text-muted-foreground">
                         {getDateLabel(proposal.event_date)}
                       </p>
-                      <Link to={`/proposals/${proposal.id}`} className="mt-2 block text-lg font-bold hover:underline">
+                      <Link
+                        to={`/proposals/${proposal.id}`}
+                        state={{
+                          returnTo: isAdmin ? `/proposals?status=${statusFilter}` : "/proposals",
+                          returnLabel: isAdmin ? "Back to Final Review" : "Back to Proposals"
+                        }}
+                        className="mt-2 block text-lg font-bold hover:underline"
+                      >
                         {proposal.title}
                       </Link>
                     </div>
@@ -213,13 +245,21 @@ export default function Proposals() {
                     {isAdmin ? getProposalClubLabel(proposal) : getProposalOwnerLabel(proposal.current_owner_role)}
                   </p>
                   <Button asChild variant="outline" size="sm" className="mt-4 w-full">
-                    <Link
-                      to={
-                        isPresident && isProposalEditable(proposal.status)
-                          ? `/proposals/new?edit=${proposal.id}`
-                          : `/proposals/${proposal.id}`
-                      }
-                    >
+                      <Link
+                        to={
+                          isPresident && isProposalEditable(proposal.status)
+                            ? `/proposals/new?edit=${proposal.id}`
+                            : `/proposals/${proposal.id}`
+                        }
+                        state={
+                          isPresident && isProposalEditable(proposal.status)
+                            ? undefined
+                            : {
+                                returnTo: isAdmin ? `/proposals?status=${statusFilter}` : "/proposals",
+                                returnLabel: isAdmin ? "Back to Final Review" : "Back to Proposals"
+                              }
+                        }
+                      >
                       {isPresident ? getProposalPrimaryActionLabel(proposal.status) : "View"}
                     </Link>
                   </Button>

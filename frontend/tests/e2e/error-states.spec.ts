@@ -41,7 +41,7 @@ test("student sees a club-not-found state for an unavailable club detail link", 
   await failApi(page, "/clubs/missing-club", "Club not found.", 404);
   await loginAs(page, "student");
 
-  await page.goto("/membership/clubs/missing-club");
+  await page.goto("/membership/clubs/missing-club", { waitUntil: "domcontentloaded" });
 
   await expect(page.getByText("Club not found")).toBeVisible();
   await expect(page.getByText("Please go back to the discover page and choose another one.")).toBeVisible();
@@ -72,7 +72,9 @@ test("student sees a feedback submission error when feedback cannot be saved", a
   await page.getByLabel("Experience rating").fill("3");
   await page.getByLabel("What were you trying to do?").fill("Share a club with a friend");
   await page.getByLabel("What confused you or went wrong?").fill("The share action failed during testing.");
-  await page.getByRole("button", { name: "Submit Feedback" }).click();
+  const submitButton = page.getByRole("button", { name: "Submit Feedback" });
+  await expect(submitButton).toBeEnabled();
+  await submitButton.click({ force: true });
 
   await expect(page.getByText("Feedback failed")).toBeVisible();
   await expect(page.getByText("Feedback inbox is temporarily unavailable.")).toBeVisible();

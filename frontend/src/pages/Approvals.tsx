@@ -26,18 +26,34 @@ export default function Approvals() {
   const { data: pending = [], isLoading, isError, error } = useAdvisorPendingProposals();
   const queryClient = useQueryClient();
   const [remarksByProposalId, setRemarksByProposalId] = useState<Record<string, string>>({});
+  const [remarksErrorsByProposalId, setRemarksErrorsByProposalId] = useState<Record<string, string>>({});
   const [decidingProposalId, setDecidingProposalId] = useState<string | null>(null);
 
   async function handleDecision(proposalId: string, decision: "approve" | "reject") {
+    const remarks = remarksByProposalId[proposalId]?.trim() || "";
+
+    if (decision === "reject" && !remarks) {
+      setRemarksErrorsByProposalId((current) => ({
+        ...current,
+        [proposalId]: "Add rejection remarks before rejecting this proposal."
+      }));
+      return;
+    }
+
     setDecidingProposalId(proposalId);
 
     try {
       await submitAdvisorDecision(proposalId, {
         decision,
-        remarks: remarksByProposalId[proposalId]?.trim() || undefined
+        remarks: remarks || undefined
       });
 
       actionSuccess(decision === "approve" ? "Proposal approved" : "Proposal rejected", "The proposal queue has been updated.");
+      setRemarksErrorsByProposalId((current) => {
+        const next = { ...current };
+        delete next[proposalId];
+        return next;
+      });
       await queryClient.invalidateQueries({ queryKey: ["advisor-pending-proposals"] });
       await queryClient.invalidateQueries({ queryKey: ["navigation-counts"] });
     } catch (decisionError) {
@@ -87,16 +103,30 @@ export default function Approvals() {
                     placeholder="Add advisor remarks before approving or rejecting..."
                     rows={2}
                     value={remarksByProposalId[proposal.id] ?? ""}
-                    onChange={(event) =>
+                    onChange={(event) => {
+                      setRemarksErrorsByProposalId((current) => {
+                        if (!current[proposal.id]) {
+                          return current;
+                        }
+
+                        const next = { ...current };
+                        delete next[proposal.id];
+                        return next;
+                      });
                       setRemarksByProposalId((current) => ({
                         ...current,
                         [proposal.id]: event.target.value
-                      }))
-                    }
+                      }));
+                    }}
                   />
+                  {remarksErrorsByProposalId[proposal.id] ? (
+                    <p className="text-sm font-medium text-destructive">{remarksErrorsByProposalId[proposal.id]}</p>
+                  ) : null}
                   <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
                     <Button asChild variant="outline">
-                      <Link to={`/proposals/${proposal.id}`}>View details</Link>
+                      <Link to={`/proposals/${proposal.id}`} state={{ returnTo: "/approvals", returnLabel: "Back to Approvals" }}>
+                        View details
+                      </Link>
                     </Button>
                     <Button
                       className="bg-success hover:bg-success/90 text-success-foreground"

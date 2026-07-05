@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, FileText, ImageIcon, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { DataPagination } from "@/components/DataPagination";
+import { AccessDenied } from "@/components/AccessDenied";
 import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -464,7 +465,7 @@ export default function MediaArchive() {
           title="Reports & Media Archive"
           description="Post-event reports are available to presidents, advisors, and Club Services admins."
         />
-        <ClublyStateCard icon={FileText} title="Report access is restricted" message="No report access for this role." />
+        <AccessDenied icon={FileText} title="Report access is restricted" reason="Post-event reports are available to presidents, advisors, and Club Services admins." />
       </div>
     );
   }

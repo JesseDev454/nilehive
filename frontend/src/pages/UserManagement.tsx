@@ -418,7 +418,7 @@ export default function UserManagement() {
           <Button asChild variant="outline" className="w-fit">
             <Link to="/user-management">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to users
+              Back to user management
             </Link>
           </Button>
           {isLoadingFocusedUser ? (

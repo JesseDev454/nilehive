@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { Users } from "lucide-react";
+import { AccessDenied } from "@/components/AccessDenied";
 import { DataPagination } from "@/components/DataPagination";
 import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { Badge } from "@/components/ui/badge";
@@ -84,8 +86,10 @@ function StatusBadge({ status }: { status: ClubMemberRecord["membership_status"]
 
 export default function Members() {
   const { role } = useRole();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
-  const [memberClubFilter, setMemberClubFilter] = useState("all");
+  const requestedClubId = searchParams.get("club_id") || "all";
+  const [memberClubFilter, setMemberClubFilter] = useState(requestedClubId);
   const [page, setPage] = useState(1);
   const [pendingPresidentReplacement, setPendingPresidentReplacement] = useState<PendingPresidentReplacement | null>(null);
   const canViewMembers = role === "president" || role === "executive" || role === "admin";
@@ -97,6 +101,12 @@ export default function Members() {
   useEffect(() => {
     setPage(1);
   }, [memberClubFilter]);
+
+  useEffect(() => {
+    if (role === "admin") {
+      setMemberClubFilter(requestedClubId);
+    }
+  }, [requestedClubId, role]);
 
   const {
     data: membersPage = emptyPaginatedResponse<ClubMemberRecord>(),
@@ -292,7 +302,11 @@ export default function Members() {
           title="Member Database"
           description="Member records are available to executives, presidents, and Club Services admins."
         />
-        <ClublyStateCard icon={Users} title="Member access is restricted" message="This role does not use the member database yet." />
+        <AccessDenied
+          icon={Users}
+          title="Member access is restricted"
+          reason="Member records are available to executives, presidents, and Club Services admins."
+        />
       </div>
     );
   }

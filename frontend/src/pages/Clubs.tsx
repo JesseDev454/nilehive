@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Loader2, Pencil, Plus, School, Trash2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { AccessDenied } from "@/components/AccessDenied";
 import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -213,7 +214,7 @@ export default function Clubs() {
   if (!canManageClubs) {
     return (
       <div className="clb-screen">
-        <ClublyStateCard icon={School} title="Club management is restricted" message="Only Club Services admins and assigned presidents can edit club content." />
+        <AccessDenied icon={School} title="Club management is restricted" reason="Only Club Services admins and assigned presidents can edit club content." />
       </div>
     );
   }

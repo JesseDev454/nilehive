@@ -14,6 +14,13 @@ test("student discovers a club, uploads dues proof, and submits a join request",
 
   await page.getByRole("link", { name: "View Club" }).first().click();
   await expect(page.getByRole("heading", { name: /Join Nile Tech Club/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Membership Progress" })).toBeVisible();
+  await expect(page.getByText("Choose Club", { exact: true })).toBeVisible();
+  await expect(page.getByText("Submit Details", { exact: true })).toBeVisible();
+  await expect(page.getByText("Pay Dues", { exact: true })).toBeVisible();
+  await expect(page.getByText("Upload Proof", { exact: true })).toBeVisible();
+  await expect(page.getByText("Await Approval", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Continue Membership Setup", exact: true })).toHaveCount(1);
   await expect(page.getByText("Tech", { exact: true }).first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "Events", exact: true })).toBeVisible();
   await expect(page.getByText("Build Night", { exact: true }).first()).toBeVisible();
@@ -42,6 +49,18 @@ test("student discovers a club, uploads dues proof, and submits a join request",
   await expect(page.getByText("Current request: Payment Under Review.")).toBeVisible();
 });
 
+test("student sidebar includes notifications and opens discover clubs", async ({ page }) => {
+  await mockClubServicesApi(page);
+  await loginAs(page, "student");
+
+  await page.goto("/");
+
+  await expect(page.getByRole("link", { name: /Notifications/i })).toBeVisible();
+  await page.getByRole("link", { name: /Discover Clubs/i }).first().click();
+  await expect(page).toHaveURL(/\/membership$/);
+  await expect(page.getByRole("heading", { name: "Discover Clubs" })).toBeVisible();
+});
+
 test("student can RSVP for an upcoming event", async ({ page }) => {
   await mockClubServicesApi(page);
   await loginAs(page, "student");
@@ -52,6 +71,22 @@ test("student can RSVP for an upcoming event", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Build Night" }).first()).toBeVisible();
   await page.getByRole("button", { name: "RSVP" }).first().click();
   await expect(page.getByRole("button", { name: "RSVP Saved" }).first()).toBeVisible();
+});
+
+test("student can submit feedback successfully", async ({ page }) => {
+  await mockClubServicesApi(page);
+  await loginAs(page, "student");
+
+  await page.goto("/feedback");
+
+  await expect(page.getByRole("heading", { name: "Announcements and Feedback" })).toBeVisible();
+  await page.getByLabel("Experience rating").fill("4");
+  await page.getByLabel("What were you trying to do?").fill("Join a club and upload payment proof");
+  await page.getByLabel("What confused you or went wrong?").fill("I wanted to confirm the feedback form submits in E2E.");
+  await page.getByLabel("What should we improve?").fill("Keep the next action visible.");
+  await page.getByRole("button", { name: "Submit Feedback" }).click();
+
+  await expect(page.getByText("Feedback submitted")).toBeVisible();
 });
 
 test("student sees club links only when real links exist", async ({ page }) => {

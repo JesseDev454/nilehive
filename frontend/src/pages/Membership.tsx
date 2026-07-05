@@ -5,6 +5,7 @@ import { ArrowLeft, Camera, Copy, Filter, ImageIcon, Instagram, Loader2, Message
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
 import { DataPagination } from "@/components/DataPagination";
+import { AccessDenied } from "@/components/AccessDenied";
 import { NhStudentId } from "@/components/NhStudentId";
 import { ClublyLoadingState, ClublyMetaChip, ClublyPageHeader, ClublySectionHeader, ClublyStateCard } from "@/components/Clubly";
 import { Badge } from "@/components/ui/badge";
@@ -462,35 +463,66 @@ function getMembershipNextStep(status: ResolvedMembershipStatus, duesRequired: b
 }
 
 function getJoinFlowSteps(status: ResolvedMembershipStatus | "not_started", duesRequired: boolean) {
-  const paymentDone = status === "payment_under_review" || status === "active";
+  const detailsDone = status !== "not_started";
+  const paymentDone = !duesRequired || ["pending_payment", "payment_under_review", "needs_new_payment_details", "active"].includes(status);
+  const proofDone = !duesRequired || status === "payment_under_review" || status === "active";
+  const awaitingApproval = status === "under_review" || status === "payment_under_review";
 
   return [
     {
-      label: "Request to join",
-      done: status !== "not_started",
-      current: status === "not_started" || status === "under_review"
-    },
-    {
-      label: duesRequired ? "Upload dues proof" : "Dues not required",
-      done: !duesRequired || paymentDone,
-      current: duesRequired && (status === "pending_payment" || status === "needs_new_payment_details")
-    },
-    {
-      label: "Clubly verification",
-      done: status === "active",
-      current: status === "payment_under_review"
-    },
-    {
-      label: "Membership active",
-      done: status === "active",
+      label: "Choose Club",
+      done: true,
       current: false
     },
     {
-      label: "Onboarding instructions",
+      label: "Submit Details",
+      done: detailsDone,
+      current: status === "not_started"
+    },
+    {
+      label: "Pay Dues",
+      done: paymentDone,
+      current: duesRequired && status === "pending_payment"
+    },
+    {
+      label: "Upload Proof",
+      done: proofDone,
+      current: duesRequired && (status === "pending_payment" || status === "needs_new_payment_details")
+    },
+    {
+      label: "Await Approval",
       done: status === "active",
-      current: status === "active"
+      current: awaitingApproval || status === "active"
     }
   ];
+}
+
+function getJoinFlowPrimaryAction(status: ResolvedMembershipStatus | "not_started", duesRequired: boolean) {
+  if (status === "active") {
+    return {
+      label: "Explore Events",
+      to: "/events"
+    };
+  }
+
+  if (status === "payment_under_review" || status === "under_review") {
+    return {
+      label: "View Approval Status",
+      href: "#membership-action"
+    };
+  }
+
+  if (duesRequired && (status === "pending_payment" || status === "needs_new_payment_details")) {
+    return {
+      label: "Upload Payment Proof",
+      href: "#membership-action"
+    };
+  }
+
+  return {
+    label: "Continue Membership Setup",
+    href: "#membership-action"
+  };
 }
 
 function getWhatsAppStatusLabel(request?: MembershipRequestRecord) {
@@ -824,12 +856,24 @@ function JoinFlowStepper({
   duesRequired: boolean;
 }) {
   const steps = getJoinFlowSteps(status, duesRequired);
+  const primaryAction = getJoinFlowPrimaryAction(status, duesRequired);
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Join Progress</CardTitle>
-        <p className="text-sm text-muted-foreground">Every club membership moves through Clubly verification before activation.</p>
+      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <CardTitle className="text-lg">Membership Progress</CardTitle>
+          <p className="text-sm text-muted-foreground">Follow the next required step from club choice through Clubly approval.</p>
+        </div>
+        {primaryAction.to ? (
+          <Button asChild className="w-full sm:w-auto">
+            <Link to={primaryAction.to}>{primaryAction.label}</Link>
+          </Button>
+        ) : (
+          <Button asChild className="w-full sm:w-auto">
+            <a href={primaryAction.href}>{primaryAction.label}</a>
+          </Button>
+        )}
       </CardHeader>
       <CardContent className="grid gap-3 md:grid-cols-5">
         {steps.map((step, index) => (
@@ -845,6 +889,9 @@ function JoinFlowStepper({
           >
             <p className="text-xs font-semibold uppercase tracking-wide">Step {index + 1}</p>
             <p className="mt-1 font-semibold">{step.label}</p>
+            {!duesRequired && (step.label === "Pay Dues" || step.label === "Upload Proof") ? (
+              <p className="mt-1 text-xs">Not required</p>
+            ) : null}
           </div>
         ))}
       </CardContent>
@@ -1438,7 +1485,7 @@ function JoinClubPanel({
   }
 
   return (
-    <Card className="overflow-hidden">
+    <Card id="membership-action" className="scroll-mt-24 overflow-hidden">
       <CardHeader className="border-b-2 border-foreground bg-primary/10">
         <div className="flex items-start justify-between gap-3">
           <div>
@@ -1559,6 +1606,11 @@ function JoinClubPanel({
                     onChange={handleReceiptUpload}
                     disabled={isUploadingProof}
                   />
+                  {!proofUrl ? (
+                    <div className="rounded-xl border border-dashed bg-muted/35 p-3 text-sm text-muted-foreground">
+                      No payment proof uploaded yet. Pay the dues, then upload a receipt before sending this join request.
+                    </div>
+                  ) : null}
                   {proofFileName ? <p className="text-xs text-muted-foreground">Uploaded: {proofFileName}</p> : null}
                   {proofUrl ? (
                     <div className="space-y-2">
@@ -2018,6 +2070,24 @@ function StudentMembershipView() {
             </Card>
           ) : null}
 
+          {myRequests.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-semibold">No membership requests yet</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Choose a club below to start your membership setup and see each required step.
+                  </p>
+                </div>
+                {activeFilterCount ? (
+                  <Button type="button" variant="outline" onClick={clearDiscoveryFilters}>
+                    Show all clubs
+                  </Button>
+                ) : null}
+              </CardContent>
+            </Card>
+          ) : null}
+
           {showRecommendations ? (
             <Card>
               <CardHeader>
@@ -2225,38 +2295,58 @@ function ReviewerMembershipView() {
           ) : (
             <div>
               <div className="space-y-3">
-                {visibleRequests.map((request) => (
-                  <div key={request.id} className="clb-list-card">
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-semibold">{request.profile?.full_name || "Student"}</p>
-                          <ReviewRequestStatusBadge status={request.status} />
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {request.club?.name || "Selected club"} - Student fee - {formatCurrency(request.dues_amount)}
-                        </p>
-                        {request.due_payment?.payment_account_name ? (
+                {visibleRequests.map((request) => {
+                  const paymentId = request.due_payment_id || request.due_payment?.id;
+                  const hasPaymentProof = Boolean(paymentId && request.due_payment?.proof_url);
+
+                  return (
+                    <div key={request.id} className="clb-list-card">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-semibold">{request.profile?.full_name || "Student"}</p>
+                            <ReviewRequestStatusBadge status={request.status} />
+                          </div>
                           <p className="text-sm text-muted-foreground">
-                            Paid by: {request.due_payment.payment_account_name}
+                            {request.club?.name || "Selected club"} - Student fee - {formatCurrency(request.dues_amount)}
                           </p>
-                        ) : null}
-                        {request.join_reason ? (
-                          <p className="text-sm text-muted-foreground">{request.join_reason}</p>
-                        ) : null}
-                        {request.decision_remarks ? (
-                          <p className="text-sm text-muted-foreground">Last note: {request.decision_remarks}</p>
-                        ) : null}
-                      </div>
-                      <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm">
-                        <p className="font-semibold text-primary">Next step</p>
-                        <p className="mt-1 text-muted-foreground">
-                          Open the Dues &amp; Payment Review page to confirm or reject the payment record for this request.
-                        </p>
+                          {request.due_payment?.payment_account_name ? (
+                            <p className="text-sm text-muted-foreground">
+                              Paid by: {request.due_payment.payment_account_name}
+                            </p>
+                          ) : null}
+                          {request.join_reason ? (
+                            <p className="text-sm text-muted-foreground">{request.join_reason}</p>
+                          ) : null}
+                          {request.decision_remarks ? (
+                            <p className="text-sm text-muted-foreground">Last note: {request.decision_remarks}</p>
+                          ) : null}
+                        </div>
+                        <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm lg:max-w-xs">
+                          <p className="font-semibold text-primary">Payment review</p>
+                          {hasPaymentProof ? (
+                            <div className="mt-3 space-y-3">
+                              <p className="text-muted-foreground">A payment proof is attached to this join request.</p>
+                              <Button asChild size="sm">
+                                <Link to={`/dues/${paymentId}/proof`} state={{ returnTo: "/membership" }}>
+                                  Review Payment Proof
+                                </Link>
+                              </Button>
+                            </div>
+                          ) : paymentId ? (
+                            <p className="mt-1 text-muted-foreground">
+                              Payment record exists, but no proof has been uploaded yet.
+                            </p>
+                          ) : (
+                            <p className="mt-1 text-muted-foreground">
+                              No payment record has been created yet. Ask the student to submit payment details from their club setup page.
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               <DataPagination
                 page={requestsPage.page}
@@ -2286,10 +2376,10 @@ export default function Membership() {
 
   return (
     <div className="clb-screen">
-      <ClublyStateCard
+      <AccessDenied
         icon={Users}
         title="Membership tools are not available here"
-        message="This role does not use the membership workflow."
+        reason="This role does not use the membership workflow."
       />
     </div>
   );

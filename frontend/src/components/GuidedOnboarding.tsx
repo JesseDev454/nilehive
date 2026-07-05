@@ -100,7 +100,7 @@ const stepsByRole: Record<AppRole, OnboardingStep[]> = {
       id: "president-proposal",
       route: "/proposals/new",
       target: "nav-create-proposal",
-      title: "Create proposals",
+      title: "Create event proposals",
       body: "Start event proposals here. They move through advisor review and then Clubly final review."
     },
     {

@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AccessDenied } from "@/components/AccessDenied";
 import { ClublyMetaChip, ClublyPageHeader, ClublyStateCard, ClublyStepIndicator } from "@/components/Clubly";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/contexts/RoleContext";
@@ -627,10 +628,10 @@ export default function NewProposal() {
   if (!canManageProposals) {
     return (
       <div className="clb-screen max-w-3xl">
-        <ClublyStateCard
+        <AccessDenied
           icon={Building2}
           title="Proposal access is for club presidents"
-          message="Club presidents create and resubmit proposals here. Executives can keep up with club work through tasks and events."
+          reason="Club presidents create and resubmit proposals here. Executives can keep up with club work through tasks and events."
         />
       </div>
     );
@@ -685,7 +686,7 @@ export default function NewProposal() {
     <div className="clb-screen max-w-[720px]">
       <ClublyPageHeader
         eyebrow="Event Proposal"
-        title={isEditMode ? "Edit Proposal" : "Create Proposal"}
+        title={isEditMode ? "Edit Proposal" : "Create Event Proposal"}
         description="Three focused steps. Clubly sends the proposal to your advisor first, then to final review."
         actions={lastLocalSaveAt ? (
           <span className="clb-status border-border bg-card text-muted-foreground">
@@ -861,7 +862,7 @@ export default function NewProposal() {
     <div className="clb-screen max-w-6xl">
       <ClublyPageHeader
         eyebrow="Event Proposal"
-        title={isEditMode ? "Edit Proposal" : "Create Proposal"}
+        title={isEditMode ? "Edit Proposal" : "Create Event Proposal"}
         description={
           isEditMode
             ? "Update a draft or rejected proposal before sending it back for review."

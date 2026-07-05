@@ -14,14 +14,16 @@ test("admin can view privacy-safe usage and operational analytics", async ({ pag
   await expect(page.getByText(/No search text or browsing histories/i)).toBeVisible();
 });
 
-test("admin dashboard shows club health values in the performance matrix", async ({ page }) => {
+test("admin dashboard prioritizes operational queues before general metrics", async ({ page }) => {
   await mockClubServicesApi(page);
   await loginAs(page, "admin");
   await page.goto("/");
 
-  await expect(page.getByText("Club performance matrix")).toBeVisible();
-  await expect(page.getByRole("link", { name: "Nile Tech Club" })).toBeVisible();
-  await expect(page.getByText("80 - healthy")).toBeVisible();
+  await expect(page.getByText("Needs Action Today")).toBeVisible();
+  const bodyText = await page.locator("body").innerText();
+  expect(bodyText.indexOf("Needs Action Today")).toBeLessThan(bodyText.indexOf("Total Clubs"));
+  await expect(page.getByRole("link", { name: /Review Proposals/i })).toHaveAttribute("href", "/proposals?status=pending_admin_review");
+  await expect(page.getByRole("link", { name: /Review Payments/i })).toHaveAttribute("href", "/dues?status=submitted");
 });
 
 test("student cannot access admin analytics", async ({ page }) => {

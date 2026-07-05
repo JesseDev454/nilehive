@@ -6,9 +6,11 @@ test("executive dashboard is task-focused and shows relevant club updates", asyn
   await mockClubServicesApi(page);
   await loginAs(page, "executive");
 
-  await page.goto("/");
+  await page.goto("/", { waitUntil: "domcontentloaded" });
 
   await expect(page.getByRole("heading", { name: "Executive Dashboard" })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Discover Clubs/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /^Members$/i })).toBeVisible();
   await expect(page.getByText("My Assigned Tasks")).toBeVisible();
   await expect(page.getByText("Prepare check-in desk")).toBeVisible();
   await expect(page.getByText("Club Announcements")).toBeVisible();
@@ -16,11 +18,28 @@ test("executive dashboard is task-focused and shows relevant club updates", asyn
   await expect(page.getByRole("link", { name: /Send Feedback/i })).toHaveAttribute("href", "/feedback");
 });
 
+test("executive can open discover clubs and members without admin controls", async ({ page }) => {
+  await mockClubServicesApi(page);
+  await loginAs(page, "executive");
+
+  await page.goto("/membership", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByRole("heading", { name: "Discover Clubs" })).toBeVisible();
+  await expect(page.getByText(/access is restricted/i)).toHaveCount(0);
+
+  await page.goto("/members", { waitUntil: "domcontentloaded" });
+
+  await expect(page.getByRole("heading", { name: "Member Database", exact: true })).toBeVisible();
+  await expect(page.getByText(/Member access is restricted/i)).toHaveCount(0);
+  await expect(page.getByRole("combobox")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Replace President|Update Status/i })).toHaveCount(0);
+});
+
 test("executive can update an assigned task status", async ({ page }) => {
   await mockClubServicesApi(page);
   await loginAs(page, "executive");
 
-  await page.goto("/tasks");
+  await page.goto("/tasks", { waitUntil: "domcontentloaded" });
 
   await expect(page.getByRole("heading", { name: "My Tasks" })).toBeVisible();
   await expect(page.getByText("Prepare check-in desk")).toBeVisible();

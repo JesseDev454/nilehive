@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Banknote, CalendarDays, ClipboardList, FileText, MessageSquare, Users } from "lucide-react";
+import { AccessDenied } from "@/components/AccessDenied";
 import { ClublyLoadingState, ClublyMetricCard, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -103,7 +104,7 @@ export default function AdminClubDashboard() {
     return (
       <div className="clb-screen">
         <ClublyPageHeader eyebrow="Club Services" title="Club dashboard" description="This club operations view is for Club Services admins." />
-        <ClublyStateCard icon={Users} title="Club dashboard access is restricted" message="Only Club Services admins can inspect all-club progress." />
+        <AccessDenied icon={Users} title="Club dashboard access is restricted" reason="Only Club Services admins can inspect all-club progress." />
       </div>
     );
   }
@@ -153,7 +154,7 @@ export default function AdminClubDashboard() {
           <Button asChild variant="outline" size="sm">
             <Link to="/">
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to matrix
+              Back to admin dashboard
             </Link>
           </Button>
           <Button asChild variant="outline" size="sm">

@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { loginAs } from "./helpers/auth";
-import { mockClubServicesApi } from "./helpers/mock-api";
+import { createE2EState, mockClubServicesApi } from "./helpers/mock-api";
 
-test("president sees action cards and quick actions for their club", async ({ page }) => {
+test("president sees focused dashboard actions for their club", async ({ page }) => {
   await mockClubServicesApi(page);
   await loginAs(page, "president");
 
@@ -18,12 +18,27 @@ test("president sees action cards and quick actions for their club", async ({ pa
   await expect(page.getByText("76", { exact: true })).toBeVisible();
   await expect(page.getByText("Healthy", { exact: true })).toBeVisible();
 
-  await expect(page.getByRole("link", { name: "Create announcement", exact: true }).first()).toHaveAttribute("href", "/communications");
-  await expect(page.getByRole("link", { name: "Create event", exact: true })).toHaveAttribute("href", "/proposals/new");
-  await expect(page.getByRole("link", { name: "Create proposal", exact: true })).toHaveAttribute("href", "/proposals/new");
-  await expect(page.getByRole("link", { name: "Assign task", exact: true }).first()).toHaveAttribute("href", "/tasks");
-  await expect(page.getByRole("link", { name: "View members", exact: true })).toHaveAttribute("href", "/members");
-  await expect(page.getByRole("link", { name: "View reports", exact: true })).toHaveAttribute("href", "/archive");
+  const main = page.getByRole("main");
+  const createProposalLinks = main.getByRole("link", { name: "Create Event Proposal", exact: true });
+  await expect(createProposalLinks).toHaveCount(1);
+  await expect(createProposalLinks.first()).toHaveAttribute("href", "/proposals/new");
+  await expect(page.getByRole("link", { name: "Create event", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Create proposal", exact: true })).toHaveCount(0);
+  await expect(main.getByRole("link", { name: "Track Proposal Status", exact: true })).toHaveAttribute("href", "/proposals");
+  await expect(main.getByRole("link", { name: "Assign Tasks", exact: true })).toHaveAttribute("href", "/tasks");
+  await expect(main.getByRole("link", { name: "Manage Members", exact: true })).toHaveAttribute("href", "/members");
+  await expect(main.getByRole("link", { name: "Submit Event Report", exact: true })).toHaveAttribute("href", "/archive");
+});
+
+test("president create event proposal CTA opens the proposal form", async ({ page }) => {
+  await mockClubServicesApi(page);
+  await loginAs(page, "president");
+
+  await page.goto("/");
+  await page.getByRole("main").getByRole("link", { name: "Create Event Proposal", exact: true }).click();
+
+  await expect(page).toHaveURL(/\/proposals\/new$/);
+  await expect(page.getByRole("heading", { name: /Create Event Proposal|New Event Proposal/i })).toBeVisible();
 });
 
 test("president can route from setup dashboard to task delegation", async ({ page }) => {
@@ -31,11 +46,27 @@ test("president can route from setup dashboard to task delegation", async ({ pag
   await loginAs(page, "president");
 
   await page.goto("/");
-  await page.getByRole("link", { name: "Assign task", exact: true }).first().click();
+  await page.getByRole("link", { name: "Assign Tasks", exact: true }).first().click();
 
   await expect(page).toHaveURL(/\/tasks$/);
   await expect(page.getByRole("heading", { name: "Task Delegation" })).toBeVisible();
   await expect(page.getByText("Prepare check-in desk")).toBeVisible();
+});
+
+test("president sees no-executives guidance and can open members", async ({ page }) => {
+  const state = createE2EState();
+  state.presidentExecutives = [];
+  await mockClubServicesApi(page, state);
+  await loginAs(page, "president");
+
+  await page.goto("/");
+
+  await expect(page.getByText("No executives linked yet")).toBeVisible();
+  await expect(page.getByText("Assign an executive from Members before creating tasks for your team.")).toBeVisible();
+  const membersLink = page.getByRole("link", { name: "Manage Members", exact: true }).last();
+  await expect(membersLink).toHaveAttribute("href", "/members");
+  await membersLink.click();
+  await expect(page).toHaveURL(/\/members$/);
 });
 
 test("president can edit only their assigned club profile and cannot add clubs", async ({ page }) => {
