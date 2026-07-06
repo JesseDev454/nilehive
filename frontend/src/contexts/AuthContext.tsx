@@ -10,7 +10,7 @@ import {
   isPasswordAuthEnabled,
   usesCookieAuthProvider
 } from "@/lib/env";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, queryPersister } from "@/lib/queryClient";
 import { supabase, SUPABASE_AUTH_STORAGE_KEY } from "@/lib/supabase";
 
 export type AppRole = "executive" | "advisor" | "admin" | "president" | "student" | "feedback_manager";
@@ -711,6 +711,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       },
       async signOut() {
+        queryClient.clear();
+        await queryPersister.removeClient();
+
         if (isE2EAuthEnabled()) {
           window.localStorage.removeItem(E2E_AUTH_STORAGE_KEY);
         }

@@ -93,7 +93,7 @@ export function AppLayout() {
                 {role === "admin"
                   ? "Admin Access"
                   : role
-                    ? `${role} Mode`
+                    ? `${role.charAt(0).toUpperCase()}${role.slice(1)} Mode`
                     : profile?.role ?? "Loading"}
               </span>
               <Button
