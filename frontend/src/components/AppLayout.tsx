@@ -9,6 +9,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Outlet, useLocation } from "react-router-dom";
 import { useSidebar } from "@/components/ui/sidebar";
 
+function formatRoleLabel(role: string): string {
+  return role
+    .split("_")
+    .filter(Boolean)
+    .map((word) => `${word.charAt(0).toUpperCase()}${word.slice(1)}`)
+    .join(" ");
+}
+
 function AppShellEffects() {
   const location = useLocation();
   const { openMobile, setOpenMobile } = useSidebar();
@@ -93,7 +101,7 @@ export function AppLayout() {
                 {role === "admin"
                   ? "Admin Access"
                   : role
-                    ? `${role.charAt(0).toUpperCase()}${role.slice(1)} Mode`
+                    ? `${formatRoleLabel(role)} Mode`
                     : profile?.role ?? "Loading"}
               </span>
               <Button
@@ -110,7 +118,7 @@ export function AppLayout() {
               </Button>
             </div>
           </header>
-          <main className="flex-1 p-4 md:p-8 md:pt-28">
+          <main className="min-w-0 flex-1 p-4 md:p-8 md:pt-28">
             <Outlet />
           </main>
           <SiteFooter />

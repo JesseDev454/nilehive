@@ -35,7 +35,7 @@ test("top bar exposes role context, help, and logout controls", async ({ page })
 
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
-  await expect(page.getByRole("banner")).toContainText("student Mode");
+  await expect(page.getByRole("banner")).toContainText("Student Mode");
   await expect(page.getByRole("button", { name: /Help \/ Guide|Guide/i })).toBeVisible();
   await expect(page.getByRole("button", { name: "Logout" })).toBeVisible();
 });

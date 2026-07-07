@@ -969,7 +969,7 @@ function ClubDetailOverview({
                 <ClubLogo club={club} className="h-16 w-16" />
                 <div className="min-w-0">
                   <p className="clb-eyebrow text-primary-foreground/70">{club.code || "Nile University club"}</p>
-                  <h2 className="mt-1 text-3xl font-bold leading-tight tracking-tight">{club.name}</h2>
+                  <h2 className="mt-1 text-3xl font-bold leading-tight tracking-tight text-primary-foreground">{club.name}</h2>
                 </div>
               </div>
               {existingRequest ? <MembershipStatusBadge request={existingRequest} payment={payment} /> : <Badge className="bg-white/15 text-white hover:bg-white/15">Not a member</Badge>}

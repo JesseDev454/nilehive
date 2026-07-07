@@ -401,7 +401,7 @@ export default function Members() {
                         <div className="flex flex-col gap-2 border border-border bg-primary p-4 text-primary-foreground shadow-soft-sm sm:flex-row sm:items-center sm:justify-between">
                           <div>
                             <p className="clb-panel-title text-primary-foreground/70">{group.code || "No code"}</p>
-                            <h3 className="text-xl font-bold">{group.name}</h3>
+                            <h3 className="text-xl font-bold text-primary-foreground">{group.name}</h3>
                           </div>
                           <div className="flex gap-3 text-sm font-bold tracking-[0.12em]">
                             <span>{group.members.length} member(s)</span>
