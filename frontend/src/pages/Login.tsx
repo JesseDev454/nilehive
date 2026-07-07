@@ -189,7 +189,7 @@ export default function Login() {
 
           <div className="relative z-10 max-w-xl">
             <p className="clb-eyebrow text-primary-foreground/70">Institutional Access</p>
-            <h2 className="mt-4 text-6xl font-bold leading-[0.9] tracking-tighter">
+            <h2 className="mt-4 text-6xl font-bold leading-[0.9] tracking-tighter text-primary-foreground">
               Campus clubs, proposals, and records.
             </h2>
             <p className="mt-6 border-l-4 border-secondary pl-5 text-lg leading-8 text-primary-foreground/82">

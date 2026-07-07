@@ -596,7 +596,7 @@ export default function Communications({ defaultTab = "announcements" }: { defau
 
       {activeTab === "announcements" ? (
         <div className="clb-section-grid">
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             {canCreateAnnouncement ? (
               <Card className="overflow-hidden">
                 <CardHeader>
@@ -747,7 +747,7 @@ export default function Communications({ defaultTab = "announcements" }: { defau
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted">
                       <Megaphone className="h-5 w-5 text-muted-foreground" />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <h2 className="font-semibold">Read-only communication access</h2>
                       <p className="mt-1 text-sm text-muted-foreground">
                         You can view announcements relevant to your role and club. Announcement creation is currently limited to admins and presidents.

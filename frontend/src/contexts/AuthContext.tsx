@@ -1,6 +1,12 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import { ApiClientError, getMyProfile, getUserFacingErrorMessage, SESSION_EXPIRED_EVENT } from "@/lib/api";
+import {
+  ApiClientError,
+  getMyProfile,
+  getUserFacingErrorMessage,
+  SESSION_EXPIRED_EVENT,
+  type MyProfileResponse
+} from "@/lib/api";
 import {
   getCampusOneOidcAuthUrl,
   getAllowedEmailDomainLabel,
@@ -10,7 +16,7 @@ import {
   isPasswordAuthEnabled,
   usesCookieAuthProvider
 } from "@/lib/env";
-import { queryClient } from "@/lib/queryClient";
+import { queryClient, queryPersister } from "@/lib/queryClient";
 import { supabase, SUPABASE_AUTH_STORAGE_KEY } from "@/lib/supabase";
 
 export type AppRole = "executive" | "advisor" | "admin" | "president" | "student" | "feedback_manager";
@@ -82,6 +88,14 @@ const PROFILE_FETCH_RETRY_ATTEMPTS = 5;
 const PROFILE_FETCH_RETRY_DELAY_MS = 500;
 const LAST_ACTIVITY_STORAGE_KEY = `${SUPABASE_AUTH_STORAGE_KEY}:last-activity-at`;
 const E2E_AUTH_STORAGE_KEY = "club-services:e2e-auth";
+const PORTAL_PROFILE_CACHE_KEY = `${SUPABASE_AUTH_STORAGE_KEY}:cached-portal-profile`;
+const PORTAL_PROFILE_CACHE_MAX_AGE_MS = 5 * 60 * 1000;
+
+interface CachedPortalProfile {
+  user: MyProfileResponse["user"];
+  profile: AppProfile | null;
+  cachedAt: number;
+}
 
 function isAuthFailure(error: unknown) {
   return error instanceof ApiClientError && (error.status === 401 || error.status === 403);
@@ -112,6 +126,57 @@ function clearLastActivityAt() {
   }
 
   window.localStorage.removeItem(LAST_ACTIVITY_STORAGE_KEY);
+}
+
+function readCachedPortalProfile(): CachedPortalProfile | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const rawValue = window.localStorage.getItem(PORTAL_PROFILE_CACHE_KEY);
+
+  if (!rawValue) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(rawValue) as CachedPortalProfile;
+
+    if (!parsed || typeof parsed.cachedAt !== "number" || !parsed.user?.id) {
+      return null;
+    }
+
+    if (Date.now() - parsed.cachedAt > PORTAL_PROFILE_CACHE_MAX_AGE_MS) {
+      return null;
+    }
+
+    return parsed;
+  } catch {
+    window.localStorage.removeItem(PORTAL_PROFILE_CACHE_KEY);
+    return null;
+  }
+}
+
+function writeCachedPortalProfile(data: MyProfileResponse) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const snapshot: CachedPortalProfile = {
+    user: data.user,
+    profile: data.profile as AppProfile | null,
+    cachedAt: Date.now()
+  };
+
+  window.localStorage.setItem(PORTAL_PROFILE_CACHE_KEY, JSON.stringify(snapshot));
+}
+
+function clearCachedPortalProfile() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(PORTAL_PROFILE_CACHE_KEY);
 }
 
 function isE2EAuthEnabled() {
@@ -287,6 +352,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   function clearAuthState() {
     beginAuthLoad();
     clearLastActivityAt();
+    clearCachedPortalProfile();
     currentUserIdRef.current = null;
     queryClient.clear();
     setSession(null);
@@ -332,6 +398,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return null;
     }
 
+    writeCachedPortalProfile(data);
     prepareForSession(createPortalSession({ user: data.user, profile: nextProfile }));
     setProfile(nextProfile);
     setProfileError(nextProfile ? null : "We couldn't finish opening your profile. Please try again.");
@@ -431,6 +498,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (isSignedOutLoginRoute() || isCampusOnePublicAuthRoute()) {
           clearAuthState();
           return;
+        }
+
+        // Authorization for cookie auth is enforced server-side via the httpOnly
+        // session cookie (see getFreshAccessToken), not a client-held token, so it's
+        // safe to paint the last-known profile immediately while we revalidate in the
+        // background. This removes the full-page spinner on every reload for
+        // returning users instead of blocking on a network round trip first.
+        const cachedPortalProfile = readCachedPortalProfile();
+
+        if (cachedPortalProfile && isCurrentAuthLoad(loadVersion)) {
+          prepareForSession(
+            createPortalSession({ user: cachedPortalProfile.user, profile: cachedPortalProfile.profile })
+          );
+          setProfile(cachedPortalProfile.profile);
+          setProfileError(null);
+          setRequiresProfileRecovery(!cachedPortalProfile.profile);
+          setIsLoading(false);
         }
 
         try {
@@ -711,6 +795,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         };
       },
       async signOut() {
+        queryClient.clear();
+        await queryPersister.removeClient();
+
         if (isE2EAuthEnabled()) {
           window.localStorage.removeItem(E2E_AUTH_STORAGE_KEY);
         }

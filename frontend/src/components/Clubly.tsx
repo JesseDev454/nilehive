@@ -109,7 +109,7 @@ export function ClublyProgressHero({
       <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0">
           {eyebrow ? <p className="clb-eyebrow text-primary-foreground/70">{eyebrow}</p> : null}
-          <h2 className="mt-2 text-3xl font-bold leading-tight tracking-tight md:text-4xl">{title}</h2>
+          <h2 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-primary-foreground md:text-4xl">{title}</h2>
           <div className="mt-4 text-4xl font-bold leading-none md:text-5xl">{value}</div>
           {detail ? <div className="mt-3 max-w-2xl text-sm leading-6 text-primary-foreground/75">{detail}</div> : null}
         </div>
@@ -209,13 +209,13 @@ export function ClublyCommandPanel({
   return (
     <section className="clb-command-panel">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-        <div>
+        <div className="min-w-0">
           {eyebrow ? <p className="clb-eyebrow text-primary-foreground/75">{eyebrow}</p> : null}
-          <h1 className="mt-2 text-4xl font-bold leading-tight md:text-5xl">{title}</h1>
+          <h1 className="mt-2 break-words text-3xl font-bold leading-tight text-primary-foreground sm:text-4xl md:text-5xl">{title}</h1>
           {description ? <p className="mt-3 max-w-3xl text-sm text-primary-foreground/80 md:text-base">{description}</p> : null}
         </div>
         {stats?.length ? (
-          <div className="grid min-w-[280px] grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:min-w-[280px]">
             {stats.map((stat) => (
               <div key={stat.label} className="rounded-[18px] border border-primary-foreground/15 bg-primary-foreground/10 p-4">
                 <p className="text-2xl font-bold">{stat.value}</p>
