@@ -560,7 +560,11 @@ function createCampusOneAuthRouter(options = {}) {
       }
 
       if (!statePayload?.state || statePayload.state !== cookies[OIDC_STATE_COOKIE]) {
-        throw new ApiError(400, "CampusOne sign-in state could not be verified", "INVALID_OIDC_STATE");
+        throw new ApiError(400, "CampusOne sign-in state could not be verified", "INVALID_OIDC_STATE", {
+          has_state_cookie: Boolean(cookies[OIDC_STATE_COOKIE]),
+          has_verifier_cookie: Boolean(cookies[OIDC_VERIFIER_COOKIE]),
+          has_nonce_cookie: Boolean(cookies[OIDC_NONCE_COOKIE])
+        });
       }
 
       const codeVerifier = cookies[OIDC_VERIFIER_COOKIE];

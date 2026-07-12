@@ -637,6 +637,25 @@ test("CampusOne cancelled consent redirects to friendly login page", async (t) =
   assert.equal(response.headers.get("location"), "https://clubs.campusone.com.ng/login?auth_error=cancelled");
 });
 
+test("CampusOne OIDC state failure exposes safe cookie diagnostics", async (t) => {
+  withCampusOneOidcEnv(t);
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+  const state = Buffer.from(JSON.stringify({ state: "missing-cookie", returnTo: "/" })).toString("base64url");
+
+  const response = await fetch(`${server.baseUrl}/api/v1/auth/campus-one/callback?code=test&state=${state}`, {
+    redirect: "manual"
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 400);
+  assert.deepEqual(payload.error.details, {
+    has_state_cookie: false,
+    has_verifier_cookie: false,
+    has_nonce_cookie: false
+  });
+});
+
 test("CampusOne login normalizes feedback return path to dashboard", async (t) => {
   withCampusOneOidcEnv(t);
   const server = await createTestServer(createFakeDatabase());
