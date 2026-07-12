@@ -771,6 +771,26 @@ function createDatabase(options = {}) {
       return data ?? null;
     },
 
+    async createCampusOneOidcTransaction(transaction) {
+      const { data, error } = await getClient().from("campus_one_oidc_transactions").insert(transaction).select("*").single();
+      if (error) throw error;
+      return data;
+    },
+
+    async consumeCampusOneOidcTransaction(state) {
+      const now = new Date().toISOString();
+      const { data, error } = await getClient()
+        .from("campus_one_oidc_transactions")
+        .update({ consumed_at: now })
+        .eq("state", state)
+        .is("consumed_at", null)
+        .gt("expires_at", now)
+        .select("*")
+        .maybeSingle();
+      if (error) throw error;
+      return data ?? null;
+    },
+
     async listProfiles(filters = {}) {
       let query = getClient()
         .from("profiles")

@@ -502,7 +502,8 @@ function createCampusOneAuthRouter(options = {}) {
   const { database, logger = baseLogger } = options;
   const router = require("express").Router();
 
-  router.get("/campus-one/login", (req, res) => {
+  router.get("/campus-one/login", async (req, res, next) => {
+    try {
     const env = getEnv();
 
     if (!env.CAMPUS_ONE_CLIENT_ID || !env.CAMPUS_ONE_CLIENT_SECRET || !env.CAMPUS_ONE_REDIRECT_URI) {
@@ -516,6 +517,16 @@ function createCampusOneAuthRouter(options = {}) {
     const returnTo = normalizeReturnTo(req.query.return_to);
     const stateValue = base64UrlEncode(JSON.stringify({ state, returnTo }));
     const authorizationUrl = new URL(getAuthorizationEndpoint());
+
+    if (database?.createCampusOneOidcTransaction) {
+      await database.createCampusOneOidcTransaction({
+        state,
+        code_verifier: codeVerifier,
+        nonce,
+        return_to: returnTo,
+        expires_at: new Date(Date.now() + OIDC_COOKIE_MAX_AGE_SECONDS * 1000).toISOString()
+      });
+    }
 
     authorizationUrl.searchParams.set("response_type", "code");
     authorizationUrl.searchParams.set("client_id", env.CAMPUS_ONE_CLIENT_ID);
@@ -531,6 +542,9 @@ function createCampusOneAuthRouter(options = {}) {
     appendSetCookie(res, buildCookie(OIDC_NONCE_COOKIE, nonce, getOidcCookieOptions()));
 
     res.redirect(authorizationUrl.toString());
+    } catch (error) {
+      next(error);
+    }
   });
 
   router.get("/campus-one/callback", async (req, res, next) => {
@@ -559,7 +573,12 @@ function createCampusOneAuthRouter(options = {}) {
         throw new ApiError(400, "CampusOne sign-in state could not be verified", "INVALID_OIDC_STATE");
       }
 
-      if (!statePayload?.state || statePayload.state !== cookies[OIDC_STATE_COOKIE]) {
+      const cookieStateMatches = Boolean(statePayload?.state && statePayload.state === cookies[OIDC_STATE_COOKIE]);
+      const transaction = cookieStateMatches || !statePayload?.state || !database?.consumeCampusOneOidcTransaction
+        ? null
+        : await database.consumeCampusOneOidcTransaction(statePayload.state);
+
+      if (!cookieStateMatches && !transaction) {
         throw new ApiError(400, "CampusOne sign-in state could not be verified", "INVALID_OIDC_STATE", {
           has_state_cookie: Boolean(cookies[OIDC_STATE_COOKIE]),
           has_verifier_cookie: Boolean(cookies[OIDC_VERIFIER_COOKIE]),
@@ -567,8 +586,8 @@ function createCampusOneAuthRouter(options = {}) {
         });
       }
 
-      const codeVerifier = cookies[OIDC_VERIFIER_COOKIE];
-      const nonce = cookies[OIDC_NONCE_COOKIE];
+      const codeVerifier = cookies[OIDC_VERIFIER_COOKIE] || transaction?.code_verifier;
+      const nonce = cookies[OIDC_NONCE_COOKIE] || transaction?.nonce;
 
       if (!codeVerifier || !nonce) {
         throw new ApiError(400, "CampusOne sign-in expired. Please try again.", "OIDC_COOKIE_EXPIRED");
