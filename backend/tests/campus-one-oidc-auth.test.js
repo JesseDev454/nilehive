@@ -5,6 +5,7 @@ const { clearEnvCache } = require("../src/config/env");
 const {
   getCampusOneCustomRoles,
   getCampusOneCookieDomain,
+  getTrustedIssuers,
   resolveCampusOneProfile,
   resolveCampusOnePortalRole
 } = require("../src/modules/auth/campusOneOidc");
@@ -123,6 +124,14 @@ test("CampusOne production cookies share the documented parent domain", async (t
   clearEnvCache();
 
   assert.equal(getCampusOneCookieDomain(), ".campusone.com.ng");
+});
+
+test("CampusOne accepts only its root and authorization-server issuer forms", async (t) => {
+  withCampusOneOidcEnv(t);
+  assert.deepEqual(getTrustedIssuers(), [
+    "https://auth.campusone.com.ng",
+    "https://auth.campusone.com.ng/api/auth"
+  ]);
 });
 
 test("CampusOne OIDC profile resolution trusts CampusOne email claims by default", async (t) => {
