@@ -33,6 +33,10 @@ function buildCookie(name, value, options = {}) {
     parts.push(`Expires=${options.expires.toUTCString()}`);
   }
 
+  if (options.domain) {
+    parts.push(`Domain=${options.domain}`);
+  }
+
   parts.push(`Path=${options.path || "/"}`);
 
   if (options.httpOnly !== false) {

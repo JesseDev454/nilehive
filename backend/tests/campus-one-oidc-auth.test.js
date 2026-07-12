@@ -4,6 +4,7 @@ const { createApp } = require("../src/app");
 const { clearEnvCache } = require("../src/config/env");
 const {
   getCampusOneCustomRoles,
+  getCampusOneCookieDomain,
   resolveCampusOneProfile,
   resolveCampusOnePortalRole
 } = require("../src/modules/auth/campusOneOidc");
@@ -60,6 +61,7 @@ function withCampusOneOidcEnv(t) {
     AUTH_PROVIDER: process.env.AUTH_PROVIDER,
     CAMPUS_ONE_CLIENT_ID: process.env.CAMPUS_ONE_CLIENT_ID,
     CAMPUS_ONE_CLIENT_SECRET: process.env.CAMPUS_ONE_CLIENT_SECRET,
+    NODE_ENV: process.env.NODE_ENV,
     CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN: process.env.CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN,
     FRONTEND_APP_URL: process.env.FRONTEND_APP_URL,
     SUPABASE_URL: process.env.SUPABASE_URL,
@@ -68,6 +70,7 @@ function withCampusOneOidcEnv(t) {
   };
 
   process.env.AUTH_PROVIDER = "campus_one_oidc";
+  process.env.NODE_ENV = "test";
   process.env.CAMPUS_ONE_CLIENT_ID = "test-campus-one-client";
   process.env.CAMPUS_ONE_CLIENT_SECRET = "test-campus-one-secret";
   process.env.CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN = "false";
@@ -112,6 +115,14 @@ test("CampusOne OIDC session cookie authenticates profile requests", async (t) =
   assert.equal(payload.data.profile.id, "profile-1");
   assert.equal(payload.data.profile.effective_role, "student");
   assert.equal(payload.data.profile.portal_role, "student");
+});
+
+test("CampusOne production cookies share the documented parent domain", async (t) => {
+  withCampusOneOidcEnv(t);
+  process.env.NODE_ENV = "production";
+  clearEnvCache();
+
+  assert.equal(getCampusOneCookieDomain(), ".campusone.com.ng");
 });
 
 test("CampusOne OIDC profile resolution trusts CampusOne email claims by default", async (t) => {

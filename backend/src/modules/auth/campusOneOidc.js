@@ -58,11 +58,25 @@ function getJwksEndpoint() {
   return `${getIssuer()}/api/auth/jwks`;
 }
 
+function getCampusOneCookieDomain() {
+  if (getEnv().NODE_ENV !== "production") return undefined;
+
+  try {
+    const hostname = new URL(getEnv().FRONTEND_APP_URL).hostname.toLowerCase();
+    return hostname === "campusone.com.ng" || hostname.endsWith(".campusone.com.ng")
+      ? ".campusone.com.ng"
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function getOidcCookieOptions(maxAge = OIDC_COOKIE_MAX_AGE_SECONDS) {
   return {
     httpOnly: true,
     secure: getEnv().NODE_ENV === "production",
     sameSite: "Lax",
+    domain: getCampusOneCookieDomain(),
     path: OIDC_COOKIE_PATH,
     maxAge
   };
@@ -73,6 +87,7 @@ function getSessionCookieOptions(maxAge = SESSION_MAX_AGE_SECONDS) {
     httpOnly: true,
     secure: getEnv().NODE_ENV === "production",
     sameSite: "Lax",
+    domain: getCampusOneCookieDomain(),
     path: "/",
     maxAge
   };
@@ -624,6 +639,7 @@ function createCampusOneAuthRouter(options = {}) {
 
 module.exports = {
   createCampusOneAuthRouter,
+  getCampusOneCookieDomain,
   resolveCampusOneProfile,
   resolveCampusOnePortalRole,
   getCampusOneCustomRoles,
