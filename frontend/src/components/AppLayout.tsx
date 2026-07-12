@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { UserCircle } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { GuidedOnboarding } from "@/components/GuidedOnboarding";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -6,16 +8,12 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
 import { useSidebar } from "@/components/ui/sidebar";
-
-function formatRoleLabel(role: string): string {
-  return role
-    .split("_")
-    .filter(Boolean)
-    .map((word) => `${word.charAt(0).toUpperCase()}${word.slice(1)}`)
-    .join(" ");
-}
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { ClubDiscoveryOnboarding } from "@/components/ClubDiscoveryOnboarding";
+import { getClubPreferences } from "@/lib/api";
+import { formatRoleLabel } from "@/lib/roles";
 
 function AppShellEffects() {
   const location = useLocation();
@@ -70,6 +68,8 @@ function AppShellEffects() {
 export function AppLayout() {
   const { profile, role, signOut } = useAuth();
   const [guideRestartSignal, setGuideRestartSignal] = useState(0);
+  const preferences = useQuery({ queryKey: ["club-preferences"], queryFn: getClubPreferences, enabled: role === "student", retry: false });
+  const showDiscoveryOnboarding = role === "student" && !preferences.isLoading && !preferences.isError && !preferences.data;
 
   async function handleSignOut() {
     await signOut();
@@ -80,9 +80,9 @@ export function AppLayout() {
       <div className="flex min-h-screen w-full bg-background text-foreground">
         <AppShellEffects />
         <AppSidebar />
-        <GuidedOnboarding restartSignal={guideRestartSignal} />
+        {showDiscoveryOnboarding ? <ClubDiscoveryOnboarding /> : <GuidedOnboarding restartSignal={guideRestartSignal} />}
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-3 border-b border-border/70 bg-card/85 px-3 py-3 shadow-soft-sm backdrop-blur-xl md:absolute md:right-8 md:top-8 md:min-h-0 md:rounded-[24px] md:border md:bg-card/80 md:p-2">
+          <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-1 border-b border-border/70 bg-card/85 px-2 py-3 shadow-soft-sm backdrop-blur-xl sm:gap-3 sm:px-3 md:absolute md:right-8 md:top-8 md:min-h-0 md:rounded-[24px] md:border md:bg-card/80 md:p-2">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1 md:hidden">
                 <SidebarTrigger />
@@ -104,6 +104,10 @@ export function AppLayout() {
                     ? `${formatRoleLabel(role)} Mode`
                     : profile?.role ?? "Loading"}
               </span>
+              <ThemeToggle />
+              <Button asChild type="button" variant="outline" size="icon" className="hidden min-[360px]:inline-flex">
+                <Link to="/profile" aria-label="Open profile"><UserCircle className="h-4 w-4" aria-hidden="true" /></Link>
+              </Button>
               <Button
                 type="button"
                 variant="outline"

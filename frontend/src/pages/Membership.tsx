@@ -8,6 +8,7 @@ import { DataPagination } from "@/components/DataPagination";
 import { AccessDenied } from "@/components/AccessDenied";
 import { NhStudentId } from "@/components/NhStudentId";
 import { ClublyLoadingState, ClublyMetaChip, ClublyPageHeader, ClublySectionHeader, ClublyStateCard } from "@/components/Clubly";
+import { ClublySkeleton } from "@/components/ClublySkeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +26,7 @@ import {
   getAnnouncements,
   getApprovedEvents,
   getClubDetail,
+  getClubRecommendations,
   getClubs,
   getClubPaymentSettings,
   getMembershipRequests,
@@ -1656,12 +1658,16 @@ function DiscoverClubCard({
   club,
   existingRequest,
   categories,
-  nextEvent
+  nextEvent,
+  matchScore,
+  matchReasons
 }: {
   club: ClubRecord;
   existingRequest?: MembershipRequestRecord;
   categories: ClubInterestCategory[];
   nextEvent?: ApprovedEventRecord;
+  matchScore?: number;
+  matchReasons?: string[];
 }) {
   const description = getClubDescription(club);
   const buttonLabel = getClubCtaLabel(existingRequest);
@@ -1678,6 +1684,7 @@ function DiscoverClubCard({
         </div>
       </CardHeader>
       <CardContent className="flex flex-1 flex-col space-y-4 p-5">
+        {typeof matchScore === "number" ? <div className="rounded-xl border border-primary/25 bg-primary/10 p-3"><p className="font-semibold text-primary">{matchScore}% match</p>{matchReasons?.length ? <p className="mt-1 text-xs text-muted-foreground">{matchReasons.join(" • ")}</p> : null}</div> : null}
         <div className="flex flex-wrap gap-2">
           {categories.slice(0, 3).map((category) => (
             <Badge key={category} variant="outline" className="bg-accent/25">
@@ -1854,6 +1861,11 @@ function StudentMembershipView() {
     isError: clubsFailed,
     error: clubsError
   } = useQuery(publicClubsQueryOptions);
+  const { data: personalizedRecommendations = [] } = useQuery({
+    queryKey: ["club-recommendations"],
+    queryFn: getClubRecommendations,
+    retry: false
+  });
   const {
     data: eventsPage = emptyPaginatedResponse<ApprovedEventRecord>(),
     isError: eventsFailed,
@@ -1920,7 +1932,7 @@ function StudentMembershipView() {
       });
   }, [categoryFilter, clubCategoriesById, clubs, eventFilter, nextEventByClubId, recommendedCategories, search]);
   const activeFilterCount = [categoryFilter !== "all", eventFilter !== "all", search.trim().length > 0].filter(Boolean).length;
-  const recommendedClubs = useMemo(() => {
+  const fallbackRecommendedClubs = useMemo(() => {
     const candidateCategories = recommendedCategories.length > 0 ? recommendedCategories : CLUB_INTEREST_CATEGORIES;
 
     return filteredClubs
@@ -1932,6 +1944,13 @@ function StudentMembershipView() {
       .sort((first, second) => Number(Boolean(nextEventByClubId.get(second.id))) - Number(Boolean(nextEventByClubId.get(first.id))) || first.name.localeCompare(second.name))
       .slice(0, 3);
   }, [clubCategoriesById, filteredClubs, nextEventByClubId, recommendedCategories]);
+  const recommendedClubs = personalizedRecommendations.length
+    ? personalizedRecommendations.map((recommendation) => recommendation.club)
+    : fallbackRecommendedClubs;
+  const personalizedByClubId = useMemo(
+    () => new Map(personalizedRecommendations.map((recommendation) => [recommendation.club.id, recommendation])),
+    [personalizedRecommendations]
+  );
   const showRecommendations = activeFilterCount === 0 && recommendedClubs.length > 0 && !recommendationsDismissed;
   const recommendedClubIds = useMemo(() => new Set(recommendedClubs.map((club) => club.id)), [recommendedClubs]);
   const directoryClubs = useMemo(
@@ -2044,7 +2063,7 @@ function StudentMembershipView() {
       </Card>
 
       {isLoadingClubs || isLoadingRequests ? (
-        <ClublyLoadingState title="Checking club membership status" message="We are loading clubs and your current requests." compact />
+        <ClublySkeleton variant="cards" rows={3} />
       ) : clubsFailed ? (
         <Card>
           <CardContent className="p-8">
@@ -2093,10 +2112,12 @@ function StudentMembershipView() {
               <CardHeader>
                 <div className="flex items-start justify-between gap-3"><CardTitle className="flex items-center gap-2 text-lg">
                   <Sparkles className="h-5 w-5 text-primary" />
-                  {recommendedCategories.length ? "Recommended Clubs" : "Explore by Interest"}
+                  {personalizedRecommendations.length ? "Your Best Matches" : recommendedCategories.length ? "Recommended Clubs" : "Explore by Interest"}
                 </CardTitle><Button type="button" size="sm" variant="ghost" onClick={() => { sessionStorage.setItem("club-recommendations-dismissed", "true"); setRecommendationsDismissed(true); }}>Dismiss</Button></div>
                 <p className="text-sm text-muted-foreground">
-                  {recommendedCategories.length
+                  {personalizedRecommendations.length
+                    ? "Based on your saved interests, skills, career goals, and availability."
+                    : recommendedCategories.length
                     ? `Based on your profile signals: ${recommendedCategories.slice(0, 3).join(", ")}.`
                     : "A quick starting point using active clubs and inferred interest areas."}
                 </p>
@@ -2110,6 +2131,8 @@ function StudentMembershipView() {
                       existingRequest={requestByClubId.get(club.id)}
                       categories={clubCategoriesById.get(club.id) ?? []}
                       nextEvent={nextEventByClubId.get(club.id)}
+                      matchScore={personalizedByClubId.get(club.id)?.score}
+                      matchReasons={personalizedByClubId.get(club.id)?.reasons}
                     />
                   ))}
                 </div>

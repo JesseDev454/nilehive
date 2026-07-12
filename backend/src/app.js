@@ -6,6 +6,7 @@ const errorHandler = require("./middleware/errorHandler");
 const { createRequestContextMiddleware } = require("./middleware/requestContext");
 const { createRequestTimeoutMiddleware } = require("./middleware/requestTimeout");
 const { createCampusOneAuthRouter } = require("./modules/auth/campusOneOidc");
+const { createCampusOneWebhookHandler } = require("./modules/auth/campusOneWebhook");
 const { createAdminUsersRouter } = require("./modules/admin-users/admin-users.routes");
 const { createAnalyticsRouter } = require("./modules/analytics/analytics.routes");
 const { createHealthRouter, createReadyRouter } = require("./modules/health/health.routes");
@@ -82,6 +83,12 @@ function createApp(options = {}) {
 
     next();
   });
+
+  app.post(
+    "/api/v1/webhooks/campus-one",
+    express.raw({ type: "application/json", limit: "1mb" }),
+    createCampusOneWebhookHandler({ database, logger })
+  );
 
   app.use(express.json({ limit: "10mb" }));
 

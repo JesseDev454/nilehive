@@ -48,6 +48,10 @@ export interface ClubRecord {
   whatsapp_group_name?: string | null;
   whatsapp_onboarding_notes?: string | null;
   categories?: string[];
+  skills_offered?: string[];
+  career_goals?: string[];
+  meeting_windows?: string[];
+  weekly_commitment?: "1-2" | "3-5" | "6+" | null;
   logo_path?: string | null;
   website_url?: string | null;
   social_links?: Record<string, string>;
@@ -168,6 +172,28 @@ export interface ProfileOnboardingPayload {
   requested_role?: "student" | "advisor";
 }
 
+export interface ClubPreferencesRecord {
+  profile_id: string;
+  interests: string[];
+  skills: string[];
+  career_goals: string[];
+  availability: string[];
+  weekly_commitment: "1-2" | "3-5" | "6+" | null;
+  status: "completed" | "dismissed";
+  version: number;
+  completed_at: string | null;
+  dismissed_at: string | null;
+  updated_at: string;
+}
+
+export type ClubPreferencesPayload = Pick<ClubPreferencesRecord, "interests" | "skills" | "career_goals" | "availability" | "weekly_commitment" | "status">;
+
+export interface ClubRecommendationRecord {
+  club: ClubRecord;
+  score: number;
+  reasons: string[];
+}
+
 
 export interface ProposalRecord {
   id: string;
@@ -228,6 +254,7 @@ export interface NotificationRecord {
   message: string;
   delivery_status: string;
   created_at: string;
+  delivery_channels?: Record<string, { status: "pending" | "sent" | "failed" | "skipped"; last_error_code?: string | null }>;
 }
 
 export interface NavigationCountsRecord {
@@ -248,6 +275,8 @@ export interface NavigationCountsRecord {
 export interface PushConfigRecord {
   enabled: boolean;
   public_key: string | null;
+  browser?: { enabled: boolean; public_key: string | null };
+  campus_one?: { enabled: boolean; connected: boolean; consent_required: boolean };
 }
 
 export interface PushSubscriptionRecord {
@@ -1298,6 +1327,21 @@ export async function getPublicClubs() {
   return response.data;
 }
 
+export async function getClubPreferences(token?: string) {
+  const response = await request<ApiEnvelope<ClubPreferencesRecord | null>>("/api/v1/profile/club-preferences", { method: "GET", token });
+  return response.data;
+}
+
+export async function updateClubPreferences(payload: ClubPreferencesPayload, token?: string) {
+  const response = await request<ApiEnvelope<ClubPreferencesRecord>>("/api/v1/profile/club-preferences", { method: "PUT", token, body: payload });
+  return response.data;
+}
+
+export async function getClubRecommendations(token?: string) {
+  const response = await request<ApiEnvelope<ClubRecommendationRecord[]>>("/api/v1/clubs/recommendations", { method: "GET", token });
+  return response.data;
+}
+
 export async function completeProfileOnboarding(payload: ProfileOnboardingPayload, token?: string) {
   const response = await request<ApiEnvelope<ProfileRecord>>("/api/v1/profile/onboarding", {
     method: "POST",
@@ -1346,6 +1390,10 @@ export async function updateClub(
     whatsapp_group_name: string | null;
     whatsapp_onboarding_notes: string | null;
     categories: string[];
+    skills_offered: string[];
+    career_goals: string[];
+    meeting_windows: string[];
+    weekly_commitment: ClubRecord["weekly_commitment"];
     logo_path: string | null;
     website_url: string | null;
     social_links: Record<string, string>;
@@ -1363,7 +1411,7 @@ export async function updateClub(
 
 export async function updateClubProfile(
   clubId: string,
-  payload: Partial<Pick<ClubRecord, "description" | "categories" | "logo_path" | "website_url" | "social_links" | "whatsapp_group_name" | "whatsapp_onboarding_notes">>,
+  payload: Partial<Pick<ClubRecord, "description" | "categories" | "skills_offered" | "career_goals" | "meeting_windows" | "weekly_commitment" | "logo_path" | "website_url" | "social_links" | "whatsapp_group_name" | "whatsapp_onboarding_notes">>,
   token?: string
 ) {
   const response = await request<ApiEnvelope<ClubRecord>>(`/api/v1/clubs/${clubId}/profile`, {

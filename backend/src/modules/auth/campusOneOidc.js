@@ -11,6 +11,7 @@ const { isAllowedEmail } = require("../../config/emailPolicy");
 const { logger: baseLogger } = require("../../config/logger");
 const { resolveEffectiveRole } = require("../../shared/portalAccess");
 const { isValidStudentId, normalizeStudentId } = require("../../shared/studentId");
+const { saveCampusOneAuthorization } = require("../notifications/campusOneTokens");
 
 const OIDC_STATE_COOKIE = "nilehive_oidc_state";
 const OIDC_VERIFIER_COOKIE = "nilehive_oidc_verifier";
@@ -591,6 +592,7 @@ function createCampusOneAuthRouter(options = {}) {
         appRole: profile.role,
         customRoles
       });
+      await saveCampusOneAuthorization({ database, profileId: profile.id, tokens });
       const sessionToken = createCampusOneSessionToken({
         profileId: profile.id,
         portalUserId: profile.portal_user_id,

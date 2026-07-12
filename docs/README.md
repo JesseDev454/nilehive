@@ -36,5 +36,7 @@ Use this index to find the right guide quickly.
 - [SUPABASE_RLS_AUDIT_CHECKLIST.md](C:/Users/goodl/Documents/NileHive/docs/SUPABASE_RLS_AUDIT_CHECKLIST.md)
 - [CAMPUSONE_LIVE_DEPLOYMENT_ACTION_PLAN.md](C:/Users/goodl/Documents/NileHive/docs/CAMPUSONE_LIVE_DEPLOYMENT_ACTION_PLAN.md)
   CampusOne rollout plan covering onboarding, KPIs, first two weeks, feedback, privacy, and support
+- [CLUB_CONTENT_ONBOARDING_CHECKLIST.md](C:/Users/goodl/Documents/NileHive/docs/CLUB_CONTENT_ONBOARDING_CHECKLIST.md)
+  Real-content checklist for club presidents, Mrs. Rukkayat, and the admin reviewer
 - [MIGAKI_DEPLOYMENT_STANDARD_RESPONSE.md](C:/Users/goodl/Documents/NileHive/docs/MIGAKI_DEPLOYMENT_STANDARD_RESPONSE.md)
   NileHive response mapped to the Migaki Deployment Standard for Buildathon 2026

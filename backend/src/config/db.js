@@ -12,10 +12,10 @@ const pushSubscriptionSelect =
   "id, user_id, endpoint, p256dh, auth, user_agent, created_at, updated_at, last_used_at";
 const eventReminderSelect =
   "id, user_id, proposal_id, message, remind_at, delivery_status, created_at";
-const clubSelect = "id, name, code, description, advisor_id, dues_amount, is_public_signup, whatsapp_group_name, whatsapp_onboarding_notes, categories, logo_path, website_url, social_links, created_at";
+const clubSelect = "id, name, code, description, advisor_id, dues_amount, is_public_signup, whatsapp_group_name, whatsapp_onboarding_notes, categories, skills_offered, career_goals, meeting_windows, weekly_commitment, logo_path, website_url, social_links, created_at";
 const clubAdvisorAssignmentSelect =
   "id, club_id, advisor_profile_id, assigned_by, remarks, created_at, club:clubs!club_advisors_club_id_fkey(id, name, code), advisor:profiles!club_advisors_advisor_profile_id_fkey(id, full_name, role, club_id, student_id)";
-const publicClubSelect = "id, name, code, description, dues_amount, created_at, is_public_signup, categories, logo_path, website_url, social_links";
+const publicClubSelect = "id, name, code, description, dues_amount, created_at, is_public_signup, categories, skills_offered, career_goals, meeting_windows, weekly_commitment, logo_path, website_url, social_links";
 const clubMediaSelect = "id, club_id, storage_path, caption, display_order, uploaded_by, created_at, updated_at";
 const taskSelect =
   "id, club_id, assigned_by, assigned_to, title, description, priority, status, due_date, created_at, updated_at, assigned_by_profile:profiles!tasks_assigned_by_fkey(id, full_name, student_id, role), assigned_to_profile:profiles!tasks_assigned_to_fkey(id, full_name, student_id, role)";
@@ -57,6 +57,9 @@ const auditLogSelect =
   "id, actor_id, entity_type, action, target_profile_id, club_id, proposal_id, due_payment_id, leadership_application_id, announcement_id, remarks, metadata, created_at";
 const emailDeliverySelect =
   "id, provider, recipient_user_id, recipient_email, subject, status, announcement_id, notification_id, proposal_id, error_message, sent_at, created_at, updated_at";
+const clubPreferencesSelect = "profile_id, interests, skills, career_goals, availability, weekly_commitment, status, version, completed_at, dismissed_at, created_at, updated_at";
+const campusOneAuthorizationSelect = "profile_id, access_token_ciphertext, refresh_token_ciphertext, scopes, access_token_expires_at, disconnected_at, created_at, updated_at";
+const notificationDeliverySelect = "id, notification_id, channel, status, attempt_count, external_id, last_error_code, sent_at, created_at, updated_at";
 
 function createAdminClient() {
   const env = getEnv();
@@ -153,6 +156,10 @@ function createDatabase(options = {}) {
       whatsapp_group_name: club.whatsapp_group_name ?? null,
       whatsapp_onboarding_notes: club.whatsapp_onboarding_notes ?? null,
       categories: Array.isArray(club.categories) ? club.categories : [],
+      skills_offered: Array.isArray(club.skills_offered) ? club.skills_offered : [],
+      career_goals: Array.isArray(club.career_goals) ? club.career_goals : [],
+      meeting_windows: Array.isArray(club.meeting_windows) ? club.meeting_windows : [],
+      weekly_commitment: club.weekly_commitment ?? null,
       logo_path: club.logo_path ?? null,
       website_url: club.website_url ?? null,
       social_links: club.social_links && typeof club.social_links === "object" ? club.social_links : {},
@@ -700,6 +707,68 @@ function createDatabase(options = {}) {
       }
 
       return normalizeProfile(data);
+    },
+
+    async getClubPreferences(profileId) {
+      const { data, error } = await getClient().from("student_club_preferences").select(clubPreferencesSelect).eq("profile_id", profileId).maybeSingle();
+      if (error) throw error;
+      return data ?? null;
+    },
+
+    async upsertClubPreferences(preferences) {
+      const { data, error } = await getClient().from("student_club_preferences").upsert(preferences, { onConflict: "profile_id" }).select(clubPreferencesSelect).single();
+      if (error) throw error;
+      return data;
+    },
+
+    async listActiveClubIdsByProfileId(profileId) {
+      const { data, error } = await getClient().from("club_members").select("club_id").eq("profile_id", profileId).eq("membership_status", "active");
+      if (error) throw error;
+      return (data ?? []).map((item) => item.club_id);
+    },
+
+    async upsertCampusOneAuthorization(authorization) {
+      const { data, error } = await getClient().from("campus_one_authorizations").upsert(authorization, { onConflict: "profile_id" }).select(campusOneAuthorizationSelect).single();
+      if (error) throw error;
+      return data;
+    },
+
+    async getCampusOneAuthorization(profileId) {
+      const { data, error } = await getClient().from("campus_one_authorizations").select(campusOneAuthorizationSelect).eq("profile_id", profileId).maybeSingle();
+      if (error) throw error;
+      return data ?? null;
+    },
+
+    async disconnectCampusOneAuthorization(profileId) {
+      const { data, error } = await getClient().from("campus_one_authorizations").update({ disconnected_at: new Date().toISOString() }).eq("profile_id", profileId).select(campusOneAuthorizationSelect).maybeSingle();
+      if (error) throw error;
+      return data ?? null;
+    },
+
+    async upsertNotificationDelivery(delivery) {
+      const { data, error } = await getClient().from("notification_deliveries").upsert(delivery, { onConflict: "notification_id,channel" }).select(notificationDeliverySelect).single();
+      if (error) throw error;
+      return data;
+    },
+
+    async listNotificationDeliveries(notificationIds) {
+      if (!notificationIds.length) return [];
+      const { data, error } = await getClient().from("notification_deliveries").select(notificationDeliverySelect).in("notification_id", notificationIds);
+      if (error) throw error;
+      return data ?? [];
+    },
+
+    async createCampusOneWebhookEvent(event) {
+      const { data, error } = await getClient().from("campus_one_webhook_events").insert(event).select("*").maybeSingle();
+      if (error?.code === "23505") return null;
+      if (error) throw error;
+      return data ?? null;
+    },
+
+    async updateCampusOneWebhookEvent(deliveryId, update) {
+      const { data, error } = await getClient().from("campus_one_webhook_events").update(update).eq("delivery_id", deliveryId).select("*").maybeSingle();
+      if (error) throw error;
+      return data ?? null;
     },
 
     async listProfiles(filters = {}) {

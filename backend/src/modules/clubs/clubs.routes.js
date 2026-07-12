@@ -18,6 +18,7 @@ function createClubsRouter(options = {}) {
   });
 
   router.get("/public", controller.listPublicClubs);
+  router.get("/recommendations", auth, controller.listRecommendations);
   router.get("/", auth, controller.listClubs);
   router.get("/:clubId", auth, controller.getClubDetail);
   router.get("/:clubId/media", auth, controller.listClubMedia);

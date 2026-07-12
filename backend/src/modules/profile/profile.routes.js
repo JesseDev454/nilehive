@@ -10,6 +10,8 @@ function createProfileRouter(options = {}) {
   const controller = createProfileController({ database });
 
   router.get("/me", authUser, controller.getMe);
+  router.get("/club-preferences", authUser, controller.getClubPreferences);
+  router.put("/club-preferences", authUser, controller.updateClubPreferences);
   router.post("/onboarding", authUser, controller.completeOnboarding);
 
   return router;

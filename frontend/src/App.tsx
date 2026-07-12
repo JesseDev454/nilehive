@@ -1,4 +1,5 @@
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { ThemeProvider } from "next-themes";
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -31,10 +32,11 @@ import MediaArchive from "@/pages/MediaArchive";
 import Members from "@/pages/Members";
 import Membership from "@/pages/Membership";
 import Notifications from "@/pages/Notifications";
+import Profile from "@/pages/Profile";
 import Tasks from "@/pages/Tasks";
 import UserManagement from "@/pages/UserManagement";
 import NotFound from "@/pages/NotFound";
-import { PERSIST_MAX_AGE, queryClient, queryPersister } from "@/lib/queryClient";
+import { PERSIST_MAX_AGE, queryClient, queryPersister, shouldPersistQuery } from "@/lib/queryClient";
 
 function ProtectedRoutes() {
   const { profile, session, isLoading, profileError, requiresProfileRecovery, signOut } = useAuth();
@@ -103,9 +105,11 @@ const App = () => (
     persistOptions={{
       persister: queryPersister,
       maxAge: PERSIST_MAX_AGE,
-      buster: "v1"
+      buster: "v2-public-only",
+      dehydrateOptions: { shouldDehydrateQuery: shouldPersistQuery }
     }}
   >
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="clubly-theme" disableTransitionOnChange>
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -128,6 +132,7 @@ const App = () => (
                   <Route path="/proposals/:id" element={<ProposalDetail />} />
                   <Route path="/approvals" element={<Approvals />} />
                   <Route path="/notifications" element={<Notifications />} />
+                  <Route path="/profile" element={<Profile />} />
                   <Route path="/events" element={<EventCalendar />} />
                   <Route path="/membership" element={<Membership />} />
                   <Route path="/membership/clubs/:clubId" element={<Membership />} />
@@ -152,6 +157,7 @@ const App = () => (
         </RoleProvider>
       </AuthProvider>
     </TooltipProvider>
+    </ThemeProvider>
   </PersistQueryClientProvider>
 );
 

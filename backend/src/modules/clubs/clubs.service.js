@@ -1,6 +1,7 @@
 const { db } = require("../../config/db");
 const ApiError = require("../../shared/ApiError");
 const { writeAuditLog } = require("../../shared/auditLog");
+const { rankClubs } = require("../profile/clubPreferences");
 const {
   validateClubMediaPayload,
   validateClubPayload,
@@ -80,6 +81,19 @@ async function listPublicClubs(options = {}) {
 
   // If production clubs exist but have not been flagged public yet, avoid a blank signup flow.
   return filterPublicSignupClubs(await database.listClubs()).map(stripPrivateClubSettings);
+}
+
+async function listRecommendations(options = {}) {
+  const { actor, database = db } = options;
+  if (!actor) throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
+  if (actor.role !== "student") throw new ApiError(403, "Club recommendations are available to students", "FORBIDDEN");
+  const preferences = await database.getClubPreferences(actor.id);
+  if (!preferences || preferences.status !== "completed") return [];
+  const clubs = await listPublicClubs({ database });
+  const joinedClubIds = database.listActiveClubIdsByProfileId
+    ? await database.listActiveClubIdsByProfileId(actor.id)
+    : [];
+  return rankClubs(preferences, clubs, joinedClubIds).slice(0, 3);
 }
 
 function requireAdmin(actor) {
@@ -324,6 +338,7 @@ module.exports = {
   getClubDetail,
   listClubMedia,
   listPublicClubs,
+  listRecommendations,
   listVisibleClubs,
   updateClub,
   updateClubMedia,

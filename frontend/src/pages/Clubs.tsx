@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Loader2, Pencil, Plus, School, Trash2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, Loader2, Pencil, Plus, School, Trash2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { AccessDenied } from "@/components/AccessDenied";
 import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
+import { ClublySkeleton } from "@/components/ClublySkeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useRole } from "@/contexts/RoleContext";
@@ -34,9 +36,18 @@ const emptyForm = {
   whatsapp_group_name: "",
   whatsapp_onboarding_notes: "",
   categories: [] as string[],
+  skills_offered: [] as string[],
+  career_goals: [] as string[],
+  meeting_windows: [] as string[],
+  weekly_commitment: "" as "" | "1-2" | "3-5" | "6+",
   instagram: "",
   linkedin: ""
 };
+const MATCHING_OPTIONS = {
+  skills_offered: [["communication", "Communication"], ["leadership", "Leadership"], ["technical", "Technical"], ["design", "Design"], ["research", "Research"], ["entrepreneurship", "Entrepreneurship"], ["event_planning", "Event planning"], ["media_content", "Media / content"], ["teamwork", "Teamwork"], ["community_service", "Community service"]],
+  career_goals: [["portfolio_building", "Portfolio building"], ["leadership", "Leadership"], ["networking", "Networking"], ["technology", "Technology"], ["entrepreneurship", "Entrepreneurship"], ["public_speaking", "Public speaking"], ["creative_practice", "Creative practice"], ["community_impact", "Community impact"], ["academic_enrichment", "Academic enrichment"]],
+  meeting_windows: [["weekday_daytime", "Weekday daytime"], ["weekday_evening", "Weekday evening"], ["weekend", "Weekend"], ["flexible", "Flexible"]]
+} as const;
 const CLUB_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 const CLUB_IMAGE_ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const CLUB_GALLERY_MAX_IMAGES = 12;
@@ -92,6 +103,10 @@ export default function Clubs() {
       whatsapp_group_name: editingClub.whatsapp_group_name || "",
       whatsapp_onboarding_notes: editingClub.whatsapp_onboarding_notes || "",
       categories: editingClub.categories || [],
+      skills_offered: editingClub.skills_offered || [],
+      career_goals: editingClub.career_goals || [],
+      meeting_windows: editingClub.meeting_windows || [],
+      weekly_commitment: editingClub.weekly_commitment || "",
       instagram: editingClub.social_links?.instagram || "",
       linkedin: editingClub.social_links?.linkedin || ""
     });
@@ -127,6 +142,10 @@ export default function Clubs() {
           : await updateClubProfile(editingClub.id, {
               description: payload.description,
               categories: payload.categories,
+              skills_offered: payload.skills_offered,
+              career_goals: payload.career_goals,
+              meeting_windows: payload.meeting_windows,
+              weekly_commitment: payload.weekly_commitment || null,
               logo_path: payload.logo_path,
               social_links: payload.social_links,
               whatsapp_group_name: payload.whatsapp_group_name,
@@ -267,6 +286,19 @@ export default function Clubs() {
               <Label>Categories</Label>
               <div className="flex flex-wrap gap-2">{CLUB_INTEREST_CATEGORIES.map((category) => <Button key={category} type="button" size="sm" variant={form.categories.includes(category) ? "default" : "outline"} onClick={() => setForm({ ...form, categories: form.categories.includes(category) ? form.categories.filter((item) => item !== category) : [...form.categories, category].slice(0, 5) })}>{category}</Button>)}</div>
             </div>
+            {(Object.entries(MATCHING_OPTIONS) as Array<[keyof typeof MATCHING_OPTIONS, readonly (readonly [string, string])[]]>).map(([field, options]) => (
+              <div key={field} className="space-y-2 lg:col-span-2">
+                <Label>{field === "skills_offered" ? "Skills students can build" : field === "career_goals" ? "Career goals supported" : "Typical meeting times"}</Label>
+                <div className="flex flex-wrap gap-2">{options.map(([value, label]) => <Button key={value} type="button" size="sm" variant={form[field].includes(value) ? "default" : "outline"} onClick={() => setForm({ ...form, [field]: form[field].includes(value) ? form[field].filter((item) => item !== value) : [...form[field], value] })}>{label}</Button>)}</div>
+              </div>
+            ))}
+            <div className="space-y-2">
+              <Label>Weekly time commitment</Label>
+              <Select value={form.weekly_commitment || "unset"} onValueChange={(value) => setForm({ ...form, weekly_commitment: value === "unset" ? "" : value as typeof form.weekly_commitment })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="unset">Not set</SelectItem><SelectItem value="1-2">1–2 hours</SelectItem><SelectItem value="3-5">3–5 hours</SelectItem><SelectItem value="6+">6+ hours</SelectItem></SelectContent>
+              </Select>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="club_instagram">Instagram</Label>
               <Input id="club_instagram" type="url" value={form.instagram} onChange={(event) => setForm({ ...form, instagram: event.target.value })} placeholder="Optional Instagram URL" />
@@ -305,6 +337,9 @@ export default function Clubs() {
                 </div>
               </>
             ) : null}
+            {editingClub ? <div className="rounded-2xl border border-border bg-muted/30 p-4 lg:col-span-2"><p className="font-semibold">Profile completeness</p><div className="mt-3 grid gap-2 text-sm sm:grid-cols-2">{[
+              ["Description", Boolean(form.description.trim())], ["Categories", form.categories.length > 0], ["Logo", Boolean(logoFile || editingClub.logo_path)], ["Contact / social link", Boolean(form.instagram || form.linkedin)], ["Onboarding instructions", Boolean(form.whatsapp_onboarding_notes)], ["Gallery image", Boolean(galleryFile || editingClub.gallery?.length)], ["Matching attributes", Boolean(form.skills_offered.length && form.career_goals.length && form.meeting_windows.length && form.weekly_commitment)], ["Dues configured", editingClub.dues_amount !== null]
+            ].map(([label, done]) => <div key={String(label)} className="flex items-center gap-2">{done ? <CheckCircle2 className="h-4 w-4 text-success" /> : <Circle className="h-4 w-4 text-muted-foreground" />}<span>{label}</span></div>)}</div><div className="mt-4 flex flex-wrap gap-2"><Button asChild type="button" variant="outline" size="sm"><Link to="/members">Verify president assignment</Link></Button><Button asChild type="button" variant="outline" size="sm"><Link to="/communications">Publish welcome announcement</Link></Button></div></div> : null}
             <div className="flex flex-wrap justify-end gap-2 lg:col-span-2">
               {editingClub && role === "admin" ? (
                 <Button
@@ -354,7 +389,7 @@ export default function Clubs() {
       {!isFocusedEdit ? <Card>
         <CardHeader><CardTitle className="text-lg">Configured clubs</CardTitle></CardHeader>
         <CardContent>
-          {isLoading ? <ClublyLoadingState title="Loading clubs" message="We are gathering the current club directory." compact /> : isError ? (
+          {isLoading ? <ClublySkeleton variant="cards" rows={3} /> : isError ? (
             <ClublyStateCard icon={School} title="Could not load clubs" message={getErrorMessage(error)} tone="danger" />
           ) : !clubs.length ? (
             <ClublyStateCard

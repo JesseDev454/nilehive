@@ -38,8 +38,12 @@ function getEnv() {
       defaultValue: "http://localhost:4000/api/v1/auth/campus-one/callback"
     }),
     CAMPUS_ONE_SCOPES: readEnv("CAMPUS_ONE_SCOPES", {
-      defaultValue: "openid profile email academic roles offline_access"
+      defaultValue: "openid profile email academic roles notifications offline_access"
     }),
+    CAMPUS_ONE_NOTIFICATIONS_ENABLED: readEnv("CAMPUS_ONE_NOTIFICATIONS_ENABLED", { defaultValue: "false" }),
+    CAMPUS_ONE_API_BASE_URL: readEnv("CAMPUS_ONE_API_BASE_URL", { defaultValue: "https://auth.campusone.com.ng/api/apps" }),
+    CAMPUS_ONE_TOKEN_ENCRYPTION_KEY: readEnv("CAMPUS_ONE_TOKEN_ENCRYPTION_KEY", { defaultValue: "" }),
+    CAMPUS_ONE_WEBHOOK_SECRET: readEnv("CAMPUS_ONE_WEBHOOK_SECRET", { defaultValue: "" }),
     CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN: readEnv("CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN", { defaultValue: "false" }),
     REQUEST_TIMEOUT_MS: readEnv("REQUEST_TIMEOUT_MS", { defaultValue: "15000" }),
     ASYNC_JOBS_ENABLED: readEnv("ASYNC_JOBS_ENABLED", { defaultValue: "false" }),

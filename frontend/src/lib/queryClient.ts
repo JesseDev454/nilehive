@@ -19,4 +19,10 @@ export const queryPersister = createSyncStoragePersister({
   key: "clubly-query-cache"
 });
 
+const PERSISTED_QUERY_ROOTS = new Set(["public-clubs"]);
+
+export function shouldPersistQuery(query: { queryKey: readonly unknown[] }) {
+  return PERSISTED_QUERY_ROOTS.has(String(query.queryKey[0] ?? ""));
+}
+
 export const PERSIST_MAX_AGE = FIVE_MINUTES;

@@ -137,7 +137,7 @@ test("admin can create a club and edit club profile media", async ({ page }) => 
   await page.getByLabel("Club Name").fill("Nile Robotics Club");
   await page.getByLabel("Short Code").fill("NRC");
   await page.getByLabel("Description").fill("Students build robotics projects and learn practical automation.");
-  await page.getByRole("button", { name: "Tech" }).click();
+  await page.getByRole("button", { name: "Tech", exact: true }).click();
   await page.getByRole("button", { name: "Add Club" }).click();
 
   await expect(page.getByText("Club created")).toBeVisible();

@@ -24,15 +24,18 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
+import { ClublySkeleton } from "@/components/ClublySkeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   ApiClientError,
   getAnnouncements,
   getNotifications,
+  getPushConfig,
   markAnnouncementRead,
   type AnnouncementRecord,
   type NotificationRecord
 } from "@/lib/api";
+import { getCampusOneOidcAuthUrl } from "@/lib/env";
 import { actionError, actionSuccess } from "@/lib/notify";
 import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 import {
@@ -282,18 +285,18 @@ function getFilteredEmptyMessage(filter: NotificationFilter) {
 
 function getAnnouncementPriorityClass(priority: AnnouncementRecord["priority"]) {
   if (priority === "urgent") {
-    return "border-red-200 bg-red-50 text-red-700";
+    return "border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-200";
   }
 
   if (priority === "high") {
-    return "border-amber-200 bg-amber-50 text-amber-700";
+    return "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200";
   }
 
   if (priority === "low") {
-    return "border-slate-200 bg-slate-50 text-slate-600";
+    return "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200";
   }
 
-  return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  return "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200";
 }
 
 export default function Notifications() {
@@ -304,6 +307,7 @@ export default function Notifications() {
   const [activeFilter, setActiveFilter] = useState<NotificationFilter>("all");
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushSupported, setPushSupported] = useState(true);
+  const { data: deliveryConfig } = useQuery({ queryKey: ["notification-delivery-config"], queryFn: getPushConfig, retry: false });
   const { data: notificationsPage = emptyPaginatedResponse<NotificationRecord>(), isLoading, isError, error } = useQuery({
     queryKey: ["notifications", page],
     queryFn: () => getNotifications({ page, page_size: DEFAULT_PAGE_SIZE }),
@@ -461,6 +465,16 @@ export default function Notifications() {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-border bg-primary text-primary-foreground"><ShieldCheck className="h-5 w-5" /></div>
+            <div><p className="font-semibold">CampusOne notifications</p><p className="mt-1 text-sm text-muted-foreground">{deliveryConfig?.campus_one?.connected ? "Connected. Eligible Clubly updates can also appear in your CampusOne notification feed." : deliveryConfig?.campus_one?.enabled ? "Reconnect CampusOne to grant notification consent." : "CampusOne delivery is not enabled in this environment. Your Clubly inbox still works."}</p></div>
+          </div>
+          {deliveryConfig?.campus_one?.enabled && !deliveryConfig.campus_one.connected ? <Button type="button" variant="outline" onClick={() => window.location.assign(getCampusOneOidcAuthUrl("login", "/notifications"))}>Reconnect CampusOne</Button> : null}
+        </CardContent>
+      </Card>
+
       <div className="grid gap-3 md:grid-cols-4">
         <Card>
           <CardContent className="flex items-center gap-3 p-4">
@@ -509,7 +523,7 @@ export default function Notifications() {
       </div>
 
       {isLoading ? (
-        <ClublyLoadingState title="Loading notifications" message="We are getting your latest updates." />
+        <ClublySkeleton variant="list" rows={4} />
       ) : isError ? (
         <ClublyStateCard icon={Bell} title="Unable to load notifications" message={getErrorMessage(error)} tone="danger" />
       ) : (

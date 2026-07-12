@@ -26,7 +26,7 @@ function createNotificationsController(options = {}) {
     }),
 
     getPushConfig: asyncHandler(async (req, res) => {
-      res.status(200).json({ data: getPushRegistrationConfig() });
+      res.status(200).json({ data: await getPushRegistrationConfig({ actor: req.user, database }) });
     }),
 
     registerPushSubscription: asyncHandler(async (req, res) => {

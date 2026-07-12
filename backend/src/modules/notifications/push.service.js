@@ -146,6 +146,9 @@ async function sendPushForNotifications(options) {
   let sent = 0;
 
   for (const notification of notifications) {
+    if (database.upsertNotificationDelivery && notification.id) {
+      await database.upsertNotificationDelivery({ notification_id: notification.id, channel: "web_push", status: "pending", attempt_count: 1, updated_at: new Date().toISOString() });
+    }
     const result = await sendPushToUsers({
       database,
       userIds: [notification.user_id],
@@ -156,9 +159,28 @@ async function sendPushForNotifications(options) {
 
     attempted += result.attempted ?? 0;
     sent += result.sent ?? 0;
+    if (database.upsertNotificationDelivery && notification.id) {
+      await database.upsertNotificationDelivery({
+        notification_id: notification.id,
+        channel: "web_push",
+        status: (result.sent ?? 0) > 0 ? "sent" : "skipped",
+        attempt_count: 1,
+        last_error_code: result.reason || ((result.attempted ?? 0) === 0 ? "subscription_missing" : null),
+        sent_at: (result.sent ?? 0) > 0 ? new Date().toISOString() : null,
+        updated_at: new Date().toISOString()
+      });
+    }
   }
 
-  return { attempted, sent };
+  let campusOne = { attempted: 0, sent: 0 };
+  try {
+    const { sendCampusOneForNotifications } = require("./campusOne.service");
+    campusOne = await sendCampusOneForNotifications({ notifications, database, logger, env });
+  } catch (error) {
+    logger?.warn?.("campus_one.delivery_batch_failed", { cause: error instanceof Error ? error.message : "unknown_error" });
+  }
+
+  return { attempted, sent, campus_one: campusOne };
 }
 
 function validateSubscriptionPayload(payload) {

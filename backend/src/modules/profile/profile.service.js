@@ -2,6 +2,7 @@ const { db } = require("../../config/db");
 const { formatAllowedEmailDomains, isAllowedEmail } = require("../../config/emailPolicy");
 const ApiError = require("../../shared/ApiError");
 const { validateCompleteProfilePayload } = require("./profile.validation");
+const { validatePreferences } = require("./clubPreferences");
 
 function formatProfile(profile, authUser = null, user = null) {
   return {
@@ -90,7 +91,35 @@ async function completeProfileOnboarding(options) {
   return formatProfile(profile, authUser);
 }
 
+function requireStudent(actor) {
+  if (!actor) throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
+  if (actor.role !== "student") throw new ApiError(403, "Club preferences are available to students", "FORBIDDEN");
+}
+
+async function getClubPreferences(options) {
+  const { actor, database = db } = options;
+  requireStudent(actor);
+  return database.getClubPreferences(actor.id);
+}
+
+async function updateClubPreferences(options) {
+  const { actor, payload, database = db } = options;
+  requireStudent(actor);
+  const validated = validatePreferences(payload);
+  const now = new Date().toISOString();
+  return database.upsertClubPreferences({
+    profile_id: actor.id,
+    ...validated,
+    version: 1,
+    completed_at: validated.status === "completed" ? now : null,
+    dismissed_at: validated.status === "dismissed" ? now : null,
+    updated_at: now
+  });
+}
+
 module.exports = {
   completeProfileOnboarding,
-  getMyProfile
+  getMyProfile,
+  getClubPreferences,
+  updateClubPreferences
 };

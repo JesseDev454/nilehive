@@ -342,8 +342,13 @@ export function createE2EState() {
     attendance: new Map<string, unknown>(),
     pushConfig: {
       enabled: true,
-      public_key: "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+      public_key: "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      browser: { enabled: true, public_key: "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB" },
+      campus_one: { enabled: true, connected: true, consent_required: false }
     },
+    clubPreferences: {
+      profile_id: "e2e-student", interests: [], skills: [], career_goals: [], availability: [], weekly_commitment: null, status: "dismissed", version: 1, completed_at: null, dismissed_at: now, updated_at: now
+    } as null | Record<string, unknown>,
     pushSubscriptions: [] as Array<{
       id: string;
       user_id: string;
@@ -563,6 +568,21 @@ export async function mockClubServicesApi(page: Page, state = createE2EState()) 
 
     if (method === "GET" && path === "/clubs/public") {
       return ok(route, state.clubs);
+    }
+
+    if (method === "GET" && path === "/clubs/recommendations") {
+      if (state.clubPreferences?.status !== "completed") return ok(route, []);
+      return ok(route, [{ club: state.clubs[0], score: 100, reasons: ["Interests: Tech", "Skills: technical", "Availability: weekday evening"] }]);
+    }
+
+    if (method === "GET" && path === "/profile/club-preferences") {
+      return ok(route, state.clubPreferences);
+    }
+
+    if (method === "PUT" && path === "/profile/club-preferences") {
+      const body = request.postDataJSON() as Record<string, unknown>;
+      state.clubPreferences = { profile_id: "e2e-student", version: 1, completed_at: body.status === "completed" ? now : null, dismissed_at: body.status === "dismissed" ? now : null, updated_at: now, ...body };
+      return ok(route, state.clubPreferences);
     }
 
     if (method === "GET" && path === "/clubs") {

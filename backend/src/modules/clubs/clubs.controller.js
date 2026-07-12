@@ -7,6 +7,7 @@ const {
   getClubDetail,
   listClubMedia,
   listPublicClubs,
+  listRecommendations,
   listVisibleClubs,
   updateClub,
   updateClubMedia,
@@ -21,6 +22,11 @@ function createClubsController(options = {}) {
       const clubs = await listPublicClubs({ database });
 
       res.status(200).json({ data: clubs });
+    }),
+
+    listRecommendations: asyncHandler(async (req, res) => {
+      const data = await listRecommendations({ actor: req.user, database });
+      res.status(200).json({ data });
     }),
 
     listClubs: asyncHandler(async (req, res) => {

@@ -55,7 +55,15 @@ services:
       - key: CAMPUS_ONE_REDIRECT_URI
         sync: false
       - key: CAMPUS_ONE_SCOPES
-        value: openid profile email academic roles offline_access
+        value: openid profile email academic roles notifications offline_access
+      - key: CAMPUS_ONE_NOTIFICATIONS_ENABLED
+        value: false
+      - key: CAMPUS_ONE_API_BASE_URL
+        value: https://auth.campusone.com.ng/api/apps
+      - key: CAMPUS_ONE_TOKEN_ENCRYPTION_KEY
+        sync: false
+      - key: CAMPUS_ONE_WEBHOOK_SECRET
+        sync: false
       - key: CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN
         value: false
       - key: FRONTEND_APP_URL

@@ -21,7 +21,11 @@ This document lists the important environment variables used by the frontend and
 | `CAMPUS_ONE_SESSION_SECRET` | No | Optional local session signing secret | Falls back to CampusOne client secret/service key if empty |
 | `CAMPUS_ONE_ISSUER` | OIDC mode | CampusOne OIDC issuer | Default is `https://auth.campusone.com.ng` |
 | `CAMPUS_ONE_REDIRECT_URI` | OIDC mode | Backend callback URL registered in CampusOne | Example: `https://clubs-api.campusone.com.ng/api/v1/auth/campus-one/callback` |
-| `CAMPUS_ONE_SCOPES` | No | OIDC scopes requested | Defaults to `openid profile email academic roles offline_access` |
+| `CAMPUS_ONE_SCOPES` | No | OIDC scopes requested | Defaults to `openid profile email academic roles notifications offline_access` |
+| `CAMPUS_ONE_NOTIFICATIONS_ENABLED` | No | Enables CampusOne shell delivery | Defaults to `false` |
+| `CAMPUS_ONE_API_BASE_URL` | No | CampusOne connected-app API base URL | Defaults to the production API gateway |
+| `CAMPUS_ONE_TOKEN_ENCRYPTION_KEY` | Production | Encrypts stored OIDC access and refresh tokens | Secret, never exposed to the frontend |
+| `CAMPUS_ONE_WEBHOOK_SECRET` | Production | Verifies CampusOne webhook signatures | Secret from the developer dashboard |
 | `CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN` | No | Optional extra email-domain gate for OIDC users | Defaults to `false` because CampusOne is the trusted identity provider |
 | `ALLOWED_EMAIL_DOMAINS` | Yes | Allowed signup domains | Local often includes `nilehive.test`; production should not |
 | `FRONTEND_APP_URL` | Yes | Frontend origin | Used for redirects and environment alignment |

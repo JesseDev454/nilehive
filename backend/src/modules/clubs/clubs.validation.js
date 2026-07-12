@@ -17,6 +17,10 @@ const CLUB_CATEGORIES = new Set([
   "Other"
 ]);
 const SOCIAL_LINK_KEYS = new Set(["instagram", "linkedin", "x", "facebook", "youtube", "tiktok"]);
+const CLUB_SKILLS = new Set(["communication", "leadership", "technical", "design", "research", "entrepreneurship", "event_planning", "media_content", "teamwork", "community_service"]);
+const CLUB_CAREER_GOALS = new Set(["portfolio_building", "leadership", "networking", "technology", "entrepreneurship", "public_speaking", "creative_practice", "community_impact", "academic_enrichment"]);
+const MEETING_WINDOWS = new Set(["weekday_daytime", "weekday_evening", "weekend", "flexible"]);
+const WEEKLY_COMMITMENTS = new Set(["1-2", "3-5", "6+"]);
 
 function readString(payload, fieldName) {
   return typeof payload[fieldName] === "string" ? payload[fieldName].trim() : "";
@@ -89,6 +93,17 @@ function readSocialLinks(payload) {
   }, {});
 }
 
+function readAllowedList(payload, fieldName, allowed, max = 10) {
+  if (!Array.isArray(payload[fieldName])) {
+    throw new ApiError(400, `${fieldName} must be a list`, "VALIDATION_ERROR", { field: fieldName });
+  }
+  const values = [...new Set(payload[fieldName].map((value) => String(value).trim()).filter(Boolean))];
+  const invalid = values.find((value) => !allowed.has(value));
+  if (invalid) throw new ApiError(400, `Unsupported ${fieldName} value: ${invalid}`, "VALIDATION_ERROR", { field: fieldName });
+  if (values.length > max) throw new ApiError(400, `Choose no more than ${max} ${fieldName}`, "VALIDATION_ERROR", { field: fieldName });
+  return values;
+}
+
 function validateClubPayload(payload = {}, { partial = false } = {}) {
   const update = {};
   const name = readString(payload, "name");
@@ -141,6 +156,15 @@ function validateClubPayload(payload = {}, { partial = false } = {}) {
     update.social_links = payload.social_links === undefined ? {} : readSocialLinks(payload);
   }
 
+  if (!partial || payload.skills_offered !== undefined) update.skills_offered = payload.skills_offered === undefined ? [] : readAllowedList(payload, "skills_offered", CLUB_SKILLS);
+  if (!partial || payload.career_goals !== undefined) update.career_goals = payload.career_goals === undefined ? [] : readAllowedList(payload, "career_goals", CLUB_CAREER_GOALS);
+  if (!partial || payload.meeting_windows !== undefined) update.meeting_windows = payload.meeting_windows === undefined ? [] : readAllowedList(payload, "meeting_windows", MEETING_WINDOWS, 4);
+  if (!partial || payload.weekly_commitment !== undefined) {
+    const commitment = readOptionalString(payload, "weekly_commitment");
+    if (commitment && !WEEKLY_COMMITMENTS.has(commitment)) throw new ApiError(400, "Unsupported weekly commitment", "VALIDATION_ERROR", { field: "weekly_commitment" });
+    update.weekly_commitment = commitment;
+  }
+
   return update;
 }
 
@@ -151,6 +175,10 @@ function validateClubProfilePayload(payload = {}) {
     "logo_path",
     "website_url",
     "social_links",
+    "skills_offered",
+    "career_goals",
+    "meeting_windows",
+    "weekly_commitment",
     "whatsapp_group_name",
     "whatsapp_onboarding_notes"
   ]);

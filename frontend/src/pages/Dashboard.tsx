@@ -1198,7 +1198,7 @@ function AdvisorDashboard() {
 
   return (
     <div className="space-y-8 animate-slide-up">
-      <section className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+      <section className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
         <div className="max-w-3xl">
           <div className="flex flex-wrap items-center gap-4">
             <h1 className="text-5xl font-black leading-none tracking-[-0.07em] md:text-6xl">Advisor Dashboard</h1>
@@ -1224,7 +1224,7 @@ function AdvisorDashboard() {
         </div>
       </section>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardContent className="p-5">
             <QuestSticker tone={pending.length ? "blue" : "green"}>Decisions</QuestSticker>
@@ -3177,8 +3177,8 @@ function PresidentDashboard() {
             </Link>
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-            <Card>
+          <div className="grid min-w-0 gap-5 lg:grid-cols-[1.1fr_0.9fr] [&>*]:min-w-0">
+            <Card className="min-w-0 overflow-hidden">
               <CardHeader>
                 <ClublySectionHeader
                   title="Pending proposals"
@@ -3195,7 +3195,7 @@ function PresidentDashboard() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="min-w-0 overflow-hidden">
               <CardHeader>
                 <ClublySectionHeader
                   title="Next tasks"

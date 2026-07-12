@@ -26,7 +26,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 24 10% 10%;
 
-    --primary: 239 84% 67%;
+    --primary: 239 70% 52%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 174 84% 32%;
@@ -66,14 +66,25 @@
   }
 
   .dark {
+    --clubly-accent: #818cf8;
+    --clubly-accent-d: #6366f1;
+    --clubly-accent-soft: #1f2552;
+    --clubly-ink: #f8fafc;
+    --clubly-body: #e2e8f0;
+    --clubly-muted: #94a3b8;
+    --clubly-faint: #64748b;
+    --clubly-line: rgba(226, 232, 240, 0.14);
+    --clubly-line-2: rgba(226, 232, 240, 0.08);
+    --clubly-card-2: #111827;
+    --clubly-page: #0b1220;
     --background: 220 52% 10%;
     --foreground: 210 40% 98%;
     --card: 220 43% 13%;
     --card-foreground: 210 40% 98%;
     --popover: 220 43% 13%;
     --popover-foreground: 210 40% 98%;
-    --primary: 212 100% 22%;
-    --primary-foreground: 222 39% 10%;
+    --primary: 239 84% 74%;
+    --primary-foreground: 220 52% 10%;
     --secondary: 107 45% 54%;
     --secondary-foreground: 220 100% 6%;
     --muted: 221 28% 20%;
