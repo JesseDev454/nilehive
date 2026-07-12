@@ -499,12 +499,37 @@ function createCampusOneAuthRouter(options = {}) {
       throw new ApiError(500, "CampusOne sign-in is not configured yet", "CAMPUS_ONE_NOT_CONFIGURED");
     }
 
-    const state = randomToken();
-    const nonce = randomToken();
-    const codeVerifier = randomToken(48);
+    res.setHeader("Cache-Control", "no-store");
+
+    const cookies = parseCookies(req.headers.cookie || "");
+    let stateValue = cookies[OIDC_STATE_COOKIE] || "";
+    let nonce = cookies[OIDC_NONCE_COOKIE] || "";
+    let codeVerifier = cookies[OIDC_VERIFIER_COOKIE] || "";
+    let statePayload = null;
+
+    try {
+      statePayload = JSON.parse(base64UrlDecode(stateValue).toString("utf8"));
+    } catch {
+      statePayload = null;
+    }
+
+    const hasReusableState = Boolean(statePayload?.state && nonce && codeVerifier);
+
+    if (!hasReusableState) {
+      const state = randomToken();
+      nonce = randomToken();
+      codeVerifier = randomToken(48);
+      const returnTo = normalizeReturnTo(req.query.return_to);
+      stateValue = base64UrlEncode(JSON.stringify({ state, returnTo }));
+
+      // Store the complete opaque state value so a duplicate login request can
+      // safely reuse the same authorization transaction instead of replacing it.
+      appendSetCookie(res, buildCookie(OIDC_STATE_COOKIE, stateValue, getOidcCookieOptions()));
+      appendSetCookie(res, buildCookie(OIDC_VERIFIER_COOKIE, codeVerifier, getOidcCookieOptions()));
+      appendSetCookie(res, buildCookie(OIDC_NONCE_COOKIE, nonce, getOidcCookieOptions()));
+    }
+
     const codeChallenge = base64UrlEncode(crypto.createHash("sha256").update(codeVerifier).digest());
-    const returnTo = normalizeReturnTo(req.query.return_to);
-    const stateValue = base64UrlEncode(JSON.stringify({ state, returnTo }));
     const authorizationUrl = new URL(getAuthorizationEndpoint());
 
     authorizationUrl.searchParams.set("response_type", "code");
@@ -516,15 +541,12 @@ function createCampusOneAuthRouter(options = {}) {
     authorizationUrl.searchParams.set("code_challenge", codeChallenge);
     authorizationUrl.searchParams.set("code_challenge_method", "S256");
 
-    appendSetCookie(res, buildCookie(OIDC_STATE_COOKIE, state, getOidcCookieOptions()));
-    appendSetCookie(res, buildCookie(OIDC_VERIFIER_COOKIE, codeVerifier, getOidcCookieOptions()));
-    appendSetCookie(res, buildCookie(OIDC_NONCE_COOKIE, nonce, getOidcCookieOptions()));
-
     res.redirect(authorizationUrl.toString());
   });
 
   router.get("/campus-one/callback", async (req, res, next) => {
     try {
+      res.setHeader("Cache-Control", "no-store");
       const code = typeof req.query.code === "string" ? req.query.code : "";
       const encodedState = typeof req.query.state === "string" ? req.query.state : "";
       const oidcError = typeof req.query.error === "string" ? req.query.error : "";
@@ -549,7 +571,13 @@ function createCampusOneAuthRouter(options = {}) {
         throw new ApiError(400, "CampusOne sign-in state could not be verified", "INVALID_OIDC_STATE");
       }
 
-      if (!statePayload?.state || statePayload.state !== cookies[OIDC_STATE_COOKIE]) {
+      if (!statePayload?.state || encodedState !== cookies[OIDC_STATE_COOKIE]) {
+        logger.warn("campus_one.oidc_state_mismatch", {
+          has_state_cookie: Boolean(cookies[OIDC_STATE_COOKIE]),
+          has_verifier_cookie: Boolean(cookies[OIDC_VERIFIER_COOKIE]),
+          has_nonce_cookie: Boolean(cookies[OIDC_NONCE_COOKIE]),
+          request_host: req.get("host") || null
+        });
         throw new ApiError(400, "CampusOne sign-in state could not be verified", "INVALID_OIDC_STATE");
       }
 

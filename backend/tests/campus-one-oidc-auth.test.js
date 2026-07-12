@@ -647,7 +647,21 @@ test("CampusOne login normalizes feedback return path to dashboard", async (t) =
   const location = response.headers.get("location");
   const state = location ? new URL(location).searchParams.get("state") : null;
   const statePayload = decodeBase64UrlJson(state);
+  const setCookie = response.headers.get("set-cookie") || "";
 
   assert.equal(response.status, 302);
   assert.equal(statePayload.returnTo, "/");
+  assert.match(setCookie, /nilehive_oidc_state=/);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+
+  const cookieHeader = [...setCookie.matchAll(/(nilehive_oidc_[^=]+=[^;]+)/g)].map((match) => match[1]).join("; ");
+  const retryResponse = await fetch(`${server.baseUrl}/api/v1/auth/campus-one/login?return_to=/`, {
+    headers: { Cookie: cookieHeader },
+    redirect: "manual"
+  });
+  const retryLocation = retryResponse.headers.get("location");
+  const retryState = retryLocation ? new URL(retryLocation).searchParams.get("state") : null;
+
+  assert.equal(retryState, state);
+  assert.equal(retryResponse.headers.get("set-cookie"), null);
 });
