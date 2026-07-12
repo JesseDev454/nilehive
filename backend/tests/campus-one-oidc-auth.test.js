@@ -62,6 +62,7 @@ function withCampusOneOidcEnv(t) {
     CAMPUS_ONE_CLIENT_ID: process.env.CAMPUS_ONE_CLIENT_ID,
     CAMPUS_ONE_CLIENT_SECRET: process.env.CAMPUS_ONE_CLIENT_SECRET,
     CAMPUS_ONE_ISSUER: process.env.CAMPUS_ONE_ISSUER,
+    NODE_ENV: process.env.NODE_ENV,
     CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN: process.env.CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN,
     FRONTEND_APP_URL: process.env.FRONTEND_APP_URL,
     SUPABASE_URL: process.env.SUPABASE_URL,
@@ -70,6 +71,7 @@ function withCampusOneOidcEnv(t) {
   };
 
   process.env.AUTH_PROVIDER = "campus_one_oidc";
+  process.env.NODE_ENV = "test";
   process.env.CAMPUS_ONE_CLIENT_ID = "test-campus-one-client";
   process.env.CAMPUS_ONE_CLIENT_SECRET = "test-campus-one-secret";
   process.env.CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN = "false";
@@ -122,6 +124,21 @@ test("CampusOne OIDC normalizes harmless whitespace around the configured issuer
   clearEnvCache();
 
   assert.equal(getIssuer(), "https://auth.campusone.com.ng");
+});
+
+test("CampusOne production OIDC cookies allow the CampusOne app-shell return", async (t) => {
+  withCampusOneOidcEnv(t);
+  process.env.NODE_ENV = "production";
+  clearEnvCache();
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/auth/campus-one/login`, { redirect: "manual" });
+  const setCookie = response.headers.get("set-cookie") || "";
+
+  assert.match(setCookie, /SameSite=None/);
+  assert.match(setCookie, /Secure/);
+  assert.match(setCookie, /Partitioned/);
 });
 
 test("CampusOne OIDC profile resolution trusts CampusOne email claims by default", async (t) => {

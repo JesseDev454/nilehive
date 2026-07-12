@@ -60,10 +60,16 @@ function getJwksEndpoint() {
 }
 
 function getOidcCookieOptions(maxAge = OIDC_COOKIE_MAX_AGE_SECONDS) {
+  const isProduction = getEnv().NODE_ENV === "production";
+
   return {
     httpOnly: true,
-    secure: getEnv().NODE_ENV === "production",
-    sameSite: "Lax",
+    // CampusOne can open Clubly inside a cross-site app shell. Lax cookies are
+    // not returned from that context, so use a secure cross-site cookie in
+    // production while retaining Lax cookies for local HTTP development.
+    secure: isProduction,
+    sameSite: isProduction ? "None" : "Lax",
+    partitioned: isProduction,
     path: OIDC_COOKIE_PATH,
     maxAge
   };

@@ -45,6 +45,10 @@ function buildCookie(name, value, options = {}) {
 
   parts.push(`SameSite=${options.sameSite || "Lax"}`);
 
+  if (options.partitioned) {
+    parts.push("Partitioned");
+  }
+
   return parts.join("; ");
 }
 
