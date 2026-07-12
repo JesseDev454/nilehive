@@ -44,7 +44,7 @@ function randomToken(byteLength = 32) {
 }
 
 function getIssuer() {
-  return getEnv().CAMPUS_ONE_ISSUER.replace(/\/+$/, "");
+  return String(getEnv().CAMPUS_ONE_ISSUER || "").trim().replace(/\/+$/, "");
 }
 
 function getAuthorizationEndpoint() {
@@ -258,6 +258,10 @@ async function verifyCampusOneIdToken(idToken, expectedNonce) {
   const env = getEnv();
 
   if (payload.iss !== getIssuer()) {
+    baseLogger.warn("campus_one.id_token_issuer_mismatch", {
+      expected_issuer: getIssuer(),
+      token_issuer: typeof payload.iss === "string" ? payload.iss : null
+    });
     throw new ApiError(401, "CampusOne sign-in token has an invalid issuer", "INVALID_ID_TOKEN_ISSUER");
   }
 
@@ -626,6 +630,7 @@ function createCampusOneAuthRouter(options = {}) {
 
 module.exports = {
   createCampusOneAuthRouter,
+  getIssuer,
   resolveCampusOneProfile,
   resolveCampusOnePortalRole,
   getCampusOneCustomRoles,

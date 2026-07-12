@@ -4,6 +4,7 @@ const { createApp } = require("../src/app");
 const { clearEnvCache } = require("../src/config/env");
 const {
   getCampusOneCustomRoles,
+  getIssuer,
   resolveCampusOneProfile,
   resolveCampusOnePortalRole
 } = require("../src/modules/auth/campusOneOidc");
@@ -60,6 +61,7 @@ function withCampusOneOidcEnv(t) {
     AUTH_PROVIDER: process.env.AUTH_PROVIDER,
     CAMPUS_ONE_CLIENT_ID: process.env.CAMPUS_ONE_CLIENT_ID,
     CAMPUS_ONE_CLIENT_SECRET: process.env.CAMPUS_ONE_CLIENT_SECRET,
+    CAMPUS_ONE_ISSUER: process.env.CAMPUS_ONE_ISSUER,
     CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN: process.env.CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN,
     FRONTEND_APP_URL: process.env.FRONTEND_APP_URL,
     SUPABASE_URL: process.env.SUPABASE_URL,
@@ -112,6 +114,14 @@ test("CampusOne OIDC session cookie authenticates profile requests", async (t) =
   assert.equal(payload.data.profile.id, "profile-1");
   assert.equal(payload.data.profile.effective_role, "student");
   assert.equal(payload.data.profile.portal_role, "student");
+});
+
+test("CampusOne OIDC normalizes harmless whitespace around the configured issuer", async (t) => {
+  withCampusOneOidcEnv(t);
+  process.env.CAMPUS_ONE_ISSUER = " https://auth.campusone.com.ng/ ";
+  clearEnvCache();
+
+  assert.equal(getIssuer(), "https://auth.campusone.com.ng");
 });
 
 test("CampusOne OIDC profile resolution trusts CampusOne email claims by default", async (t) => {
