@@ -38,7 +38,7 @@ function getEnv() {
       defaultValue: "http://localhost:4000/api/v1/auth/campus-one/callback"
     }),
     CAMPUS_ONE_SCOPES: readEnv("CAMPUS_ONE_SCOPES", {
-      defaultValue: "openid profile email academic roles notifications offline_access"
+      defaultValue: "openid profile email academic roles offline_access"
     }),
     CAMPUS_ONE_NOTIFICATIONS_ENABLED: readEnv("CAMPUS_ONE_NOTIFICATIONS_ENABLED", { defaultValue: "false" }),
     CAMPUS_ONE_API_BASE_URL: readEnv("CAMPUS_ONE_API_BASE_URL", { defaultValue: "https://auth.campusone.com.ng/api/apps" }),

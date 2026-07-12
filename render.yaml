@@ -55,7 +55,7 @@ services:
       - key: CAMPUS_ONE_REDIRECT_URI
         sync: false
       - key: CAMPUS_ONE_SCOPES
-        value: openid profile email academic roles notifications offline_access
+        value: openid profile email academic roles offline_access
       - key: CAMPUS_ONE_NOTIFICATIONS_ENABLED
         value: false
       - key: CAMPUS_ONE_API_BASE_URL

@@ -11,7 +11,6 @@ const { isAllowedEmail } = require("../../config/emailPolicy");
 const { logger: baseLogger } = require("../../config/logger");
 const { resolveEffectiveRole } = require("../../shared/portalAccess");
 const { isValidStudentId, normalizeStudentId } = require("../../shared/studentId");
-const { saveCampusOneAuthorization } = require("../notifications/campusOneTokens");
 
 const OIDC_STATE_COOKIE = "nilehive_oidc_state";
 const OIDC_VERIFIER_COOKIE = "nilehive_oidc_verifier";
@@ -44,7 +43,7 @@ function randomToken(byteLength = 32) {
 }
 
 function getIssuer() {
-  return String(getEnv().CAMPUS_ONE_ISSUER || "").trim().replace(/\/+$/, "");
+  return getEnv().CAMPUS_ONE_ISSUER.replace(/\/+$/, "");
 }
 
 function getAuthorizationEndpoint() {
@@ -60,16 +59,10 @@ function getJwksEndpoint() {
 }
 
 function getOidcCookieOptions(maxAge = OIDC_COOKIE_MAX_AGE_SECONDS) {
-  const isProduction = getEnv().NODE_ENV === "production";
-
   return {
     httpOnly: true,
-    // CampusOne can open Clubly inside a cross-site app shell. Lax cookies are
-    // not returned from that context, so use a secure cross-site cookie in
-    // production while retaining Lax cookies for local HTTP development.
-    secure: isProduction,
-    sameSite: isProduction ? "None" : "Lax",
-    partitioned: isProduction,
+    secure: getEnv().NODE_ENV === "production",
+    sameSite: "Lax",
     path: OIDC_COOKIE_PATH,
     maxAge
   };
@@ -264,10 +257,6 @@ async function verifyCampusOneIdToken(idToken, expectedNonce) {
   const env = getEnv();
 
   if (payload.iss !== getIssuer()) {
-    baseLogger.warn("campus_one.id_token_issuer_mismatch", {
-      expected_issuer: getIssuer(),
-      token_issuer: typeof payload.iss === "string" ? payload.iss : null
-    });
     throw new ApiError(401, "CampusOne sign-in token has an invalid issuer", "INVALID_ID_TOKEN_ISSUER");
   }
 
@@ -505,37 +494,12 @@ function createCampusOneAuthRouter(options = {}) {
       throw new ApiError(500, "CampusOne sign-in is not configured yet", "CAMPUS_ONE_NOT_CONFIGURED");
     }
 
-    res.setHeader("Cache-Control", "no-store");
-
-    const cookies = parseCookies(req.headers.cookie || "");
-    let stateValue = cookies[OIDC_STATE_COOKIE] || "";
-    let nonce = cookies[OIDC_NONCE_COOKIE] || "";
-    let codeVerifier = cookies[OIDC_VERIFIER_COOKIE] || "";
-    let statePayload = null;
-
-    try {
-      statePayload = JSON.parse(base64UrlDecode(stateValue).toString("utf8"));
-    } catch {
-      statePayload = null;
-    }
-
-    const hasReusableState = Boolean(statePayload?.state && nonce && codeVerifier);
-
-    if (!hasReusableState) {
-      const state = randomToken();
-      nonce = randomToken();
-      codeVerifier = randomToken(48);
-      const returnTo = normalizeReturnTo(req.query.return_to);
-      stateValue = base64UrlEncode(JSON.stringify({ state, returnTo }));
-
-      // Store the complete opaque state value so a duplicate login request can
-      // safely reuse the same authorization transaction instead of replacing it.
-      appendSetCookie(res, buildCookie(OIDC_STATE_COOKIE, stateValue, getOidcCookieOptions()));
-      appendSetCookie(res, buildCookie(OIDC_VERIFIER_COOKIE, codeVerifier, getOidcCookieOptions()));
-      appendSetCookie(res, buildCookie(OIDC_NONCE_COOKIE, nonce, getOidcCookieOptions()));
-    }
-
+    const state = randomToken();
+    const nonce = randomToken();
+    const codeVerifier = randomToken(48);
     const codeChallenge = base64UrlEncode(crypto.createHash("sha256").update(codeVerifier).digest());
+    const returnTo = normalizeReturnTo(req.query.return_to);
+    const stateValue = base64UrlEncode(JSON.stringify({ state, returnTo }));
     const authorizationUrl = new URL(getAuthorizationEndpoint());
 
     authorizationUrl.searchParams.set("response_type", "code");
@@ -547,12 +511,15 @@ function createCampusOneAuthRouter(options = {}) {
     authorizationUrl.searchParams.set("code_challenge", codeChallenge);
     authorizationUrl.searchParams.set("code_challenge_method", "S256");
 
+    appendSetCookie(res, buildCookie(OIDC_STATE_COOKIE, state, getOidcCookieOptions()));
+    appendSetCookie(res, buildCookie(OIDC_VERIFIER_COOKIE, codeVerifier, getOidcCookieOptions()));
+    appendSetCookie(res, buildCookie(OIDC_NONCE_COOKIE, nonce, getOidcCookieOptions()));
+
     res.redirect(authorizationUrl.toString());
   });
 
   router.get("/campus-one/callback", async (req, res, next) => {
     try {
-      res.setHeader("Cache-Control", "no-store");
       const code = typeof req.query.code === "string" ? req.query.code : "";
       const encodedState = typeof req.query.state === "string" ? req.query.state : "";
       const oidcError = typeof req.query.error === "string" ? req.query.error : "";
@@ -577,13 +544,7 @@ function createCampusOneAuthRouter(options = {}) {
         throw new ApiError(400, "CampusOne sign-in state could not be verified", "INVALID_OIDC_STATE");
       }
 
-      if (!statePayload?.state || encodedState !== cookies[OIDC_STATE_COOKIE]) {
-        logger.warn("campus_one.oidc_state_mismatch", {
-          has_state_cookie: Boolean(cookies[OIDC_STATE_COOKIE]),
-          has_verifier_cookie: Boolean(cookies[OIDC_VERIFIER_COOKIE]),
-          has_nonce_cookie: Boolean(cookies[OIDC_NONCE_COOKIE]),
-          request_host: req.get("host") || null
-        });
+      if (!statePayload?.state || statePayload.state !== cookies[OIDC_STATE_COOKIE]) {
         throw new ApiError(400, "CampusOne sign-in state could not be verified", "INVALID_OIDC_STATE");
       }
 
@@ -630,7 +591,6 @@ function createCampusOneAuthRouter(options = {}) {
         appRole: profile.role,
         customRoles
       });
-      await saveCampusOneAuthorization({ database, profileId: profile.id, tokens });
       const sessionToken = createCampusOneSessionToken({
         profileId: profile.id,
         portalUserId: profile.portal_user_id,
@@ -664,7 +624,6 @@ function createCampusOneAuthRouter(options = {}) {
 
 module.exports = {
   createCampusOneAuthRouter,
-  getIssuer,
   resolveCampusOneProfile,
   resolveCampusOnePortalRole,
   getCampusOneCustomRoles,

@@ -4,7 +4,6 @@ const { createApp } = require("../src/app");
 const { clearEnvCache } = require("../src/config/env");
 const {
   getCampusOneCustomRoles,
-  getIssuer,
   resolveCampusOneProfile,
   resolveCampusOnePortalRole
 } = require("../src/modules/auth/campusOneOidc");
@@ -61,8 +60,6 @@ function withCampusOneOidcEnv(t) {
     AUTH_PROVIDER: process.env.AUTH_PROVIDER,
     CAMPUS_ONE_CLIENT_ID: process.env.CAMPUS_ONE_CLIENT_ID,
     CAMPUS_ONE_CLIENT_SECRET: process.env.CAMPUS_ONE_CLIENT_SECRET,
-    CAMPUS_ONE_ISSUER: process.env.CAMPUS_ONE_ISSUER,
-    NODE_ENV: process.env.NODE_ENV,
     CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN: process.env.CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN,
     FRONTEND_APP_URL: process.env.FRONTEND_APP_URL,
     SUPABASE_URL: process.env.SUPABASE_URL,
@@ -71,7 +68,6 @@ function withCampusOneOidcEnv(t) {
   };
 
   process.env.AUTH_PROVIDER = "campus_one_oidc";
-  process.env.NODE_ENV = "test";
   process.env.CAMPUS_ONE_CLIENT_ID = "test-campus-one-client";
   process.env.CAMPUS_ONE_CLIENT_SECRET = "test-campus-one-secret";
   process.env.CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN = "false";
@@ -116,29 +112,6 @@ test("CampusOne OIDC session cookie authenticates profile requests", async (t) =
   assert.equal(payload.data.profile.id, "profile-1");
   assert.equal(payload.data.profile.effective_role, "student");
   assert.equal(payload.data.profile.portal_role, "student");
-});
-
-test("CampusOne OIDC normalizes harmless whitespace around the configured issuer", async (t) => {
-  withCampusOneOidcEnv(t);
-  process.env.CAMPUS_ONE_ISSUER = " https://auth.campusone.com.ng/ ";
-  clearEnvCache();
-
-  assert.equal(getIssuer(), "https://auth.campusone.com.ng");
-});
-
-test("CampusOne production OIDC cookies allow the CampusOne app-shell return", async (t) => {
-  withCampusOneOidcEnv(t);
-  process.env.NODE_ENV = "production";
-  clearEnvCache();
-  const server = await createTestServer(createFakeDatabase());
-  t.after(() => server.close());
-
-  const response = await fetch(`${server.baseUrl}/api/v1/auth/campus-one/login`, { redirect: "manual" });
-  const setCookie = response.headers.get("set-cookie") || "";
-
-  assert.match(setCookie, /SameSite=None/);
-  assert.match(setCookie, /Secure/);
-  assert.match(setCookie, /Partitioned/);
 });
 
 test("CampusOne OIDC profile resolution trusts CampusOne email claims by default", async (t) => {
@@ -664,21 +637,7 @@ test("CampusOne login normalizes feedback return path to dashboard", async (t) =
   const location = response.headers.get("location");
   const state = location ? new URL(location).searchParams.get("state") : null;
   const statePayload = decodeBase64UrlJson(state);
-  const setCookie = response.headers.get("set-cookie") || "";
 
   assert.equal(response.status, 302);
   assert.equal(statePayload.returnTo, "/");
-  assert.match(setCookie, /nilehive_oidc_state=/);
-  assert.equal(response.headers.get("cache-control"), "no-store");
-
-  const cookieHeader = [...setCookie.matchAll(/(nilehive_oidc_[^=]+=[^;]+)/g)].map((match) => match[1]).join("; ");
-  const retryResponse = await fetch(`${server.baseUrl}/api/v1/auth/campus-one/login?return_to=/`, {
-    headers: { Cookie: cookieHeader },
-    redirect: "manual"
-  });
-  const retryLocation = retryResponse.headers.get("location");
-  const retryState = retryLocation ? new URL(retryLocation).searchParams.get("state") : null;
-
-  assert.equal(retryState, state);
-  assert.equal(retryResponse.headers.get("set-cookie"), null);
 });
