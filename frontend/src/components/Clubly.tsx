@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { ElementType, ReactNode } from "react";
+import { Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function ClublySectionHeader({
@@ -38,7 +39,7 @@ export function ClublyMetaChip({
   return (
     <span
       className={cn(
-        "inline-flex min-h-9 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-soft-sm",
+        "inline-flex min-h-9 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground shadow-sm",
         className
       )}
     >
@@ -143,14 +144,14 @@ export function ClublyPageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <section className="clb-hero">
+    <header className="mb-8 flex flex-col gap-5 md:mb-12 md:flex-row md:items-start md:justify-between">
       <div className="min-w-0">
-        {eyebrow ? <p className="clb-eyebrow">{eyebrow}</p> : null}
-        <h1 className="clb-title mt-2">{title}</h1>
-        {description ? <p className="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground md:text-base">{description}</p> : null}
+        {eyebrow ? <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">{eyebrow}</p> : null}
+        <h1 className="text-[32px] font-bold leading-[1.2] tracking-[-0.02em] text-primary md:text-[48px]">{title}</h1>
+        {description ? <p className="mt-2 max-w-3xl text-base leading-7 text-muted-foreground md:text-lg">{description}</p> : null}
       </div>
-      {actions ? <div className="flex flex-wrap gap-3">{actions}</div> : null}
-    </section>
+      {actions ? <div className="flex shrink-0 flex-wrap items-center gap-3">{actions}</div> : null}
+    </header>
   );
 }
 
@@ -490,5 +491,29 @@ export function ClublyLoadingState({
         </div>
       </div>
     </div>
+  );
+}
+
+export function ClublyWorkspaceLoadingScreen({
+  title = "Opening your Clubly workspace",
+  message = "Preparing your campus workspace."
+}: {
+  title?: string;
+  message?: string;
+}) {
+  return (
+    <main className="grid min-h-screen place-items-center bg-[#001529] px-6 text-white">
+      <section className="w-full max-w-sm text-center" aria-live="polite" aria-busy="true">
+        <div className="mx-auto grid h-28 w-28 place-items-center rounded-full border-[3px] border-[#8d7a38] bg-[#f0f4ff] shadow-[0_0_0_2px_rgba(255,255,255,0.1)]">
+          <Users className="h-12 w-12 text-[#001529]" aria-hidden="true" />
+        </div>
+        <h1 className="mt-14 text-4xl font-semibold tracking-[-0.02em] text-[#fed65b]">Clubly</h1>
+        <p className="mt-4 text-xl text-[#b7ccff]">{title}</p>
+        <p className="mt-2 text-sm text-[#b7ccff]/80">{message}</p>
+        <div className="mt-10 h-2 overflow-hidden rounded-full bg-[#315486]" role="progressbar" aria-label={title} aria-valuemin={0} aria-valuemax={100} aria-valuenow={45}>
+          <div className="h-full w-1/3 rounded-full bg-[#fed65b] animate-clubly-progress" />
+        </div>
+      </section>
+    </main>
   );
 }

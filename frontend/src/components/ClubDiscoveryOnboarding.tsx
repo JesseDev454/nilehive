@@ -1,14 +1,17 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ClubPreferencesForm } from "@/components/ClubPreferencesForm";
-import { getUserFacingErrorMessage, updateClubPreferences, type ClubPreferencesPayload } from "@/lib/api";
+import { clubPreferencesQueryKey, getUserFacingErrorMessage, updateClubPreferences, type ClubPreferencesPayload } from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext";
 import { actionError, actionSuccess } from "@/lib/notify";
 
 export function ClubDiscoveryOnboarding() {
+  const { profile, session } = useAuth();
   const queryClient = useQueryClient();
+  const preferencesQueryKey = clubPreferencesQueryKey(profile?.id, session?.expires_at);
   const mutation = useMutation({
     mutationFn: (payload: ClubPreferencesPayload) => updateClubPreferences(payload),
     onSuccess: async (record) => {
-      queryClient.setQueryData(["club-preferences"], record);
+      queryClient.setQueryData(preferencesQueryKey, record);
       await queryClient.invalidateQueries({ queryKey: ["club-recommendations"] });
       actionSuccess(record.status === "dismissed" ? "You can finish this later" : "Club matches are ready", record.status === "dismissed" ? "Open Profile whenever you want personalized club suggestions." : "Your recommendations now reflect your interests and availability.");
     },

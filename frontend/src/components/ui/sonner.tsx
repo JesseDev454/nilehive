@@ -4,7 +4,8 @@ import { Toaster as Sonner, toast } from "sonner";
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme();
+  const { theme } = useTheme();
+  const toastTheme = theme === "dark" ? "dark" : "light";
   const baseToastClass =
     "group toast group-[.toaster]:rounded-[22px] group-[.toaster]:border group-[.toaster]:border-border/70 group-[.toaster]:text-foreground group-[.toaster]:shadow-soft-lg";
   const successToastClass =
@@ -15,7 +16,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
 
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme={toastTheme}
       className="toaster group"
       toastOptions={{
         classNames: {

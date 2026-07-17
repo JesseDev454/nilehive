@@ -8,12 +8,11 @@ test("advisor dashboard focuses on assigned proposals, reports, and club activit
 
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: "Advisor Dashboard" })).toBeVisible();
-  await expect(page.getByText("Proposals Assigned To Me")).toBeVisible();
-  await expect(page.getByText("Build Night Proposal")).toBeVisible();
-  await expect(page.getByText("Reports To Review / Check")).toBeVisible();
-  await expect(page.getByText("Upcoming Events For Assigned Clubs")).toBeVisible();
-  await expect(page.getByRole("link", { name: /Review Proposals/i })).toHaveAttribute("href", "/approvals");
+  await expect(page.getByRole("heading", { name: "Advisor Home" })).toBeVisible();
+  await expect(page.getByText("Decisions", { exact: true })).toBeVisible();
+  await expect(page.getByText("Reports", { exact: true })).toBeVisible();
+  await expect(page.getByRole("main").getByText("Events", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Review proposals/i })).toHaveAttribute("href", "/approvals");
 });
 
 test("advisor cannot reject without remarks and sees inline validation", async ({ page }) => {

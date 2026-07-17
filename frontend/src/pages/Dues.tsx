@@ -2,12 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
-import { CreditCard, Receipt } from "lucide-react";
+import { CreditCard } from "lucide-react";
 import { AccessDenied } from "@/components/AccessDenied";
 import { DataPagination } from "@/components/DataPagination";
 import {
   ClublyLoadingState,
-  ClublyMetaChip,
   ClublyPageHeader,
   ClublyProgressHero,
   ClublySectionHeader,
@@ -104,7 +103,6 @@ export default function Dues() {
   const duesClubFilter = role === "admin" && selectedClubId !== "all" ? selectedClubId : undefined;
   const duesStatusFilter = statusFilter === "all" ? undefined : statusFilter;
   const returnTo = `${location.pathname}${location.search}`;
-  const submittedProofsReturnTo = "/dues?status=submitted";
 
   const {
     data: duesData,
@@ -164,12 +162,17 @@ export default function Dues() {
     }
   }, [duesData, duesPage]);
 
+  const [nameQuery, setNameQuery] = useState("");
+
   const clubNameById = useMemo(
     () => new Map(clubs.map((club) => [club.id, club.name])),
     [clubs]
   );
   const visiblePayments = duesData?.payments.items || [];
   const pendingProofs = visiblePayments.filter((payment) => payment.status === "submitted");
+  const searchedPayments = nameQuery.trim()
+    ? visiblePayments.filter((payment) => getSubmittedName(payment).toLowerCase().includes(nameQuery.trim().toLowerCase()))
+    : visiblePayments;
 
   const saveSharedProfileMutation = useMutation({
     mutationFn: () =>
@@ -252,89 +255,59 @@ export default function Dues() {
       <Card>
         <CardHeader>
           <ClublySectionHeader
-            title="Pending proofs"
-            description="Open a student's uploaded receipt before changing their dues status."
+            title="Dues ledger"
+            description="Dues status across all clubs. Tap View Proof to review a receipt."
           />
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <ClublyLoadingState title="Loading dues records" message="We are checking payment proofs." compact />
-          ) : isError ? (
-            <ClublyStateCard title="Unable to load dues" message={getErrorMessage(error)} tone="danger" />
-          ) : pendingProofs.length === 0 ? (
-            <ClublyStateCard icon={Receipt} title="No submitted proofs" message="Submitted dues proofs will appear here before they enter the full ledger." />
-          ) : (
-            <div className="space-y-3">
-              {pendingProofs.map((payment) => (
-                <div key={payment.id} className="clb-list-card flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                  <div className="min-w-0">
-                    <p className="font-semibold">{getSubmittedName(payment)}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {payment.club?.name || clubNameById.get(payment.club_id) || "Unknown club"} - {formatCurrency(payment.amount)}
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <ClublyMetaChip label="Session" value={payment.academic_session} />
-                      {payment.member?.student_id ? <ClublyMetaChip label="Student ID" value={payment.member.student_id} /> : null}
-                      <Badge className={getPaymentStatusClassName(payment.status)}>{getPaymentStatusLabel(payment.status)}</Badge>
-                    </div>
-                  </div>
-                  <div className="flex gap-2 md:shrink-0">
-                    {payment.proof_url ? (
-                      <Button asChild size="sm">
-                        <Link to={`/dues/${payment.id}/proof`} state={{ returnTo: submittedProofsReturnTo }}>
-                          View Proof
-                        </Link>
-                      </Button>
-                    ) : (
-                      <Badge variant="outline">No proof file</Badge>
-                    )}
-                  </div>
-                </div>
+          <div className="mb-4 flex flex-col gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="sm:max-w-xs sm:flex-1">
+                <Label htmlFor="dues_name_search" className="sr-only">Search by member name</Label>
+                <Input
+                  id="dues_name_search"
+                  value={nameQuery}
+                  onChange={(event) => setNameQuery(event.target.value)}
+                  placeholder="Search by member name"
+                />
+              </div>
+              <div className="sm:w-56">
+                <Label htmlFor="dues_club_filter" className="sr-only">Club</Label>
+                <Select value={selectedClubId} onValueChange={setSelectedClubId}>
+                  <SelectTrigger id="dues_club_filter"><SelectValue placeholder="All clubs" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All clubs</SelectItem>
+                    {clubs.map((club) => <SelectItem key={club.id} value={club.id}>{club.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {([
+                ["all", "All"],
+                ["unpaid", "Unpaid"],
+                ["submitted", "Pending"],
+                ["paid", "Paid"],
+                ["rejected", "Rejected"]
+              ] as const).map(([value, label]) => (
+                <Button
+                  key={value}
+                  type="button"
+                  size="sm"
+                  variant={statusFilter === value ? "default" : "outline"}
+                  onClick={() => setStatusFilter(value)}
+                >
+                  {label}
+                </Button>
               ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <ClublySectionHeader
-            title="All members"
-            description="A simpler dues ledger with only the columns needed for review."
-          />
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:max-w-2xl">
-            <div className="space-y-2">
-              <Label htmlFor="dues_club_filter">Club</Label>
-              <Select value={selectedClubId} onValueChange={setSelectedClubId}>
-                <SelectTrigger id="dues_club_filter"><SelectValue placeholder="All clubs" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All clubs</SelectItem>
-                  {clubs.map((club) => <SelectItem key={club.id} value={club.id}>{club.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="dues_status_filter">Status</Label>
-              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as (typeof DUE_STATUS_FILTERS)[number])}>
-                <SelectTrigger id="dues_status_filter"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All statuses</SelectItem>
-                  <SelectItem value="submitted">Submitted proofs</SelectItem>
-                  <SelectItem value="rejected">Rejected proofs</SelectItem>
-                  <SelectItem value="unpaid">Unpaid</SelectItem>
-                  <SelectItem value="paid">Paid</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
           {isLoading ? (
             <ClublyLoadingState title="Loading dues records" message="We are checking payment status and receipts." compact />
           ) : isError ? (
             <ClublyStateCard title="Unable to load dues" message={getErrorMessage(error)} tone="danger" />
-          ) : !visiblePayments.length ? (
-            <ClublyStateCard icon={CreditCard} title="No dues records yet" message="New student joins and signups will create dues records automatically." />
+          ) : !searchedPayments.length ? (
+            <ClublyStateCard icon={CreditCard} title="No matching dues" message="Try another club, status, or clear your search." />
           ) : (
             <div className="clb-table-wrap">
               <table className="clb-table">
@@ -349,7 +322,7 @@ export default function Dues() {
                   </tr>
                 </thead>
                 <tbody>
-                  {visiblePayments.map((payment) => (
+                  {searchedPayments.map((payment) => (
                     <tr key={payment.id} className="transition-colors hover:bg-accent/50">
                       <td className="p-3">
                         <p className="font-medium">{getSubmittedName(payment)}</p>

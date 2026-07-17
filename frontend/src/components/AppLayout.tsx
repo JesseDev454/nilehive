@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { UserCircle } from "lucide-react";
+import { Bell, UserCircle } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { GuidedOnboarding } from "@/components/GuidedOnboarding";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -12,8 +12,8 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 import { useSidebar } from "@/components/ui/sidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ClubDiscoveryOnboarding } from "@/components/ClubDiscoveryOnboarding";
-import { getClubPreferences } from "@/lib/api";
-import { formatRoleLabel } from "@/lib/roles";
+import { MobileBottomNavigation } from "@/components/MobileBottomNavigation";
+import { clubPreferencesQueryKey, getClubPreferences } from "@/lib/api";
 
 function AppShellEffects() {
   const location = useLocation();
@@ -66,23 +66,23 @@ function AppShellEffects() {
 }
 
 export function AppLayout() {
-  const { profile, role, signOut } = useAuth();
-  const [guideRestartSignal, setGuideRestartSignal] = useState(0);
-  const preferences = useQuery({ queryKey: ["club-preferences"], queryFn: getClubPreferences, enabled: role === "student", retry: false });
+  const { profile, role, session } = useAuth();
+  const preferences = useQuery({
+    queryKey: clubPreferencesQueryKey(profile?.id, session?.expires_at),
+    queryFn: () => getClubPreferences(),
+    enabled: role === "student" && Boolean(session?.user),
+    retry: false
+  });
   const showDiscoveryOnboarding = role === "student" && !preferences.isLoading && !preferences.isError && !preferences.data;
-
-  async function handleSignOut() {
-    await signOut();
-  }
 
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background text-foreground">
         <AppShellEffects />
         <AppSidebar />
-        {showDiscoveryOnboarding ? <ClubDiscoveryOnboarding /> : <GuidedOnboarding restartSignal={guideRestartSignal} />}
+        {showDiscoveryOnboarding ? <ClubDiscoveryOnboarding /> : <GuidedOnboarding restartSignal={0} />}
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-1 border-b border-border/70 bg-card/85 px-2 py-3 shadow-soft-sm backdrop-blur-xl sm:gap-3 sm:px-3 md:absolute md:right-8 md:top-8 md:min-h-0 md:rounded-[24px] md:border md:bg-card/80 md:p-2">
+          <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-1 border-b border-border/80 bg-card/95 px-4 py-3 backdrop-blur-xl sm:gap-3 sm:px-6 md:static md:min-h-0 md:border-0 md:bg-transparent md:px-6 md:pb-0 md:pt-6 md:shadow-none">
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1 md:hidden">
                 <SidebarTrigger />
@@ -97,35 +97,20 @@ export function AppLayout() {
               </div>
             </div>
             <div className="flex min-w-0 items-center justify-end gap-2 sm:gap-3">
-              <span className="hidden rounded-full border border-primary/10 bg-accent/70 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-accent-foreground sm:inline">
-                {role === "admin"
-                  ? "Admin Access"
-                  : role
-                    ? `${formatRoleLabel(role)} Mode`
-                    : profile?.role ?? "Loading"}
-              </span>
-              <ThemeToggle />
-              <Button asChild type="button" variant="outline" size="icon" className="hidden min-[360px]:inline-flex">
+              <ThemeToggle className="text-muted-foreground hover:bg-muted md:text-sidebar-foreground" />
+              <Button asChild type="button" variant="ghost" size="icon" className="hidden min-[360px]:inline-flex">
+                <Link to="/notifications" aria-label="Open notifications"><Bell className="h-5 w-5" aria-hidden="true" /></Link>
+              </Button>
+              <Button asChild type="button" variant="ghost" size="icon" className="hidden min-[360px]:inline-flex">
                 <Link to="/profile" aria-label="Open profile"><UserCircle className="h-4 w-4" aria-hidden="true" /></Link>
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setGuideRestartSignal((value) => value + 1)}
-              >
-                <span className="sm:hidden">Guide</span>
-                <span className="hidden sm:inline">Help / Guide</span>
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleSignOut}>
-                Logout
               </Button>
             </div>
           </header>
-          <main className="min-w-0 flex-1 p-4 md:p-8 md:pt-28">
+          <main className="min-w-0 flex-1 p-4 pb-24 md:px-6 md:pb-8 md:pt-8">
             <Outlet />
           </main>
           <SiteFooter />
+          <MobileBottomNavigation />
         </div>
       </div>
     </SidebarProvider>

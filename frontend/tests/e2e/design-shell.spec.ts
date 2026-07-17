@@ -13,7 +13,7 @@ test("production shell does not show the prototype role switcher", async ({ page
   await expect(page.getByText("Design preview only")).toHaveCount(0);
 });
 
-test("mobile shell shows top bar and the first five role nav items", async ({ page }) => {
+test("mobile shell shows the Stitch-style role navigation", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await mockClubServicesApi(page);
   await loginAs(page, "student");
@@ -25,19 +25,19 @@ test("mobile shell shows top bar and the first five role nav items", async ({ pa
   await expect(page.getByRole("link", { name: /Home/i })).toBeVisible();
   await expect(page.getByRole("link", { name: /Discover Clubs/i })).toHaveAttribute("href", "/membership");
   await expect(page.getByRole("link", { name: /Events/i })).toBeVisible();
-  await expect(page.getByRole("link", { name: /Announcements/i })).toHaveAttribute("href", "/communications");
-  await expect(page.getByRole("link", { name: /Feedback/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Updates/i })).toHaveAttribute("href", "/communications");
+  await expect(page.getByRole("link", { name: /Profile/i })).toBeVisible();
 });
 
-test("top bar exposes role context, help, and logout controls", async ({ page }) => {
+test("top bar exposes theme, notification, and profile controls", async ({ page }) => {
   await mockClubServicesApi(page);
   await loginAs(page, "student");
 
   await page.goto("/", { waitUntil: "domcontentloaded" });
 
-  await expect(page.getByRole("banner")).toContainText("Student Mode");
-  await expect(page.getByRole("button", { name: /Help \/ Guide|Guide/i })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Logout" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Switch to dark mode" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open notifications" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open profile" })).toBeVisible();
 });
 
 test("desktop sidebar can collapse and expand", async ({ page }) => {

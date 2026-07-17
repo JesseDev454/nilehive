@@ -1328,8 +1328,20 @@ export async function getPublicClubs() {
 }
 
 export async function getClubPreferences(token?: string) {
-  const response = await request<ApiEnvelope<ClubPreferencesRecord | null>>("/api/v1/profile/club-preferences", { method: "GET", token });
+  // React Query supplies a QueryFunctionContext when a function is passed to
+  // `queryFn` directly. Only forward an actual token, never that context.
+  const accessToken = typeof token === "string" ? token : undefined;
+  const response = await request<ApiEnvelope<ClubPreferencesRecord | null>>("/api/v1/profile/club-preferences", { method: "GET", token: accessToken });
   return response.data;
+}
+
+/**
+ * Keep preference data isolated per signed-in user and refetch it after a
+ * Supabase session refresh. Using `expires_at` avoids persisting the access
+ * token itself in the React Query cache.
+ */
+export function clubPreferencesQueryKey(profileId?: string | null, sessionExpiresAt?: number | null) {
+  return ["club-preferences", profileId ?? "anonymous", sessionExpiresAt ?? 0] as const;
 }
 
 export async function updateClubPreferences(payload: ClubPreferencesPayload, token?: string) {

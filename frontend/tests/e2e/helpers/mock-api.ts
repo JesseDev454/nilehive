@@ -576,6 +576,10 @@ export async function mockClubServicesApi(page: Page, state = createE2EState()) 
     }
 
     if (method === "GET" && path === "/profile/club-preferences") {
+      if (request.headers()["authorization"]?.includes("[object Object]")) {
+        return apiError(route, 401, "Invalid or expired access token", "INVALID_TOKEN");
+      }
+
       return ok(route, state.clubPreferences);
     }
 

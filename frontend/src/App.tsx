@@ -1,14 +1,16 @@
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider, useTheme } from "next-themes";
+import { useEffect } from "react";
 import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
+import { AccessDenied } from "@/components/AccessDenied";
 import { AuthProvider, resolveEffectiveRole, useAuth } from "@/contexts/AuthContext";
-import { RoleProvider } from "@/contexts/RoleContext";
+import { RoleProvider, useRole } from "@/contexts/RoleContext";
 import { AppLayout } from "@/components/AppLayout";
-import { ClublyLoadingState, ClublyStateCard } from "@/components/Clubly";
+import { ClublyLoadingState, ClublyStateCard, ClublyWorkspaceLoadingScreen } from "@/components/Clubly";
 import Dashboard from "@/pages/Dashboard";
 import ForgotPassword from "@/pages/ForgotPassword";
 import Login from "@/pages/Login";
@@ -43,17 +45,7 @@ function ProtectedRoutes() {
   const location = useLocation();
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-6">
-        <div className="w-full max-w-xl">
-          <ClublyLoadingState
-            title="Getting your account ready"
-            message="Please wait while we open your Club Services workspace."
-            delayedMessage="This is taking longer than usual. Please check your network connection."
-          />
-        </div>
-      </div>
-    );
+    return <ClublyWorkspaceLoadingScreen title="Opening your Clubly workspace" message="Preparing your campus workspace." />;
   }
 
   if (!session) {
@@ -99,6 +91,28 @@ function FrontendApiRouteFallback() {
   return <Navigate to="/" replace />;
 }
 
+const allowedRoutes: Record<string, string[]> = {
+  student: ["/", "/membership", "/events", "/communications", "/feedback", "/notifications", "/profile"],
+  president: ["/", "/clubs", "/proposals", "/events", "/communications", "/notifications", "/profile", "/members", "/dues", "/tasks", "/archive", "/feedback"],
+  executive: ["/", "/clubs", "/tasks", "/events", "/communications", "/notifications", "/profile", "/feedback"],
+  advisor: ["/", "/approvals", "/proposals", "/events", "/communications", "/notifications", "/profile", "/archive", "/feedback"],
+  admin: ["/", "/proposals", "/approvals", "/notifications", "/profile", "/events", "/membership", "/members", "/dues", "/communications", "/clubs", "/feedback", "/tasks", "/user-management", "/analytics", "/archive"],
+  feedback_manager: ["/feedback", "/notifications", "/profile"],
+};
+
+function RoleRouteGuard() {
+  const { role } = useRole();
+  const location = useLocation();
+  const allowed = role ? allowedRoutes[role] ?? [] : [];
+  const matches = allowed.some((path) => path === "/" ? location.pathname === "/" : location.pathname === path || location.pathname.startsWith(`${path}/`));
+
+  if (!matches) {
+    return <AccessDenied reason="This workspace is not available for your current Clubly role." />;
+  }
+
+  return <Outlet />;
+}
+
 const App = () => (
   <PersistQueryClientProvider
     client={queryClient}
@@ -109,7 +123,8 @@ const App = () => (
       dehydrateOptions: { shouldDehydrateQuery: shouldPersistQuery }
     }}
   >
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="clubly-theme" disableTransitionOnChange>
+    <ThemeProvider attribute="class" themes={["light", "dark"]} defaultTheme="light" enableSystem={false} storageKey="clubly-theme" disableTransitionOnChange>
+    <ThemePreferenceMigration />
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -125,6 +140,7 @@ const App = () => (
               <Route path="/api/v1/*" element={<FrontendApiRouteFallback />} />
               <Route element={<ProtectedRoutes />}>
                 <Route path="/events/:proposalId/check-in" element={<EventCheckIn />} />
+                <Route element={<RoleRouteGuard />}>
                 <Route element={<AppLayout />}>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/proposals/new" element={<NewProposal />} />
@@ -150,6 +166,7 @@ const App = () => (
                   <Route path="/analytics" element={<Analytics />} />
                   <Route path="/archive" element={<MediaArchive />} />
                 </Route>
+                </Route>
               </Route>
               <Route path="*" element={<NotFound />} />
             </Routes>
@@ -162,3 +179,14 @@ const App = () => (
 );
 
 export default App;
+function ThemePreferenceMigration() {
+  const { theme, setTheme } = useTheme();
+
+  useEffect(() => {
+    if (theme !== "light" && theme !== "dark") {
+      setTheme("light");
+    }
+  }, [setTheme, theme]);
+
+  return null;
+}

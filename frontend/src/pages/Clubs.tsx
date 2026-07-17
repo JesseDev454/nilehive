@@ -80,12 +80,13 @@ export default function Clubs() {
   const [galleryFile, setGalleryFile] = useState<File | null>(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const canManageClubs = role === "admin" || role === "president";
+  const canViewClub = canManageClubs || role === "executive";
   const canCreateClubs = role === "admin";
   const isFocusedEdit = Boolean(editClubId);
   const { data: clubs = [], isLoading, isError, error } = useQuery({
     queryKey: ["clubs-management"],
     queryFn: () => getClubs(),
-    enabled: canManageClubs,
+    enabled: canViewClub,
     retry: false
   });
 
@@ -161,7 +162,12 @@ export default function Clubs() {
         }
         return club;
       }
-      return createClub(payload);
+      const created = await createClub(payload);
+      if (logoFile) {
+        const upload = await uploadStorageFile(logoFile, "club-logos", { folder: created.id });
+        return updateClub(created.id, { logo_path: upload.path });
+      }
+      return created;
     },
     onSuccess: async () => {
       actionSuccess(editingClub ? "Club updated" : "Club created", "Students will see public club details in Discover Clubs.");
@@ -230,10 +236,44 @@ export default function Clubs() {
     setter(file);
   }
 
-  if (!canManageClubs) {
+  if (!canViewClub) {
     return (
       <div className="clb-screen">
         <AccessDenied icon={School} title="Club management is restricted" reason="Only Club Services admins and assigned presidents can edit club content." />
+      </div>
+    );
+  }
+
+  if (role === "executive") {
+    return (
+      <div className="clb-screen">
+        <ClublyPageHeader
+          eyebrow="Club leadership"
+          title="My Club"
+          description="View your club profile and public information. Presidents and Club Services manage changes."
+        />
+        {isLoading ? (
+          <ClublyLoadingState title="Loading club profile" message="Opening your club information." />
+        ) : isError ? (
+          <ClublyStateCard icon={School} title="Unable to load club profile" message={getErrorMessage(error)} tone="danger" />
+        ) : clubs.length === 0 ? (
+          <ClublyStateCard icon={School} title="No club assignment found" message="Ask your club president or Club Services to confirm your executive assignment." />
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {clubs.slice(0, 1).map((club) => (
+              <Card key={club.id} className="overflow-hidden">
+                <CardContent className="p-6">
+                  <p className="text-xl font-semibold text-primary">{club.name}</p>
+                  {club.code ? <p className="mt-1 text-sm text-muted-foreground">{club.code}</p> : null}
+                  <p className="mt-4 text-sm leading-6 text-muted-foreground">{club.description || "Your club profile has not been completed yet."}</p>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    {(club.categories || []).map((category) => <span key={category} className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-accent-foreground">{category}</span>)}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
@@ -263,6 +303,9 @@ export default function Clubs() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">{editingClub ? `Edit ${editingClub.name}` : "Add a new club"}</CardTitle>
+            {!editingClub ? (
+              <p className="text-sm text-muted-foreground">Just the essentials. You can add more later.</p>
+            ) : null}
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="clb-form-grid">
@@ -270,58 +313,79 @@ export default function Clubs() {
               <Label htmlFor="club_name">Club Name</Label>
               <Input id="club_name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required disabled={role === "president"} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="club_code">Short Code</Label>
-              <Input id="club_code" value={form.code} onChange={(event) => setForm({ ...form, code: event.target.value })} placeholder="Optional" disabled={role === "president"} />
-            </div>
+            {editingClub ? (
+              <div className="space-y-2">
+                <Label htmlFor="club_code">Short Code</Label>
+                <Input id="club_code" value={form.code} onChange={(event) => setForm({ ...form, code: event.target.value })} placeholder="Optional" disabled={role === "president"} />
+              </div>
+            ) : null}
             <div className="space-y-2 lg:col-span-2">
               <Label htmlFor="club_description">Description</Label>
-              <Textarea id="club_description" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} required />
+              <Textarea id="club_description" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} placeholder="One or two lines about what the club does." required />
             </div>
             <div className="flex items-center gap-3">
               <Switch id="club_public" checked={form.is_public_signup} onCheckedChange={(checked) => setForm({ ...form, is_public_signup: checked })} disabled={role === "president"} />
               <Label htmlFor="club_public">Show in Discover Clubs</Label>
             </div>
             <div className="space-y-2 lg:col-span-2">
-              <Label>Categories</Label>
-              <div className="flex flex-wrap gap-2">{CLUB_INTEREST_CATEGORIES.map((category) => <Button key={category} type="button" size="sm" variant={form.categories.includes(category) ? "default" : "outline"} onClick={() => setForm({ ...form, categories: form.categories.includes(category) ? form.categories.filter((item) => item !== category) : [...form.categories, category].slice(0, 5) })}>{category}</Button>)}</div>
-            </div>
-            {(Object.entries(MATCHING_OPTIONS) as Array<[keyof typeof MATCHING_OPTIONS, readonly (readonly [string, string])[]]>).map(([field, options]) => (
-              <div key={field} className="space-y-2 lg:col-span-2">
-                <Label>{field === "skills_offered" ? "Skills students can build" : field === "career_goals" ? "Career goals supported" : "Typical meeting times"}</Label>
-                <div className="flex flex-wrap gap-2">{options.map(([value, label]) => <Button key={value} type="button" size="sm" variant={form[field].includes(value) ? "default" : "outline"} onClick={() => setForm({ ...form, [field]: form[field].includes(value) ? form[field].filter((item) => item !== value) : [...form[field], value] })}>{label}</Button>)}</div>
+              <Label>{editingClub ? "Categories" : "Category"}</Label>
+              <div className="flex flex-wrap gap-2">
+                {CLUB_INTEREST_CATEGORIES.map((category) => (
+                  <Button
+                    key={category}
+                    type="button"
+                    size="sm"
+                    variant={form.categories.includes(category) ? "default" : "outline"}
+                    onClick={() => setForm({
+                      ...form,
+                      categories: editingClub
+                        ? (form.categories.includes(category)
+                          ? form.categories.filter((item) => item !== category)
+                          : [...form.categories, category].slice(0, 5))
+                        : (form.categories.includes(category) ? [] : [category])
+                    })}
+                  >
+                    {category}
+                  </Button>
+                ))}
               </div>
-            ))}
-            <div className="space-y-2">
-              <Label>Weekly time commitment</Label>
-              <Select value={form.weekly_commitment || "unset"} onValueChange={(value) => setForm({ ...form, weekly_commitment: value === "unset" ? "" : value as typeof form.weekly_commitment })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="unset">Not set</SelectItem><SelectItem value="1-2">1–2 hours</SelectItem><SelectItem value="3-5">3–5 hours</SelectItem><SelectItem value="6+">6+ hours</SelectItem></SelectContent>
-              </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="club_instagram">Instagram</Label>
-              <Input id="club_instagram" type="url" value={form.instagram} onChange={(event) => setForm({ ...form, instagram: event.target.value })} placeholder="Optional Instagram URL" />
+              <Label htmlFor="club_logo">Club logo</Label>
+              <Input
+                id="club_logo"
+                type="file"
+                accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
+                onChange={(event) => chooseClubImage(event.target.files?.[0], setLogoFile, "Club logo")}
+              />
+              <p className="text-xs text-muted-foreground">JPG, PNG, or WEBP under 5MB.</p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="club_linkedin">LinkedIn</Label>
-              <Input id="club_linkedin" type="url" value={form.linkedin} onChange={(event) => setForm({ ...form, linkedin: event.target.value })} placeholder="Optional LinkedIn URL" />
-            </div>
-            <p className="text-xs font-semibold text-muted-foreground lg:col-span-2">
-              Leave social links blank to remove them from the public club profile.
-            </p>
             {editingClub ? (
               <>
+                {(Object.entries(MATCHING_OPTIONS) as Array<[keyof typeof MATCHING_OPTIONS, readonly (readonly [string, string])[]]>).map(([field, options]) => (
+                  <div key={field} className="space-y-2 lg:col-span-2">
+                    <Label>{field === "skills_offered" ? "Skills students can build" : field === "career_goals" ? "Career goals supported" : "Typical meeting times"}</Label>
+                    <div className="flex flex-wrap gap-2">{options.map(([value, label]) => <Button key={value} type="button" size="sm" variant={form[field].includes(value) ? "default" : "outline"} onClick={() => setForm({ ...form, [field]: form[field].includes(value) ? form[field].filter((item) => item !== value) : [...form[field], value] })}>{label}</Button>)}</div>
+                  </div>
+                ))}
                 <div className="space-y-2">
-                  <Label htmlFor="club_logo">Club logo</Label>
-                  <Input
-                    id="club_logo"
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp"
-                    onChange={(event) => chooseClubImage(event.target.files?.[0], setLogoFile, "Club logo")}
-                  />
-                  <p className="text-xs text-muted-foreground">JPG, PNG, or WEBP under 5MB.</p>
+                  <Label>Weekly time commitment</Label>
+                  <Select value={form.weekly_commitment || "unset"} onValueChange={(value) => setForm({ ...form, weekly_commitment: value === "unset" ? "" : value as typeof form.weekly_commitment })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent><SelectItem value="unset">Not set</SelectItem><SelectItem value="1-2">1–2 hours</SelectItem><SelectItem value="3-5">3–5 hours</SelectItem><SelectItem value="6+">6+ hours</SelectItem></SelectContent>
+                  </Select>
                 </div>
+                <div className="space-y-2">
+                  <Label htmlFor="club_instagram">Instagram</Label>
+                  <Input id="club_instagram" type="url" value={form.instagram} onChange={(event) => setForm({ ...form, instagram: event.target.value })} placeholder="Optional Instagram URL" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="club_linkedin">LinkedIn</Label>
+                  <Input id="club_linkedin" type="url" value={form.linkedin} onChange={(event) => setForm({ ...form, linkedin: event.target.value })} placeholder="Optional LinkedIn URL" />
+                </div>
+                <p className="text-xs font-semibold text-muted-foreground lg:col-span-2">
+                  Leave social links blank to remove them from the public club profile.
+                </p>
                 <div className="space-y-2">
                   <Label htmlFor="club_gallery">Add gallery image</Label>
                   <Input

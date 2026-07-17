@@ -613,34 +613,36 @@ export default function Communications({ defaultTab = "announcements" }: { defau
                 <CardContent className="pt-6">
                   <form className="space-y-4" onSubmit={handleAnnouncementSubmit}>
                     <div className="space-y-2">
-                      <Label>Audience</Label>
-                      <Select
-                        value={announcementAudience}
-                        onValueChange={(value) => {
-                          const nextAudience = value as AnnouncementAudience;
-                          setAnnouncementAudience(nextAudience);
-                          if (nextAudience !== "club") {
-                            setAnnouncementClubId("");
-                          }
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {role === "admin" && (
-                            <>
-                              <SelectItem value="all_users">All users</SelectItem>
-                              <SelectItem value="all_clubs">All clubs</SelectItem>
-                              <SelectItem value="club">Specific club</SelectItem>
-                            </>
-                          )}
-                          {role === "president" && <SelectItem value="club">My club</SelectItem>}
-                          <SelectItem value="role">
-                            {role === "president" ? "My club role group" : "Role group"}
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Label>Send to</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {(role === "admin"
+                          ? ([
+                              ["all_users", "Everyone"],
+                              ["all_clubs", "All clubs"],
+                              ["club", "Specific club"],
+                              ["role", "Role group"]
+                            ] as const)
+                          : ([
+                              ["club", "My club"],
+                              ["role", "My club role group"]
+                            ] as const)
+                        ).map(([value, label]) => (
+                          <Button
+                            key={value}
+                            type="button"
+                            size="sm"
+                            variant={announcementAudience === value ? "default" : "outline"}
+                            onClick={() => {
+                              setAnnouncementAudience(value);
+                              if (value !== "club") {
+                                setAnnouncementClubId("");
+                              }
+                            }}
+                          >
+                            {label}
+                          </Button>
+                        ))}
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         {getAudienceHelp(announcementAudience, role)}
                       </p>
@@ -687,21 +689,20 @@ export default function Communications({ defaultTab = "announcements" }: { defau
 
                     <div className="space-y-2">
                       <Label>Priority</Label>
-                      <Select
-                        value={announcementPriority}
-                        onValueChange={(value) => setAnnouncementPriority(value as AnnouncementPriority)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {priorityOptions.map((priority) => (
-                            <SelectItem key={priority} value={priority} className="capitalize">
-                              {priority}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex flex-wrap gap-2">
+                        {priorityOptions.map((priority) => (
+                          <Button
+                            key={priority}
+                            type="button"
+                            size="sm"
+                            variant={announcementPriority === priority ? "default" : "outline"}
+                            className="capitalize"
+                            onClick={() => setAnnouncementPriority(priority)}
+                          >
+                            {priority}
+                          </Button>
+                        ))}
+                      </div>
                     </div>
 
                     <div className="space-y-2">

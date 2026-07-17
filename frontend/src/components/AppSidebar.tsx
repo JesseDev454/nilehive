@@ -1,4 +1,4 @@
-import { PanelLeftClose, PanelLeftOpen, School } from "lucide-react";
+import { CircleHelp, LogOut, PanelLeftClose, PanelLeftOpen, School } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "react-router-dom";
 import { NavLink } from "@/components/NavLink";
@@ -39,6 +39,7 @@ function useIdentity() {
 
 export function AppSidebar() {
   const { role } = useRole();
+  const { signOut } = useAuth();
   const { setOpen, state } = useSidebar();
   const { pathname, search } = useLocation();
   const collapsed = state === "collapsed";
@@ -84,24 +85,21 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border/10 bg-sidebar/75 backdrop-blur-xl max-[920px]:hidden">
-      <SidebarHeader className={collapsed ? "border-b border-sidebar-border/10 px-1 py-5" : "border-b-0 p-5 pb-4"}>
+    <Sidebar collapsible="icon" className="[--sidebar-width:17.5rem] border-r border-sidebar-border bg-sidebar max-[920px]:hidden">
+      <SidebarHeader className={collapsed ? "border-b border-sidebar-border/10 px-1 py-5" : "border-b-0 px-6 pb-8 pt-6"}>
         {!collapsed && (
-          <div className="space-y-5">
+          <div className="space-y-3">
             <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 space-y-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-[16px] bg-primary text-primary-foreground shadow-soft-sm" aria-hidden="true">
-                  <School className="h-6 w-6" />
-                </div>
+              <div className="min-w-0 space-y-2">
                 <div>
-                  <h2 className="text-2xl font-bold leading-none tracking-tight text-sidebar-foreground">Campus One</h2>
-                  <p className="mt-2 text-sm font-medium leading-6 text-sidebar-foreground/60">Club Services workspace</p>
+                  <h2 className="text-xl font-bold leading-none tracking-tight text-primary">Clubly</h2>
+                  <p className="mt-2 text-sm font-medium leading-6 text-sidebar-foreground/60">Nile University · Club Services</p>
                 </div>
               </div>
               <button
                 type="button"
                 aria-label="Collapse sidebar"
-                className="rounded-full border border-sidebar-border/10 bg-card/75 p-2 text-sidebar-foreground/65 shadow-soft-sm transition hover:-translate-y-0.5 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                className="rounded-md p-1 text-sidebar-foreground/45 transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 onClick={() => setOpen(false)}
               >
                 <PanelLeftClose className="h-4 w-4" />
@@ -123,11 +121,8 @@ export function AppSidebar() {
 
       <SidebarContent className="px-2">
         <SidebarGroup>
-          <SidebarGroupLabel className="px-4 text-[11px] font-semibold tracking-wide text-sidebar-foreground/45">
-            Navigation
-          </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="gap-1.5">
+            <SidebarMenu className="gap-1">
               {items.map((item) => {
                 const badgeCount = getBadgeCount(item.badgeKey);
 
@@ -139,8 +134,8 @@ export function AppSidebar() {
                         end={item.url === "/"}
                         activeOverride={getActiveOverride(item.url)}
                         data-onboarding-target={item.onboardingTarget}
-                        className="relative flex min-w-0 items-center rounded-[16px] px-3 py-3 text-sm font-semibold tracking-[-0.01em] text-sidebar-foreground/70 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground shadow-soft-sm"
+                        className="relative flex min-w-0 items-center rounded-lg px-4 py-2.5 text-sm font-semibold text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        activeClassName="border-l-4 border-secondary bg-sidebar-accent text-sidebar-accent-foreground"
                       >
                         <item.icon className="mr-3 h-5 w-5 shrink-0" />
                         {!collapsed && <span className="min-w-0 flex-1 truncate">{item.title}</span>}
@@ -165,8 +160,8 @@ export function AppSidebar() {
             <span className="text-xs font-semibold tracking-wide">{initials}</span>
           </div>
         ) : (
-          <div className="rounded-[22px] border border-sidebar-border/10 bg-card/70 p-4 shadow-soft-sm">
-            <div className="flex items-center gap-3">
+          <div className="grid gap-1">
+            <div className="hidden items-center gap-3">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-sidebar-accent-foreground">
                 <span className="text-sm font-semibold tracking-wide">{initials}</span>
               </div>
@@ -174,6 +169,14 @@ export function AppSidebar() {
                 <h3 className="truncate text-sm font-semibold text-sidebar-foreground">{displayName}</h3>
                 <p className="block truncate text-[11px] font-medium tracking-wide text-sidebar-foreground/60">{identityLabel}</p>
               </div>
+            </div>
+            <div className="grid gap-1">
+              <a href="mailto:clubservices@nileuniversity.edu.ng" className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-semibold text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                <CircleHelp className="h-5 w-5" aria-hidden="true" /> Help Center
+              </a>
+              <button type="button" onClick={() => void signOut()} className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-left text-sm font-semibold text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                <LogOut className="h-5 w-5" aria-hidden="true" /> Logout
+              </button>
             </div>
           </div>
         )}

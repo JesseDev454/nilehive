@@ -107,45 +107,18 @@ test("student sees club links only when real links exist", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Instagram" })).toHaveAttribute("href", /https:\/\/instagram\.com\/robotics\/?/);
 });
 
-test("student home shows discover quick access, dashboard share sheet, and contained announcements", async ({ page }) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
-    Object.defineProperty(navigator, "clipboard", {
-      value: {
-        writeText: async (text: string) => {
-          (window as Window & { __copiedDashboardInvite?: string }).__copiedDashboardInvite = text;
-        }
-      },
-      configurable: true
-    });
-  });
+test("student home follows the Stitch hierarchy for discovery, events, and updates", async ({ page }) => {
   await mockClubServicesApi(page);
   await loginAs(page, "student");
 
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: /Hello, E2E/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Welcome back, E2E/i })).toBeVisible();
   await expect(page.getByRole("link", { name: /Discover Clubs/i }).first()).toHaveAttribute("href", "/membership");
-  await expect(page.getByRole("link", { name: "View Announcements" })).toBeVisible();
-  const announcementCard = page.getByText("Announcements Preview").locator("xpath=ancestor::div[contains(@class, 'rounded')][1]");
-  const cardBox = await announcementCard.boundingBox();
-  const buttonBox = await page.getByRole("link", { name: "View Announcements" }).boundingBox();
-
-  expect(cardBox).not.toBeNull();
-  expect(buttonBox).not.toBeNull();
-  expect(buttonBox!.x + buttonBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width + 1);
-
-  await page.getByRole("button", { name: "Invite a friend to discover clubs" }).click();
-  await expect(page.getByTestId("dashboard-share-sheet")).toBeVisible();
-  await expect(page.getByRole("button", { name: /Share to apps/i })).toBeVisible();
-  await expect(page.getByRole("link", { name: /WhatsApp/i })).toHaveAttribute("href", /https:\/\/wa\.me\/\?text=/);
-  await expect(page.getByRole("button", { name: /Snapchat/i })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Instagram/i })).toBeVisible();
-  await page.getByRole("button", { name: /Copy Link/i }).click();
-  await expect(page.getByText("Invite link copied")).toBeVisible();
-  await expect
-    .poll(() => page.evaluate(() => (window as Window & { __copiedDashboardInvite?: string }).__copiedDashboardInvite))
-    .toContain("/membership");
+  await expect(page.getByRole("heading", { name: "Membership Journey" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Upcoming Events" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Recent Updates" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "View All" })).toHaveAttribute("href", "/events");
 });
 
 test("student can open the club invite share sheet and copy a link", async ({ page }) => {

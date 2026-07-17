@@ -4,112 +4,112 @@
 
 @layer base {
   :root {
-    --background: 36 36% 95%;
-    --foreground: 24 10% 10%;
-    --clubly-accent: #6366F1;
-    --clubly-accent-d: #4F46E5;
-    --clubly-accent-soft: #EEF0FF;
-    --clubly-ink: #1C1917;
-    --clubly-body: #44403C;
-    --clubly-muted: #79716B;
-    --clubly-faint: #A8A29E;
-    --clubly-line: rgba(28, 25, 23, 0.08);
-    --clubly-line-2: rgba(28, 25, 23, 0.05);
-    --clubly-card-2: #FCFAF7;
-    --clubly-page: #F6F2EC;
-    --soft-sh: 0 4px 20px rgba(0, 0, 0, 0.03), 0 1px 3px rgba(0, 0, 0, 0.02);
-    --lift-sh: 0 14px 36px rgba(0, 0, 0, 0.07), 0 3px 12px rgba(0, 0, 0, 0.03);
+    --background: 228 100% 99%;
+    --foreground: 213 63% 12%;
+    --clubly-accent: #001430;
+    --clubly-accent-d: #001b3d;
+    --clubly-accent-soft: #d3e4fe;
+    --clubly-ink: #0b1c30;
+    --clubly-body: #0b1c30;
+    --clubly-muted: #43474f;
+    --clubly-faint: #747780;
+    --clubly-line: rgba(116, 119, 128, 0.36);
+    --clubly-line-2: rgba(116, 119, 128, 0.16);
+    --clubly-card-2: #eff4ff;
+    --clubly-page: #f8f9ff;
+    --soft-sh: 0 1px 2px rgba(11, 28, 48, 0.08);
+    --lift-sh: 0 8px 24px rgba(11, 28, 48, 0.12);
 
     --card: 0 0% 100%;
-    --card-foreground: 24 10% 10%;
+    --card-foreground: 213 63% 12%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 24 10% 10%;
+    --popover-foreground: 213 63% 12%;
 
-    --primary: 239 70% 52%;
+    --primary: 216 100% 9%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 174 84% 32%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 46 98% 67%;
+    --secondary-foreground: 45 100% 23%;
 
-    --muted: 34 23% 91%;
-    --muted-foreground: 25 5% 45%;
+    --muted: 215 100% 95%;
+    --muted-foreground: 218 9% 28%;
 
-    --accent: 232 100% 97%;
-    --accent-foreground: 243 75% 59%;
+    --accent: 212 100% 92%;
+    --accent-foreground: 216 100% 9%;
 
     --destructive: 0 61% 54%;
     --destructive-foreground: 0 0% 100%;
 
-    --warning: 28 91% 37%;
+    --warning: 45 100% 23%;
     --warning-foreground: 0 0% 100%;
 
-    --success: 174 84% 32%;
+    --success: 174 55% 31%;
     --success-foreground: 0 0% 100%;
 
-    --border: 24 14% 84%;
-    --input: 24 10% 78%;
-    --ring: 239 84% 67%;
-    --neo-shadow: 24 10% 10%;
+    --border: 228 10% 78%;
+    --input: 228 10% 78%;
+    --ring: 216 100% 9%;
+    --neo-shadow: 216 100% 9%;
 
-    --radius: 1rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 24 10% 10%;
-    --sidebar-primary: 239 84% 67%;
+    --sidebar-background: 215 100% 97%;
+    --sidebar-foreground: 218 9% 28%;
+    --sidebar-primary: 216 100% 9%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 232 100% 97%;
-    --sidebar-accent-foreground: 243 75% 59%;
-    --sidebar-border: 24 14% 84%;
-    --sidebar-ring: 239 84% 67%;
-    --sidebar-muted: 34 23% 91%;
+    --sidebar-accent: 212 100% 92%;
+    --sidebar-accent-foreground: 216 100% 9%;
+    --sidebar-border: 228 10% 78%;
+    --sidebar-ring: 216 100% 9%;
+    --sidebar-muted: 215 100% 95%;
   }
 
   .dark {
-    --clubly-accent: #818cf8;
-    --clubly-accent-d: #6366f1;
-    --clubly-accent-soft: #1f2552;
-    --clubly-ink: #f8fafc;
-    --clubly-body: #e2e8f0;
-    --clubly-muted: #94a3b8;
-    --clubly-faint: #64748b;
-    --clubly-line: rgba(226, 232, 240, 0.14);
-    --clubly-line-2: rgba(226, 232, 240, 0.08);
-    --clubly-card-2: #111827;
-    --clubly-page: #0b1220;
-    --background: 220 52% 10%;
-    --foreground: 210 40% 98%;
-    --card: 220 43% 13%;
-    --card-foreground: 210 40% 98%;
-    --popover: 220 43% 13%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 239 84% 74%;
-    --primary-foreground: 220 52% 10%;
-    --secondary: 107 45% 54%;
-    --secondary-foreground: 220 100% 6%;
-    --muted: 221 28% 20%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 199 70% 72%;
-    --accent-foreground: 220 100% 6%;
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-    --warning: 199 70% 72%;
-    --warning-foreground: 220 100% 6%;
-    --success: 107 45% 54%;
-    --success-foreground: 220 100% 6%;
-    --border: 220 28% 22%;
-    --input: 220 28% 22%;
-    --ring: 107 45% 54%;
-    --neo-shadow: 220 100% 3%;
-    --sidebar-background: 220 52% 10%;
-    --sidebar-foreground: 210 40% 90%;
-    --sidebar-primary: 210 40% 98%;
-    --sidebar-primary-foreground: 220 52% 10%;
-    --sidebar-accent: 107 45% 54%;
-    --sidebar-accent-foreground: 220 100% 6%;
-    --sidebar-border: 220 28% 22%;
-    --sidebar-ring: 107 45% 54%;
-    --sidebar-muted: 220 34% 24%;
+    --clubly-accent: #d6e3ff;
+    --clubly-accent-d: #aac7fd;
+    --clubly-accent-soft: #1d3045;
+    --clubly-ink: #ffffff;
+    --clubly-body: #f4f6fb;
+    --clubly-muted: #c8d0dc;
+    --clubly-faint: #9aaabc;
+    --clubly-line: rgba(196, 214, 235, 0.18);
+    --clubly-line-2: rgba(196, 214, 235, 0.1);
+    --clubly-card-2: #1b2e42;
+    --clubly-page: #001529;
+    --background: 211 100% 8%;
+    --foreground: 0 0% 100%;
+    --card: 211 37% 18%;
+    --card-foreground: 0 0% 100%;
+    --popover: 211 37% 18%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 216 100% 92%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 46 98% 67%;
+    --secondary-foreground: 45 100% 23%;
+    --muted: 211 31% 15%;
+    --muted-foreground: 215 21% 72%;
+    --accent: 212 35% 19%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 72% 61%;
+    --destructive-foreground: 0 0% 100%;
+    --warning: 46 98% 67%;
+    --warning-foreground: 45 100% 23%;
+    --success: 174 55% 47%;
+    --success-foreground: 211 100% 8%;
+    --border: 211 28% 26%;
+    --input: 211 28% 34%;
+    --ring: 216 100% 92%;
+    --neo-shadow: 211 100% 4%;
+    --sidebar-background: 213 63% 12%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 216 100% 92%;
+    --sidebar-primary-foreground: 213 63% 12%;
+    --sidebar-accent: 211 35% 20%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 211 28% 22%;
+    --sidebar-ring: 216 100% 92%;
+    --sidebar-muted: 211 31% 15%;
   }
 }
 
@@ -120,27 +120,56 @@
   body {
     @apply bg-background text-foreground antialiased;
     background: var(--clubly-page);
-    font-family: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
-    color: var(--clubly-body);
+    font-family: 'Plus Jakarta Sans', Inter, Geist, 'Segoe UI', system-ui, sans-serif;
+    color: hsl(var(--foreground));
   }
 
   h1,
   h2,
   h3,
   h4 {
-    font-family: 'Epilogue', 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
+    font-family: 'Plus Jakarta Sans', Inter, Geist, 'Segoe UI', system-ui, sans-serif;
     letter-spacing: -0.02em;
-    color: var(--clubly-ink);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer utilities {
+  .dark .bg-primary {
+    background-color: #001e43;
+  }
+
+  .dark input:not([type="checkbox"]):not([type="radio"]),
+  .dark textarea,
+  .dark [role="combobox"] {
+    background-color: #ffffff;
+    border-color: #c4c6d0;
+    color: #0b1c30;
+  }
+
+  .dark input::placeholder,
+  .dark textarea::placeholder {
+    color: #5f6673;
   }
 }
 
 @layer components {
   .clb-screen {
-    @apply mx-auto w-full max-w-[1180px] space-y-6 animate-slide-up;
+    @apply mx-auto w-full max-w-[1280px] space-y-6 animate-slide-up;
   }
 
   .clb-hero {
-    @apply flex flex-col gap-5 rounded-[28px] border border-border/70 bg-card/85 px-5 py-5 shadow-soft backdrop-blur md:flex-row md:items-end md:justify-between md:px-6 md:py-6;
+    @apply flex flex-col gap-5 rounded-xl border border-border bg-card px-5 py-5 shadow-sm md:flex-row md:items-end md:justify-between md:px-6 md:py-6;
   }
 
   .clb-eyebrow {
@@ -152,7 +181,7 @@
   }
 
   .clb-card {
-    @apply rounded-[24px] border border-border/70 bg-card text-card-foreground shadow-soft transition duration-200;
+    @apply rounded-xl border border-border bg-card text-card-foreground shadow-sm;
   }
 
   .clb-panel-title {
@@ -160,11 +189,11 @@
   }
 
   .clb-action-strip {
-    @apply rounded-[20px] border border-primary/20 bg-primary p-4 text-primary-foreground shadow-soft;
+    @apply rounded-xl border border-primary/20 bg-primary p-4 text-primary-foreground shadow-sm;
   }
 
   .clb-command-panel {
-    @apply relative overflow-hidden rounded-[28px] border border-primary/15 bg-primary p-6 text-primary-foreground shadow-soft-lg md:p-7;
+    @apply relative overflow-hidden rounded-xl border border-primary/15 bg-primary p-6 text-primary-foreground shadow-sm md:p-8;
   }
 
   .clb-command-panel::after {
@@ -181,15 +210,15 @@
   }
 
   .clb-mobile-card {
-    @apply rounded-[20px] border border-border bg-card p-4 shadow-soft-sm;
+    @apply rounded-xl border border-border bg-card p-4 shadow-sm;
   }
 
   .clb-list-card {
-    @apply rounded-[22px] border border-border/70 bg-card p-4 shadow-soft-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-soft;
+    @apply rounded-xl border border-border bg-card p-4 shadow-sm transition-colors hover:bg-muted/40;
   }
 
   .clb-empty {
-    @apply rounded-[24px] border border-dashed border-border/80 bg-card/70 p-8 text-center shadow-soft-sm;
+    @apply rounded-xl border border-dashed border-border bg-card/70 p-8 text-center shadow-sm;
   }
 
   .clb-status {
@@ -197,7 +226,7 @@
   }
 
   .clb-table-wrap {
-    @apply overflow-x-auto rounded-[24px] border border-border/70 bg-card shadow-soft;
+    @apply overflow-x-auto rounded-xl border border-border bg-card shadow-sm;
   }
 
   .clb-table {

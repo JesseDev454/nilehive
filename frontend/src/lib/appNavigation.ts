@@ -4,13 +4,11 @@ import {
   CalendarDays,
   ClipboardList,
   Clock,
-  CreditCard,
   FileText,
   Home,
   MessageSquare,
-  Plus,
   School,
-  UserCog,
+  UserCircle,
   UserPlus,
   Users,
   type LucideIcon,
@@ -36,70 +34,55 @@ export const roleLabels: Record<NonNullable<Role>, string> = {
   feedback_manager: "Feedback Manager",
 };
 
+const profileItem: AppNavItem = { title: "Profile", shortTitle: "Profile", url: "/profile", icon: UserCircle, onboardingTarget: "nav-profile" };
+
 const executiveItems: AppNavItem[] = [
-  { title: "Dashboard", shortTitle: "Home", url: "/", icon: Home, onboardingTarget: "nav-dashboard" },
-  { title: "Discover Clubs", shortTitle: "Clubs", url: "/membership", icon: UserPlus, onboardingTarget: "nav-membership" },
-  { title: "My Tasks", shortTitle: "Tasks", url: "/tasks", icon: ClipboardList, onboardingTarget: "nav-tasks" },
-  { title: "Members", url: "/members", icon: Users, onboardingTarget: "nav-members" },
-  { title: "Announcements", shortTitle: "Updates", url: "/communications", icon: MessageSquare, onboardingTarget: "nav-communications" },
+  { title: "Home", url: "/", icon: Home, onboardingTarget: "nav-dashboard" },
+  { title: "My Tasks", shortTitle: "Tasks", url: "/tasks", icon: ClipboardList, onboardingTarget: "nav-tasks", badgeKey: "tasks" },
+  { title: "My Club", shortTitle: "Club", url: "/clubs", icon: School, onboardingTarget: "nav-clubs" },
   { title: "Events", url: "/events", icon: CalendarDays, onboardingTarget: "nav-events" },
-  { title: "Feedback", url: "/feedback", icon: MessageSquare, onboardingTarget: "nav-feedback" },
-  { title: "Notifications", shortTitle: "Alerts", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications", badgeKey: "notifications" },
+  { title: "Updates", url: "/communications", icon: MessageSquare, onboardingTarget: "nav-communications" },
+  profileItem,
 ];
 
 const advisorItems: AppNavItem[] = [
-  { title: "Dashboard", shortTitle: "Home", url: "/", icon: Home, onboardingTarget: "nav-dashboard" },
-  { title: "Pending Approvals", shortTitle: "Approvals", url: "/approvals", icon: Clock, onboardingTarget: "nav-approvals", badgeKey: "pending_approvals" },
-  { title: "Announcements", shortTitle: "Updates", url: "/communications", icon: MessageSquare, onboardingTarget: "nav-communications" },
+  { title: "Home", url: "/", icon: Home, onboardingTarget: "nav-dashboard" },
+  { title: "Review Queue", shortTitle: "Review", url: "/approvals", icon: Clock, onboardingTarget: "nav-approvals", badgeKey: "pending_approvals" },
   { title: "Events", url: "/events", icon: CalendarDays, onboardingTarget: "nav-events" },
-  { title: "Reports Archive", shortTitle: "Reports", url: "/archive", icon: FileText, onboardingTarget: "nav-archive" },
-  { title: "Feedback", url: "/feedback", icon: MessageSquare, onboardingTarget: "nav-feedback" },
-  { title: "Notifications", shortTitle: "Alerts", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications", badgeKey: "notifications" },
+  { title: "Updates", url: "/communications", icon: MessageSquare, onboardingTarget: "nav-communications" },
+  profileItem,
 ];
 
 const adminItems: AppNavItem[] = [
-  { title: "Dashboard", shortTitle: "Home", url: "/", icon: Home, onboardingTarget: "nav-dashboard" },
-  { title: "Analytics", url: "/analytics", icon: BarChart3, onboardingTarget: "nav-analytics" },
-  { title: "User Management", shortTitle: "Users", url: "/user-management", icon: UserCog, onboardingTarget: "nav-user-management" },
-  { title: "Clubs", url: "/clubs", icon: School, onboardingTarget: "nav-clubs" },
-  { title: "Final Review", shortTitle: "Review", url: "/proposals", icon: FileText, onboardingTarget: "nav-proposals", badgeKey: "final_review" },
-  { title: "Membership", shortTitle: "Members", url: "/membership", icon: UserPlus, onboardingTarget: "nav-membership" },
-  { title: "Members", url: "/members", icon: Users, onboardingTarget: "nav-members" },
-  { title: "Tasks", url: "/tasks", icon: ClipboardList, onboardingTarget: "nav-tasks", badgeKey: "tasks" },
-  { title: "Dues", url: "/dues", icon: CreditCard, onboardingTarget: "nav-dues", badgeKey: "dues" },
-  { title: "Announcements", shortTitle: "Updates", url: "/communications", icon: MessageSquare, onboardingTarget: "nav-communications" },
+  { title: "Operations Queue", shortTitle: "Queue", url: "/", icon: ClipboardList, onboardingTarget: "nav-dashboard" },
+  { title: "Clubs & People", shortTitle: "Clubs", url: "/clubs", icon: Users, onboardingTarget: "nav-clubs" },
   { title: "Events", url: "/events", icon: CalendarDays, onboardingTarget: "nav-events", badgeKey: "events" },
-  { title: "Reports Archive", shortTitle: "Reports", url: "/archive", icon: FileText, onboardingTarget: "nav-archive", badgeKey: "reports_archive" },
-  { title: "Feedback", url: "/feedback", icon: MessageSquare, onboardingTarget: "nav-feedback" },
-  { title: "Notifications", shortTitle: "Alerts", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications", badgeKey: "notifications" },
+  { title: "Analytics", url: "/analytics", icon: BarChart3, onboardingTarget: "nav-analytics" },
+  { title: "Updates", url: "/communications", icon: MessageSquare, onboardingTarget: "nav-communications" },
+  profileItem,
 ];
 
 const presidentItems: AppNavItem[] = [
-  { title: "Dashboard", shortTitle: "Home", url: "/", icon: Home, onboardingTarget: "nav-dashboard" },
-  { title: "Club Profile", shortTitle: "Profile", url: "/clubs", icon: School, onboardingTarget: "nav-clubs" },
-  { title: "Create Event Proposal", shortTitle: "Create", url: "/proposals/new", icon: Plus, onboardingTarget: "nav-create-proposal" },
-  { title: "Club Proposals", shortTitle: "Proposals", url: "/proposals", icon: FileText, onboardingTarget: "nav-proposals" },
-  { title: "Task Delegation", shortTitle: "Tasks", url: "/tasks", icon: ClipboardList, onboardingTarget: "nav-tasks" },
-  { title: "Members", url: "/members", icon: Users, onboardingTarget: "nav-members" },
-  { title: "Announcements", shortTitle: "Updates", url: "/communications", icon: MessageSquare, onboardingTarget: "nav-communications" },
+  { title: "Home", url: "/", icon: Home, onboardingTarget: "nav-dashboard" },
+  { title: "My Club", shortTitle: "Club", url: "/clubs", icon: School, onboardingTarget: "nav-clubs" },
+  { title: "Proposals", url: "/proposals", icon: FileText, onboardingTarget: "nav-proposals" },
   { title: "Events", url: "/events", icon: CalendarDays, onboardingTarget: "nav-events" },
-  { title: "Reports Archive", shortTitle: "Reports", url: "/archive", icon: FileText, onboardingTarget: "nav-archive" },
-  { title: "Feedback", url: "/feedback", icon: MessageSquare, onboardingTarget: "nav-feedback" },
-  { title: "Notifications", shortTitle: "Alerts", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications", badgeKey: "notifications" },
+  { title: "Updates", url: "/communications", icon: MessageSquare, onboardingTarget: "nav-communications" },
+  profileItem,
 ];
 
 const studentItems: AppNavItem[] = [
   { title: "Home", url: "/", icon: Home, onboardingTarget: "nav-dashboard" },
   { title: "Discover Clubs", shortTitle: "Clubs", url: "/membership", icon: UserPlus, onboardingTarget: "nav-membership" },
   { title: "Events", url: "/events", icon: CalendarDays, onboardingTarget: "nav-events" },
-  { title: "Announcements", shortTitle: "Updates", url: "/communications", icon: MessageSquare, onboardingTarget: "nav-communications" },
-  { title: "Feedback", url: "/feedback", icon: MessageSquare, onboardingTarget: "nav-feedback" },
-  { title: "Notifications", shortTitle: "Alerts", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications", badgeKey: "notifications" },
+  { title: "Updates", url: "/communications", icon: MessageSquare, onboardingTarget: "nav-communications" },
+  profileItem,
 ];
 
 const feedbackManagerItems: AppNavItem[] = [
   { title: "App Feedback", shortTitle: "Feedback", url: "/feedback", icon: MessageSquare, onboardingTarget: "nav-feedback" },
   { title: "Notifications", shortTitle: "Alerts", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications", badgeKey: "notifications" },
+  profileItem,
 ];
 
 export function getRoleNavItems(role: Role | null): AppNavItem[] {

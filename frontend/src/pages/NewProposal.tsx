@@ -10,7 +10,8 @@ import {
   Rocket,
   Trash2,
   Users,
-  WalletCards
+  WalletCards,
+  X
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,7 +44,7 @@ import {
 import { normalizeStudentId, STUDENT_ID_PLACEHOLDER } from "@/lib/studentId";
 import { cn } from "@/lib/utils";
 
-const steps = ["Club Details", "Event Plan", "Budget", "Team", "Review"];
+const steps = ["Club Details", "Event Plan", "Budget", "Responsible Team", "Review"];
 const MAX_RESPONSIBLE_MEMBERS = 10;
 const PROPOSAL_AUTOSAVE_DELAY_MS = 1000;
 
@@ -301,6 +302,7 @@ export default function NewProposal() {
   const isEditMode = Boolean(editProposalId);
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(INITIAL_FORM_STATE);
+  const [eventCategory, setEventCategory] = useState("");
   const [budgetItems, setBudgetItems] = useState<BudgetFormItem[]>([createBudgetItem()]);
   const [responsibleMembers, setResponsibleMembers] = useState<ResponsibleMemberForm[]>([
     createResponsibleMember()
@@ -650,6 +652,9 @@ export default function NewProposal() {
     );
   }
 
+  // Keep the previous compact builder available only for support recovery links.
+  // The normal president journey follows the five-step Stitch proposal workflow below.
+  if (searchParams.get("legacy") === "true") {
   const wizardSteps = ["Basics", "Details", "Review"];
   const wizardStep = Math.min(step, wizardSteps.length - 1);
   const primaryDate = form.eventDates[0] || "";
@@ -857,33 +862,24 @@ export default function NewProposal() {
       </Card>
     </div>
   );
+  }
 
   return (
-    <div className="clb-screen max-w-6xl">
-      <ClublyPageHeader
-        eyebrow="Event Proposal"
-        title={isEditMode ? "Edit Proposal" : "Create Event Proposal"}
-        description={
-          isEditMode
-            ? "Update a draft or rejected proposal before sending it back for review."
-            : "Share your event plan, budget estimate, and team members for review."
-        }
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            {lastLocalSaveAt ? (
-              <span className="clb-status border-foreground bg-background text-foreground">
-                Saved locally {formatProposalDraftSavedAt(lastLocalSaveAt)}
-              </span>
-            ) : null}
-            <span className="clb-status border-secondary bg-secondary text-secondary-foreground">
-              Max {MAX_RESPONSIBLE_MEMBERS} members
-            </span>
-          </div>
-        }
-      />
+    <div className="mx-auto w-full max-w-6xl space-y-10 animate-slide-up">
+      <header>
+        <div className="flex items-center justify-between gap-4 text-sm font-semibold text-muted-foreground">
+          <button type="button" onClick={() => navigate(-1)} className="inline-flex items-center gap-2 hover:text-primary">
+            <X className="h-4 w-4" /> Exit Proposal
+          </button>
+          <span className="text-xs font-semibold uppercase tracking-[0.12em]">{lastLocalSaveAt ? `Draft saved ${formatProposalDraftSavedAt(lastLocalSaveAt)}` : "Draft auto-saving..."}</span>
+        </div>
+        <p className="mt-12 text-xs font-semibold uppercase tracking-[0.16em] text-[#745c00]">Event Proposal</p>
+        <h1 className="mt-3 text-[32px] font-bold leading-[1.15] tracking-[-0.025em] text-primary md:text-[48px]">{isEditMode ? "Edit Event Proposal" : "Create Event Proposal"}</h1>
+        <p className="mt-5 text-lg text-muted-foreground">Plan your event in five focused steps, then send it for review.</p>
+      </header>
 
-      <div className="relative">
-        <div className="absolute left-0 top-5 hidden h-1 w-full bg-foreground sm:block" />
+      <div className="relative max-w-md">
+        <div className="absolute left-5 right-5 top-5 h-0.5 bg-border" />
         <div className="relative grid grid-cols-5 gap-2">
           {steps.map((label, index) => (
             <button
@@ -898,15 +894,15 @@ export default function NewProposal() {
             >
               <span
                 className={cn(
-                  "flex h-10 w-10 items-center justify-center border-2 border-foreground text-sm font-black transition-colors",
+                  "flex h-10 w-10 items-center justify-center rounded-full border-2 border-background text-sm font-bold transition-colors",
                   index < step && "bg-secondary text-secondary-foreground",
-                  index === step && "bg-primary text-primary-foreground shadow-[4px_4px_0_hsl(var(--foreground))]",
-                  index > step && "bg-muted text-muted-foreground"
+                  index === step && "bg-primary text-primary-foreground",
+                  index > step && "border-border bg-muted text-muted-foreground"
                 )}
               >
                 {index < step ? <Check className="h-4 w-4" /> : index + 1}
               </span>
-              <span className="hidden text-xs font-black uppercase tracking-[0.12em] text-foreground sm:block">{label}</span>
+              <span className="sr-only">{label}</span>
             </button>
           ))}
         </div>
@@ -940,14 +936,95 @@ export default function NewProposal() {
                   </div>
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="aim-objectives">Purpose and goals</Label>
-                  <Textarea
-                    id="aim-objectives"
-                    className="rounded-xl bg-[#EEF3FB]"
-                    placeholder="Explain why this event matters and what your club wants to achieve..."
-                    rows={5}
+                  <h2 className="border-b border-border pb-3 text-xl font-semibold text-primary">Event Basics</h2>
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="proposal-event-title">Event title</Label>
+                  <Input
+                    id="proposal-event-title"
+                    placeholder="e.g. Annual Tech Symposium"
+                    value={form.proposedActivity}
+                    onChange={(event) => setForm({ ...form, proposedActivity: event.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">Choose a clear name students will recognise.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="proposal-event-category">Event category</Label>
+                  <Select value={eventCategory} onValueChange={setEventCategory}>
+                    <SelectTrigger id="proposal-event-category"><SelectValue placeholder="Select a category" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="academic">Academic / Educational</SelectItem>
+                      <SelectItem value="social">Social / Networking</SelectItem>
+                      <SelectItem value="competition">Competition / Hackathon</SelectItem>
+                      <SelectItem value="workshop">Workshop / Training</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="proposal-primary-objective">Primary objective</Label>
+                  <Input
+                    id="proposal-primary-objective"
+                    placeholder="e.g. Increase member engagement"
                     value={form.aimObjectives}
                     onChange={(event) => setForm({ ...form, aimObjectives: event.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">Briefly explain what the event will achieve.</p>
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="proposal-detailed-description">Detailed event description</Label>
+                  <Textarea
+                    id="proposal-detailed-description"
+                    placeholder="Provide a comprehensive overview of the activities, audience, and expected outcome."
+                    rows={5}
+                    value={form.description}
+                    onChange={(event) => setForm({ ...form, description: event.target.value })}
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <h2 className="border-b border-border pb-3 pt-3 text-xl font-semibold text-primary">Logistics</h2>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="proposal-event-date">Event date</Label>
+                  <Input
+                    id="proposal-event-date"
+                    type="date"
+                    value={form.eventDates[0] || ""}
+                    onChange={(event) => setForm({ ...form, eventDates: [event.target.value, ...form.eventDates.slice(1)] })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="proposal-event-start">Start time</Label>
+                  <Select value={form.eventTime} onValueChange={(eventTime) => setForm({ ...form, eventTime })}>
+                    <SelectTrigger id="proposal-event-start"><SelectValue placeholder="Select start time" /></SelectTrigger>
+                    <SelectContent>{TIME_OPTIONS.map((time) => <SelectItem key={time} value={time}>{formatTime12h(time)}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="proposal-event-end">End time</Label>
+                  <Select value={form.eventEndTime} onValueChange={(eventEndTime) => setForm({ ...form, eventEndTime })}>
+                    <SelectTrigger id="proposal-event-end"><SelectValue placeholder="Select end time" /></SelectTrigger>
+                    <SelectContent>{TIME_OPTIONS.map((time) => <SelectItem key={time} value={time}>{formatTime12h(time)}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="proposal-event-venue">Proposed venue</Label>
+                  <Select value={form.venue} onValueChange={(venue) => setForm({ ...form, venue, venueOther: "" })}>
+                    <SelectTrigger id="proposal-event-venue"><SelectValue placeholder="Select location" /></SelectTrigger>
+                    <SelectContent>
+                      {PRESET_VENUES.map((venue) => <SelectItem key={venue} value={venue}>{venue}</SelectItem>)}
+                      <SelectItem value="other">Other venue</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="proposal-event-attendance">Expected attendance</Label>
+                  <Input
+                    id="proposal-event-attendance"
+                    type="number"
+                    min={1}
+                    placeholder="0"
+                    value={form.numberOfParticipants}
+                    onChange={(event) => setForm({ ...form, numberOfParticipants: event.target.value })}
                   />
                 </div>
               </CardContent>
