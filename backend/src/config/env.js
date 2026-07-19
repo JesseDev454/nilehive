@@ -22,6 +22,7 @@ function getEnv() {
 
   cachedEnv = {
     NODE_ENV: readEnv("NODE_ENV", { defaultValue: "development" }),
+    APP_ENV: readEnv("APP_ENV", { defaultValue: readEnv("NODE_ENV", { defaultValue: "development" }) }),
     PORT: readEnv("PORT", { defaultValue: "4000" }),
     HOST: readEnv("HOST", { defaultValue: "0.0.0.0" }),
     SUPABASE_URL: readEnv("SUPABASE_URL", { required: true }),
@@ -45,6 +46,8 @@ function getEnv() {
     CAMPUS_ONE_TOKEN_ENCRYPTION_KEY: readEnv("CAMPUS_ONE_TOKEN_ENCRYPTION_KEY", { defaultValue: "" }),
     CAMPUS_ONE_WEBHOOK_SECRET: readEnv("CAMPUS_ONE_WEBHOOK_SECRET", { defaultValue: "" }),
     CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN: readEnv("CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN", { defaultValue: "false" }),
+    E2E_STAGING_AUTH_BRIDGE_ENABLED: readEnv("E2E_STAGING_AUTH_BRIDGE_ENABLED", { defaultValue: "false" }),
+    E2E_STAGING_AUTH_BRIDGE_SECRET: readEnv("E2E_STAGING_AUTH_BRIDGE_SECRET", { defaultValue: "" }),
     REQUEST_TIMEOUT_MS: readEnv("REQUEST_TIMEOUT_MS", { defaultValue: "15000" }),
     ASYNC_JOBS_ENABLED: readEnv("ASYNC_JOBS_ENABLED", { defaultValue: "false" }),
     REDIS_URL: readEnv("REDIS_URL", { defaultValue: "" }),

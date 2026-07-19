@@ -42,6 +42,19 @@ function randomToken(byteLength = 32) {
   return base64UrlEncode(crypto.randomBytes(byteLength));
 }
 
+function hasMatchingStagingBridgeSecret(providedSecret, expectedSecret) {
+  if (!providedSecret || !expectedSecret) return false;
+  const provided = Buffer.from(providedSecret);
+  const expected = Buffer.from(expectedSecret);
+  return provided.length === expected.length && crypto.timingSafeEqual(provided, expected);
+}
+
+function isStagingE2EAuthBridgeEnabled(env = getEnv()) {
+  return env.APP_ENV === "staging"
+    && env.E2E_STAGING_AUTH_BRIDGE_ENABLED === "true"
+    && Boolean(env.E2E_STAGING_AUTH_BRIDGE_SECRET);
+}
+
 function getIssuer() {
   return getEnv().CAMPUS_ONE_ISSUER.replace(/\/+$/, "");
 }
@@ -652,6 +665,47 @@ function createCampusOneAuthRouter(options = {}) {
     }
   });
 
+  // This endpoint intentionally does not authenticate a real person. It exists
+  // only for a separately deployed staging environment so Playwright can create
+  // the same signed session cookie normally created after Campus One OIDC.
+  router.post("/e2e/staging-session", async (req, res, next) => {
+    try {
+      const env = getEnv();
+      if (!isStagingE2EAuthBridgeEnabled(env)) {
+        throw new ApiError(404, "Not found", "NOT_FOUND");
+      }
+
+      if (!hasMatchingStagingBridgeSecret(req.get("x-e2e-staging-auth"), env.E2E_STAGING_AUTH_BRIDGE_SECRET)) {
+        throw new ApiError(401, "Invalid staging E2E credentials", "E2E_STAGING_AUTH_FAILED");
+      }
+
+      const profileId = typeof req.body?.profile_id === "string" ? req.body.profile_id.trim() : "";
+      if (!profileId) {
+        throw new ApiError(400, "profile_id is required", "VALIDATION_ERROR", { field: "profile_id" });
+      }
+
+      const profile = await database.getProfileById(profileId);
+      const email = String(profile?.email || "").toLowerCase();
+      if (!profile || !email.startsWith("e2e+")) {
+        throw new ApiError(403, "Only dedicated E2E profiles can use this endpoint", "E2E_PROFILE_REQUIRED");
+      }
+
+      const roleContext = resolveEffectiveRole({ appRole: profile.role });
+      const sessionToken = createCampusOneSessionToken({
+        profileId: profile.id,
+        portalUserId: `e2e:${profile.id}`,
+        portalRole: roleContext.portalRole,
+        customRoles: roleContext.customRoles,
+        email: profile.email
+      }, { maxAgeSeconds: 15 * 60 });
+
+      appendSetCookie(res, buildCookie(CAMPUS_ONE_SESSION_COOKIE, sessionToken, getSessionCookieOptions(15 * 60)));
+      res.status(204).end();
+    } catch (error) {
+      next(error);
+    }
+  });
+
   router.post("/campus-one/logout", (req, res) => {
     clearCampusOneSessionCookie(res);
     res.status(200).json({ data: { signed_out: true } });
@@ -669,6 +723,8 @@ module.exports = {
   createCampusOneAuthRouter,
   getTrustedIssuers,
   getCampusOneCookieDomain,
+  hasMatchingStagingBridgeSecret,
+  isStagingE2EAuthBridgeEnabled,
   resolveCampusOneProfile,
   resolveCampusOnePortalRole,
   getCampusOneCustomRoles,

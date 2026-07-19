@@ -9,7 +9,9 @@
     "dev:worker": "node --watch src/worker.js",
     "start": "node src/server.js",
     "worker": "node src/worker.js",
-    "test": "node --test"
+    "test": "node --test",
+    "e2e:staging:reset": "node scripts/e2e-staging.js reset",
+    "e2e:staging:seed": "node scripts/e2e-staging.js seed"
   },
   "engines": {
     "node": ">=18"
