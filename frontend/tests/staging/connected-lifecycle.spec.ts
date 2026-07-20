@@ -99,10 +99,10 @@ test.describe("staging connected proposal-to-feedback lifecycle", () => {
       requireData(await api(student.page, "/communications/feedback", "POST", {
         club_id: club!.id,
         proposal_id: proposal.id,
-        category: "event",
+        category: "club",
         rating: 5,
-        comment: "E2E lifecycle feedback"
-      }), "student submits feedback");
+        comment: "E2E club feedback after verified attendance"
+      }), "student submits club feedback");
 
       const report = requireData<{ id: string }>(await api(president.page, "/reports", "POST", {
         proposal_id: proposal.id,

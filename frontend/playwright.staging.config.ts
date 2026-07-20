@@ -21,6 +21,7 @@ export default defineConfig({
   projects: [
     {
       name: "staging-chromium",
+      testIgnore: /mobile\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], channel: "chrome" }
     },
     {

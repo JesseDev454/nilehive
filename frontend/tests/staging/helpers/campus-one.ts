@@ -65,5 +65,5 @@ export async function signInThroughStagingBridge(page: Page, role: StagingRole) 
 
 export async function expectRestrictedRoute(page: Page, route: string) {
   await page.goto(route, { waitUntil: "domcontentloaded" });
-  await expect(page).not.toHaveURL(new RegExp(`${route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`));
+  await expect(page.getByText("This workspace is not available for your current Clubly role.")).toBeVisible();
 }

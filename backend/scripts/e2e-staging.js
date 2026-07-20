@@ -146,7 +146,7 @@ async function seed() {
       requested_role: role === "feedback_manager" ? "student" : role,
       onboarding_status: "complete",
       account_status: "active",
-      club_id: ["president", "executive", "advisor"].includes(role) ? club.id : null
+      club_id: ["president", "executive", "advisor", "student"].includes(role) ? club.id : null
     };
     const { error } = await client.from("profiles").update(update).eq("id", actor.profile_id);
     if (error) throw new Error(`profiles/${role}: ${error.message}`);
