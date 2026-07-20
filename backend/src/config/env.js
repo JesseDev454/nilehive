@@ -48,6 +48,7 @@ function getEnv() {
     CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN: readEnv("CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN", { defaultValue: "false" }),
     E2E_STAGING_AUTH_BRIDGE_ENABLED: readEnv("E2E_STAGING_AUTH_BRIDGE_ENABLED", { defaultValue: "false" }),
     E2E_STAGING_AUTH_BRIDGE_SECRET: readEnv("E2E_STAGING_AUTH_BRIDGE_SECRET", { defaultValue: "" }),
+    E2E_STAGING_ALLOWED_PROFILE_IDS: readEnv("E2E_STAGING_ALLOWED_PROFILE_IDS", { defaultValue: "" }),
     REQUEST_TIMEOUT_MS: readEnv("REQUEST_TIMEOUT_MS", { defaultValue: "15000" }),
     ASYNC_JOBS_ENABLED: readEnv("ASYNC_JOBS_ENABLED", { defaultValue: "false" }),
     REDIS_URL: readEnv("REDIS_URL", { defaultValue: "" }),

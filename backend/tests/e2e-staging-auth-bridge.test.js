@@ -2,6 +2,7 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const {
   hasMatchingStagingBridgeSecret,
+  isAllowedStagingE2EProfile,
   isStagingE2EAuthBridgeEnabled
 } = require("../src/modules/auth/campusOneOidc");
 
@@ -23,6 +24,18 @@ test("staging E2E bridge is disabled unless the deployment is explicitly marked 
     E2E_STAGING_AUTH_BRIDGE_ENABLED: "true",
     E2E_STAGING_AUTH_BRIDGE_SECRET: "test-secret"
   }), true);
+});
+
+test("staging E2E bridge permits e2e+ emails and an explicit staging allow-list only", () => {
+  assert.equal(isAllowedStagingE2EProfile({ id: "student-id", email: "e2e+student@nilehive.test" }, {}), true);
+  assert.equal(isAllowedStagingE2EProfile(
+    { id: "student-id", email: "newstudent@nilehive.test" },
+    { E2E_STAGING_ALLOWED_PROFILE_IDS: "student-id, president-id" }
+  ), true);
+  assert.equal(isAllowedStagingE2EProfile(
+    { id: "other-id", email: "newstudent@nilehive.test" },
+    { E2E_STAGING_ALLOWED_PROFILE_IDS: "student-id, president-id" }
+  ), false);
 });
 
 test("staging E2E bridge requires an exact secret match", () => {

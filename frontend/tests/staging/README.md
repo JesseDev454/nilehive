@@ -40,9 +40,10 @@ Set these only on the staging backend deployment (not in GitHub Actions and neve
 APP_ENV=staging
 E2E_STAGING_AUTH_BRIDGE_ENABLED=true
 E2E_STAGING_AUTH_BRIDGE_SECRET=<the same GitHub Environment secret>
+E2E_STAGING_ALLOWED_PROFILE_IDS=<comma-separated dedicated test profile UUIDs; optional>
 ```
 
-The staging backend must also use `AUTH_PROVIDER=campus_one_oidc`, because the bridge issues the same signed session cookie as the Campus One callback.
+The staging backend must also use `AUTH_PROVIDER=campus_one_oidc`, because the bridge issues the same signed session cookie as the Campus One callback. By default, the bridge accepts only profiles whose email begins with `e2e+`. `E2E_STAGING_ALLOWED_PROFILE_IDS` is a staging-only explicit allow-list for existing dedicated test profiles that use different email addresses; never include real-user IDs.
 
 The nightly workflow alone sets `E2E_STAGING_ENABLE_MUTATIONS=true`. That enables the connected proposal → advisor → admin → RSVP/QR check-in → report → feedback → club-health test; local staging runs remain read-only unless you deliberately set that flag.
 
