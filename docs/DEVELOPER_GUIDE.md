@@ -291,7 +291,7 @@ Apply them in numeric order.
 Current migration ceiling:
 
 ```text
-0043_portal_auth_profile_bridge.sql
+0050_campus_one_oidc_transactions.sql
 ```
 
 ### Production-safe SQL files

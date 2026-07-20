@@ -7,6 +7,7 @@ This document lists the important environment variables used by the frontend and
 | Variable | Required | Purpose | Notes |
 |---|---|---|---|
 | `NODE_ENV` | No | Runtime mode | Usually `development` locally |
+| `APP_ENV` | No | Deployment identity used for environment-specific safeguards | Set to `staging` only on the staging backend; otherwise it follows `NODE_ENV` |
 | `PORT` | Yes | Backend port | Local default is `4000` |
 | `HOST` | No | Backend bind host | Common local value is `0.0.0.0` |
 | `REQUEST_TIMEOUT_MS` | No | API request timeout | Helps avoid hanging requests |
@@ -27,6 +28,8 @@ This document lists the important environment variables used by the frontend and
 | `CAMPUS_ONE_TOKEN_ENCRYPTION_KEY` | Production | Encrypts stored OIDC access and refresh tokens | Secret, never exposed to the frontend |
 | `CAMPUS_ONE_WEBHOOK_SECRET` | Production | Verifies CampusOne webhook signatures | Secret from the developer dashboard |
 | `CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN` | No | Optional extra email-domain gate for OIDC users | Defaults to `false` because CampusOne is the trusted identity provider |
+| `E2E_STAGING_AUTH_BRIDGE_ENABLED` | Staging E2E only | Enables the short-lived Playwright session bridge | Must be exactly `true` and only on staging |
+| `E2E_STAGING_AUTH_BRIDGE_SECRET` | Staging E2E only, secret | Shared secret required by the bridge | Must match the GitHub `staging` Environment secret; never set in production |
 | `ALLOWED_EMAIL_DOMAINS` | Yes | Allowed signup domains | Local often includes `nilehive.test`; production should not |
 | `FRONTEND_APP_URL` | Yes | Frontend origin | Used for redirects and environment alignment |
 | `CORS_ALLOWED_ORIGINS` | Yes | Allowed browser origins | Keep aligned with active frontend URLs |
@@ -69,6 +72,22 @@ This document lists the important environment variables used by the frontend and
 - Microsoft client secrets
 - backend-only queue or email secrets
 - Portal API secrets, if Campus One later provides any server-only keys
+- `E2E_STAGING_AUTH_BRIDGE_SECRET`
+
+## Staging E2E Test Configuration
+
+The staging suite is intentionally isolated from production and does not automate Campus One login. It uses a temporary server-signed session for six dedicated `e2e+` profiles, then exercises the deployed frontend, backend, Supabase database, and storage.
+
+Set the following only on the **staging backend deployment**:
+
+```env
+APP_ENV=staging
+AUTH_PROVIDER=campus_one_oidc
+E2E_STAGING_AUTH_BRIDGE_ENABLED=true
+E2E_STAGING_AUTH_BRIDGE_SECRET=the-same-secret-stored-in-github
+```
+
+The GitHub `staging` Environment additionally needs the staging URL/project variables and these secrets: `E2E_STAGING_SUPABASE_URL`, `E2E_STAGING_SUPABASE_SERVICE_ROLE_KEY`, `E2E_STAGING_ACTORS_JSON`, and `E2E_STAGING_AUTH_BRIDGE_SECRET`. See [frontend/tests/staging/README.md](C:/Users/goodl/Documents/NileHive/frontend/tests/staging/README.md) for the complete safe setup and run procedure.
 
 ### Keep these aligned
 

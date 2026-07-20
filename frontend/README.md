@@ -76,6 +76,18 @@ http://localhost:8080
 npm.cmd run build
 ```
 
+## E2E Testing
+
+```powershell
+# Fast mocked role and UI regression suite
+npm.cmd run test:e2e:mock
+
+# Deployed staging suite; requires isolated staging configuration
+npm.cmd run test:e2e:staging
+```
+
+The staging suite uses a backend-issued temporary session for dedicated `e2e+` profiles; it does not automate a Campus One tenant login. Read [tests/staging/README.md](C:/Users/goodl/Documents/NileHive/frontend/tests/staging/README.md) before configuring or running it.
+
 ## Important Files
 
 - routes and protected loading: [src/App.tsx](C:/Users/goodl/Documents/NileHive/frontend/src/App.tsx)
@@ -105,7 +117,7 @@ Signup does not assign a club. Students join a club later from `Discover Clubs`.
 - the app loads the linked profile after sign-in
 - in CampusOne OIDC mode the app reads two role layers:
   - Campus One platform role: `student`, `staff`, or `admin`
-  - NileHive local app role: `student`, `executive`, `president`, or `advisor`
+  - NileHive local app role: `student`, `executive`, `president`, `advisor`, `admin`, or `feedback_manager`
 - the frontend resolves an effective experience from those two layers
 - inactivity protection signs the user out after the configured timeout, including persisted-session re-entry checks
 
@@ -116,6 +128,7 @@ Signup does not assign a club. Students join a club later from `Discover Clubs`.
 - Campus One `staff` without local advisor assignment -> access-pending state
 - local `president` -> president experience
 - local `executive` -> executive experience
+- local `feedback_manager` -> feedback-only experience
 - otherwise -> student experience
 
 Important:

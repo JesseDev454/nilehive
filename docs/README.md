@@ -10,6 +10,9 @@ Use this index to find the right guide quickly.
 - [DEVELOPER_GUIDE.md](C:/Users/goodl/Documents/NileHive/docs/DEVELOPER_GUIDE.md)
   Main developer walkthrough for local setup, auth, workflows, and troubleshooting
 
+- [Clubly-Campus-One-Developer-Guide.md](C:/Users/goodl/Documents/NileHive/docs/Clubly-Campus-One-Developer-Guide.md)
+  Illustrated current-state guide for all six roles, UI workflows, API boundaries, and testing.
+
 ## Deep Technical Docs
 
 - [ARCHITECTURE.md](C:/Users/goodl/Documents/NileHive/docs/ARCHITECTURE.md)
@@ -23,6 +26,9 @@ Use this index to find the right guide quickly.
 
 - [WORKFLOWS.md](C:/Users/goodl/Documents/NileHive/docs/WORKFLOWS.md)
   Business flows for signup, club joining, dues, proposals, and events
+
+- [tests/staging/README.md](C:/Users/goodl/Documents/NileHive/frontend/tests/staging/README.md)
+  Safe staging E2E setup, seed/reset contract, and the role-based release suite.
 
 ## Service Guides
 

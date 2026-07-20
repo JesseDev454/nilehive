@@ -12,13 +12,13 @@ NileHive is the Club Services platform for Nile University of Nigeria. It replac
 
 NileHive currently supports:
 
-- Supabase auth locally and Campus One portal auth for Buildathon production
+- Supabase auth locally, legacy Campus One Portal auth, and Campus One OIDC for current deployments
 - slim local fallback account creation for students and advisors
 - Discover Clubs join flow with dues proof upload
 - membership request and dues verification workflows
 - proposal submission, advisor review, president oversight, and admin final approval
 - approved events, reminders, and post-event reporting
-- member management, role assignment, announcements, notifications, and dashboards
+- member management, role assignment, announcements, notifications, feedback management, and dashboards
 
 The codebase is organized as one frontend app, one backend API, and a Supabase project that handles storage and Postgres data. In local mode, Supabase can still own auth; in Buildathon production, the shared Campus One portal owns sign-in.
 
@@ -85,7 +85,7 @@ backend/supabase/migrations/
 Apply them in numeric order. The current checked-in migration ceiling is:
 
 ```text
-0043_portal_auth_profile_bridge.sql
+0050_campus_one_oidc_transactions.sql
 ```
 
 ### 4. Start the services
@@ -111,12 +111,13 @@ Default local URLs:
 
 ## Data And Auth Model
 
-NileHive supports two auth providers:
+NileHive supports three auth providers:
 
 - `supabase` for local development and standalone demos
-- `portal` for the Buildathon shared Campus One login flow
+- `portal` for the legacy Buildathon shared Campus One login flow
+- `campus_one_oidc` for current Campus One OIDC deployments
 
-In both modes, `public.profiles` remains the Club Services profile table. In portal mode, profiles are linked by `portal_user_id` and email, while Campus One provides the live platform role from the shared session.
+In every mode, `public.profiles` remains the Club Services profile table. In Portal/OIDC mode, profiles are linked by `portal_user_id` and email, while Campus One provides the live platform role from a shared session or verified OIDC token.
 
 Buildathon production defaults:
 
@@ -157,13 +158,15 @@ Current role model:
   - `executive`
   - `president`
   - `advisor`
+  - `admin`
+  - `feedback_manager`
 
 Effective access rules:
 
-- Campus One `admin` always gets NileHive admin access
+- Campus One `admin` or recognised `club_services_admin` custom role gets NileHive admin access
 - Campus One `staff` needs a local NileHive `advisor` assignment to use advisor features
 - Campus One `student` may still be a local `executive` or `president`
-- NileHive no longer treats local `admin` assignment as the source of truth for admin access
+- `feedback_manager` is a local feedback-only role; it is not a Campus One platform role
 
 ## Environment Rules
 
@@ -202,6 +205,22 @@ cd frontend
 npm.cmd run build
 ```
 
+Fast mocked role suite:
+
+```powershell
+cd frontend
+npm.cmd run test:e2e:mock
+```
+
+Staging role suite (only after the isolated staging setup is configured):
+
+```powershell
+cd frontend
+npm.cmd run test:e2e:staging
+```
+
+See [frontend/tests/staging/README.md](C:/Users/goodl/Documents/NileHive/frontend/tests/staging/README.md) for the safe reset/seed contract, required GitHub Environment configuration, and staging auth bridge rules. Never point this suite at production.
+
 Current expected non-blocking frontend warnings:
 
 - Browserslist data age warning
@@ -216,6 +235,7 @@ Start here if you are new to the codebase:
 3. [docs/ARCHITECTURE.md](C:/Users/goodl/Documents/NileHive/docs/ARCHITECTURE.md)
 4. [docs/WORKFLOWS.md](C:/Users/goodl/Documents/NileHive/docs/WORKFLOWS.md)
 5. [docs/ENVIRONMENT_REFERENCE.md](C:/Users/goodl/Documents/NileHive/docs/ENVIRONMENT_REFERENCE.md)
+6. [docs/Clubly-Campus-One-Developer-Guide.md](C:/Users/goodl/Documents/NileHive/docs/Clubly-Campus-One-Developer-Guide.md)
 
 Service-specific references:
 

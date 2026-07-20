@@ -123,8 +123,30 @@ supabase/migrations/
 Current migration ceiling:
 
 ```text
-0043_portal_auth_profile_bridge.sql
+0050_campus_one_oidc_transactions.sql
 ```
+
+## Staging E2E Support
+
+The backend provides a staging-only bridge for the deployed Playwright suite. It issues the same short-lived signed cookie that Campus One OIDC normally creates, but only when all safeguards are present:
+
+```env
+APP_ENV=staging
+AUTH_PROVIDER=campus_one_oidc
+E2E_STAGING_AUTH_BRIDGE_ENABLED=true
+E2E_STAGING_AUTH_BRIDGE_SECRET=the-same-secret-stored-in-github
+```
+
+The bridge endpoint only accepts an exact secret match and profiles whose email starts with `e2e+`; it must never be configured in production.
+
+Useful staging data commands:
+
+```powershell
+npm.cmd run e2e:staging:reset
+npm.cmd run e2e:staging:seed
+```
+
+They intentionally refuse to run unless the explicit staging safety variables are set. Complete instructions are in [frontend/tests/staging/README.md](C:/Users/goodl/Documents/NileHive/frontend/tests/staging/README.md).
 
 ## Role Model In CampusOne OIDC Mode
 
