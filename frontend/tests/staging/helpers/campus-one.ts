@@ -45,7 +45,9 @@ function getStagingActorProfileId(role: StagingRole) {
  */
 export async function signInThroughStagingBridge(page: Page, role: StagingRole) {
   assertStagingConfiguration();
-  const response = await page.request.post(`${getStagingApiBaseUrl()}/api/v1/auth/e2e/staging-session`, {
+  // Route through the Vercel same-origin API rewrite so the test session cookie
+  // belongs to the frontend origin rather than the separate Render origin.
+  const response = await page.request.post(`${origin(requireSetting("E2E_STAGING_BASE_URL"))}/api/v1/auth/e2e/staging-session`, {
     headers: { "x-e2e-staging-auth": requireSetting("E2E_STAGING_AUTH_BRIDGE_SECRET") },
     data: { profile_id: getStagingActorProfileId(role) }
   });

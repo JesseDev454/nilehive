@@ -9,9 +9,21 @@ function readEnv(name: keyof ImportMetaEnv) {
 }
 
 export function getApiBaseUrl() {
-  return readEnv("VITE_API_BASE_URL")
+  const configuredBaseUrl = readEnv("VITE_API_BASE_URL")
     .replace(/\/+$/, "")
     .replace(/\/api\/v1$/i, "");
+
+  // Vercel proxies the configured Render API through /api so browser sessions
+  // remain first-party even when the backend lives on a separate host.
+  if (
+    typeof window !== "undefined"
+    && window.location.hostname.endsWith(".vercel.app")
+    && configuredBaseUrl.includes(".onrender.com")
+  ) {
+    return window.location.origin;
+  }
+
+  return configuredBaseUrl;
 }
 
 export function getSupabaseUrl() {

@@ -15,6 +15,8 @@ This suite is intentionally separate from `tests/e2e`. It tests the deployed Clu
 
 GitHub Environment variables: `E2E_STAGING_BASE_URL`, `E2E_STAGING_API_BASE_URL` (when the API is on a different origin), `E2E_STAGING_PROJECT_REF`, and `E2E_STAGING_STORAGE_BUCKETS`.
 
+The Vercel staging deployment proxies `/api/*` to the Render staging backend. Keep `VITE_API_BASE_URL` pointed at the Render backend; the frontend detects its Vercel host and uses the same-origin proxy so browser session cookies are not third-party cookies.
+
 GitHub Environment secrets: `E2E_STAGING_SUPABASE_URL`, `E2E_STAGING_SUPABASE_SERVICE_ROLE_KEY`, `E2E_STAGING_ACTORS_JSON`, and `E2E_STAGING_AUTH_BRIDGE_SECRET`.
 
 `E2E_STAGING_ACTORS_JSON` maps each lower-case role to its already-provisioned Campus One profile, for example:
