@@ -27,6 +27,10 @@ export function getStagingApiBaseUrl() {
   return (process.env.E2E_STAGING_API_BASE_URL || process.env.E2E_STAGING_BASE_URL || "").replace(/\/$/, "");
 }
 
+export function getStagingBrowserApiBaseUrl() {
+  return origin(requireSetting("E2E_STAGING_BASE_URL"));
+}
+
 function getStagingActorProfileId(role: StagingRole) {
   try {
     const actors = JSON.parse(requireSetting("E2E_STAGING_ACTORS_JSON"));

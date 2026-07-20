@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import {
-  getStagingApiBaseUrl,
+  getStagingBrowserApiBaseUrl,
   hasStagingConfiguration,
   signInThroughStagingBridge,
   type StagingRole
@@ -9,7 +9,7 @@ import {
 type ApiResponse<T> = { status: number; body: T };
 
 async function api<T>(page: Page, path: string, method = "GET", body?: unknown): Promise<ApiResponse<T>> {
-  const apiBaseUrl = getStagingApiBaseUrl();
+  const apiBaseUrl = getStagingBrowserApiBaseUrl();
   return page.evaluate(async ({ apiBaseUrl: baseUrl, path: requestPath, method: requestMethod, body: requestBody }) => {
     const response = await fetch(`${baseUrl}/api/v1${requestPath}`, {
       method: requestMethod,
