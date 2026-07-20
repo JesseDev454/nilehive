@@ -55,14 +55,18 @@ function isStagingE2EAuthBridgeEnabled(env = getEnv()) {
     && Boolean(env.E2E_STAGING_AUTH_BRIDGE_SECRET);
 }
 
+function getAllowedStagingE2EProfileIds(env = getEnv()) {
+  return String(env.E2E_STAGING_ALLOWED_PROFILE_IDS || "")
+    .split(",")
+    .map((profileId) => profileId.trim())
+    .filter(Boolean);
+}
+
 function isAllowedStagingE2EProfile(profile, env = getEnv()) {
   const email = String(profile?.email || "").toLowerCase();
   if (email.startsWith("e2e+")) return true;
 
-  const allowedProfileIds = String(env.E2E_STAGING_ALLOWED_PROFILE_IDS || "")
-    .split(",")
-    .map((profileId) => profileId.trim())
-    .filter(Boolean);
+  const allowedProfileIds = getAllowedStagingE2EProfileIds(env);
   return Boolean(profile?.id) && allowedProfileIds.includes(profile.id);
 }
 
@@ -697,7 +701,13 @@ function createCampusOneAuthRouter(options = {}) {
 
       const profile = await database.getProfileById(profileId);
       if (!isAllowedStagingE2EProfile(profile, env)) {
-        throw new ApiError(403, "Only dedicated E2E profiles can use this endpoint", "E2E_PROFILE_REQUIRED");
+        const configuredProfileIds = getAllowedStagingE2EProfileIds(env);
+        throw new ApiError(403, "Only dedicated E2E profiles can use this endpoint", "E2E_PROFILE_REQUIRED", {
+          profile_found: Boolean(profile),
+          allowlist_configured: configuredProfileIds.length > 0,
+          allowlist_count: configuredProfileIds.length,
+          requested_profile_allowed: Boolean(profile?.id) && configuredProfileIds.includes(profile.id)
+        });
       }
 
       const roleContext = resolveEffectiveRole({ appRole: profile.role });
@@ -733,6 +743,7 @@ module.exports = {
   createCampusOneAuthRouter,
   getTrustedIssuers,
   getCampusOneCookieDomain,
+  getAllowedStagingE2EProfileIds,
   hasMatchingStagingBridgeSecret,
   isAllowedStagingE2EProfile,
   isStagingE2EAuthBridgeEnabled,

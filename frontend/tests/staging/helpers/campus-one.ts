@@ -49,7 +49,9 @@ export async function signInThroughStagingBridge(page: Page, role: StagingRole) 
     headers: { "x-e2e-staging-auth": requireSetting("E2E_STAGING_AUTH_BRIDGE_SECRET") },
     data: { profile_id: getStagingActorProfileId(role) }
   });
-  expect(response.status()).toBe(204);
+  if (response.status() !== 204) {
+    throw new Error(`Staging auth bridge rejected ${role} (${response.status()}): ${await response.text()}`);
+  }
 
   await page.goto(`${origin(requireSetting("E2E_STAGING_BASE_URL"))}/`, { waitUntil: "domcontentloaded" });
   await expect(page.getByRole("main")).toBeVisible();
