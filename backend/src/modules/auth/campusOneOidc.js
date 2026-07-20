@@ -115,11 +115,16 @@ function getOidcCookieOptions(maxAge = OIDC_COOKIE_MAX_AGE_SECONDS) {
   };
 }
 
-function getSessionCookieOptions(maxAge = SESSION_MAX_AGE_SECONDS) {
+function getSessionCookieOptions(maxAge = SESSION_MAX_AGE_SECONDS, env = getEnv()) {
+  const isStaging = env.APP_ENV === "staging";
+
   return {
     httpOnly: true,
-    secure: getEnv().NODE_ENV === "production",
-    sameSite: "Lax",
+    // The staging frontend and API use different HTTPS origins (Vercel and
+    // Render). The browser must be allowed to send the session cookie on its
+    // credentialed cross-origin API calls.
+    secure: env.NODE_ENV === "production" || isStaging,
+    sameSite: isStaging ? "None" : "Lax",
     domain: getCampusOneCookieDomain(),
     path: "/",
     maxAge
@@ -743,6 +748,7 @@ module.exports = {
   createCampusOneAuthRouter,
   getTrustedIssuers,
   getCampusOneCookieDomain,
+  getSessionCookieOptions,
   getAllowedStagingE2EProfileIds,
   hasMatchingStagingBridgeSecret,
   isAllowedStagingE2EProfile,

@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const {
   hasMatchingStagingBridgeSecret,
   getAllowedStagingE2EProfileIds,
+  getSessionCookieOptions,
   isAllowedStagingE2EProfile,
   isStagingE2EAuthBridgeEnabled
 } = require("../src/modules/auth/campusOneOidc");
@@ -44,4 +45,13 @@ test("staging E2E bridge requires an exact secret match", () => {
   assert.equal(hasMatchingStagingBridgeSecret("test-secret", "test-secret"), true);
   assert.equal(hasMatchingStagingBridgeSecret("wrong-secret", "test-secret"), false);
   assert.equal(hasMatchingStagingBridgeSecret("", "test-secret"), false);
+});
+
+test("staging session cookies support credentialed frontend-to-API requests", () => {
+  const stagingOptions = getSessionCookieOptions(undefined, { APP_ENV: "staging", NODE_ENV: "development" });
+  assert.equal(stagingOptions.secure, true);
+  assert.equal(stagingOptions.sameSite, "None");
+
+  const productionOptions = getSessionCookieOptions(undefined, { APP_ENV: "production", NODE_ENV: "production" });
+  assert.equal(productionOptions.sameSite, "Lax");
 });
