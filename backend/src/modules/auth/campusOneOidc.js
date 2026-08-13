@@ -87,6 +87,10 @@ function getTokenEndpoint() {
   return `${getIssuer()}/api/auth/oauth2/token`;
 }
 
+function getUserInfoEndpoint() {
+  return `${getIssuer()}/api/auth/oauth2/userinfo`;
+}
+
 function getJwksEndpoint() {
   return `${getIssuer()}/api/auth/jwks`;
 }
@@ -332,7 +336,7 @@ async function verifyCampusOneIdToken(idToken, expectedNonce) {
   return payload;
 }
 
-async function exchangeCodeForTokens({ code, codeVerifier }) {
+async function exchangeCodeForTokens({ code, codeVerifier, fetchImpl = fetch }) {
   const env = getEnv();
   const body = new URLSearchParams({
     grant_type: "authorization_code",
@@ -343,7 +347,7 @@ async function exchangeCodeForTokens({ code, codeVerifier }) {
     code_verifier: codeVerifier
   });
 
-  const response = await fetch(getTokenEndpoint(), {
+  const response = await fetchImpl(getTokenEndpoint(), {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
@@ -362,6 +366,71 @@ async function exchangeCodeForTokens({ code, codeVerifier }) {
   }
 
   return payload;
+}
+
+async function fetchCampusOneUserInfo(accessToken, fetchImpl = fetch) {
+  if (!accessToken) {
+    throw new ApiError(401, "CampusOne sign-in could not be completed", "CAMPUS_ONE_USERINFO_FAILED", {
+      reason: "missing_access_token"
+    });
+  }
+
+  let response;
+
+  try {
+    response = await fetchImpl(getUserInfoEndpoint(), {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json"
+      }
+    });
+  } catch {
+    throw new ApiError(401, "CampusOne sign-in could not be completed", "CAMPUS_ONE_USERINFO_FAILED", {
+      reason: "request_failed"
+    });
+  }
+
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok || !payload || typeof payload !== "object" || Array.isArray(payload)) {
+    throw new ApiError(401, "CampusOne sign-in could not be completed", "CAMPUS_ONE_USERINFO_FAILED", {
+      reason: !response.ok ? "rejected" : "invalid_response",
+      status: response.status
+    });
+  }
+
+  return payload;
+}
+
+function mergeCampusOneClaims(idTokenClaims = {}, userInfoClaims = {}) {
+  const merged = { ...idTokenClaims };
+
+  for (const field of ["role", "roles"]) {
+    if (Object.prototype.hasOwnProperty.call(userInfoClaims, field)) {
+      merged[field] = userInfoClaims[field];
+    }
+  }
+
+  if (Object.prototype.hasOwnProperty.call(userInfoClaims, "custom_roles")) {
+    merged.custom_roles = userInfoClaims.custom_roles;
+    delete merged.customRoles;
+  } else if (Object.prototype.hasOwnProperty.call(userInfoClaims, "customRoles")) {
+    merged.customRoles = userInfoClaims.customRoles;
+    delete merged.custom_roles;
+  }
+
+  return merged;
+}
+
+function resolveCampusOneClaims(idTokenClaims = {}, userInfoClaims = {}) {
+  if (!userInfoClaims.sub || userInfoClaims.sub !== idTokenClaims.sub) {
+    throw new ApiError(401, "CampusOne sign-in could not be completed", "CAMPUS_ONE_USERINFO_SUBJECT_MISMATCH", {
+      reason: userInfoClaims.sub ? "subject_mismatch" : "missing_subject"
+    });
+  }
+
+  return mergeCampusOneClaims(idTokenClaims, userInfoClaims);
 }
 
 function resolveCampusOnePortalRole(claims = {}) {
@@ -537,7 +606,7 @@ async function resolveCampusOneProfile(database, claims) {
 }
 
 function createCampusOneAuthRouter(options = {}) {
-  const { database, logger = baseLogger } = options;
+  const { database, logger = baseLogger, fetchImpl = fetch } = options;
   const router = require("express").Router();
 
   router.get("/campus-one/login", async (req, res, next) => {
@@ -631,8 +700,27 @@ function createCampusOneAuthRouter(options = {}) {
         throw new ApiError(400, "CampusOne sign-in expired. Please try again.", "OIDC_COOKIE_EXPIRED");
       }
 
-      const tokens = await exchangeCodeForTokens({ code, codeVerifier });
-      const claims = await verifyCampusOneIdToken(tokens.id_token, nonce);
+      const tokens = await exchangeCodeForTokens({ code, codeVerifier, fetchImpl });
+      const idTokenClaims = await verifyCampusOneIdToken(tokens.id_token, nonce);
+      let userInfoClaims;
+
+      try {
+        userInfoClaims = await fetchCampusOneUserInfo(tokens.access_token, fetchImpl);
+        userInfoClaims = resolveCampusOneClaims(idTokenClaims, userInfoClaims);
+      } catch (error) {
+        logger.warn("campus_one.userinfo.failed", {
+          code: error?.code ?? "CAMPUS_ONE_USERINFO_FAILED",
+          portal_user_id: idTokenClaims.sub ?? null,
+          status: error?.details?.status ?? null,
+          reason: error?.details?.reason ?? "unknown"
+        });
+        clearCampusOneOidcCookies(res);
+        clearCampusOneSessionCookie(res);
+        res.redirect(getFrontendLoginUrl({ auth_error: "failed" }));
+        return;
+      }
+
+      const claims = userInfoClaims;
       let profile;
       let portalRole;
       let customRoles;
@@ -659,7 +747,13 @@ function createCampusOneAuthRouter(options = {}) {
         profile_id: profile.id,
         portal_user_id: profile.portal_user_id,
         portal_role: portalRole,
-        custom_roles: customRoles
+        custom_roles: customRoles,
+        claim_source: "userinfo",
+        effective_role: resolveEffectiveRole({
+          portalRole,
+          appRole: profile.role,
+          customRoles
+        }).effectiveRole
       });
 
       const roleContext = resolveEffectiveRole({
@@ -756,5 +850,8 @@ module.exports = {
   resolveCampusOneProfile,
   resolveCampusOnePortalRole,
   getCampusOneCustomRoles,
+  fetchCampusOneUserInfo,
+  mergeCampusOneClaims,
+  resolveCampusOneClaims,
   verifyCampusOneIdToken
 };

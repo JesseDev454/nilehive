@@ -3,9 +3,12 @@ const assert = require("node:assert/strict");
 const { createApp } = require("../src/app");
 const { clearEnvCache } = require("../src/config/env");
 const {
+  fetchCampusOneUserInfo,
   getCampusOneCustomRoles,
   getCampusOneCookieDomain,
   getTrustedIssuers,
+  mergeCampusOneClaims,
+  resolveCampusOneClaims,
   resolveCampusOneProfile,
   resolveCampusOnePortalRole
 } = require("../src/modules/auth/campusOneOidc");
@@ -340,9 +343,9 @@ test("CampusOne admin session receives effective admin role", async (t) => {
   assert.equal(payload.data.profile.portal_role, "admin");
 });
 
-test("CampusOne club_services_admin custom role receives effective admin access", async (t) => {
+test("CampusOne club_services_admin overrides a local feedback manager with effective admin access", async (t) => {
   withCampusOneOidcEnv(t);
-  const server = await createTestServer(createFakeDatabase({ role: "student" }));
+  const server = await createTestServer(createFakeDatabase({ role: "feedback_manager" }));
   t.after(() => server.close());
   const token = createCampusOneSessionToken({
     profileId: "profile-1",
@@ -360,7 +363,7 @@ test("CampusOne club_services_admin custom role receives effective admin access"
   const payload = await response.json();
 
   assert.equal(response.status, 200);
-  assert.equal(payload.data.profile.app_role, "student");
+  assert.equal(payload.data.profile.app_role, "feedback_manager");
   assert.equal(payload.data.profile.effective_role, "admin");
   assert.equal(payload.data.profile.portal_role, "staff");
   assert.deepEqual(payload.data.profile.custom_roles, ["club_services_admin"]);
@@ -406,6 +409,131 @@ test("CampusOne custom roles are normalized for diagnostics without granting acc
   assert.deepEqual(getCampusOneCustomRoles({ roles: ["student", "president"] }), []);
   assert.deepEqual(getCampusOneCustomRoles({ roles: ["staff", "club_services_admin"] }), ["club_services_admin"]);
   assert.deepEqual(getCampusOneCustomRoles({ customRoles: ["club_services_admin"] }), ["club_services_admin"]);
+});
+
+test("CampusOne unit_admin alone preserves a local feedback manager role", async (t) => {
+  withCampusOneOidcEnv(t);
+  const server = await createTestServer(createFakeDatabase({ role: "feedback_manager" }));
+  t.after(() => server.close());
+  const token = createCampusOneSessionToken({
+    profileId: "profile-1",
+    portalUserId: "campus-unit-admin-1",
+    portalRole: "student",
+    customRoles: ["unit_admin"],
+    email: "unit-admin@nileuniversity.edu.ng"
+  });
+
+  const response = await fetch(`${server.baseUrl}/api/v1/profile/me`, {
+    headers: {
+      Cookie: `${CAMPUS_ONE_SESSION_COOKIE}=${encodeURIComponent(token)}`
+    }
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.profile.app_role, "feedback_manager");
+  assert.equal(payload.data.profile.effective_role, "feedback_manager");
+  assert.deepEqual(payload.data.profile.custom_roles, ["unit_admin"]);
+});
+
+test("CampusOne user-info role claims override stale ID-token role claims", () => {
+  const merged = mergeCampusOneClaims(
+    {
+      sub: "campus-user-1",
+      role: "student",
+      roles: ["student", "club_services_admin"],
+      customRoles: ["club_services_admin"]
+    },
+    {
+      sub: "campus-user-1",
+      role: "staff",
+      roles: ["staff", "unit_admin"],
+      custom_roles: ["unit_admin"]
+    }
+  );
+
+  assert.equal(merged.sub, "campus-user-1");
+  assert.equal(merged.role, "staff");
+  assert.deepEqual(merged.roles, ["staff", "unit_admin"]);
+  assert.deepEqual(getCampusOneCustomRoles(merged), ["unit_admin"]);
+  assert.equal(Object.prototype.hasOwnProperty.call(merged, "customRoles"), false);
+});
+
+test("CampusOne ID-token role claims remain available when user-info omits them", () => {
+  const merged = mergeCampusOneClaims(
+    {
+      sub: "campus-user-1",
+      role: "student",
+      custom_roles: ["club_services_admin"]
+    },
+    { sub: "campus-user-1", name: "Campus User" }
+  );
+
+  assert.equal(merged.role, "student");
+  assert.deepEqual(getCampusOneCustomRoles(merged), ["club_services_admin"]);
+});
+
+test("CampusOne user-info custom admin role is normalized without promoting unit_admin", () => {
+  const merged = mergeCampusOneClaims(
+    { sub: "campus-user-1", role: "student", custom_roles: [] },
+    { sub: "campus-user-1", custom_roles: [" UNIT_ADMIN ", " CLUB_SERVICES_ADMIN "] }
+  );
+
+  assert.deepEqual(getCampusOneCustomRoles(merged), ["unit_admin", "club_services_admin"]);
+});
+
+test("CampusOne user-info request uses the access token and returns parsed claims", async () => {
+  let request = null;
+  const claims = await fetchCampusOneUserInfo("access-token-value", async (url, options) => {
+    request = { url, options };
+    return new Response(JSON.stringify({
+      sub: "campus-user-1",
+      role: "student",
+      custom_roles: ["club_services_admin"]
+    }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+  });
+
+  assert.equal(request.url, "https://auth.campusone.com.ng/api/auth/oauth2/userinfo");
+  assert.equal(request.options.headers.Authorization, "Bearer access-token-value");
+  assert.deepEqual(claims.custom_roles, ["club_services_admin"]);
+});
+
+test("CampusOne user-info failures expose only safe diagnostics", async () => {
+  await assert.rejects(
+    fetchCampusOneUserInfo("secret-access-token", async () => new Response("not-json", { status: 401 })),
+    (error) => {
+      assert.equal(error.code, "CAMPUS_ONE_USERINFO_FAILED");
+      assert.deepEqual(error.details, { reason: "rejected", status: 401 });
+      assert.equal(JSON.stringify(error).includes("secret-access-token"), false);
+      return true;
+    }
+  );
+
+  await assert.rejects(
+    fetchCampusOneUserInfo("secret-access-token", async () => {
+      throw new Error("network unavailable");
+    }),
+    (error) => {
+      assert.equal(error.code, "CAMPUS_ONE_USERINFO_FAILED");
+      assert.deepEqual(error.details, { reason: "request_failed" });
+      return true;
+    }
+  );
+});
+
+test("CampusOne user-info identity must match the verified ID token", () => {
+  assert.throws(
+    () => resolveCampusOneClaims({ sub: "campus-user-1" }, { role: "student" }),
+    (error) => error.code === "CAMPUS_ONE_USERINFO_SUBJECT_MISMATCH" && error.details.reason === "missing_subject"
+  );
+
+  assert.throws(
+    () => resolveCampusOneClaims({ sub: "campus-user-1" }, { sub: "campus-user-2", role: "student" }),
+    (error) => error.code === "CAMPUS_ONE_USERINFO_SUBJECT_MISMATCH" && error.details.reason === "subject_mismatch"
+  );
 });
 
 test("CampusOne OIDC links an existing local role by valid student ID without overwriting it", async (t) => {
