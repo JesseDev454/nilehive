@@ -471,7 +471,14 @@ export default function Clubs() {
                   </div>
                   <p className="text-sm text-muted-foreground">{club.description || "No description yet."}</p>
                   <div className="flex flex-wrap gap-1">{(club.categories || []).map((category) => <Badge key={category} variant="outline">{category}</Badge>)}</div>
-                  <Button asChild size="sm" variant="outline"><Link to={`/clubs/${club.id}/edit`}><Pencil className="h-4 w-4" /> Edit Club</Link></Button>
+                  <div className="flex flex-wrap gap-2">
+                    {role === "admin" ? (
+                      <Button asChild size="sm" variant="secondary">
+                        <Link to={`/clubs/${club.id}/dashboard`}>View club health</Link>
+                      </Button>
+                    ) : null}
+                    <Button asChild size="sm" variant="outline"><Link to={`/clubs/${club.id}/edit`}><Pencil className="h-4 w-4" /> Edit Club</Link></Button>
+                  </div>
                 </div>
               ))}
             </div>

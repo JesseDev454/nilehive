@@ -1371,6 +1371,9 @@ function AdminDashboard() {
                               <p className="text-xs text-muted-foreground">Reports</p>
                             </div>
                           </div>
+                          <Button asChild variant="outline" size="sm">
+                            <Link to={`/clubs/${club.club_id}/dashboard`}>View club health</Link>
+                          </Button>
                         </div>
                       </div>
                     ))}

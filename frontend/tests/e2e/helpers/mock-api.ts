@@ -878,6 +878,80 @@ export async function mockClubServicesApi(page: Page, state = createE2EState()) 
       return ok(route, getAdminDashboard(state));
     }
 
+    if (method === "GET" && path.match(/^\/dashboard\/admin-operations\/clubs\/[^/]+$/)) {
+      const clubId = path.split("/").at(-1) || "";
+      const club = state.clubs.find((item) => item.id === clubId);
+      const performance = getAdminDashboard(state).club_performance.find((item) => item.club_id === clubId);
+
+      if (!club || !performance) {
+        return apiError(route, 404, "Club not found", "CLUB_NOT_FOUND");
+      }
+
+      return ok(route, {
+        role: "admin",
+        club,
+        performance,
+        dues_comparison: {
+          current_academic_session: "2025/2026",
+          previous_academic_session: "2024/2025",
+          current_session_dues_collected: 0,
+          previous_session_dues_collected: 0,
+          dues_change_amount: 0
+        },
+        summary: {
+          total_proposals: performance.proposal_count,
+          pending_proposals: performance.pending_proposals,
+          approved_proposals: performance.approved_events,
+          rejected_proposals: 0,
+          approval_rate: 50,
+          total_members: performance.total_members,
+          active_members: performance.active_members,
+          pending_membership_requests: 0,
+          dues_collected_amount: performance.current_session_dues_collected,
+          dues_collection_rate: performance.dues_collection_rate,
+          current_session_dues_collected: performance.current_session_dues_collected,
+          previous_session_dues_collected: performance.previous_session_dues_collected,
+          dues_change_amount: performance.dues_change_amount,
+          approved_events: performance.approved_events,
+          reports_submitted: performance.reports_submitted,
+          missing_reports: 0,
+          event_attendance_count: performance.attendance_count,
+          event_rsvp_count: performance.rsvp_count,
+          attendance_rate: 0,
+          feedback_count: performance.feedback_count,
+          total_tasks: performance.open_tasks,
+          pending_tasks: performance.open_tasks,
+          in_progress_tasks: 0,
+          completed_tasks: 0,
+          blocked_tasks: 0,
+          open_tasks: performance.open_tasks,
+          average_rating: null,
+          club_health_score: performance.club_health_score,
+          club_health_label: "Healthy",
+          club_health_breakdown: performance.club_health_breakdown
+        },
+        tasks: [],
+        recent_proposals: [],
+        recent_members: [
+          {
+            id: "member-tech-1",
+            club_id: clubId,
+            profile_id: "student-1",
+            full_name: "Ada Student",
+            student_id: "123456789",
+            club_role: "member",
+            membership_status: "active",
+            created_at: now,
+            updated_at: now
+          }
+        ],
+        recent_reports: [],
+        approved_events: [],
+        missing_reports: [],
+        recent_activity: []
+      });
+    }
+
     if (method === "GET" && path === "/dashboard/president") {
       return ok(route, getPresidentDashboard(state));
     }

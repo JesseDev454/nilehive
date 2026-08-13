@@ -164,6 +164,20 @@ test("admin can create a club and edit club profile media", async ({ page }) => 
   await expect(page).toHaveURL(/\/clubs$/);
 });
 
+test("admin can open a club health dashboard from clubs management", async ({ page }) => {
+  await mockClubServicesApi(page);
+  await loginAs(page, "admin");
+
+  await page.goto("/clubs", { waitUntil: "domcontentloaded" });
+
+  const healthLink = page.getByRole("link", { name: "View club health" }).first();
+  await expect(healthLink).toHaveAttribute("href", "/clubs/club-tech/dashboard");
+  await healthLink.click();
+  await expect(page).toHaveURL(/\/clubs\/club-tech\/dashboard$/);
+  await expect(page.getByText("Club Health", { exact: true })).toBeVisible();
+  await expect(page.getByText("Recent Members", { exact: true })).toBeVisible();
+});
+
 test("admin opens manage access in a focused page", async ({ page }) => {
   await mockClubServicesApi(page);
   await loginAs(page, "admin");
