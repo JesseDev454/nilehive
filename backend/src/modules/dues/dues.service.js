@@ -259,6 +259,18 @@ async function updateDuePayment(options) {
 
   const update = validateUpdateDuePaymentPayload(payload);
 
+  if (
+    update.status &&
+    update.status === payment.status &&
+    ["paid", "rejected"].includes(update.status)
+  ) {
+    throw new ApiError(
+      409,
+      "This dues record has already been decided",
+      "INVALID_PAYMENT_STATE"
+    );
+  }
+
   if (["paid", "rejected"].includes(update.status)) {
     update.verified_by = actor.id;
     update.verified_at = new Date().toISOString();

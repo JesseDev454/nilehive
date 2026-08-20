@@ -11,13 +11,21 @@ export class ApiClientError extends Error {
   readonly status: number;
   readonly code: string;
   readonly details?: unknown;
+  readonly retryAfter: number | null;
 
-  constructor(status: number, code: string, message: string, details?: unknown) {
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    details?: unknown,
+    retryAfter: number | null = null,
+  ) {
     super(message);
     this.name = "ApiClientError";
     this.status = status;
     this.code = code;
     this.details = details;
+    this.retryAfter = retryAfter;
   }
 }
 
@@ -34,6 +42,12 @@ export function getApiBaseUrl(): string {
 
   const origin = trimTrailingSlash(raw);
   return origin.endsWith("/api/v1") ? origin : `${origin}/api/v1`;
+}
+
+function parseRetryAfter(value: string | null): number | null {
+  if (!value) return null;
+  const seconds = Number.parseInt(value, 10);
+  return Number.isFinite(seconds) && seconds >= 0 ? seconds : null;
 }
 
 function joinApiPath(path: string): string {
@@ -167,7 +181,13 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
       return apiRequest<T>(path, { ...options, csrfRetried: true });
     }
 
-    throw new ApiClientError(response.status, code, message, errorPayload?.error?.details);
+    throw new ApiClientError(
+      response.status,
+      code,
+      message,
+      errorPayload?.error?.details,
+      parseRetryAfter(response.headers.get("Retry-After")),
+    );
   }
 
   return payload as T;

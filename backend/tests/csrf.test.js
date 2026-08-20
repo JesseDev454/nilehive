@@ -535,3 +535,95 @@ test("POST logout requires CSRF while a valid session exists", async (t) => {
   });
   assert.equal(stillAuthed.response.status, 200);
 });
+
+test("Admin approval mutations require a valid CSRF token", async (t) => {
+  withCsrfEnv(t);
+  const database = createFakeDatabase({
+    role: "admin",
+    email: "admin@nileuniversity.edu.ng",
+    custom_roles: ["club_services_admin"]
+  });
+  database.getProposalById = async () => null;
+  database.getMembershipRequestById = async () => null;
+  database.getDuePaymentById = async () => null;
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+  const token = createSessionToken({
+    portalRole: "staff",
+    email: "admin@nileuniversity.edu.ng",
+    customRoles: ["club_services_admin"]
+  });
+
+  const endpoints = [
+    "/api/v1/proposals/admin/proposal-1/decision",
+    "/api/v1/membership-requests/request-1/decision",
+    "/api/v1/dues/payment-1"
+  ];
+
+  for (const path of endpoints) {
+    const missing = await fetchJson(`${server.baseUrl}${path}`, {
+      method: "POST",
+      headers: {
+        Cookie: sessionCookie(token),
+        Origin: FRONTEND_ORIGIN,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ decision: "approve", status: "paid" })
+    });
+    assert.equal(missing.response.status, 403);
+    assert.equal(missing.payload.error.code, "CSRF_TOKEN_REQUIRED");
+  }
+
+  const csrf = await getCsrfToken(server.baseUrl, token);
+  const invalid = await fetchJson(`${server.baseUrl}/api/v1/proposals/admin/proposal-1/decision`, {
+    method: "POST",
+    headers: {
+      Cookie: sessionCookie(token),
+      Origin: FRONTEND_ORIGIN,
+      "Content-Type": "application/json",
+      "X-CSRF-Token": "not-a-valid-token"
+    },
+    body: JSON.stringify({ decision: "approve" })
+  });
+  assert.equal(invalid.response.status, 403);
+  assert.equal(invalid.payload.error.code, "CSRF_TOKEN_INVALID");
+
+  const proposal = await fetchJson(`${server.baseUrl}/api/v1/proposals/admin/proposal-1/decision`, {
+    method: "POST",
+    headers: {
+      Cookie: sessionCookie(token),
+      Origin: FRONTEND_ORIGIN,
+      "Content-Type": "application/json",
+      "X-CSRF-Token": csrf
+    },
+    body: JSON.stringify({ decision: "approve" })
+  });
+  assert.equal(proposal.response.status, 404);
+  assert.equal(proposal.payload.error.code, "PROPOSAL_NOT_FOUND");
+
+  const membership = await fetchJson(`${server.baseUrl}/api/v1/membership-requests/request-1/decision`, {
+    method: "POST",
+    headers: {
+      Cookie: sessionCookie(token),
+      Origin: FRONTEND_ORIGIN,
+      "Content-Type": "application/json",
+      "X-CSRF-Token": csrf
+    },
+    body: JSON.stringify({ decision: "reject" })
+  });
+  assert.equal(membership.response.status, 404);
+  assert.equal(membership.payload.error.code, "MEMBERSHIP_REQUEST_NOT_FOUND");
+
+  const dues = await fetchJson(`${server.baseUrl}/api/v1/dues/payment-1`, {
+    method: "POST",
+    headers: {
+      Cookie: sessionCookie(token),
+      Origin: FRONTEND_ORIGIN,
+      "Content-Type": "application/json",
+      "X-CSRF-Token": csrf
+    },
+    body: JSON.stringify({ status: "paid" })
+  });
+  assert.equal(dues.response.status, 404);
+  assert.equal(dues.payload.error.code, "DUE_PAYMENT_NOT_FOUND");
+});

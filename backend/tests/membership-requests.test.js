@@ -492,6 +492,53 @@ test("executive cannot review membership requests", async () => {
   );
 });
 
+test("student cannot review membership requests", async () => {
+  await assert.rejects(
+    () =>
+      decideMembershipRequest({
+        actor: {
+          id: "student-1",
+          role: "student",
+          clubId: "club-1"
+        },
+        requestId: "request-1",
+        payload: {
+          decision: "approve"
+        },
+        database: {
+          async getMembershipRequestById() {
+            return createRequest();
+          }
+        }
+      }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
+});
+
+test("duplicate membership decisions are rejected", async () => {
+  await assert.rejects(
+    () =>
+      decideMembershipRequest({
+        actor: {
+          id: "admin-1",
+          role: "admin",
+          clubId: null
+        },
+        requestId: "request-1",
+        payload: {
+          decision: "reject",
+          remarks: "Already decided"
+        },
+        database: {
+          async getMembershipRequestById() {
+            return createRequest({ status: "active" });
+          }
+        }
+      }),
+    (error) => error.statusCode === 409 && error.code === "INVALID_REQUEST_STATE"
+  );
+});
+
 test("dues payment verification activates membership and updates request state", async () => {
   let memberUpdate;
   let requestUpdate;

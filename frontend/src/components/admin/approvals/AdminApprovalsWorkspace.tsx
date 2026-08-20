@@ -1,5 +1,8 @@
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { OFFICIAL_14_CLUBS } from "@/data/mockData";
+import type { ApprovalsUiError } from "@/lib/approvals/errors";
 import {
   AdminApprovalsHeader,
   type ApprovalTab,
@@ -11,71 +14,7 @@ import {
   AdminDecisionDialog,
   type DecisionType,
 } from "./AdminDecisionDialog";
-import type {
-  DuesProofMock,
-  JoinRequestMock,
-  ProposalMock,
-} from "@/components/AdminHomeView";
-
-const INITIAL_PROPOSALS: ProposalMock[] = [
-  {
-    id: "proposal-1",
-    title: "Google Cloud and Generative AI Buildathon",
-    club_id: "nile-google-developers",
-    club_name: "Nile Google Developers",
-    submitted_by_name: "Farouk Aliyu",
-    proposed_date: "2026-09-12",
-    venue: "Technology Auditorium",
-    budget: 150000,
-    description: "A practical buildathon for student teams working with responsible AI tools.",
-    advisor_name: "Dr. Aliyu Bello",
-    status: "pending_admin_review",
-  },
-  {
-    id: "proposal-2",
-    title: "Inter-Faculty Debate Finals",
-    club_id: "nile-debate-club",
-    club_name: "Nile Debate Club",
-    submitted_by_name: "Tariq Ibrahim",
-    proposed_date: "2026-09-20",
-    venue: "Main Auditorium",
-    budget: 85000,
-    description: "The final round of the university's inter-faculty debate series.",
-    advisor_name: "Prof. Halima Yusuf",
-    status: "pending_admin_review",
-  },
-];
-
-const INITIAL_JOINS: JoinRequestMock[] = [
-  {
-    id: "join-1",
-    student_id: "NIL/2023/UG/0491",
-    student_name: "Ibrahim Sani",
-    student_email: "ibrahim.sani@nileuniversity.edu.ng",
-    club_id: "nile-climate-initiatives-club",
-    club_name: "Nile Climate Initiatives Club",
-    statement: "I want to support practical sustainability projects on campus.",
-    applied_at: "2026-08-18T14:30:00Z",
-    status: "pending",
-  },
-];
-
-const INITIAL_PROOFS: DuesProofMock[] = [
-  {
-    id: "proof-1",
-    student_id: "NIL/2024/UG/1029",
-    student_name: "Fatima Aliyu",
-    student_email: "fatima.aliyu@nileuniversity.edu.ng",
-    club_id: "nile-business-club",
-    club_name: "Nile Business Club",
-    amount: 10000,
-    payment_method: "Bank transfer",
-    reference_number: "REF-NUB-984210",
-    proof_document_url: "/oneclub.svg",
-    status: "submitted",
-    created_at: "2026-08-18T16:15:00Z",
-  },
-];
+import { useAdminApprovalsData } from "./useAdminApprovalsData";
 
 type PendingDecision = {
   type: DecisionType;
@@ -84,52 +23,89 @@ type PendingDecision = {
   subtitle?: string;
 } | null;
 
+function matchesClub(clubId: string, clubName: string, clubFilter: string): boolean {
+  if (clubFilter === "all") return true;
+  if (clubId === clubFilter) return true;
+  const selected = OFFICIAL_14_CLUBS.find((club) => club.id === clubFilter);
+  return selected ? selected.name === clubName : false;
+}
+
 export function AdminApprovalsWorkspace() {
+  const { reportAuthFailure } = useAuth();
+  const data = useAdminApprovalsData(reportAuthFailure);
   const [activeTab, setActiveTab] = useState<ApprovalTab>("proposals");
   const [searchTerm, setSearchTerm] = useState("");
   const [clubFilter, setClubFilter] = useState("all");
-  const [proposals, setProposals] = useState(INITIAL_PROPOSALS);
-  const [joins, setJoins] = useState(INITIAL_JOINS);
-  const [proofs, setProofs] = useState(INITIAL_PROOFS);
   const [pendingDecision, setPendingDecision] = useState<PendingDecision>(null);
+  const [dialogError, setDialogError] = useState<string | null>(null);
 
-  const matches = useCallback((text: string, clubId: string) =>
-    text.toLowerCase().includes(searchTerm.toLowerCase()) &&
-    (clubFilter === "all" || clubId === clubFilter), [clubFilter, searchTerm]);
-
+  const query = searchTerm.toLowerCase();
   const filteredProposals = useMemo(
-    () => proposals.filter((item) => matches(`${item.title} ${item.club_name}`, item.club_id)),
-    [proposals, matches],
+    () =>
+      data.proposals.items.filter((item) =>
+        `${item.title} ${item.club_name}`.toLowerCase().includes(query) &&
+        matchesClub(item.club_id, item.club_name, clubFilter),
+      ),
+    [clubFilter, data.proposals.items, query],
   );
   const filteredJoins = useMemo(
-    () => joins.filter((item) => matches(`${item.student_name} ${item.club_name}`, item.club_id)),
-    [joins, matches],
+    () =>
+      data.joins.items.filter((item) =>
+        `${item.student_name} ${item.club_name}`.toLowerCase().includes(query) &&
+        matchesClub(item.club_id, item.club_name, clubFilter),
+      ),
+    [clubFilter, data.joins.items, query],
   );
   const filteredProofs = useMemo(
-    () => proofs.filter((item) => matches(`${item.student_name} ${item.reference_number}`, item.club_id)),
-    [proofs, matches],
+    () =>
+      data.dues.items.filter((item) =>
+        `${item.student_name} ${item.reference_number || ""}`.toLowerCase().includes(query) &&
+        matchesClub(item.club_id, item.club_name, clubFilter),
+      ),
+    [clubFilter, data.dues.items, query],
   );
 
-  const ask = (type: DecisionType, id: string, title: string, subtitle?: string) =>
+  const ask = (type: DecisionType, id: string, title: string, subtitle?: string) => {
+    if (data.mutation) return;
+    setDialogError(null);
     setPendingDecision({ type, id, title, subtitle });
-
-  const confirmDecision = () => {
-    if (!pendingDecision) return;
-    const { type, id } = pendingDecision;
-    if (type.includes("proposal")) setProposals((items) => items.filter((item) => item.id !== id));
-    if (type.includes("join")) setJoins((items) => items.filter((item) => item.id !== id));
-    if (type.includes("proof")) setProofs((items) => items.filter((item) => item.id !== id));
-    toast.success("Decision recorded in this UI preview.");
-    setPendingDecision(null);
   };
 
+  const handleConfirm = useCallback(async (remarks?: string) => {
+    if (!pendingDecision) return;
+    const { type, id } = pendingDecision;
+    try {
+      if (type === "approve_proposal") await data.decideProposal(id, "approve", remarks);
+      else if (type === "reject_proposal") await data.decideProposal(id, "reject", remarks);
+      else if (type === "override_proposal") await data.decideProposal(id, "approve", remarks);
+      else if (type === "approve_join") await data.decideJoin(id, "approve", remarks);
+      else if (type === "reject_join") await data.decideJoin(id, "reject", remarks);
+      else if (type === "verify_proof") await data.decideDues(id, "paid");
+      else if (type === "reject_proof") await data.decideDues(id, "rejected");
+      toast.success(data.mockMode ? "Decision recorded in this UI preview." : "Decision saved.");
+      setPendingDecision(null);
+      setDialogError(null);
+    } catch (error) {
+      const mapped = error as ApprovalsUiError & { code?: string };
+      if (mapped?.code === "DECISION_IN_PROGRESS") return;
+      setDialogError(mapped?.message || "This decision could not be saved.");
+    }
+  }, [data, pendingDecision]);
+
+  const busyId = data.mutation?.id ?? null;
+
   return (
-    <section className="mx-auto w-full max-w-6xl space-y-6 pb-16" aria-labelledby="admin-approvals-title">
+    <section
+      className="mx-auto w-full max-w-6xl space-y-6 pb-16"
+      aria-labelledby="admin-approvals-title"
+      data-approvals-source={data.source}
+    >
       <span id="admin-approvals-title" className="sr-only">Approvals</span>
+      <div className="sr-only" aria-live="polite">{data.liveMessage}</div>
       <AdminApprovalsHeader
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        counts={{ proposals: proposals.length, join_requests: joins.length, payment_proofs: proofs.length }}
+        counts={data.counts}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         selectedClubFilter={clubFilter}
@@ -137,7 +113,16 @@ export function AdminApprovalsWorkspace() {
       />
       {activeTab === "proposals" ? (
         <AdminProposalList
+          queue={data.proposals}
           proposals={filteredProposals}
+          busyId={busyId}
+          filteredEmpty={data.proposals.status === "ready" && filteredProposals.length === 0}
+          onRetry={() => {
+            void data.loadProposals(true);
+          }}
+          onInspect={(proposalId) => {
+            void data.inspectProposal(proposalId);
+          }}
           onApprove={(item) => ask("approve_proposal", item.id, item.title, item.club_name)}
           onReject={(item) => ask("reject_proposal", item.id, item.title, item.club_name)}
           onOverride={(item) => ask("override_proposal", item.id, item.title, item.club_name)}
@@ -145,25 +130,52 @@ export function AdminApprovalsWorkspace() {
       ) : null}
       {activeTab === "join_requests" ? (
         <AdminJoinRequestList
+          queue={data.joins}
           joinRequests={filteredJoins}
+          busyId={busyId}
+          filteredEmpty={data.joins.status === "ready" && filteredJoins.length === 0}
+          mockMode={data.mockMode}
+          onRetry={() => {
+            void data.loadJoins(true);
+          }}
           onApprove={(item) => ask("approve_join", item.id, item.student_name, item.club_name)}
           onReject={(item) => ask("reject_join", item.id, item.student_name, item.club_name)}
+          onWhatsAppChange={(item, added) => {
+            void data.markWhatsApp(item.id, added).catch((error: ApprovalsUiError) => {
+              toast.error(error?.message || "WhatsApp status could not be saved.");
+            });
+          }}
         />
       ) : null}
       {activeTab === "payment_proofs" ? (
         <AdminPaymentProofList
+          queue={data.dues}
           proofs={filteredProofs}
-          onVerify={(item) => ask("verify_proof", item.id, item.student_name, item.reference_number)}
-          onReject={(item) => ask("reject_proof", item.id, item.student_name, item.reference_number)}
+          busyId={busyId}
+          filteredEmpty={data.dues.status === "ready" && filteredProofs.length === 0}
+          onRetry={() => {
+            void data.loadDues(true);
+          }}
+          onVerify={(item) => ask("verify_proof", item.id, item.student_name, item.reference_number || item.id)}
+          onReject={(item) => ask("reject_proof", item.id, item.student_name, item.reference_number || item.id)}
         />
       ) : null}
       <AdminDecisionDialog
         open={Boolean(pendingDecision)}
-        onOpenChange={(open) => !open && setPendingDecision(null)}
+        onOpenChange={(open) => {
+          if (!open && !data.mutation) {
+            setPendingDecision(null);
+            setDialogError(null);
+          }
+        }}
         decisionType={pendingDecision?.type ?? null}
+        itemId={pendingDecision?.id ?? ""}
         itemTitle={pendingDecision?.title ?? ""}
         itemSubtitle={pendingDecision?.subtitle}
-        onConfirm={confirmDecision}
+        onConfirm={handleConfirm}
+        isSubmitting={Boolean(data.mutation && pendingDecision && data.mutation.id === pendingDecision.id)}
+        submitError={dialogError}
+        remarksPersistKey={pendingDecision ? `${pendingDecision.type}:${pendingDecision.id}` : undefined}
       />
     </section>
   );

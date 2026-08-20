@@ -259,6 +259,73 @@ test("admin can verify a submitted payment as paid", async () => {
   assert.equal(payment.status, "paid");
 });
 
+test("duplicate dues decisions are rejected", async () => {
+  await assert.rejects(
+    () =>
+      updateDuePayment({
+        actor: {
+          id: "admin-1",
+          role: "admin",
+          clubId: null
+        },
+        paymentId: "payment-1",
+        payload: {
+          status: "paid"
+        },
+        database: {
+          async getDuePaymentById() {
+            return createPayment({ status: "paid" });
+          }
+        }
+      }),
+    (error) => error.statusCode === 409 && error.code === "INVALID_PAYMENT_STATE"
+  );
+
+  await assert.rejects(
+    () =>
+      updateDuePayment({
+        actor: {
+          id: "admin-1",
+          role: "admin",
+          clubId: null
+        },
+        paymentId: "payment-1",
+        payload: {
+          status: "rejected"
+        },
+        database: {
+          async getDuePaymentById() {
+            return createPayment({ status: "rejected" });
+          }
+        }
+      }),
+    (error) => error.statusCode === 409 && error.code === "INVALID_PAYMENT_STATE"
+  );
+});
+
+test("student cannot verify dues", async () => {
+  await assert.rejects(
+    () =>
+      updateDuePayment({
+        actor: {
+          id: "student-1",
+          role: "student",
+          clubId: "club-1"
+        },
+        paymentId: "payment-1",
+        payload: {
+          status: "paid"
+        },
+        database: {
+          async getDuePaymentById() {
+            return createPayment({ status: "submitted" });
+          }
+        }
+      }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
+});
+
 test("paid current-session dues activate an inactive member", async () => {
   let memberUpdate;
   let historyEntry;

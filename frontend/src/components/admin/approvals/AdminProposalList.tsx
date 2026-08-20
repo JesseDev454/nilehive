@@ -1,54 +1,70 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  AlertCircle,
-  Building2,
   Calendar,
   CheckCircle2,
   ChevronRight,
-  Eye,
   FileText,
-  HelpCircle,
   MessageSquareQuote,
-  RotateCcw,
-  ShieldAlert,
-  UserCheck
+  RotateCcw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import type { ProposalMock } from "@/components/AdminHomeView";
+import { displayValue, formatNaira, formatShortDate } from "@/lib/approvals/adapters";
+import type { ProposalApprovalView } from "@/lib/approvals/types";
+import { proposalStatusLabel } from "@/lib/proposalStatus";
+import { ApprovalsQueueStatus } from "./ApprovalsQueueStatus";
+import type { QueueState } from "./useAdminApprovalsData";
 
 interface AdminProposalListProps {
-  proposals: ProposalMock[];
-  onApprove: (proposal: ProposalMock) => void;
-  onReject: (proposal: ProposalMock) => void;
-  onOverride: (proposal: ProposalMock) => void;
+  queue: QueueState<ProposalApprovalView>;
+  proposals: ProposalApprovalView[];
+  busyId: string | null;
+  filteredEmpty: boolean;
+  onRetry: () => void;
+  onInspect: (proposalId: string) => void;
+  onApprove: (proposal: ProposalApprovalView) => void;
+  onReject: (proposal: ProposalApprovalView) => void;
+  onOverride: (proposal: ProposalApprovalView) => void;
 }
 
 export function AdminProposalList({
+  queue,
   proposals,
+  busyId,
+  filteredEmpty,
+  onRetry,
+  onInspect,
   onApprove,
   onReject,
   onOverride
 }: AdminProposalListProps) {
   const [expandedId, setExpandedId] = useState<string | null>(proposals[0]?.id ?? null);
 
-  if (proposals.length === 0) {
-    return (
-      <div className="rounded-2xl border border-dashed border-border p-12 text-center">
-        <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-          <FileText className="h-5 w-5" />
-        </div>
-        <h3 className="mt-3 text-sm font-semibold text-foreground">No proposals waiting for authorization</h3>
-        <p className="mt-1 text-xs text-muted-foreground max-w-sm mx-auto">
-          All event proposals submitted by club executives have been reviewed and decided.
-        </p>
-      </div>
-    );
+  useEffect(() => {
+    if (!proposals.some((item) => item.id === expandedId)) {
+      setExpandedId(proposals[0]?.id ?? null);
+    }
+  }, [expandedId, proposals]);
+
+  const statusView = (
+    <ApprovalsQueueStatus
+      status={queue.status}
+      error={queue.error}
+      filteredEmpty={filteredEmpty}
+      emptyTitle="No proposals waiting for authorization"
+      emptyDescription="All event proposals submitted by club executives have been reviewed and decided."
+      loadingLabel="Loading proposal approvals"
+      onRetry={onRetry}
+      icon={FileText}
+    />
+  );
+
+  if (queue.status === "loading" || queue.status === "error" || queue.status === "forbidden" || queue.status === "empty" || filteredEmpty) {
+    return statusView;
   }
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-      {/* Left List (5 cols) */}
       <div className="space-y-2.5 lg:col-span-5">
         <div className="flex items-center justify-between px-1">
           <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -59,10 +75,16 @@ export function AdminProposalList({
         {proposals.map((prop) => {
           const isSelected = expandedId === prop.id;
           return (
-            <div
+            <button
               key={prop.id}
-              onClick={() => setExpandedId(prop.id)}
-              className={`group flex flex-col justify-between rounded-xl border p-4 transition-all duration-180 cursor-pointer ${
+              type="button"
+              onClick={() => {
+                setExpandedId(prop.id);
+                onInspect(prop.id);
+              }}
+              aria-pressed={isSelected}
+              aria-label={`Inspect proposal ${prop.title}`}
+              className={`group flex w-full flex-col justify-between rounded-xl border p-4 text-left transition-all duration-180 min-h-11 ${
                 isSelected
                   ? "border-primary bg-primary/5 shadow-2xs ring-1 ring-primary/30"
                   : "border-border bg-card hover:border-border/80 hover:bg-muted/30"
@@ -74,42 +96,41 @@ export function AdminProposalList({
                     {prop.club_name}
                   </span>
                   <Badge variant="outline" className="text-[10px] font-mono">
-                    ₦{prop.budget.toLocaleString()}
+                    {formatNaira(prop.budget)}
                   </Badge>
                 </div>
 
-                <h3 className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
+                <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">
                   {prop.title}
-                </h3>
+                </p>
 
                 <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
-                  <Calendar className="h-3 w-3" />
-                  <span>{prop.proposed_date}</span>
+                  <Calendar className="h-3 w-3" aria-hidden="true" />
+                  <span>{formatShortDate(prop.proposed_date)}</span>
                   <span>•</span>
-                  <span>{prop.venue}</span>
+                  <span>{displayValue(prop.venue)}</span>
                 </p>
               </div>
 
               <div className="mt-3 pt-2.5 border-t border-border/50 flex items-center justify-between text-[11px]">
                 <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                  Endorsed by {prop.advisor_name}
+                  {prop.advisor_remarks ? "Advisor review complete" : proposalStatusLabel(prop.status)}
                 </span>
                 <ChevronRight className={`h-3.5 w-3.5 transition-transform ${isSelected ? "text-primary translate-x-0.5" : "text-muted-foreground/60"}`} />
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
 
-      {/* Right Detailed Inspector (7 cols) */}
       <div className="lg:col-span-7">
         {(() => {
           const selected = proposals.find((p) => p.id === expandedId) || proposals[0];
           if (!selected) return null;
+          const busy = busyId === selected.id;
 
           return (
             <div className="sticky top-6 rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-2xs space-y-5">
-              {/* Proposal Header */}
               <div className="border-b border-border/70 pb-4">
                 <div className="flex items-center justify-between gap-2">
                   <span className="rounded-md bg-primary/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-primary">
@@ -121,59 +142,68 @@ export function AdminProposalList({
                   {selected.title}
                 </h2>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Submitted by <strong className="text-foreground">{selected.submitted_by_name}</strong> (President)
+                  Submitted by{" "}
+                  <strong className="text-foreground">
+                    {selected.submitted_by_name || "the club President"}
+                  </strong>
                 </p>
               </div>
 
-              {/* Full Proposal Spec (Strictly Read-Only) */}
               <div className="grid grid-cols-2 gap-3 text-xs sm:grid-cols-3">
                 <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
                   <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Event Date</span>
-                  <span className="font-semibold text-foreground mt-0.5 block">{selected.proposed_date}</span>
+                  <span className="font-semibold text-foreground mt-0.5 block">{formatShortDate(selected.proposed_date)}</span>
                 </div>
                 <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
                   <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Campus Venue</span>
-                  <span className="font-semibold text-foreground mt-0.5 block">{selected.venue}</span>
+                  <span className="font-semibold text-foreground mt-0.5 block">{displayValue(selected.venue)}</span>
                 </div>
                 <div className="rounded-xl border border-border/70 bg-muted/20 p-3 col-span-2 sm:col-span-1">
                   <span className="text-muted-foreground block text-[10px] uppercase font-semibold">Requested Budget</span>
-                  <span className="font-mono font-bold text-foreground mt-0.5 block">₦{selected.budget.toLocaleString()}</span>
+                  <span className="font-mono font-bold text-foreground mt-0.5 block">{formatNaira(selected.budget)}</span>
                 </div>
               </div>
 
-              {/* Description (Read-Only) */}
               <div className="space-y-1.5 rounded-xl border border-border/70 bg-muted/10 p-3.5 text-xs">
                 <span className="font-semibold text-foreground block text-xs">Proposal Description &amp; Objectives (Read-Only)</span>
                 <p className="text-muted-foreground leading-relaxed">
-                  {selected.description}
+                  {displayValue(selected.description || selected.aim_objectives || selected.proposed_activity, "No proposal body was returned for this record.")}
                 </p>
               </div>
 
-              {/* Advisor Remarks Block */}
               <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 space-y-1 text-xs">
                 <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 font-semibold">
-                  <MessageSquareQuote className="h-4 w-4" />
+                  <MessageSquareQuote className="h-4 w-4" aria-hidden="true" />
                   <span>Advisor Review &amp; Recommendation</span>
                 </div>
                 <p className="text-muted-foreground leading-relaxed pt-1">
-                  "I have reviewed the academic timeline and safety protocols for this proposal. Highly recommended for Directorate clearance."
+                  {selected.advisor_remarks
+                    ? selected.advisor_remarks
+                    : "No Advisor remarks were returned with this proposal."}
                 </p>
-                <p className="text-[11px] font-medium text-emerald-700 dark:text-emerald-300 pt-1">
-                  — {selected.advisor_name}, Faculty Advisor
-                </p>
+                {selected.advisor_name ? (
+                  <p className="text-[11px] font-medium text-emerald-700 dark:text-emerald-300 pt-1">
+                    — {selected.advisor_name}, Faculty Advisor
+                  </p>
+                ) : (
+                  <p className="text-[11px] font-medium text-emerald-700 dark:text-emerald-300 pt-1">
+                    Faculty Advisor
+                  </p>
+                )}
               </div>
 
-              {/* Decision Actions Bar (Never preselected) */}
               <div className="pt-3 border-t border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
+                  disabled={busy || !selected.can_override}
                   onClick={() => onOverride(selected)}
-                  className="text-xs text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10 gap-1.5 h-9"
-                  title="Override a rejected or disputed proposal with directorate remarks"
+                  className="text-xs text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10 gap-1.5 min-h-11"
+                  title="Override a returned proposal with directorate remarks"
+                  aria-label={`Override returned proposal: ${selected.title}`}
                 >
-                  <RotateCcw className="h-3.5 w-3.5" />
+                  <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                   <span>Directorate Override</span>
                 </Button>
 
@@ -182,8 +212,10 @@ export function AdminProposalList({
                     type="button"
                     variant="outline"
                     size="sm"
+                    disabled={busy || !selected.can_authorize}
                     onClick={() => onReject(selected)}
-                    className="text-xs text-destructive border-destructive/30 hover:bg-destructive/10 h-9"
+                    className="text-xs text-destructive border-destructive/30 hover:bg-destructive/10 min-h-11"
+                    aria-label={`Reject proposal: ${selected.title}`}
                   >
                     Return / Reject with Remarks
                   </Button>
@@ -192,11 +224,13 @@ export function AdminProposalList({
                     type="button"
                     variant="default"
                     size="sm"
+                    disabled={busy || !selected.can_authorize}
                     onClick={() => onApprove(selected)}
-                    className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 h-9"
+                    className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 min-h-11"
+                    aria-label={`Approve proposal: ${selected.title}`}
                   >
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    <span>Authorize Proposal</span>
+                    <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                    <span>{busy ? "Saving..." : "Authorize Proposal"}</span>
                   </Button>
                 </div>
               </div>

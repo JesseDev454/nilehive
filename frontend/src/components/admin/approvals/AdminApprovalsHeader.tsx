@@ -1,4 +1,4 @@
-import { CheckSquare, Clock, CreditCard, FileText, Filter, Search, UserCheck } from "lucide-react";
+import { CheckSquare, CreditCard, FileText, Filter, Search, UserCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { OFFICIAL_14_CLUBS } from "@/data/mockData";
@@ -64,8 +64,7 @@ export function AdminApprovalsHeader({
         </p>
       </div>
 
-      {/* 3 Unified Filter Tabs (Not competing homes) */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="Approval queues">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -75,14 +74,16 @@ export function AdminApprovalsHeader({
               key={tab.id}
               id={`tab-approvals-${tab.id}`}
               type="button"
+              role="tab"
+              aria-selected={isActive}
               onClick={() => onTabChange(tab.id)}
-              className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all duration-180 ${
+              className={`flex min-h-11 items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold transition-all duration-180 ${
                 isActive
                   ? "bg-primary text-primary-foreground shadow-2xs scale-[1.01]"
                   : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >
-              <Icon className="h-3.5 w-3.5" />
+              <Icon className="h-3.5 w-3.5" aria-hidden="true" />
               <span>{tab.label}</span>
               <span
                 className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
@@ -98,22 +99,22 @@ export function AdminApprovalsHeader({
         })}
       </div>
 
-      {/* Search & Club Filtering */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="relative max-w-sm flex-1">
-          <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+          <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
           <Input
+            aria-label={`Search ${activeTab.replace("_", " ")}`}
             placeholder={`Search ${activeTab.replace("_", " ")} by title, name, reference...`}
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-8 text-xs h-9 bg-background"
+            className="pl-8 text-xs h-11 bg-background"
           />
         </div>
 
         <div className="flex items-center gap-2">
-          <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+          <Filter className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
           <Select value={selectedClubFilter} onValueChange={onClubFilterChange}>
-            <SelectTrigger className="w-[200px] text-xs h-9 bg-background">
+            <SelectTrigger className="w-[200px] text-xs h-11 bg-background" aria-label="Filter by club">
               <SelectValue placeholder="All 14 Official Clubs" />
             </SelectTrigger>
             <SelectContent className="max-h-60">

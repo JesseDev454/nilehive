@@ -29,6 +29,11 @@ async function loadModules(env) {
       mode: await server.ssrLoadModule("/src/lib/oneclubMode.ts"),
       data: await server.ssrLoadModule("/src/data/adminMoreData.ts"),
       statuses: await server.ssrLoadModule("/src/lib/proposalStatus.ts"),
+      membershipStatus: await server.ssrLoadModule("/src/lib/membershipStatus.ts"),
+      duesStatus: await server.ssrLoadModule("/src/lib/duesStatus.ts"),
+      adapters: await server.ssrLoadModule("/src/lib/approvals/adapters.ts"),
+      errors: await server.ssrLoadModule("/src/lib/approvals/errors.ts"),
+      approvals: await server.ssrLoadModule("/src/lib/api/approvals.ts"),
     };
   } finally {
     await server.close();
@@ -320,3 +325,158 @@ test("api client preserves abort and normalized network errors", async () => {
     );
   });
 });
+
+test("membership and dues statuses map backend values and reject mock aliases", () => {
+  const { membershipRequestStatusLabel, isUnsupportedMembershipStatus, isPendingMembershipRequest } = integrated.membershipStatus;
+  const { duesStatusLabel, isUnsupportedDuesStatus, isActionableDuesStatus } = integrated.duesStatus;
+  assert.equal(membershipRequestStatusLabel("pending"), "Pending review");
+  assert.equal(membershipRequestStatusLabel("approved_pending_dues"), "Admitted, waiting for dues");
+  assert.equal(membershipRequestStatusLabel("active"), "Admitted");
+  assert.equal(membershipRequestStatusLabel("approved"), "Unknown status");
+  assert.equal(isUnsupportedMembershipStatus("approved"), true);
+  assert.equal(isPendingMembershipRequest("pending"), true);
+  assert.equal(duesStatusLabel("submitted"), "Proof submitted");
+  assert.equal(duesStatusLabel("paid"), "Verified");
+  assert.equal(duesStatusLabel("verified"), "Unknown status");
+  assert.equal(isUnsupportedDuesStatus("verified"), true);
+  assert.equal(isActionableDuesStatus("submitted"), true);
+  assert.equal(isActionableDuesStatus("paid"), false);
+});
+
+test("approval adapters preserve backend ids and do not fabricate required fields", () => {
+  const { adaptAdminProposal, adaptMembershipRequest, adaptDuesPayment, unwrapPaginated, unwrapDuesPayments } = integrated.adapters;
+  const proposal = adaptAdminProposal({
+    id: "proposal-99",
+    title: "Cloud Buildathon",
+    description: "Build with students.",
+    club_id: "club-8",
+    club: { id: "club-8", name: "Nile Google Developers", code: "NGDC" },
+    submitted_by: "president-1",
+    event_date: "2026-09-12",
+    location: "Technology Auditorium",
+    budget_estimate: 150000,
+    status: "pending_admin_review",
+    advisor_remarks: "Ready for Admin.",
+  });
+  assert.equal(proposal.id, "proposal-99");
+  assert.equal(proposal.status, "pending_admin_review");
+  assert.equal(proposal.submitted_by_name, null);
+  assert.equal(proposal.advisor_name, null);
+  assert.equal(proposal.can_authorize, true);
+  assert.equal(proposal.can_override, false);
+
+  const join = adaptMembershipRequest({
+    id: "request-9",
+    profile_id: "student-9",
+    club_id: "club-4",
+    status: "pending",
+    join_reason: "I want to help.",
+    created_at: "2026-08-18T14:30:00Z",
+    profile: { id: "student-9", full_name: "Amina Bello", student_id: "NIL/1", role: "student" },
+    club: { id: "club-4", name: "Nile Climate Initiatives Club", code: "NCIC" },
+    due_payment: { id: "due-9", status: "submitted", amount: 10000 },
+    whatsapp_onboarding_status: "not_ready",
+  });
+  assert.equal(join.id, "request-9");
+  assert.equal(join.student_email, null);
+  assert.equal(join.whatsapp_ready, false);
+  assert.equal(join.status, "pending");
+
+  const dues = adaptDuesPayment({
+    id: "due-3",
+    club_id: "club-2",
+    amount: 10000,
+    payment_reference: "REF-1",
+    proof_url: "https://files.example/receipt",
+    status: "submitted",
+    submitted_at: "2026-08-18T16:15:00Z",
+    club: { id: "club-2", name: "Nile Business Club", code: "NBC" },
+    member: { id: "member-3", full_name: "Amina Bello", student_id: "NIL/2", email: null },
+  });
+  assert.equal(dues.id, "due-3");
+  assert.equal(dues.has_proof, true);
+  assert.equal(dues.student_email, null);
+  assert.equal(dues.payment_channel, null);
+
+  const page = unwrapPaginated({ items: [{ id: "a" }], page: 1, page_size: 20, total: 1, has_next: false });
+  assert.equal(page.items[0].id, "a");
+  const duesPage = unwrapDuesPayments({ summary: { paid: 0 }, payments: { items: [{ id: "due-3" }], page: 1, page_size: 20, total: 1, has_next: false } });
+  assert.equal(duesPage.items[0].id, "due-3");
+});
+
+test("approval error normalization covers 401 403 404 409 429 and 500", () => {
+  const { ApiClientError } = integrated.client;
+  const { normalizeApprovalsError } = integrated.errors;
+  assert.equal(normalizeApprovalsError(new ApiClientError(401, "AUTH_REQUIRED", "Please sign in")).kind, "unauthorized");
+  assert.equal(normalizeApprovalsError(new ApiClientError(403, "FORBIDDEN", "No")).kind, "forbidden");
+  assert.equal(normalizeApprovalsError(new ApiClientError(404, "PROPOSAL_NOT_FOUND", "Missing")).kind, "not_found");
+  assert.equal(normalizeApprovalsError(new ApiClientError(409, "INVALID_PROPOSAL_STATE", "Stale")).kind, "conflict");
+  const limited = normalizeApprovalsError(new ApiClientError(429, "ADMIN_DECISION_RATE_LIMITED", "Wait", null, 12));
+  assert.equal(limited.kind, "rate_limited");
+  assert.match(limited.message, /12 seconds/);
+  assert.equal(normalizeApprovalsError(new ApiClientError(500, "SERVER", "Boom")).kind, "server");
+});
+
+test("approval API functions use CSRF on mutations and honor abort", async () => {
+  const calls = [];
+  await withMockFetch(async (url, init = {}) => {
+    const headers = new Headers(init.headers);
+    calls.push({
+      url: String(url),
+      method: init.method || "GET",
+      csrf: headers.get("X-CSRF-Token"),
+      body: init.body ? JSON.parse(String(init.body)) : null,
+    });
+    if (String(url).endsWith("/auth/csrf")) {
+      return jsonResponse({ data: { csrf_token: "csrf-approvals" } });
+    }
+    if (String(url).includes("/proposals/admin") && (init.method || "GET") === "GET") {
+      return jsonResponse({ data: { items: [], page: 1, page_size: 100, total: 0, has_next: false } });
+    }
+    if (String(url).includes("/membership-requests") && (init.method || "GET") === "GET") {
+      return jsonResponse({ data: { items: [], page: 1, page_size: 100, total: 0, has_next: false } });
+    }
+    if (String(url).includes("/dues") && (init.method || "GET") === "GET") {
+      return jsonResponse({ data: { summary: {}, payments: { items: [], page: 1, page_size: 100, total: 0, has_next: false } } });
+    }
+    return jsonResponse({ data: { id: "ok", status: "approved" } });
+  }, async () => {
+    await integrated.approvals.listAdminProposals({ status: "pending_admin_review", page_size: 100 });
+    await integrated.approvals.submitAdminProposalDecision("proposal-1", { decision: "approve" });
+    await integrated.approvals.submitMembershipDecision("request-1", { decision: "reject", remarks: "Capacity reached" });
+    await integrated.approvals.markMembershipWhatsAppAdded("request-1", { notes: "Added" });
+    await integrated.approvals.submitDuesDecision("due-1", { status: "paid" });
+
+    const getCall = calls.find((call) => call.method === "GET" && call.url.includes("/proposals/admin"));
+    assert.equal(getCall.csrf, null);
+    const proposalDecision = calls.find((call) => call.url.endsWith("/proposals/admin/proposal-1/decision"));
+    assert.equal(proposalDecision.csrf, "csrf-approvals");
+    assert.deepEqual(proposalDecision.body, { decision: "approve" });
+    const membershipDecision = calls.find((call) => call.url.endsWith("/membership-requests/request-1/decision"));
+    assert.equal(membershipDecision.csrf, "csrf-approvals");
+    assert.equal(membershipDecision.body.remarks, "Capacity reached");
+    const duesDecision = calls.find((call) => call.url.endsWith("/dues/due-1"));
+    assert.equal(duesDecision.csrf, "csrf-approvals");
+    assert.deepEqual(duesDecision.body, { status: "paid" });
+  });
+
+  const controller = new AbortController();
+  controller.abort();
+  await withMockFetch(async (_url, init = {}) => {
+    if (init.signal?.aborted) {
+      throw new DOMException("The operation was aborted.", "AbortError");
+    }
+    return jsonResponse({ data: { items: [] } });
+  }, async () => {
+    await assert.rejects(
+      () => integrated.approvals.listAdminProposals({ signal: controller.signal }),
+      (error) => error.name === "AbortError",
+    );
+  });
+});
+
+test("integrated mode never falls back to mock approval records", () => {
+  assert.equal(integrated.mode.isMockPreviewMode(), false);
+  assert.equal(mockMode.mode.isMockPreviewMode(), true);
+});
+

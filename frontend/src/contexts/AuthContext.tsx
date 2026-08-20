@@ -55,6 +55,7 @@ export interface AuthContextValue {
   refresh: () => Promise<void>;
   beginLogin: (returnTo?: string) => void;
   signOut: () => Promise<void>;
+  reportAuthFailure: (error: unknown) => boolean;
 }
 
 const PREVIEW_PROFILE: PreviewProfile = {
@@ -82,6 +83,7 @@ const defaultContext: AuthContextValue = {
   refresh: async () => undefined,
   beginLogin: () => undefined,
   signOut: async () => undefined,
+  reportAuthFailure: () => false,
 };
 
 const AuthContext = createContext<AuthContextValue>(defaultContext);
@@ -199,6 +201,25 @@ function IntegratedAuthProvider({ children }: { children: ReactNode }) {
     beginCampusOneLogin(next);
   }, []);
 
+  const reportAuthFailure = useCallback((error: unknown) => {
+    if (!(error instanceof ApiClientError) || error.status !== 401) {
+      return false;
+    }
+    clearCsrfToken();
+    setSessionProfile(null);
+    setUserEmail(null);
+    if (error.code === "SESSION_EXPIRED" || error.code === "INVALID_SESSION") {
+      setStatus("session_expired");
+      setErrorCode(error.code);
+      setErrorMessage(error.message);
+    } else {
+      setStatus("unauthenticated");
+      setErrorCode(error.code);
+      setErrorMessage(error.message);
+    }
+    return true;
+  }, []);
+
   const signOut = useCallback(async () => {
     try {
       await logoutCampusOne();
@@ -230,8 +251,9 @@ function IntegratedAuthProvider({ children }: { children: ReactNode }) {
       refresh: loadProfile,
       beginLogin,
       signOut,
+      reportAuthFailure,
     };
-  }, [status, sessionProfile, userEmail, errorCode, errorMessage, loadProfile, beginLogin, signOut]);
+  }, [status, sessionProfile, userEmail, errorCode, errorMessage, loadProfile, beginLogin, signOut, reportAuthFailure]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
