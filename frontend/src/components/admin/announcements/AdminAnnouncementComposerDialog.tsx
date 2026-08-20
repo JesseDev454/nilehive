@@ -1,22 +1,12 @@
-import { useState, useEffect } from "react";
-import {
-  AlertCircle,
-  CheckCircle2,
-  Info,
-  Megaphone,
-  Radio,
-  Send,
-  Sparkles,
-  Users,
-  X
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { AlertCircle, Megaphone, Send } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,162 +17,118 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { OFFICIAL_14_CLUBS } from "@/data/mockData";
-import {
-  AUDIENCE_CONFIG,
-  PRIORITY_CONFIG,
-  ROLE_LABELS,
-  type AdminAnnouncementItem,
-  type AnnouncementAudienceType,
-  type AnnouncementPriorityLevel,
-  type TargetRoleType
-} from "@/data/adminAnnouncementsData";
+import { PRIORITY_CONFIG } from "@/data/adminAnnouncementsData";
+import { validateAnnouncementComposer, type ComposerValidationErrors } from "@/lib/announcements/adapters";
+import { ANNOUNCEMENT_DRAFT_KEY } from "@/lib/announcements/mockAnnouncements";
+import type { AnnouncementsUiError } from "@/lib/announcements/errors";
+import type {
+  AdminAnnouncementView,
+  AnnouncementAudienceType,
+  AnnouncementComposerInput,
+  AnnouncementPriorityLevel,
+  TargetRoleType,
+} from "@/lib/announcements/types";
 import { toast } from "sonner";
 
 interface AdminAnnouncementComposerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onPublished: (newAnnouncement: AdminAnnouncementItem) => void;
+  clubs: Array<{ id: string; name: string }>;
+  publishing: boolean;
+  publishError: AnnouncementsUiError | null;
+  mockMode: boolean;
+  onPublish: (input: AnnouncementComposerInput) => Promise<{
+    ok: boolean;
+    fieldErrors?: ComposerValidationErrors;
+    alreadyInFlight?: boolean;
+    announcement?: AdminAnnouncementView;
+    error?: AnnouncementsUiError | "auth" | "abort";
+  }>;
 }
+
+const EMPTY_ERRORS: ComposerValidationErrors = {};
 
 export function AdminAnnouncementComposerDialog({
   open,
   onOpenChange,
-  onPublished
+  clubs,
+  publishing,
+  publishError,
+  onPublish,
 }: AdminAnnouncementComposerDialogProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [audience, setAudience] = useState<AnnouncementAudienceType>("all_users");
-  const [targetClubId, setTargetClubId] = useState<string>("google-developers");
+  const [targetClubId, setTargetClubId] = useState("");
   const [targetRole, setTargetRole] = useState<TargetRoleType>("president");
   const [priority, setPriority] = useState<AnnouncementPriorityLevel>("normal");
-  const [actionUrl, setActionUrl] = useState("");
-  const [actionLabel, setActionLabel] = useState("");
+  const [errors, setErrors] = useState<ComposerValidationErrors>(EMPTY_ERRORS);
 
-  const [errors, setErrors] = useState<{
-    title?: string;
-    content?: string;
-    targetClubId?: string;
-  }>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Restore draft from sessionStorage if available
   useEffect(() => {
-    if (open) {
-      const draft = sessionStorage.getItem("oneclub_admin_announcement_composer_draft");
-      if (draft) {
-        try {
-          const p = JSON.parse(draft);
-          if (p.title) setTitle(p.title);
-          if (p.content) setContent(p.content);
-          if (p.audience) setAudience(p.audience);
-          if (p.targetClubId) setTargetClubId(p.targetClubId);
-          if (p.targetRole) setTargetRole(p.targetRole);
-          if (p.priority) setPriority(p.priority);
-        } catch {
-          // ignore corrupted draft
-        }
-      }
+    if (!open) return;
+    const draft = sessionStorage.getItem(ANNOUNCEMENT_DRAFT_KEY);
+    if (!draft) return;
+    try {
+      const parsed = JSON.parse(draft) as Partial<AnnouncementComposerInput>;
+      if (parsed.title) setTitle(parsed.title);
+      if (parsed.content) setContent(parsed.content);
+      if (parsed.audience) setAudience(parsed.audience);
+      if (parsed.targetClubId) setTargetClubId(parsed.targetClubId);
+      if (parsed.targetRole) setTargetRole(parsed.targetRole);
+      if (parsed.priority) setPriority(parsed.priority);
+    } catch {
+      // ignore corrupted device-local draft
     }
   }, [open]);
 
-  // Persist draft on edit
   useEffect(() => {
-    if (title || content) {
-      sessionStorage.setItem(
-        "oneclub_admin_announcement_composer_draft",
-        JSON.stringify({
-          title,
-          content,
-          audience,
-          targetClubId,
-          targetRole,
-          priority
-        })
-      );
-    }
-  }, [title, content, audience, targetClubId, targetRole, priority]);
+    if (!open) return;
+    if (!title && !content) return;
+    sessionStorage.setItem(
+      ANNOUNCEMENT_DRAFT_KEY,
+      JSON.stringify({ title, content, audience, targetClubId, targetRole, priority }),
+    );
+  }, [audience, content, open, priority, targetClubId, targetRole, title]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (audience === "one_club" && !targetClubId && clubs[0]) {
+      setTargetClubId(clubs[0].id);
+    }
+  }, [audience, clubs, targetClubId]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const newErrors: typeof errors = {};
-
-    if (!title.trim()) {
-      newErrors.title = "Announcement title is required.";
-    } else if (title.trim().length < 5) {
-      newErrors.title = "Title must be at least 5 characters.";
-    }
-
-    if (!content.trim()) {
-      newErrors.content = "Announcement message content is required.";
-    } else if (content.trim().length < 10) {
-      newErrors.content = "Message content must be at least 10 characters.";
-    }
-
-    if (audience === "one_club" && !targetClubId) {
-      newErrors.targetClubId = "Please select a target club.";
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    const input: AnnouncementComposerInput = {
+      title,
+      content,
+      audience,
+      targetClubId: audience === "one_club" ? targetClubId : undefined,
+      targetRole: audience === "role" ? targetRole : undefined,
+      priority,
+    };
+    const nextErrors = validateAnnouncementComposer(input);
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
       return;
     }
 
-    setIsSubmitting(true);
+    const result = await onPublish(input);
+    if (result.fieldErrors) {
+      setErrors(result.fieldErrors);
+      return;
+    }
+    if (!result.ok) return;
 
-    setTimeout(() => {
-      setIsSubmitting(false);
-
-      const targetClubObj =
-        audience === "one_club"
-          ? OFFICIAL_14_CLUBS.find((c) => c.id === targetClubId)
-          : undefined;
-
-      // Estimate initial total recipients based on audience
-      let totalRecipients = 1850;
-      if (audience === "all_clubs") totalRecipients = 156;
-      if (audience === "one_club") totalRecipients = 95;
-      if (audience === "role") {
-        if (targetRole === "president") totalRecipients = 14;
-        else if (targetRole === "advisor") totalRecipients = 14;
-        else if (targetRole === "executive") totalRecipients = 70;
-        else totalRecipients = 1750;
-      }
-
-      const publishedItem: AdminAnnouncementItem = {
-        id: `ann-${Date.now()}`,
-        title: title.trim(),
-        content: content.trim(),
-        audience,
-        targetClubId: audience === "one_club" ? targetClubId : undefined,
-        targetClubName: targetClubObj?.name,
-        targetRole: audience === "role" ? targetRole : undefined,
-        priority,
-        publishedAt: new Date().toISOString(),
-        publishedBy: "Directorate of Student Affairs",
-        readCount: 0,
-        totalRecipients,
-        actionUrl: actionUrl.trim() || undefined,
-        actionLabel: actionLabel.trim() || undefined
-      };
-
-      onPublished(publishedItem);
-      toast.success("Announcement broadcasted successfully.");
-
-      // Clear draft & reset
-      sessionStorage.removeItem("oneclub_admin_announcement_composer_draft");
-      setTitle("");
-      setContent("");
-      setAudience("all_users");
-      setPriority("normal");
-      setActionUrl("");
-      setActionLabel("");
-      setErrors({});
-      onOpenChange(false);
-    }, 280);
+    toast.success("Announcement published.");
+    sessionStorage.removeItem(ANNOUNCEMENT_DRAFT_KEY);
+    setTitle("");
+    setContent("");
+    setAudience("all_users");
+    setPriority("normal");
+    setErrors(EMPTY_ERRORS);
+    onOpenChange(false);
   };
 
   return (
@@ -191,27 +137,22 @@ export function AdminAnnouncementComposerDialog({
         <form onSubmit={handleSubmit} className="space-y-4">
           <DialogHeader>
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-primary">
-              <Megaphone className="h-4 w-4" />
+              <Megaphone className="h-4 w-4" aria-hidden="true" />
               <span>Broadcast Composer</span>
             </div>
-            <DialogTitle className="text-lg font-bold text-foreground">
-              Publish New Announcement
-            </DialogTitle>
+            <DialogTitle className="text-lg font-bold text-foreground">Publish New Announcement</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Official broadcasts are delivered to users' notification feeds. Once published, broadcasts cannot be edited or duplicated.
+              Official broadcasts are delivered to users&apos; notification feeds. Once published, broadcasts cannot be edited, deleted, pinned, or scheduled.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 text-xs pt-1">
-            {/* Title */}
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <Label htmlFor="ann-title" className="text-xs font-semibold">
                   Announcement Title <span className="text-destructive">*</span>
                 </Label>
-                <span className="text-[10px] text-muted-foreground font-mono">
-                  {title.length}/150
-                </span>
+                <span className="text-[10px] text-muted-foreground font-mono">{title.length}/150</span>
               </div>
               <Input
                 id="ann-title"
@@ -223,102 +164,76 @@ export function AdminAnnouncementComposerDialog({
                   if (errors.title) setErrors((prev) => ({ ...prev, title: undefined }));
                 }}
                 className={`text-xs h-9 ${errors.title ? "border-destructive" : ""}`}
+                aria-invalid={Boolean(errors.title)}
               />
-              {errors.title && (
+              {errors.title ? (
                 <p className="text-[11px] text-destructive flex items-center gap-1 mt-1">
-                  <AlertCircle className="h-3 w-3" />
+                  <AlertCircle className="h-3 w-3" aria-hidden="true" />
                   <span>{errors.title}</span>
                 </p>
-              )}
+              ) : null}
             </div>
 
-            {/* Target Audience Selector */}
             <div className="space-y-2 rounded-xl border border-border/80 bg-muted/20 p-3">
               <Label className="text-xs font-semibold block text-foreground">
                 Target Audience <span className="text-destructive">*</span>
               </Label>
 
               <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setAudience("all_users")}
-                  className={`flex flex-col text-left p-2.5 rounded-lg border text-xs transition-all ${
-                    audience === "all_users"
-                      ? "border-primary bg-primary/10 font-semibold text-primary ring-1 ring-primary/20"
-                      : "border-border bg-background text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <span>All Campus Users</span>
-                  <span className="text-[10px] opacity-75 font-normal">Every student &amp; advisor</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setAudience("all_clubs")}
-                  className={`flex flex-col text-left p-2.5 rounded-lg border text-xs transition-all ${
-                    audience === "all_clubs"
-                      ? "border-primary bg-primary/10 font-semibold text-primary ring-1 ring-primary/20"
-                      : "border-border bg-background text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <span>All 14 Official Clubs</span>
-                  <span className="text-[10px] opacity-75 font-normal">All club executives &amp; advisors</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setAudience("one_club")}
-                  className={`flex flex-col text-left p-2.5 rounded-lg border text-xs transition-all ${
-                    audience === "one_club"
-                      ? "border-primary bg-primary/10 font-semibold text-primary ring-1 ring-primary/20"
-                      : "border-border bg-background text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <span>Single Club</span>
-                  <span className="text-[10px] opacity-75 font-normal">Target one specific organization</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setAudience("role")}
-                  className={`flex flex-col text-left p-2.5 rounded-lg border text-xs transition-all ${
-                    audience === "role"
-                      ? "border-primary bg-primary/10 font-semibold text-primary ring-1 ring-primary/20"
-                      : "border-border bg-background text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <span>Specific Role</span>
-                  <span className="text-[10px] opacity-75 font-normal">Filter by user governance role</span>
-                </button>
+                {(
+                  [
+                    ["all_users", "All Campus Users", "Every student & advisor"],
+                    ["all_clubs", "All Official Clubs", "All club executives & advisors"],
+                    ["one_club", "Single Club", "Target one specific organization"],
+                    ["role", "Specific Role", "Filter by user governance role"],
+                  ] as const
+                ).map(([value, label, hint]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={audience === value}
+                    onClick={() => setAudience(value)}
+                    className={`flex flex-col text-left p-2.5 rounded-lg border text-xs transition-all min-h-11 ${
+                      audience === value
+                        ? "border-primary bg-primary/10 font-semibold text-primary ring-1 ring-primary/20"
+                        : "border-border bg-background text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <span>{label}</span>
+                    <span className="text-[10px] opacity-75 font-normal">{hint}</span>
+                  </button>
+                ))}
               </div>
 
-              {/* Conditional Sub-selectors */}
-              {audience === "one_club" && (
+              {audience === "one_club" ? (
                 <div className="pt-2 space-y-1">
                   <Label htmlFor="club-selector" className="text-[11px] font-medium text-foreground">
                     Select Target Club
                   </Label>
                   <Select value={targetClubId} onValueChange={setTargetClubId}>
                     <SelectTrigger id="club-selector" className="text-xs h-9 bg-background">
-                      <SelectValue placeholder="Select one of 14 official clubs" />
+                      <SelectValue placeholder="Select an official club" />
                     </SelectTrigger>
                     <SelectContent className="max-h-56">
-                      {OFFICIAL_14_CLUBS.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
+                      {clubs.map((club) => (
+                        <SelectItem key={club.id} value={club.id}>
+                          {club.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {errors.targetClubId ? (
+                    <p className="text-[11px] text-destructive">{errors.targetClubId}</p>
+                  ) : null}
                 </div>
-              )}
+              ) : null}
 
-              {audience === "role" && (
+              {audience === "role" ? (
                 <div className="pt-2 space-y-1">
                   <Label htmlFor="role-selector" className="text-[11px] font-medium text-foreground">
                     Select Target Governance Role
                   </Label>
-                  <Select value={targetRole} onValueChange={(r) => setTargetRole(r as TargetRoleType)}>
+                  <Select value={targetRole} onValueChange={(role) => setTargetRole(role as TargetRoleType)}>
                     <SelectTrigger id="role-selector" className="text-xs h-9 bg-background">
                       <SelectValue placeholder="Select target role" />
                     </SelectTrigger>
@@ -327,35 +242,33 @@ export function AdminAnnouncementComposerDialog({
                       <SelectItem value="advisor">Staff Advisors Only</SelectItem>
                       <SelectItem value="executive">Club Executives Only</SelectItem>
                       <SelectItem value="student">Students Only</SelectItem>
+                      <SelectItem value="admin">Club Services Admins Only</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              )}
+              ) : null}
             </div>
 
-            {/* Priority Level */}
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold block text-foreground">
-                Notice Priority Level
-              </Label>
+              <Label className="text-xs font-semibold block text-foreground">Notice Priority Level</Label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {(["low", "normal", "high", "urgent"] as const).map((p) => {
-                  const isSelected = priority === p;
-                  const conf = PRIORITY_CONFIG[p];
+                {(["low", "normal", "high", "urgent"] as const).map((level) => {
+                  const isSelected = priority === level;
                   return (
                     <button
-                      key={p}
+                      key={level}
                       type="button"
-                      onClick={() => setPriority(p)}
-                      className={`p-2 rounded-lg border text-left text-xs transition-all ${
+                      aria-pressed={isSelected}
+                      onClick={() => setPriority(level)}
+                      className={`p-2 rounded-lg border text-left text-xs transition-all min-h-11 ${
                         isSelected
                           ? "border-primary bg-primary/10 text-foreground font-bold ring-1 ring-primary/20"
                           : "border-border bg-background text-muted-foreground hover:text-foreground"
                       }`}
                     >
-                      <span className="block font-semibold capitalize">{p}</span>
+                      <span className="block font-semibold capitalize">{level}</span>
                       <span className="text-[10px] opacity-75 font-normal line-clamp-1">
-                        {p === "normal" ? "Standard" : p === "urgent" ? "Critical" : p}
+                        {level === "normal" ? "Standard" : level === "urgent" ? "Critical" : level}
                       </span>
                     </button>
                   );
@@ -366,15 +279,12 @@ export function AdminAnnouncementComposerDialog({
               </p>
             </div>
 
-            {/* Content Textarea */}
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <Label htmlFor="ann-content" className="text-xs font-semibold">
                   Announcement Message <span className="text-destructive">*</span>
                 </Label>
-                <span className="text-[10px] text-muted-foreground font-mono">
-                  {content.length} characters
-                </span>
+                <span className="text-[10px] text-muted-foreground font-mono">{content.length} characters</span>
               </div>
               <Textarea
                 id="ann-content"
@@ -386,64 +296,38 @@ export function AdminAnnouncementComposerDialog({
                   if (errors.content) setErrors((prev) => ({ ...prev, content: undefined }));
                 }}
                 className={`text-xs ${errors.content ? "border-destructive" : ""}`}
+                aria-invalid={Boolean(errors.content)}
               />
-              {errors.content && (
+              {errors.content ? (
                 <p className="text-[11px] text-destructive flex items-center gap-1 mt-1">
-                  <AlertCircle className="h-3 w-3" />
+                  <AlertCircle className="h-3 w-3" aria-hidden="true" />
                   <span>{errors.content}</span>
                 </p>
-              )}
+              ) : null}
             </div>
 
-            {/* Optional Action Deep-Link */}
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <div className="space-y-1">
-                <Label htmlFor="ann-action-url" className="text-[11px] font-medium">
-                  Attached Action Route (Optional)
-                </Label>
-                <Input
-                  id="ann-action-url"
-                  placeholder="e.g. /events or /proposals"
-                  value={actionUrl}
-                  onChange={(e) => setActionUrl(e.target.value)}
-                  className="text-xs h-8"
-                />
-              </div>
+            <p className="text-[11px] text-muted-foreground">
+              Drafts stay on this device only and are not saved to OneClub. Action links, attachments, scheduling, and pinning are not supported.
+            </p>
 
-              <div className="space-y-1">
-                <Label htmlFor="ann-action-label" className="text-[11px] font-medium">
-                  Button Label (Optional)
-                </Label>
-                <Input
-                  id="ann-action-label"
-                  placeholder="e.g. View Guidelines"
-                  value={actionLabel}
-                  onChange={(e) => setActionLabel(e.target.value)}
-                  className="text-xs h-8"
-                />
+            {publishError ? (
+              <div id="admin-announcements-publish-error" className="rounded-lg bg-destructive/10 border border-destructive/30 p-2.5 text-[11px] text-destructive" role="alert">
+                {publishError.message}
               </div>
+            ) : null}
+
+            <div className="sr-only" aria-live="polite">
+              {publishing ? "Publishing announcement." : ""}
             </div>
           </div>
 
           <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end pt-3 border-t border-border">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => onOpenChange(false)}
-              className="text-xs h-9"
-            >
+            <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)} className="text-xs h-11">
               Cancel Draft
             </Button>
-            <Button
-              type="submit"
-              variant="default"
-              size="sm"
-              disabled={isSubmitting}
-              className="text-xs gap-1.5 h-9"
-            >
+            <Button type="submit" variant="default" size="sm" disabled={publishing} className="text-xs gap-1.5 h-11">
               <Send className="h-3.5 w-3.5" />
-              <span>{isSubmitting ? "Broadcasting..." : "Publish Broadcast"}</span>
+              <span>{publishing ? "Broadcasting..." : "Publish Broadcast"}</span>
             </Button>
           </DialogFooter>
         </form>

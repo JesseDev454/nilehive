@@ -482,7 +482,7 @@ test("president can view engagement and mark attendance", async (t) => {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      user_id: "student-1",
+      user_id: "student-2",
       attended: true
     })
   });
@@ -637,6 +637,150 @@ test("student without event access cannot self check in", async (t) => {
 
   assert.equal(response.status, 403);
   assert.equal(payload.error.code, "FORBIDDEN");
+});
+
+test("admin can view engagement rosters and mark attendance", async (t) => {
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  const engagementResponse = await fetch(`${server.baseUrl}/api/v1/events/proposal-1/engagement`, {
+    headers: {
+      Authorization: "Bearer admin-token"
+    }
+  });
+  const engagementPayload = await engagementResponse.json();
+  const attendanceResponse = await fetch(`${server.baseUrl}/api/v1/events/proposal-1/attendance`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer admin-token",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      user_id: "student-2",
+      attended: true
+    })
+  });
+  const attendancePayload = await attendanceResponse.json();
+
+  assert.equal(engagementResponse.status, 200);
+  assert.equal(engagementPayload.data.event.id, "proposal-1");
+  assert.equal(engagementPayload.data.event.proposal_id, "proposal-1");
+  assert.equal(engagementPayload.data.rsvps.length, 2);
+  assert.equal(engagementPayload.data.attendance.length, 1);
+  assert.equal(attendanceResponse.status, 200);
+  assert.equal(attendancePayload.data.user_id, "student-2");
+  assert.equal(attendancePayload.data.checked_in_by, "admin-1");
+});
+
+test("admin duplicate attendance is idempotent", async (t) => {
+  let upsertCalls = 0;
+  const server = await createTestServer(createFakeDatabase({
+    async upsertEventAttendance(attendance) {
+      upsertCalls += 1;
+      return createAttendance(attendance);
+    }
+  }));
+  t.after(() => server.close());
+
+  const first = await fetch(`${server.baseUrl}/api/v1/events/proposal-1/attendance`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer admin-token",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      user_id: "student-1",
+      attended: true
+    })
+  });
+  const second = await fetch(`${server.baseUrl}/api/v1/events/proposal-1/attendance`, {
+    method: "POST",
+    headers: {
+      Authorization: "Bearer admin-token",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      user_id: "student-1",
+      attended: true
+    })
+  });
+  const payload = await second.json();
+
+  assert.equal(first.status, 200);
+  assert.equal(second.status, 200);
+  assert.equal(payload.data.user_id, "student-1");
+  assert.equal(upsertCalls, 0);
+});
+
+test("student and advisor cannot mark Admin attendance", async (t) => {
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  for (const token of ["student-token", "advisor-token"]) {
+    const response = await fetch(`${server.baseUrl}/api/v1/events/proposal-1/attendance`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        user_id: "student-1",
+        attended: true
+      })
+    });
+    const payload = await response.json();
+    assert.equal(response.status, 403);
+    assert.equal(payload.error.code, "FORBIDDEN");
+  }
+});
+
+test("engagement for another event does not include a different roster", async (t) => {
+  const server = await createTestServer(createFakeDatabase({
+    rsvpsByProposalId: {
+      "proposal-1": [createRsvp()],
+      "proposal-2": [
+        createRsvp({
+          id: "rsvp-club-2",
+          proposal_id: "proposal-2",
+          club_id: "club-2",
+          user_id: "student-2"
+        })
+      ]
+    },
+    attendanceByProposalId: {
+      "proposal-1": [createAttendance()],
+      "proposal-2": []
+    }
+  }));
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/events/proposal-2/engagement`, {
+    headers: {
+      Authorization: "Bearer admin-token"
+    }
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.event.id, "proposal-2");
+  assert.equal(payload.data.rsvps.length, 1);
+  assert.equal(payload.data.rsvps[0].proposal_id, "proposal-2");
+  assert.equal(payload.data.attendance.length, 0);
+});
+
+test("missing approved event returns 404", async (t) => {
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/events/missing-event/engagement`, {
+    headers: {
+      Authorization: "Bearer admin-token"
+    }
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 404);
+  assert.equal(payload.error.code, "APPROVED_EVENT_NOT_FOUND");
 });
 
 test("non-student cannot self check in", async (t) => {

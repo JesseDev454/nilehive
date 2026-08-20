@@ -767,3 +767,366 @@ export async function mockClubsApi(
     },
   };
 }
+
+export const E2E_EVENT = {
+  id: "proposal-e2e-event-1",
+  proposal_id: "proposal-e2e-event-1",
+  club_id: "club-ngd",
+  title: "Google Cloud Buildathon",
+  proposal_title: "Google Cloud Buildathon",
+  description: "A practical buildathon for student teams.",
+  event_date: "2099-09-12",
+  event_time: "10:00:00",
+  location: "Technology Auditorium",
+  number_of_participants: 150,
+  budget_estimate: 150000,
+  status: "approved",
+  current_stage: "approved",
+  event_lifecycle: "upcoming",
+  can_rsvp: true,
+  approved_at: "2026-08-10T10:00:00.000Z",
+  created_at: "2026-08-01T10:00:00.000Z",
+  updated_at: "2026-08-10T10:00:00.000Z",
+};
+
+export const E2E_PAST_EVENT = {
+  ...E2E_EVENT,
+  id: "proposal-e2e-event-past",
+  proposal_id: "proposal-e2e-event-past",
+  title: "Climate Showcase",
+  event_date: "2020-01-15",
+  event_lifecycle: "past",
+  can_rsvp: false,
+  club_id: "club-wit",
+};
+
+export const E2E_ANNOUNCEMENT = {
+  id: "ann-e2e-1",
+  club_id: null,
+  created_by: "e2e-admin-profile",
+  title: "Grant Guidelines",
+  message: "Review the approved proposal calendar before disbursement this semester.",
+  audience: "all_users",
+  priority: "high",
+  target_role: null,
+  is_read: false,
+  read_at: null,
+  created_at: "2026-08-18T14:30:00.000Z",
+  updated_at: "2026-08-18T14:30:00.000Z",
+};
+
+export const E2E_CHECKIN_STUDENT = {
+  id: "student-e2e-checkin",
+  full_name: "Ibrahim Sani",
+  email: "ibrahim.sani@nileuniversity.edu.ng",
+  role: "student",
+  app_role: "student",
+  club_id: "club-ngd",
+  student_id: "NIL/2023/UG/0491",
+  advisor_assignments: [],
+  club: { id: "club-ngd", name: "Nile Google Developers", code: "NGD" },
+};
+
+export async function mockEventsApi(
+  page: Page,
+  options: {
+    events?: Array<Record<string, unknown>>;
+    listStatus?: number;
+    engagementStatus?: number;
+    attendanceResult?: { status: number; body: unknown };
+    reports?: Array<Record<string, unknown>>;
+  } = {},
+) {
+  const events = options.events ?? [E2E_EVENT, E2E_PAST_EVENT];
+  const clubs = e2eOfficialClubs();
+  const attendancePosts: Array<{ csrf: string | null; body: unknown; url: string }> = [];
+  const listErrorStatus = options.listStatus && options.listStatus !== 200 ? options.listStatus : null;
+  let failList = Boolean(listErrorStatus);
+
+  await page.route("**/api/v1/clubs**", async (route) => {
+    if (route.request().method() !== "GET") {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ data: clubs }),
+    });
+  });
+
+  await page.route("**/api/v1/admin/users**", async (route) => {
+    const url = new URL(route.request().url());
+    const query = (url.searchParams.get("q") || "").toLowerCase();
+    const items = query && E2E_CHECKIN_STUDENT.student_id.toLowerCase().includes(query)
+      ? [E2E_CHECKIN_STUDENT]
+      : query
+        ? []
+        : [E2E_CHECKIN_STUDENT];
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        data: { items, page: 1, page_size: 20, total: items.length, has_next: false },
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/reports**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        data: {
+          items: options.reports ?? [],
+          page: 1,
+          page_size: 100,
+          total: (options.reports ?? []).length,
+          has_next: false,
+        },
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/events/**", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+
+    if (request.method() === "POST" && url.pathname.endsWith("/attendance")) {
+      attendancePosts.push({
+        csrf: await request.headerValue("x-csrf-token"),
+        body: request.postDataJSON(),
+        url: request.url(),
+      });
+      const result = options.attendanceResult ?? {
+        status: 200,
+        body: {
+          data: {
+            id: "att-e2e-1",
+            proposal_id: E2E_EVENT.id,
+            club_id: "club-ngd",
+            user_id: E2E_CHECKIN_STUDENT.id,
+            attended: true,
+            checked_in_by: "e2e-admin-profile",
+            checked_in_at: "2026-08-20T10:14:00.000Z",
+            profile: {
+              id: E2E_CHECKIN_STUDENT.id,
+              full_name: E2E_CHECKIN_STUDENT.full_name,
+              student_id: E2E_CHECKIN_STUDENT.student_id,
+              role: "student",
+            },
+          },
+        },
+      };
+      await route.fulfill({
+        status: result.status,
+        contentType: "application/json",
+        headers: result.status === 429 ? { "Retry-After": "12" } : {},
+        body: JSON.stringify(result.body),
+      });
+      return;
+    }
+
+    if (request.method() === "GET" && url.pathname.endsWith("/engagement")) {
+      if (options.engagementStatus && options.engagementStatus !== 200) {
+        await route.fulfill({
+          status: options.engagementStatus,
+          contentType: "application/json",
+          body: JSON.stringify({ error: { code: "APPROVED_EVENT_NOT_FOUND", message: "Approved event not found" } }),
+        });
+        return;
+      }
+      const proposalId = url.pathname.split("/").slice(-2, -1)[0];
+      const event = events.find((item) => item.id === proposalId) ?? events[0];
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: {
+            event,
+            summary: { total_rsvps: 2, going: 1, interested: 1, not_going: 0, cancelled: 0, attended: 1 },
+            rsvps: [
+              {
+                id: "rsvp-e2e-1",
+                proposal_id: event.id,
+                club_id: event.club_id,
+                user_id: E2E_CHECKIN_STUDENT.id,
+                status: "going",
+                profile: {
+                  id: E2E_CHECKIN_STUDENT.id,
+                  full_name: E2E_CHECKIN_STUDENT.full_name,
+                  student_id: E2E_CHECKIN_STUDENT.student_id,
+                  role: "student",
+                },
+              },
+            ],
+            attendance: [
+              {
+                id: "att-e2e-existing",
+                proposal_id: event.id,
+                club_id: event.club_id,
+                user_id: E2E_CHECKIN_STUDENT.id,
+                attended: true,
+                checked_in_by: E2E_CHECKIN_STUDENT.id,
+                checked_in_at: "2026-08-20T10:00:00.000Z",
+                profile: {
+                  id: E2E_CHECKIN_STUDENT.id,
+                  full_name: E2E_CHECKIN_STUDENT.full_name,
+                  student_id: E2E_CHECKIN_STUDENT.student_id,
+                  role: "student",
+                },
+              },
+            ],
+          },
+        }),
+      });
+      return;
+    }
+
+    if (request.method() === "GET" && url.pathname.endsWith("/approved")) {
+      if (failList) {
+        await route.fulfill({
+          status: listErrorStatus || 500,
+          contentType: "application/json",
+          body: JSON.stringify({ error: { code: "SERVER_ERROR", message: "Events unavailable" } }),
+        });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          data: { items: events, page: 1, page_size: 100, total: events.length, has_next: false },
+        }),
+      });
+      return;
+    }
+
+    await route.continue();
+  });
+
+  return {
+    attendancePosts,
+    allowList() {
+      failList = false;
+    },
+  };
+}
+
+export async function mockAnnouncementsApi(
+  page: Page,
+  options: {
+    announcements?: Array<Record<string, unknown>>;
+    listStatus?: number;
+    publishResult?: { status: number; body: unknown };
+  } = {},
+) {
+  const announcements = [...(options.announcements ?? [E2E_ANNOUNCEMENT])];
+  const clubs = e2eOfficialClubs();
+  const publishes: Array<{ csrf: string | null; body: unknown; url: string }> = [];
+  const listErrorStatus = options.listStatus && options.listStatus !== 200 ? options.listStatus : null;
+  let failList = Boolean(listErrorStatus);
+
+  await page.route("**/api/v1/clubs**", async (route) => {
+    if (route.request().method() !== "GET") {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ data: clubs }),
+    });
+  });
+
+  await page.route("**/api/v1/admin/users**", async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        data: {
+          items: [
+            {
+              id: "e2e-admin-profile",
+              full_name: "Zainab Ahmed",
+              role: "admin",
+              app_role: "admin",
+              student_id: null,
+              advisor_assignments: [],
+            },
+          ],
+          page: 1,
+          page_size: 100,
+          total: 1,
+          has_next: false,
+        },
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/communications/announcements**", async (route) => {
+    const request = route.request();
+    if (request.method() === "POST") {
+      publishes.push({
+        csrf: await request.headerValue("x-csrf-token"),
+        body: request.postDataJSON(),
+        url: request.url(),
+      });
+      const result = options.publishResult;
+      if (result) {
+        await route.fulfill({
+          status: result.status,
+          contentType: "application/json",
+          headers: result.status === 429 ? { "Retry-After": "12" } : {},
+          body: JSON.stringify(result.body),
+        });
+        return;
+      }
+      const body = request.postDataJSON() as Record<string, unknown>;
+      const created = {
+        id: `ann-e2e-${publishes.length}`,
+        club_id: body.club_id ?? null,
+        created_by: "e2e-admin-profile",
+        title: body.title,
+        message: body.message,
+        audience: body.audience === "all" ? "all_users" : body.audience,
+        priority: body.priority ?? "normal",
+        target_role: body.target_role ?? null,
+        created_at: "2026-08-20T11:00:00.000Z",
+        updated_at: "2026-08-20T11:00:00.000Z",
+      };
+      announcements.unshift(created);
+      await route.fulfill({
+        status: 201,
+        contentType: "application/json",
+        body: JSON.stringify({ data: created }),
+      });
+      return;
+    }
+
+    if (failList) {
+      await route.fulfill({
+        status: listErrorStatus || 500,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { code: "SERVER_ERROR", message: "Announcements unavailable" } }),
+      });
+      return;
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        data: { items: announcements, page: 1, page_size: 100, total: announcements.length, has_next: false },
+      }),
+    });
+  });
+
+  return {
+    publishes,
+    allowList() {
+      failList = false;
+    },
+  };
+}
+

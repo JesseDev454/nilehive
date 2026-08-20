@@ -703,6 +703,133 @@ test("Admin People mutations require a valid CSRF token", async (t) => {
   assert.equal(advisor.payload.error.code, "PROFILE_NOT_FOUND");
 });
 
+test("Admin event attendance and announcement publish require CSRF", async (t) => {
+  withCsrfEnv(t);
+  const announcements = [];
+  const database = createFakeDatabase({
+    role: "admin",
+    email: "admin@nileuniversity.edu.ng",
+    custom_roles: ["club_services_admin"]
+  });
+  database.getApprovedProposalById = async (proposalId) => (
+    proposalId === "proposal-1"
+      ? {
+          id: "proposal-1",
+          club_id: "club-1",
+          title: "Leadership Summit",
+          proposed_activity: "Leadership Summit",
+          description: "Planning summit",
+          event_date: "2099-01-01",
+          event_time: "10:00:00",
+          location: "Main Hall",
+          number_of_participants: 80,
+          budget_estimate: 250000,
+          status: "approved",
+          admin_decided_at: "2026-04-10T10:00:00.000Z",
+          created_at: "2026-04-05T10:00:00.000Z",
+          updated_at: "2026-04-10T10:00:00.000Z"
+        }
+      : null
+  );
+  database.listEventAttendance = async () => [];
+  database.upsertEventAttendance = async (attendance) => ({
+    id: "attendance-csrf",
+    ...attendance,
+    profile: {
+      id: attendance.user_id,
+      full_name: "Ada Student",
+      student_id: "020232255",
+      role: "student"
+    },
+    created_at: "2026-04-15T10:00:00.000Z",
+    updated_at: "2026-04-15T10:00:00.000Z"
+  });
+  database.createAnnouncement = async (announcement) => {
+    const created = {
+      id: "announcement-csrf",
+      ...announcement,
+      created_at: "2026-08-20T10:00:00.000Z",
+      updated_at: "2026-08-20T10:00:00.000Z"
+    };
+    announcements.push(created);
+    return created;
+  };
+  database.createAuditLog = async (entry) => entry;
+
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+  const token = createSessionToken({
+    portalRole: "admin",
+    email: "admin@nileuniversity.edu.ng",
+    customRoles: ["club_services_admin"]
+  });
+
+  const missingAttendance = await fetchJson(`${server.baseUrl}/api/v1/events/proposal-1/attendance`, {
+    method: "POST",
+    headers: {
+      Cookie: sessionCookie(token),
+      Origin: FRONTEND_ORIGIN,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ user_id: "student-1", attended: true })
+  });
+  assert.equal(missingAttendance.response.status, 403);
+  assert.equal(missingAttendance.payload.error.code, "CSRF_TOKEN_REQUIRED");
+
+  const missingAnnouncement = await fetchJson(`${server.baseUrl}/api/v1/communications/announcements`, {
+    method: "POST",
+    headers: {
+      Cookie: sessionCookie(token),
+      Origin: FRONTEND_ORIGIN,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      title: "Campus briefing",
+      message: "This is an official campus announcement body.",
+      audience: "all_users",
+      priority: "normal"
+    })
+  });
+  assert.equal(missingAnnouncement.response.status, 403);
+  assert.equal(missingAnnouncement.payload.error.code, "CSRF_TOKEN_REQUIRED");
+
+  const csrf = await getCsrfToken(server.baseUrl, token);
+  const attendance = await fetchJson(`${server.baseUrl}/api/v1/events/proposal-1/attendance`, {
+    method: "POST",
+    headers: {
+      Cookie: sessionCookie(token),
+      Origin: FRONTEND_ORIGIN,
+      "Content-Type": "application/json",
+      "X-CSRF-Token": csrf
+    },
+    body: JSON.stringify({ user_id: "student-1", attended: true })
+  });
+  assert.equal(attendance.response.status, 200);
+  assert.equal(attendance.payload.data.user_id, "student-1");
+  assert.equal(JSON.stringify(attendance.payload).includes(csrf), false);
+
+  const published = await fetchJson(`${server.baseUrl}/api/v1/communications/announcements`, {
+    method: "POST",
+    headers: {
+      Cookie: sessionCookie(token),
+      Origin: FRONTEND_ORIGIN,
+      "Content-Type": "application/json",
+      "X-CSRF-Token": csrf
+    },
+    body: JSON.stringify({
+      title: "Campus briefing",
+      message: "This is an official campus announcement body.",
+      audience: "all_users",
+      priority: "normal"
+    })
+  });
+  assert.equal(published.response.status, 201);
+  assert.equal(published.payload.data.audience, "all_users");
+  assert.equal(published.payload.data.title, "Campus briefing");
+  assert.equal(announcements.length, 1);
+  assert.equal(JSON.stringify(published.payload).includes(csrf), false);
+});
+
 test("cookie club update requires CSRF and does not leak secrets", async (t) => {
   withCsrfEnv(t);
   const audits = [];

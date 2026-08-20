@@ -42,6 +42,12 @@ async function loadModules(env) {
       clubsErrors: await server.ssrLoadModule("/src/lib/clubs/errors.ts"),
       clubsApi: await server.ssrLoadModule("/src/lib/api/clubs.ts"),
       clubsTypes: await server.ssrLoadModule("/src/lib/clubs/types.ts"),
+      eventsAdapters: await server.ssrLoadModule("/src/lib/events/adapters.ts"),
+      eventsErrors: await server.ssrLoadModule("/src/lib/events/errors.ts"),
+      eventsApi: await server.ssrLoadModule("/src/lib/api/events.ts"),
+      announcementsAdapters: await server.ssrLoadModule("/src/lib/announcements/adapters.ts"),
+      announcementsErrors: await server.ssrLoadModule("/src/lib/announcements/errors.ts"),
+      announcementsApi: await server.ssrLoadModule("/src/lib/api/announcements.ts"),
     };
   } finally {
     await server.close();
@@ -767,6 +773,298 @@ test("Clubs API functions use CSRF on mutations and honor abort", async () => {
 test("integrated mode never falls back to mock club records", () => {
   assert.equal(integrated.mode.isMockPreviewMode(), false);
   assert.equal(mockMode.mode.isMockPreviewMode(), true);
+});
+
+test("event adapters preserve proposal IDs and omit fabricated counts", () => {
+  const event = integrated.eventsAdapters.adaptApprovedEvent({
+    id: "proposal-1",
+    proposal_id: "proposal-1",
+    club_id: "club-1",
+    title: "Leadership Summit",
+    description: "A planning summit",
+    event_date: "2099-01-01",
+    event_time: "10:00:00",
+    location: "Main Hall",
+    number_of_participants: 80,
+    status: "approved",
+    event_lifecycle: "upcoming",
+    can_rsvp: true,
+  });
+  assert.equal(event.id, "proposal-1");
+  assert.equal(event.proposal_id, "proposal-1");
+  const view = integrated.eventsAdapters.toAdminEventView(event, { clubName: "Nile Book Club" });
+  assert.equal(view.proposalId, "proposal-1");
+  assert.equal(view.clubName, "Nile Book Club");
+  assert.equal(view.rsvpsCount, null);
+  assert.equal(view.attendeesCount, null);
+  assert.equal(view.engagementLoaded, false);
+  assert.equal(view.checkInPath, "/check-in?proposal=proposal-1");
+  assert.equal(view.startTime, "10:00");
+  assert.equal(view.endTime, null);
+
+  const engagement = integrated.eventsAdapters.adaptEventEngagement({
+    event,
+    summary: { total_rsvps: 2, going: 1, interested: 1, not_going: 0, cancelled: 0, attended: 1 },
+    rsvps: [
+      {
+        id: "rsvp-1",
+        proposal_id: "proposal-1",
+        club_id: "club-1",
+        user_id: "student-1",
+        status: "going",
+        profile: { id: "student-1", full_name: "Ada Student", student_id: "020232255", role: "student" },
+      },
+    ],
+    attendance: [
+      {
+        id: "att-1",
+        proposal_id: "proposal-1",
+        club_id: "club-1",
+        user_id: "student-1",
+        attended: true,
+        checked_in_by: "admin-1",
+        checked_in_at: "2026-08-20T10:00:00.000Z",
+        profile: { id: "student-1", full_name: "Ada Student", student_id: "020232255", role: "student" },
+      },
+    ],
+  });
+  const loaded = integrated.eventsAdapters.mergeEventEngagement(view, engagement);
+  assert.equal(loaded.rsvpsCount, 2);
+  assert.equal(loaded.attendeesCount, 1);
+  assert.equal(loaded.attendanceRoster[0].studentName, "Ada Student");
+  assert.equal(loaded.attendanceRoster[0].checkInMethod, "manual_fallback");
+});
+
+test("event errors distinguish 404 409 and 429", () => {
+  const { ApiClientError } = integrated.client;
+  const { normalizeEventsError } = integrated.eventsErrors;
+  assert.equal(normalizeEventsError(new ApiClientError(404, "APPROVED_EVENT_NOT_FOUND", "Missing")).kind, "not_found");
+  assert.equal(normalizeEventsError(new ApiClientError(409, "EVENT_CHECK_IN_CLOSED", "Closed")).kind, "conflict");
+  const limited = normalizeEventsError(new ApiClientError(429, "RATE", "Wait", null, 9));
+  assert.equal(limited.kind, "rate_limited");
+  assert.match(limited.message, /9 seconds/);
+});
+
+test("Events API functions use CSRF on attendance and honor abort", async () => {
+  const calls = [];
+  await withMockFetch(async (url, init = {}) => {
+    const headers = new Headers(init.headers);
+    calls.push({
+      url: String(url),
+      method: init.method || "GET",
+      csrf: headers.get("X-CSRF-Token"),
+      body: init.body ? JSON.parse(String(init.body)) : null,
+    });
+    if (String(url).endsWith("/auth/csrf")) {
+      return jsonResponse({ data: { csrf_token: "csrf-events" } });
+    }
+    if (String(url).includes("/engagement")) {
+      return jsonResponse({
+        data: {
+          event: {
+            id: "proposal-1",
+            proposal_id: "proposal-1",
+            club_id: "club-1",
+            title: "Summit",
+            status: "approved",
+            event_lifecycle: "upcoming",
+            can_rsvp: true,
+          },
+          summary: { total_rsvps: 0, going: 0, interested: 0, not_going: 0, cancelled: 0, attended: 0 },
+          rsvps: [],
+          attendance: [],
+        },
+      });
+    }
+    if (String(url).includes("/attendance")) {
+      return jsonResponse({
+        data: {
+          id: "att-1",
+          proposal_id: "proposal-1",
+          club_id: "club-1",
+          user_id: "student-1",
+          attended: true,
+          checked_in_by: "admin-1",
+          checked_in_at: "2026-08-20T10:00:00.000Z",
+          profile: { id: "student-1", full_name: "Ada Student", student_id: "020232255", role: "student" },
+        },
+      });
+    }
+    if (String(url).includes("/reports")) {
+      return jsonResponse({ data: { items: [], page: 1, page_size: 100, total: 0, has_next: false } });
+    }
+    return jsonResponse({
+      data: {
+        items: [
+          {
+            id: "proposal-1",
+            proposal_id: "proposal-1",
+            club_id: "club-1",
+            title: "Summit",
+            status: "approved",
+            event_lifecycle: "upcoming",
+            can_rsvp: true,
+          },
+        ],
+        page: 1,
+        page_size: 100,
+        total: 1,
+        has_next: false,
+      },
+    });
+  }, async () => {
+    await integrated.eventsApi.listApprovedEvents({ page: 1, page_size: 100 });
+    await integrated.eventsApi.getEventEngagement("proposal-1");
+    await integrated.eventsApi.submitEventAttendance("proposal-1", { user_id: "student-1", attended: true });
+    await integrated.eventsApi.listEventReports({ page_size: 100 });
+    const listCall = calls.find((call) => call.method === "GET" && call.url.includes("/events/approved"));
+    assert.equal(listCall.csrf, null);
+    assert.match(listCall.url, /sort=event_date/);
+    const attendanceCall = calls.find((call) => call.method === "POST" && call.url.includes("/attendance"));
+    assert.equal(attendanceCall.csrf, "csrf-events");
+    assert.deepEqual(attendanceCall.body, { user_id: "student-1", attended: true });
+  });
+
+  const controller = new AbortController();
+  controller.abort();
+  await withMockFetch(async (_url, init = {}) => {
+    if (init.signal?.aborted) {
+      throw new DOMException("The operation was aborted.", "AbortError");
+    }
+    return jsonResponse({ data: { items: [], page: 1, page_size: 100, total: 0, has_next: false } });
+  }, async () => {
+    await assert.rejects(
+      () => integrated.eventsApi.listApprovedEvents({ signal: controller.signal }),
+      (error) => error.name === "AbortError",
+    );
+  });
+});
+
+test("announcement adapters map club audience and validate required fields", () => {
+  const record = integrated.announcementsAdapters.adaptAnnouncementRecord({
+    id: "ann-1",
+    club_id: "club-1",
+    created_by: "admin-1",
+    title: "Lab hours",
+    message: "Tech Lab 4 stays open until 20:00 this week.",
+    audience: "club",
+    priority: "low",
+    created_at: "2026-08-11T16:45:00Z",
+  });
+  const view = integrated.announcementsAdapters.toAdminAnnouncementView(record, {
+    clubName: "Nile Google Developers",
+    publisherName: "Zainab Ahmed",
+  });
+  assert.equal(view.audience, "one_club");
+  assert.equal(view.targetClubId, "club-1");
+  assert.equal(view.readCount, null);
+  assert.equal(view.totalRecipients, null);
+  const payload = integrated.announcementsAdapters.buildCreateAnnouncementPayload({
+    title: "Grant calendar",
+    content: "Review the approved proposal calendar before disbursement.",
+    audience: "one_club",
+    targetClubId: "club-1",
+    priority: "high",
+  });
+  assert.equal(payload.audience, "club");
+  assert.equal(payload.club_id, "club-1");
+  assert.equal(payload.message, "Review the approved proposal calendar before disbursement.");
+  const errors = integrated.announcementsAdapters.validateAnnouncementComposer({
+    title: "",
+    content: "short",
+    audience: "one_club",
+    priority: "normal",
+  });
+  assert.equal(errors.title, "Announcement title is required.");
+  assert.ok(errors.content);
+  assert.equal(errors.targetClubId, "Please select a target club.");
+});
+
+test("announcement errors distinguish rate limits and validation", () => {
+  const { ApiClientError } = integrated.client;
+  const { normalizeAnnouncementsError } = integrated.announcementsErrors;
+  const limited = normalizeAnnouncementsError(new ApiClientError(429, "ANNOUNCEMENT_RATE_LIMITED", "Wait", null, 12));
+  assert.equal(limited.kind, "rate_limited");
+  assert.match(limited.message, /12 seconds/);
+  assert.equal(normalizeAnnouncementsError(new ApiClientError(403, "FORBIDDEN", "No")).kind, "forbidden");
+  assert.equal(
+    normalizeAnnouncementsError(new ApiClientError(400, "VALIDATION_ERROR", "Bad", { field: "audience" })).field,
+    "audience",
+  );
+});
+
+test("Announcements API functions use CSRF on publish and honor abort", async () => {
+  const calls = [];
+  await withMockFetch(async (url, init = {}) => {
+    const headers = new Headers(init.headers);
+    calls.push({
+      url: String(url),
+      method: init.method || "GET",
+      csrf: headers.get("X-CSRF-Token"),
+      body: init.body ? JSON.parse(String(init.body)) : null,
+    });
+    if (String(url).endsWith("/auth/csrf")) {
+      return jsonResponse({ data: { csrf_token: "csrf-announcements" } });
+    }
+    if ((init.method || "GET") === "POST") {
+      return jsonResponse({
+        data: {
+          id: "ann-new",
+          title: "Grant calendar",
+          message: "Review the approved proposal calendar before disbursement.",
+          audience: "all_users",
+          priority: "high",
+          created_at: "2026-08-20T11:00:00.000Z",
+        },
+      }, 201);
+    }
+    return jsonResponse({
+      data: {
+        items: [
+          {
+            id: "ann-1",
+            title: "Grant calendar",
+            message: "Review the approved proposal calendar before disbursement.",
+            audience: "all_users",
+            priority: "high",
+            created_at: "2026-08-18T14:30:00Z",
+          },
+        ],
+        page: 1,
+        page_size: 100,
+        total: 1,
+        has_next: false,
+      },
+    });
+  }, async () => {
+    await integrated.announcementsApi.listAnnouncements({ page: 1, page_size: 100 });
+    await integrated.announcementsApi.publishAdminAnnouncement({
+      title: "Grant calendar",
+      message: "Review the approved proposal calendar before disbursement.",
+      audience: "all_users",
+      priority: "high",
+    });
+    const listCall = calls.find((call) => call.method === "GET" && call.url.includes("/communications/announcements"));
+    assert.equal(listCall.csrf, null);
+    const publishCall = calls.find((call) => call.method === "POST");
+    assert.equal(publishCall.csrf, "csrf-announcements");
+    assert.equal(publishCall.body.audience, "all_users");
+    assert.equal(publishCall.body.priority, "high");
+  });
+
+  const controller = new AbortController();
+  controller.abort();
+  await withMockFetch(async (_url, init = {}) => {
+    if (init.signal?.aborted) {
+      throw new DOMException("The operation was aborted.", "AbortError");
+    }
+    return jsonResponse({ data: { items: [], page: 1, page_size: 100, total: 0, has_next: false } });
+  }, async () => {
+    await assert.rejects(
+      () => integrated.announcementsApi.listAnnouncements({ signal: controller.signal }),
+      (error) => error.name === "AbortError",
+    );
+  });
 });
 
 

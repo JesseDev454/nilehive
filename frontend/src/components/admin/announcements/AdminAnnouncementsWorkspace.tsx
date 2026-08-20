@@ -1,105 +1,100 @@
-import { useState, useMemo, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import {
-  INITIAL_ADMIN_ANNOUNCEMENTS,
-  type AdminAnnouncementItem,
-  type AnnouncementAudienceType,
-  type AnnouncementPriorityLevel
-} from "@/data/adminAnnouncementsData";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   AdminAnnouncementsHeader,
-  type AudienceFilterTab
+  type AudienceFilterTab,
 } from "@/components/admin/announcements/AdminAnnouncementsHeader";
 import { AdminAnnouncementCard } from "@/components/admin/announcements/AdminAnnouncementCard";
 import { AdminAnnouncementComposerDialog } from "@/components/admin/announcements/AdminAnnouncementComposerDialog";
 import { AdminAnnouncementDetailModal } from "@/components/admin/announcements/AdminAnnouncementDetailModal";
-import { MegaphoneOff, SearchX } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { AnnouncementsDirectoryStatus } from "@/components/admin/announcements/AnnouncementsDirectoryStatus";
+import { useAdminAnnouncementsData } from "@/components/admin/announcements/useAdminAnnouncementsData";
+import type { AdminAnnouncementView, AnnouncementPriorityLevel } from "@/lib/announcements/types";
 
 export function AdminAnnouncementsWorkspace() {
+  const { reportAuthFailure } = useAuth();
+  const data = useAdminAnnouncementsData(reportAuthFailure);
   const [searchParams, setSearchParams] = useSearchParams();
-  const [announcements, setAnnouncements] = useState<AdminAnnouncementItem[]>(
-    INITIAL_ADMIN_ANNOUNCEMENTS
-  );
-
   const [activeAudienceTab, setActiveAudienceTab] = useState<AudienceFilterTab>("all");
   const [selectedPriority, setSelectedPriority] = useState<"all" | AnnouncementPriorityLevel>("all");
+  const [selectedClubFilter, setSelectedClubFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
-
-  // Composer & Inspection Dialog States
   const [composerOpen, setComposerOpen] = useState(false);
-  const [inspectingItem, setInspectingItem] = useState<AdminAnnouncementItem | null>(null);
+  const [inspectingItem, setInspectingItem] = useState<AdminAnnouncementView | null>(null);
 
-  // Check if deep-linked to compose from Home primary action
   useEffect(() => {
     if (searchParams.get("compose") === "true" || searchParams.get("action") === "new") {
       setComposerOpen(true);
+      const next = new URLSearchParams(searchParams);
+      next.delete("compose");
+      next.delete("action");
+      setSearchParams(next, { replace: true });
     }
-  }, [searchParams]);
+  }, [searchParams, setSearchParams]);
 
-  // Filtered Announcements
   const filteredAnnouncements = useMemo(() => {
-    return announcements.filter((item) => {
+    return data.directory.items.filter((item) => {
       const query = searchTerm.toLowerCase();
       const matchesSearch =
         item.title.toLowerCase().includes(query) ||
         item.content.toLowerCase().includes(query) ||
         item.publishedBy.toLowerCase().includes(query) ||
         (item.targetClubName && item.targetClubName.toLowerCase().includes(query));
-
-      const matchesAudience =
-        activeAudienceTab === "all" || item.audience === activeAudienceTab;
-
-      const matchesPriority =
-        selectedPriority === "all" || item.priority === selectedPriority;
-
-      return matchesSearch && matchesAudience && matchesPriority;
+      const matchesAudience = activeAudienceTab === "all" || item.audience === activeAudienceTab;
+      const matchesPriority = selectedPriority === "all" || item.priority === selectedPriority;
+      const matchesClub = selectedClubFilter === "all" || item.targetClubId === selectedClubFilter;
+      return matchesSearch && matchesAudience && matchesPriority && matchesClub;
     });
-  }, [announcements, activeAudienceTab, selectedPriority, searchTerm]);
+  }, [activeAudienceTab, data.directory.items, searchTerm, selectedClubFilter, selectedPriority]);
 
-  const handlePublished = (newAnnouncement: AdminAnnouncementItem) => {
-    setAnnouncements((prev) => [newAnnouncement, ...prev]);
+  const filteredEmpty =
+    (data.directory.status === "ready" || data.directory.status === "refreshing") &&
+    data.directory.items.length > 0 &&
+    filteredAnnouncements.length === 0;
+  const showGrid =
+    (data.directory.status === "ready" || data.directory.status === "refreshing") &&
+    filteredAnnouncements.length > 0;
+
+  const resetFilters = () => {
+    setActiveAudienceTab("all");
+    setSelectedPriority("all");
+    setSelectedClubFilter("all");
+    setSearchTerm("");
   };
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 animate-fade-in pb-16">
-      {/* Header, Filters & Primary Publish Action */}
+    <div
+      className="mx-auto w-full max-w-7xl space-y-6 animate-fade-in pb-16"
+      data-announcements-source={data.source}
+    >
       <AdminAnnouncementsHeader
         activeAudienceTab={activeAudienceTab}
         onAudienceTabChange={setActiveAudienceTab}
         selectedPriority={selectedPriority}
         onPriorityChange={setSelectedPriority}
+        selectedClubFilter={selectedClubFilter}
+        onClubFilterChange={setSelectedClubFilter}
+        clubs={data.clubs}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         onComposeClick={() => setComposerOpen(true)}
-        totalCount={announcements.length}
+        totalCount={data.directory.items.length}
       />
 
-      {/* Populated Grid or Empty Results */}
-      {filteredAnnouncements.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border p-12 text-center space-y-3">
-          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-            <SearchX className="h-5 w-5" />
-          </div>
-          <h2 className="text-sm font-semibold text-foreground">No announcements found</h2>
-          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-            No official broadcasts match your current audience or priority filters.
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setActiveAudienceTab("all");
-              setSelectedPriority("all");
-              setSearchTerm("");
-            }}
-            className="text-xs"
-          >
-            Reset Filters
-          </Button>
-        </div>
-      ) : (
+      <div className="sr-only" aria-live="polite">
+        {data.liveMessage}
+      </div>
+
+      <AnnouncementsDirectoryStatus
+        status={data.directory.status}
+        error={data.directory.error}
+        filteredEmpty={filteredEmpty}
+        onRetry={() => void data.loadDirectory()}
+        onResetFilters={resetFilters}
+      />
+
+      {showGrid ? (
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
           {filteredAnnouncements.map((ann) => (
             <AdminAnnouncementCard
@@ -109,16 +104,18 @@ export function AdminAnnouncementsWorkspace() {
             />
           ))}
         </div>
-      )}
+      ) : null}
 
-      {/* Broadcast Composer Dialog */}
       <AdminAnnouncementComposerDialog
         open={composerOpen}
         onOpenChange={setComposerOpen}
-        onPublished={handlePublished}
+        clubs={data.clubs}
+        publishing={data.publishing}
+        publishError={data.publishError}
+        mockMode={data.mockMode}
+        onPublish={data.publish}
       />
 
-      {/* Detail Inspection Modal */}
       <AdminAnnouncementDetailModal
         announcement={inspectingItem}
         open={!!inspectingItem}

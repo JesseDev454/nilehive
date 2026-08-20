@@ -1,7 +1,6 @@
-import { Calendar, CalendarDays, Filter, Flame, History, Search, Sparkles } from "lucide-react";
+import { Calendar, CalendarDays, Filter, Flame, History, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { OFFICIAL_14_CLUBS } from "@/data/mockData";
 
 export type EventTabFilter = "all" | "happening_today" | "upcoming" | "past";
 
@@ -18,6 +17,7 @@ interface AdminEventsHeaderProps {
   onSearchChange: (val: string) => void;
   selectedClubFilter: string;
   onClubFilterChange: (val: string) => void;
+  clubs: Array<{ id: string; name: string }>;
 }
 
 export function AdminEventsHeader({
@@ -27,13 +27,14 @@ export function AdminEventsHeader({
   searchTerm,
   onSearchChange,
   selectedClubFilter,
-  onClubFilterChange
+  onClubFilterChange,
+  clubs,
 }: AdminEventsHeaderProps) {
   const tabs = [
     { id: "all" as const, label: "All Approved Events", count: counts.all, icon: Calendar },
     { id: "happening_today" as const, label: "Happening Today", count: counts.today, icon: Flame },
     { id: "upcoming" as const, label: "Upcoming", count: counts.upcoming, icon: CalendarDays },
-    { id: "past" as const, label: "Past Events", count: counts.past, icon: History }
+    { id: "past" as const, label: "Past Events", count: counts.past, icon: History },
   ];
 
   return (
@@ -51,8 +52,7 @@ export function AdminEventsHeader({
         </p>
       </div>
 
-      {/* 4 Lifecycle Filter Tabs */}
-      <div className="flex flex-wrap items-center gap-2 pt-1">
+      <div className="flex flex-wrap items-center gap-2 pt-1" role="tablist" aria-label="Event lifecycle">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -62,8 +62,10 @@ export function AdminEventsHeader({
             <button
               key={tab.id}
               type="button"
+              role="tab"
+              aria-selected={isActive}
               onClick={() => onTabChange(tab.id)}
-              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all duration-180 ${
+              className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-semibold transition-all duration-180 min-h-11 ${
                 isActive
                   ? isTodayTab
                     ? "bg-amber-600 text-white shadow-2xs scale-[1.01]"
@@ -71,7 +73,7 @@ export function AdminEventsHeader({
                   : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
             >
-              <Icon className="h-3.5 w-3.5" />
+              <Icon className="h-3.5 w-3.5" aria-hidden="true" />
               <span>{tab.label}</span>
               <span
                 className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
@@ -87,11 +89,12 @@ export function AdminEventsHeader({
         })}
       </div>
 
-      {/* Search & Club Filtering */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-1">
         <div className="relative w-full sm:max-w-xs">
-          <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+          <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
           <Input
+            id="admin-events-search"
+            aria-label="Search events by title, venue or club"
             placeholder="Search events by title, venue, organizer..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -100,16 +103,19 @@ export function AdminEventsHeader({
         </div>
 
         <div className="flex items-center gap-2">
-          <Filter className="h-3.5 w-3.5 text-muted-foreground" />
+          <Filter className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
           <Select value={selectedClubFilter} onValueChange={onClubFilterChange}>
-            <SelectTrigger className="w-[200px] text-xs h-9 bg-background">
-              <SelectValue placeholder="All 14 Official Clubs" />
+            <SelectTrigger
+              className="w-[200px] text-xs h-9 bg-background"
+              aria-label="Filter events by club"
+            >
+              <SelectValue placeholder="All official clubs" />
             </SelectTrigger>
             <SelectContent className="max-h-60">
-              <SelectItem value="all">All 14 Official Clubs</SelectItem>
-              {OFFICIAL_14_CLUBS.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
+              <SelectItem value="all">All official clubs</SelectItem>
+              {clubs.map((club) => (
+                <SelectItem key={club.id} value={club.id}>
+                  {club.name}
                 </SelectItem>
               ))}
             </SelectContent>

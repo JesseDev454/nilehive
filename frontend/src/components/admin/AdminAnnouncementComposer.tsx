@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
-import { Megaphone, AlertCircle, CheckCircle2, Send, Save, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Megaphone, Send, Save } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,10 +17,21 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 import { OFFICIAL_14_CLUBS } from "@/data/mockData";
 import { toast } from "sonner";
+import { listClubs } from "@/lib/api/clubs";
+import { publishAdminAnnouncement } from "@/lib/api/announcements";
+import {
+  buildCreateAnnouncementPayload,
+  validateAnnouncementComposer,
+} from "@/lib/announcements/adapters";
+import { normalizeAnnouncementsError } from "@/lib/announcements/errors";
+import { HOME_ANNOUNCEMENT_DRAFT_KEY } from "@/lib/announcements/mockAnnouncements";
+import type { AnnouncementPriorityLevel } from "@/lib/announcements/types";
+import { isMockPreviewMode } from "@/lib/oneclubMode";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AdminAnnouncementComposerProps {
   open: boolean;
@@ -36,90 +47,115 @@ interface AdminAnnouncementComposerProps {
 export function AdminAnnouncementComposer({
   open,
   onOpenChange,
-  onPublished
+  onPublished,
 }: AdminAnnouncementComposerProps) {
+  const { reportAuthFailure } = useAuth();
+  const mockMode = isMockPreviewMode();
   const [title, setTitle] = useState("");
   const [targetClubId, setTargetClubId] = useState("all");
   const [priority, setPriority] = useState<"normal" | "high" | "urgent">("normal");
   const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<{ title?: string; content?: string }>({});
+  const submittingRef = useRef(false);
+  const [errors, setErrors] = useState<{ title?: string; content?: string; targetClubId?: string }>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [clubs, setClubs] = useState(OFFICIAL_14_CLUBS.map((club) => ({ id: club.id, name: club.name })));
 
-  // Restore draft if available in session storage
   useEffect(() => {
-    if (open) {
-      const savedDraft = sessionStorage.getItem("oneclub_admin_announcement_draft");
-      if (savedDraft) {
-        try {
-          const parsed = JSON.parse(savedDraft);
-          if (parsed.title) setTitle(parsed.title);
-          if (parsed.content) setContent(parsed.content);
-          if (parsed.priority) setPriority(parsed.priority);
-          if (parsed.targetClubId) setTargetClubId(parsed.targetClubId);
-        } catch {
-          // ignore corrupted draft
-        }
+    if (!open) return;
+    const savedDraft = sessionStorage.getItem(HOME_ANNOUNCEMENT_DRAFT_KEY);
+    if (savedDraft) {
+      try {
+        const parsed = JSON.parse(savedDraft);
+        if (parsed.title) setTitle(parsed.title);
+        if (parsed.content) setContent(parsed.content);
+        if (parsed.priority) setPriority(parsed.priority);
+        if (parsed.targetClubId) setTargetClubId(parsed.targetClubId);
+      } catch {
+        // ignore corrupted device-local draft
       }
     }
-  }, [open]);
+    if (!mockMode) {
+      void listClubs().then((records) => {
+        setClubs(records.map((club) => ({ id: club.id, name: club.name })));
+      }).catch(() => {
+        // keep last known club list
+      });
+    }
+  }, [mockMode, open]);
 
   const handleSaveDraft = () => {
     sessionStorage.setItem(
-      "oneclub_admin_announcement_draft",
-      JSON.stringify({ title, content, priority, targetClubId })
+      HOME_ANNOUNCEMENT_DRAFT_KEY,
+      JSON.stringify({ title, content, priority, targetClubId }),
     );
-    toast.success("Announcement draft saved to local session.");
+    toast.success("Draft saved on this device only. It is not saved to OneClub.");
   };
 
-  const validate = () => {
-    const errs: { title?: string; content?: string } = {};
-    if (!title.trim()) {
-      errs.title = "Announcement title is required.";
-    } else if (title.trim().length < 4) {
-      errs.title = "Title must be at least 4 characters long.";
-    }
-
-    if (!content.trim()) {
-      errs.content = "Announcement message content cannot be empty.";
-    } else if (content.trim().length < 10) {
-      errs.content = "Content must be at least 10 characters long.";
-    }
-
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) {
+    const audience = targetClubId === "all" ? "all_users" : "one_club";
+    const fieldErrors = validateAnnouncementComposer({
+      title,
+      content,
+      audience,
+      targetClubId: audience === "one_club" ? targetClubId : undefined,
+      priority: priority as AnnouncementPriorityLevel,
+    });
+    if (Object.keys(fieldErrors).length > 0) {
+      setErrors(fieldErrors);
       toast.error("Please fix the validation errors before publishing.");
       return;
     }
-
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      sessionStorage.removeItem("oneclub_admin_announcement_draft");
+    setSubmitError(null);
 
-      const targetLabel =
-        targetClubId === "all"
-          ? "All 14 Official Clubs"
-          : OFFICIAL_14_CLUBS.find((c) => c.id === targetClubId)?.name || "Target Club";
+    try {
+      if (mockMode) {
+        sessionStorage.removeItem(HOME_ANNOUNCEMENT_DRAFT_KEY);
+        const targetLabel =
+          targetClubId === "all"
+            ? "all campus users"
+            : clubs.find((club) => club.id === targetClubId)?.name || "the selected club";
+        toast.success(`Announcement broadcasted to ${targetLabel}.`);
+        onPublished?.({ title, targetClubId, priority, content });
+        onOpenChange(false);
+        setTitle("");
+        setContent("");
+        setPriority("normal");
+        setTargetClubId("all");
+        setErrors({});
+        return;
+      }
 
-      toast.success(`Announcement broadcasted to ${targetLabel}.`, {
-        description: `Priority: ${priority.toUpperCase()} • Notification sent to executives.`
-      });
-
+      await publishAdminAnnouncement(
+        buildCreateAnnouncementPayload({
+          title,
+          content,
+          audience,
+          targetClubId: audience === "one_club" ? targetClubId : undefined,
+          priority: priority as AnnouncementPriorityLevel,
+        }),
+      );
+      sessionStorage.removeItem(HOME_ANNOUNCEMENT_DRAFT_KEY);
+      toast.success("Announcement published.");
       onPublished?.({ title, targetClubId, priority, content });
       onOpenChange(false);
-
-      // reset form
       setTitle("");
       setContent("");
       setPriority("normal");
       setTargetClubId("all");
       setErrors({});
-    }, 450);
+    } catch (error) {
+      if (reportAuthFailure(error)) return;
+      const mapped = normalizeAnnouncementsError(error);
+      setSubmitError(mapped.message);
+    } finally {
+      submittingRef.current = false;
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -128,25 +164,24 @@ export function AdminAnnouncementComposer({
         <form onSubmit={handleSubmit} className="space-y-4">
           <DialogHeader>
             <div className="flex items-center gap-2 text-primary text-xs font-semibold uppercase tracking-wider">
-              <Megaphone className="h-4 w-4" />
+              <Megaphone className="h-4 w-4" aria-hidden="true" />
               <span>Campus Directive</span>
             </div>
             <DialogTitle className="text-xl font-bold">New Campus Announcement</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground">
-              Publish an authoritative communication across Nile University's official student clubs.
+              Publish an authoritative communication across Nile University&apos;s official student clubs. Drafts stay on this device only.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3.5 pt-2">
-            {/* Title Field */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="announcement-title" className="text-xs font-semibold">
                   Announcement Title <span className="text-destructive">*</span>
                 </Label>
-                {errors.title && (
+                {errors.title ? (
                   <span className="text-[11px] font-medium text-destructive">{errors.title}</span>
-                )}
+                ) : null}
               </div>
               <Input
                 id="announcement-title"
@@ -160,7 +195,6 @@ export function AdminAnnouncementComposer({
               />
             </div>
 
-            {/* Audience & Priority Grid */}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="target-club" className="text-xs font-semibold">
@@ -171,8 +205,8 @@ export function AdminAnnouncementComposer({
                     <SelectValue placeholder="Select target audience" />
                   </SelectTrigger>
                   <SelectContent className="max-h-56">
-                    <SelectItem value="all">All 14 Official Clubs (Campus-Wide)</SelectItem>
-                    {OFFICIAL_14_CLUBS.map((club) => (
+                    <SelectItem value="all">All campus users</SelectItem>
+                    {clubs.map((club) => (
                       <SelectItem key={club.id} value={club.id}>
                         {club.name}
                       </SelectItem>
@@ -185,7 +219,7 @@ export function AdminAnnouncementComposer({
                 <Label htmlFor="priority" className="text-xs font-semibold">
                   Priority Level
                 </Label>
-                <Select value={priority} onValueChange={(val: any) => setPriority(val)}>
+                <Select value={priority} onValueChange={(val: "normal" | "high" | "urgent") => setPriority(val)}>
                   <SelectTrigger id="priority" className="text-xs h-9">
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
@@ -198,15 +232,14 @@ export function AdminAnnouncementComposer({
               </div>
             </div>
 
-            {/* Content Field */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="announcement-content" className="text-xs font-semibold">
                   Message Content <span className="text-destructive">*</span>
                 </Label>
-                {errors.content && (
+                {errors.content ? (
                   <span className="text-[11px] font-medium text-destructive">{errors.content}</span>
-                )}
+                ) : null}
               </div>
               <Textarea
                 id="announcement-content"
@@ -217,40 +250,31 @@ export function AdminAnnouncementComposer({
                   setContent(e.target.value);
                   if (errors.content) setErrors((prev) => ({ ...prev, content: undefined }));
                 }}
-                className={`text-xs leading-relaxed ${errors.content ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                className={`text-xs leading-relaxed ${errors.content ? "border-destructive" : ""}`}
               />
+            </div>
+
+            {submitError ? (
+              <p className="text-[11px] text-destructive" role="alert">
+                {submitError}
+              </p>
+            ) : null}
+            <div className="sr-only" aria-live="polite">
+              {isSubmitting ? "Publishing announcement." : ""}
             </div>
           </div>
 
           <DialogFooter className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between pt-3 border-t border-border">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={handleSaveDraft}
-              className="text-xs gap-1.5 h-9"
-            >
+            <Button type="button" variant="outline" size="sm" onClick={handleSaveDraft} className="text-xs gap-1.5 h-11">
               <Save className="h-3.5 w-3.5" />
-              <span>Save draft</span>
+              <span>Save draft on this device</span>
             </Button>
 
             <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => onOpenChange(false)}
-                className="text-xs h-9"
-              >
+              <Button type="button" variant="ghost" size="sm" onClick={() => onOpenChange(false)} className="text-xs h-11">
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                variant="default"
-                size="sm"
-                disabled={isSubmitting}
-                className="text-xs gap-1.5 h-9"
-              >
+              <Button type="submit" variant="default" size="sm" disabled={isSubmitting} className="text-xs gap-1.5 h-11">
                 <Send className="h-3.5 w-3.5" />
                 <span>{isSubmitting ? "Broadcasting..." : "Publish Directive"}</span>
               </Button>

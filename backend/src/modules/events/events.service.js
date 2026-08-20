@@ -258,6 +258,19 @@ async function submitEventAttendance(options) {
   const proposal = await getApprovedEventOrThrow(proposalId, database);
   await assertCanManageEvent(actor, proposal, database);
   const validatedPayload = validateAttendancePayload(payload);
+
+  if (validatedPayload.attended) {
+    const existingAttendance = await database.listEventAttendance({
+      proposalId: proposal.id,
+      userId: validatedPayload.user_id
+    });
+    const currentAttendance = existingAttendance.find((record) => record.attended);
+
+    if (currentAttendance) {
+      return formatAttendance(currentAttendance);
+    }
+  }
+
   const attendance = await database.upsertEventAttendance({
     proposal_id: proposal.id,
     club_id: proposal.club_id,

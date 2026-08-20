@@ -1,14 +1,4 @@
-import {
-  AlertCircle,
-  Filter,
-  Layers,
-  Megaphone,
-  Plus,
-  Search,
-  Send,
-  Sparkles,
-  Users
-} from "lucide-react";
+import { Filter, Megaphone, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,12 +6,12 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 import type {
   AnnouncementAudienceType,
-  AnnouncementPriorityLevel
-} from "@/data/adminAnnouncementsData";
+  AnnouncementPriorityLevel,
+} from "@/lib/announcements/types";
 
 export type AudienceFilterTab = "all" | AnnouncementAudienceType;
 
@@ -30,6 +20,9 @@ interface AdminAnnouncementsHeaderProps {
   onAudienceTabChange: (tab: AudienceFilterTab) => void;
   selectedPriority: "all" | AnnouncementPriorityLevel;
   onPriorityChange: (val: "all" | AnnouncementPriorityLevel) => void;
+  selectedClubFilter: string;
+  onClubFilterChange: (val: string) => void;
+  clubs: Array<{ id: string; name: string }>;
   searchTerm: string;
   onSearchChange: (val: string) => void;
   onComposeClick: () => void;
@@ -41,26 +34,27 @@ export function AdminAnnouncementsHeader({
   onAudienceTabChange,
   selectedPriority,
   onPriorityChange,
+  selectedClubFilter,
+  onClubFilterChange,
+  clubs,
   searchTerm,
   onSearchChange,
   onComposeClick,
-  totalCount
 }: AdminAnnouncementsHeaderProps) {
   const audienceTabs: Array<{ id: AudienceFilterTab; label: string }> = [
     { id: "all", label: "All Broadcasts" },
     { id: "all_users", label: "Campus-Wide" },
-    { id: "all_clubs", label: "All 14 Clubs" },
+    { id: "all_clubs", label: "All Clubs" },
     { id: "one_club", label: "Single Club" },
-    { id: "role", label: "Role Specific" }
+    { id: "role", label: "Role Specific" },
   ];
 
   return (
     <div className="space-y-4 border-b border-border/80 pb-5">
-      {/* Top Title & Dominant Action */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            <Megaphone className="h-4 w-4 text-primary" />
+            <Megaphone className="h-4 w-4 text-primary" aria-hidden="true" />
             <span>Directorate Communications &amp; Broadcasts</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
@@ -71,27 +65,27 @@ export function AdminAnnouncementsHeader({
           </p>
         </div>
 
-        {/* The Dominant Supported Action */}
         <Button
           type="button"
           onClick={onComposeClick}
-          className="h-10 shrink-0 gap-2 font-semibold shadow-xs transition-transform active:scale-[0.98]"
+          className="h-11 shrink-0 gap-2 font-semibold shadow-xs transition-transform active:scale-[0.98]"
         >
           <Plus className="h-4 w-4" />
           <span>New Announcement</span>
         </Button>
       </div>
 
-      {/* Audience Filter Pills */}
-      <div className="flex flex-wrap items-center gap-2 pt-1">
+      <div className="flex flex-wrap items-center gap-2 pt-1" role="tablist" aria-label="Announcement audience">
         {audienceTabs.map((tab) => {
           const isActive = activeAudienceTab === tab.id;
           return (
             <button
               key={tab.id}
               type="button"
+              role="tab"
+              aria-selected={isActive}
               onClick={() => onAudienceTabChange(tab.id)}
-              className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all duration-180 ${
+              className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all duration-180 min-h-11 ${
                 isActive
                   ? "bg-primary text-primary-foreground shadow-2xs scale-[1.01]"
                   : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -103,11 +97,12 @@ export function AdminAnnouncementsHeader({
         })}
       </div>
 
-      {/* Search & Priority Filtering */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-1">
         <div className="relative w-full sm:max-w-xs">
-          <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+          <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
           <Input
+            id="admin-announcements-search"
+            aria-label="Search announcements by title or keyword"
             placeholder="Search broadcasts by title or keyword..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -115,10 +110,26 @@ export function AdminAnnouncementsHeader({
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <Filter className="h-3.5 w-3.5 text-muted-foreground" />
-          <Select value={selectedPriority} onValueChange={(v) => onPriorityChange(v as "all" | AnnouncementPriorityLevel)}>
-            <SelectTrigger className="w-[180px] text-xs h-9 bg-background">
+        <div className="flex flex-wrap items-center gap-2">
+          <Filter className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+          <Select value={selectedClubFilter} onValueChange={onClubFilterChange}>
+            <SelectTrigger className="w-[180px] text-xs h-9 bg-background" aria-label="Filter announcements by club">
+              <SelectValue placeholder="All clubs" />
+            </SelectTrigger>
+            <SelectContent className="max-h-56">
+              <SelectItem value="all">All clubs</SelectItem>
+              {clubs.map((club) => (
+                <SelectItem key={club.id} value={club.id}>
+                  {club.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={selectedPriority}
+            onValueChange={(v) => onPriorityChange(v as "all" | AnnouncementPriorityLevel)}
+          >
+            <SelectTrigger className="w-[180px] text-xs h-9 bg-background" aria-label="Filter announcements by priority">
               <SelectValue placeholder="All Priorities" />
             </SelectTrigger>
             <SelectContent>
