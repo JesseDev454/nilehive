@@ -29,6 +29,7 @@ import { StatusBadge } from "@/shared/components/StatusBadge";
 import { ADVISOR_MOCK_PROPOSALS, type Proposal } from "@/data/advisorMockData";
 import { OFFICIAL_14_CLUBS_DATA } from "@/data/official14ClubsData";
 import { toast } from "sonner";
+import { applyAdvisorMockDecision } from "@/lib/proposalStatus";
 
 const ASSIGNED_CLUBS = [
   { id: "club-8", name: "Nile Google Developers", code: "NGD" },
@@ -62,7 +63,7 @@ export function AdvisorHomeWorkspace() {
           p.id === proposalId
             ? {
                 ...p,
-                status: "pending_admin_review",
+                status: applyAdvisorMockDecision(p.status, "approve"),
                 advisorRemarks: remarks || "Approved by Dr. Kalu Okonkwo and sent to Admin for the final decision."
               }
             : p
@@ -78,7 +79,7 @@ export function AdvisorHomeWorkspace() {
           p.id === proposalId
             ? {
                 ...p,
-                status: "revisions_requested",
+                status: applyAdvisorMockDecision(p.status, "reject"),
                 advisorRemarks: mandatoryRemarks
               }
             : p

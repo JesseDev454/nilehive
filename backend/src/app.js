@@ -26,17 +26,7 @@ const { createReportsRouter } = require("./modules/reports/reports.routes");
 const { createStorageRouter } = require("./modules/storage/storage.routes");
 const { createTasksRouter } = require("./modules/tasks/tasks.routes");
 const { getEnv } = require("./config/env");
-
-function getAllowedOrigins() {
-  const { CORS_ALLOWED_ORIGINS, FRONTEND_APP_URL } = getEnv();
-  const origins = new Set(
-    [FRONTEND_APP_URL, ...CORS_ALLOWED_ORIGINS.split(",")]
-      .map((origin) => origin.trim().replace(/\/+$/, ""))
-      .filter(Boolean)
-  );
-
-  return origins;
-}
+const { getAllowedOrigins } = require("./shared/allowedOrigins");
 
 function createApp(options = {}) {
   const { database } = options;
@@ -74,7 +64,7 @@ function createApp(options = {}) {
     res.header("Vary", "Origin");
     res.header("Access-Control-Allow-Credentials", "true");
     res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Idempotency-Key, X-Request-Id");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Idempotency-Key, X-Request-Id, X-CSRF-Token");
 
     if (req.method === "OPTIONS") {
       res.sendStatus(204);

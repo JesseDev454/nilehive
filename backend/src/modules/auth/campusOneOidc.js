@@ -10,6 +10,9 @@ const { getEnv } = require("../../config/env");
 const { isAllowedEmail } = require("../../config/emailPolicy");
 const { logger: baseLogger } = require("../../config/logger");
 const { resolveCampusOneEffectiveRole, resolveEffectiveRole } = require("../../shared/portalAccess");
+const { createRateLimitMiddleware } = require("../../middleware/rateLimit");
+const { createAuthUserMiddleware } = require("../../middleware/auth");
+const { createCsrfToken, protectCampusOneLogout } = require("../../shared/csrf");
 const { isValidStudentId, normalizeStudentId } = require("../../shared/studentId");
 
 const OIDC_STATE_COOKIE = "nilehive_oidc_state";
@@ -608,6 +611,31 @@ async function resolveCampusOneProfile(database, claims) {
 function createCampusOneAuthRouter(options = {}) {
   const { database, logger = baseLogger, fetchImpl = fetch } = options;
   const router = require("express").Router();
+  const authUser = createAuthUserMiddleware({ database });
+  const csrfReadLimit = createRateLimitMiddleware({
+    windowMs: 60_000,
+    max: 60,
+    code: "CSRF_RATE_LIMITED",
+    message: "Too many security-token requests. Please try again shortly.",
+    key: (req) => `${req.user?.id || req.ip}:auth:csrf`
+  });
+
+  router.get("/csrf", authUser, csrfReadLimit, (req, res, next) => {
+    try {
+      if (!req.campusOneSession || !req.campusOneSessionToken) {
+        throw new ApiError(401, "Please sign in to continue", "AUTH_REQUIRED");
+      }
+
+      res.set("Cache-Control", "no-store, private");
+      res.status(200).json({
+        data: {
+          csrf_token: createCsrfToken(req.campusOneSession, req.campusOneSessionToken)
+        }
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
 
   router.get("/campus-one/login", async (req, res, next) => {
     try {
@@ -825,14 +853,18 @@ function createCampusOneAuthRouter(options = {}) {
     }
   });
 
-  router.post("/campus-one/logout", (req, res) => {
-    clearCampusOneSessionCookie(res);
-    res.status(200).json({ data: { signed_out: true } });
+  router.post("/campus-one/logout", (req, res, next) => {
+    try {
+      protectCampusOneLogout(req);
+      clearCampusOneSessionCookie(res);
+      res.status(200).json({ data: { signed_out: true } });
+    } catch (error) {
+      next(error);
+    }
   });
 
   router.get("/campus-one/logout", (req, res) => {
-    clearCampusOneSessionCookie(res);
-    res.redirect(getFrontendLoginUrl({ signed_out: "1" }));
+    res.redirect(getFrontendLoginUrl());
   });
 
   return router;

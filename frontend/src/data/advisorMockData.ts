@@ -1,10 +1,6 @@
-export type ProposalStatus =
-  | "draft"
-  | "pending_advisor_review"
-  | "pending_admin_review"
-  | "approved"
-  | "revisions_requested"
-  | "rejected";
+import type { OneClubProposalStatus } from "@/lib/proposalStatus";
+
+export type ProposalStatus = OneClubProposalStatus;
 
 export interface Proposal {
   id: string;

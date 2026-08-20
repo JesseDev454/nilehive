@@ -1,5 +1,10 @@
 import React from "react";
 import { CheckCircle2, Clock, XCircle, AlertTriangle, ShieldCheck, FileEdit } from "lucide-react";
+import {
+  isOneClubProposalStatus,
+  isUnsupportedProposalStatus,
+  proposalStatusLabel,
+} from "@/lib/proposalStatus";
 
 export type BadgeStatusType =
   | "approved"
@@ -30,6 +35,14 @@ export function StatusBadge({
   const normalized = (status || variant || "default").toLowerCase();
 
   const getStatusConfig = () => {
+    if (isUnsupportedProposalStatus(normalized)) {
+      return {
+        bg: "bg-muted text-muted-foreground border-border",
+        icon: AlertTriangle,
+        defaultLabel: "Unknown status"
+      };
+    }
+
     switch (normalized) {
       case "approved":
       case "verified":
@@ -40,13 +53,25 @@ export function StatusBadge({
           defaultLabel: normalized === "verified" ? "Verified" : normalized === "active" ? "Active" : "Approved"
         };
       case "pending":
-      case "pending_advisor_review":
-      case "pending_admin_review":
       case "proof_awaiting_review":
         return {
           bg: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
           icon: Clock,
           defaultLabel: "Pending Review"
+        };
+      case "pending_advisor_review":
+      case "pending_admin_review":
+        return {
+          bg: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20",
+          icon: Clock,
+          defaultLabel: isOneClubProposalStatus(normalized) ? proposalStatusLabel(normalized) : "Pending Review"
+        };
+      case "advisor_rejected":
+      case "admin_rejected":
+        return {
+          bg: "bg-destructive/10 text-destructive border-destructive/20",
+          icon: XCircle,
+          defaultLabel: isOneClubProposalStatus(normalized) ? proposalStatusLabel(normalized) : "Returned"
         };
       case "rejected":
       case "proof_rejected":

@@ -29,7 +29,7 @@ const INITIAL_PROPOSALS: ProposalMock[] = [
     budget: 150000,
     description: "A practical buildathon for student teams working with responsible AI tools.",
     advisor_name: "Dr. Aliyu Bello",
-    status: "pending_admin",
+    status: "pending_admin_review",
   },
   {
     id: "proposal-2",
@@ -42,7 +42,7 @@ const INITIAL_PROPOSALS: ProposalMock[] = [
     budget: 85000,
     description: "The final round of the university's inter-faculty debate series.",
     advisor_name: "Prof. Halima Yusuf",
-    status: "pending_admin",
+    status: "pending_admin_review",
   },
 ];
 

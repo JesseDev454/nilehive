@@ -411,7 +411,7 @@ test("CampusOne custom roles are normalized for diagnostics without granting acc
   assert.deepEqual(getCampusOneCustomRoles({ customRoles: ["club_services_admin"] }), ["club_services_admin"]);
 });
 
-test("CampusOne unit_admin alone preserves a local feedback manager role", async (t) => {
+test("CampusOne unit_admin alone does not restore leftover feedback manager as an effective role", async (t) => {
   withCampusOneOidcEnv(t);
   const server = await createTestServer(createFakeDatabase({ role: "feedback_manager" }));
   t.after(() => server.close());
@@ -432,7 +432,7 @@ test("CampusOne unit_admin alone preserves a local feedback manager role", async
 
   assert.equal(response.status, 200);
   assert.equal(payload.data.profile.app_role, "feedback_manager");
-  assert.equal(payload.data.profile.effective_role, "feedback_manager");
+  assert.equal(payload.data.profile.effective_role, "student");
   assert.deepEqual(payload.data.profile.custom_roles, ["unit_admin"]);
 });
 

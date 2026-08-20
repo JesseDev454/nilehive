@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { getCurrentProfile, beginCampusOneLogin, logoutCampusOne, type ProfileMeRecord } from "@/lib/api/auth";
-import { ApiClientError } from "@/lib/api/client";
+import { ApiClientError, clearCsrfToken, getCsrfToken } from "@/lib/api/client";
 import { isMockPreviewMode } from "@/lib/oneclubMode";
 import { isOneClubRole, type OneClubRole } from "@/lib/workspaceRoutes";
 
@@ -169,6 +169,7 @@ function IntegratedAuthProvider({ children }: { children: ReactNode }) {
       setSessionProfile(record);
       setUserEmail(data.user.email);
       setStatus("authenticated");
+      void getCsrfToken().catch(() => undefined);
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
       const mapped = statusFromError(error);
@@ -179,6 +180,9 @@ function IntegratedAuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       setSessionProfile(null);
+      if (mapped.status === "unauthenticated" || mapped.status === "session_expired") {
+        clearCsrfToken();
+      }
       setStatus(mapped.status);
       setErrorCode(mapped.errorCode);
       setErrorMessage(mapped.errorMessage);
@@ -201,6 +205,7 @@ function IntegratedAuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // Cookie clear on the server is best-effort; always return to login.
     } finally {
+      clearCsrfToken();
       setSessionProfile(null);
       setUserEmail(null);
       setStatus("unauthenticated");

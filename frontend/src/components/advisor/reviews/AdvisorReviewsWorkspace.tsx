@@ -24,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { StatusBadge } from "@/shared/components/StatusBadge";
 import { ADVISOR_MOCK_PROPOSALS, type Proposal } from "@/data/advisorMockData";
+import { applyAdvisorMockDecision, isReturnedProposalStatus } from "@/lib/proposalStatus";
 
 const ASSIGNED_CLUBS = [
   { id: "club-8", name: "Nile Google Developers", code: "NGD" },
@@ -69,7 +70,7 @@ export function AdvisorReviewsWorkspace() {
         statusFilter === "all" ||
         (statusFilter === "pending" && proposal.status === "pending_advisor_review") ||
         (statusFilter === "endorsed" && (proposal.status === "pending_admin_review" || proposal.status === "approved")) ||
-        (statusFilter === "returned" && (proposal.status === "rejected" || proposal.status === "revisions_requested"));
+        (statusFilter === "returned" && isReturnedProposalStatus(proposal.status));
 
       const matchesClub =
         clubFilter === "all" ||
@@ -93,7 +94,7 @@ export function AdvisorReviewsWorkspace() {
           p.id === proposalId
             ? {
                 ...p,
-                status: "pending_admin_review",
+                status: applyAdvisorMockDecision(p.status, "approve"),
                 advisorRemarks: remarks || "Approved by Dr. Kalu Okonkwo and sent to Admin for the final decision."
               }
             : p
@@ -109,7 +110,7 @@ export function AdvisorReviewsWorkspace() {
           p.id === proposalId
             ? {
                 ...p,
-                status: "revisions_requested",
+                status: applyAdvisorMockDecision(p.status, "reject"),
                 advisorRemarks: mandatoryRemarks
               }
             : p

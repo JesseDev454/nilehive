@@ -9,6 +9,7 @@ const {
 } = require("../../jobs/queue");
 const {
   validateAdvisorDecisionPayload,
+  validateAdminDecisionPayload,
   validateCreateProposalPayload,
   validateDraftProposalPayload,
   readSaveAsDraft
@@ -785,7 +786,7 @@ async function submitAdminDecision(options) {
     throw new ApiError(403, "Only admins can verify proposals", "FORBIDDEN");
   }
 
-  const validatedPayload = validateAdvisorDecisionPayload(payload);
+  const validatedPayload = validateAdminDecisionPayload(payload);
   const proposal = await database.getProposalById(proposalId);
 
   if (!proposal) {

@@ -3,7 +3,8 @@ const { db } = require("../config/db");
 const { getEnv } = require("../config/env");
 const { isAllowedEmail } = require("../config/emailPolicy");
 const ApiError = require("../shared/ApiError");
-const { readCampusOneSessionFromRequest } = require("../shared/campusOneSession");
+const { verifyCampusOneSessionToken } = require("../shared/campusOneSession");
+const { protectCookieAuthenticatedMutation, readRawCampusOneSessionToken } = require("../shared/csrf");
 const { resolveCampusOneEffectiveRole, resolveEffectiveRole } = require("../shared/portalAccess");
 
 function extractBearerToken(authorizationHeader) {
@@ -162,7 +163,14 @@ async function getPortalAuthContext(req, database) {
 }
 
 async function getCampusOneOidcAuthContext(req, database) {
-  const session = readCampusOneSessionFromRequest(req);
+  const rawSessionToken = readRawCampusOneSessionToken(req);
+  if (!rawSessionToken) {
+    throw new ApiError(401, "Please sign in to continue", "AUTH_REQUIRED");
+  }
+
+  const session = verifyCampusOneSessionToken(rawSessionToken);
+  req.campusOneSessionToken = rawSessionToken;
+  req.campusOneSession = session;
   const profile = await database.getProfileById(session.profileId);
 
   if (!profile) {
@@ -227,6 +235,7 @@ function createAuthMiddleware(options = {}) {
         req.authUser = context.authUser;
         req.profile = context.profile;
         req.user = context.user;
+        protectCookieAuthenticatedMutation(req, req.campusOneSession, req.campusOneSessionToken);
         next();
         return;
       }
@@ -298,6 +307,7 @@ function createAuthUserMiddleware(options = {}) {
         req.authUser = context.authUser;
         req.profile = context.profile;
         req.user = context.user;
+        protectCookieAuthenticatedMutation(req, req.campusOneSession, req.campusOneSessionToken);
         next();
         return;
       }

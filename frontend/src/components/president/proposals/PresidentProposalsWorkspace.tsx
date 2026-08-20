@@ -39,14 +39,15 @@ import { TextField } from "@/shared/components/TextField";
 import { StatusBadge } from "@/shared/components/StatusBadge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/shared/components/Dialog";
 import { Banner } from "@/shared/components/Banner";
+import {
+  isOneClubProposalStatus,
+  isReturnedProposalStatus,
+  isUnderReviewProposalStatus,
+  proposalStatusLabel,
+  type OneClubProposalStatus,
+} from "@/lib/proposalStatus";
 
-export type ProposalStatus =
-  | "Draft"
-  | "Awaiting advisor review"
-  | "Awaiting admin review"
-  | "Approved"
-  | "Returned by advisor"
-  | "Returned by admin";
+export type ProposalStatus = OneClubProposalStatus;
 
 export interface BudgetItem {
   id: string;
@@ -105,7 +106,7 @@ const INITIAL_PROPOSALS: ProposalRecord[] = [
     category: "Hackathon & Competition",
     clubName: "Nile Google Developers",
     clubCode: "NGD",
-    status: "Returned by advisor",
+    status: "advisor_rejected",
     createdAt: "Oct 12, 2025",
     updatedAt: "Yesterday, 3:45 PM",
     step1: {
@@ -145,12 +146,55 @@ const INITIAL_PROPOSALS: ProposalRecord[] = [
     }
   },
   {
+    id: "prop-106",
+    title: "Campus Open Source Sprint",
+    category: "Developer Workshop",
+    clubName: "Nile Google Developers",
+    clubCode: "NGD",
+    status: "admin_rejected",
+    createdAt: "Oct 8, 2025",
+    updatedAt: "Oct 11, 2025",
+    step1: {
+      eventTitle: "Campus Open Source Sprint",
+      category: "Developer Workshop",
+      expectedAttendance: 80,
+      targetAudience: "Computer Science students contributing to campus tools",
+      eventFormat: "Physical In-Person"
+    },
+    step2: {
+      proposedDate: "2025-11-08",
+      startTime: "10:00",
+      endTime: "16:00",
+      venue: "ICT Center, Lab 1",
+      objectives: "Ship one usable campus tooling improvement with documented source control.",
+      keynoteSpeaker: "Faculty engineering mentor"
+    },
+    step3: {
+      budgetItems: [
+        { id: "b30", description: "Lab refreshments", unitPrice: 1500, quantity: 80, fundingSource: "Club Dues Fund" }
+      ]
+    },
+    step4: {
+      leadOrganizer: "Farouk Al-Mansoor",
+      logisticsLead: "Zainab Mukhtar",
+      mediaLead: "Tariq Ibrahim",
+      equipmentNeeds: "Lab workstations and a projector",
+      safetyPrecautions: "Standard computer lab regulations"
+    },
+    remarks: {
+      reviewerName: "Director Zainab Ahmed",
+      reviewerRole: "Student Affairs Admin",
+      date: "Oct 11, 2025",
+      comment: "Venue calendar conflicts with an already authorized faculty session. Please propose an alternate date."
+    }
+  },
+  {
     id: "prop-104",
     title: "Google Cloud TechSprint & Certification Clinic",
     category: "Technical Workshop",
     clubName: "Nile Google Developers",
     clubCode: "NGD",
-    status: "Draft",
+    status: "draft",
     createdAt: "Oct 16, 2025",
     updatedAt: "3 days ago",
     step1: {
@@ -187,7 +231,7 @@ const INITIAL_PROPOSALS: ProposalRecord[] = [
     category: "Industry Keynote",
     clubName: "Nile Google Developers",
     clubCode: "NGD",
-    status: "Approved",
+    status: "approved",
     createdAt: "Sept 28, 2025",
     updatedAt: "Oct 10, 2025",
     step1: {
@@ -225,7 +269,7 @@ const INITIAL_PROPOSALS: ProposalRecord[] = [
     category: "Developer Workshop",
     clubName: "Nile Google Developers",
     clubCode: "NGD",
-    status: "Awaiting advisor review",
+    status: "pending_advisor_review",
     createdAt: "Oct 17, 2025",
     updatedAt: "Oct 17, 2025",
     step1: {
@@ -331,10 +375,10 @@ export function PresidentProposalsWorkspace() {
 
       if (!matchesSearch) return false;
 
-      if (activeTab === "drafts") return p.status === "Draft";
-      if (activeTab === "returned") return p.status === "Returned by advisor" || p.status === "Returned by admin";
-      if (activeTab === "under_review") return p.status === "Awaiting advisor review" || p.status === "Awaiting admin review";
-      if (activeTab === "approved") return p.status === "Approved";
+      if (activeTab === "drafts") return p.status === "draft";
+      if (activeTab === "returned") return isReturnedProposalStatus(p.status);
+      if (activeTab === "under_review") return isUnderReviewProposalStatus(p.status);
+      if (activeTab === "approved") return p.status === "approved";
       return true;
     });
   }, [proposals, searchQuery, activeTab]);
@@ -352,7 +396,7 @@ export function PresidentProposalsWorkspace() {
 
   // Launch Edit / Revise Proposal Builder
   const handleOpenEditProposal = (proposal: ProposalRecord) => {
-    if (proposal.status === "Awaiting advisor review" || proposal.status === "Awaiting admin review") {
+    if (isUnderReviewProposalStatus(proposal.status)) {
       // Cannot edit while under review - open read-only view
       setViewingProposal(proposal);
       return;
@@ -407,7 +451,7 @@ export function PresidentProposalsWorkspace() {
           category: formData.step1.category,
           clubName,
           clubCode,
-          status: "Draft",
+          status: "draft",
           createdAt: "Today",
           updatedAt: now,
           step1: { ...formData.step1 },
@@ -434,7 +478,7 @@ export function PresidentProposalsWorkspace() {
         category: formData.step1.category,
         clubName,
         clubCode,
-        status: "Awaiting advisor review",
+        status: "pending_advisor_review",
         createdAt: "Today",
         updatedAt: "Just now",
         step1: { ...formData.step1 },
@@ -492,20 +536,8 @@ export function PresidentProposalsWorkspace() {
   };
 
   const getStatusBadge = (status: ProposalStatus) => {
-    switch (status) {
-      case "Draft":
-        return <StatusBadge status="default" label="Draft" />;
-      case "Awaiting advisor review":
-        return <StatusBadge status="warning" label="Awaiting advisor review" />;
-      case "Awaiting admin review":
-        return <StatusBadge status="info" label="Awaiting admin review" />;
-      case "Approved":
-        return <StatusBadge status="success" label="Approved" />;
-      case "Returned by advisor":
-        return <StatusBadge status="destructive" label="Returned by advisor" />;
-      case "Returned by admin":
-        return <StatusBadge status="destructive" label="Returned by admin" />;
-    }
+    const label = isOneClubProposalStatus(status) ? proposalStatusLabel(status) : "Unknown status";
+    return <StatusBadge status={status} label={label} />;
   };
 
   return (
@@ -609,8 +641,8 @@ export function PresidentProposalsWorkspace() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
             {filteredProposals.map((proposal) => {
-              const isEditable = proposal.status === "Draft" || proposal.status.startsWith("Returned");
-              const isUnderReview = proposal.status === "Awaiting advisor review" || proposal.status === "Awaiting admin review";
+              const isEditable = proposal.status === "draft" || isReturnedProposalStatus(proposal.status);
+              const isUnderReview = isUnderReviewProposalStatus(proposal.status);
 
               return (
                 <Card key={proposal.id} className="border-border/80 p-4 space-y-3 flex flex-col justify-between">
@@ -664,12 +696,12 @@ export function PresidentProposalsWorkspace() {
                       ) : isEditable ? (
                         <Button
                           size="sm"
-                          variant={proposal.status.startsWith("Returned") ? "default" : "outline"}
+                          variant={isReturnedProposalStatus(proposal.status) ? "default" : "outline"}
                           onClick={() => handleOpenEditProposal(proposal)}
                           className="text-xs font-bold h-8 gap-1"
                         >
                           <FileEdit className="h-3.5 w-3.5" />
-                          <span>{proposal.status.startsWith("Returned") ? "Revise & Resubmit" : "Edit Draft"}</span>
+                          <span>{isReturnedProposalStatus(proposal.status) ? "Revise & Resubmit" : "Edit Draft"}</span>
                         </Button>
                       ) : (
                         <Button
@@ -1327,21 +1359,21 @@ export function PresidentProposalsWorkspace() {
                     <span>Submitted by Club President ({viewingProposal.createdAt})</span>
                   </div>
 
-                  {viewingProposal.status === "Awaiting advisor review" && (
+                  {viewingProposal.status === "pending_advisor_review" && (
                     <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-semibold">
                       <Clock className="h-4 w-4" />
                       <span>Currently under Staff Advisor Review (Dr. Aminu Galadima)</span>
                     </div>
                   )}
 
-                  {viewingProposal.status === "Awaiting admin review" && (
+                  {viewingProposal.status === "pending_admin_review" && (
                     <div className="flex items-center gap-2 text-sky-600 dark:text-sky-400 font-semibold">
                       <Clock className="h-4 w-4" />
                       <span>Advisor Approved &bull; Awaiting Student Affairs Admin final review</span>
                     </div>
                   )}
 
-                  {viewingProposal.status === "Approved" && (
+                  {viewingProposal.status === "approved" && (
                     <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold">
                       <CheckCircle2 className="h-4 w-4" />
                       <span>Approved by Student Affairs &bull; Converted into Official Campus Event</span>

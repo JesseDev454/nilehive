@@ -1,4 +1,11 @@
 import { safeReturnTo } from "@/lib/workspaceRoutes";
+import {
+  clearCsrfToken,
+  getCachedCsrfToken,
+  getCsrfInFlight,
+  setCachedCsrfToken,
+  setCsrfInFlight,
+} from "./csrf";
 
 export class ApiClientError extends Error {
   readonly status: number;
@@ -13,6 +20,9 @@ export class ApiClientError extends Error {
     this.details = details;
   }
 }
+
+const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
+const CSRF_RETRY_CODES = new Set(["CSRF_TOKEN_REQUIRED", "CSRF_TOKEN_INVALID", "CSRF_TOKEN_EXPIRED"]);
 
 function trimTrailingSlash(value: string): string {
   return value.replace(/\/+$/, "");
@@ -31,11 +41,34 @@ function joinApiPath(path: string): string {
   return `${getApiBaseUrl()}${normalized}`;
 }
 
+export function isOwnApiUrl(url: string): boolean {
+  const base = getApiBaseUrl();
+  if (base.startsWith("/")) {
+    if (/^https?:\/\//i.test(url)) {
+      return false;
+    }
+    try {
+      const parsed = new URL(url, "http://oneclub.local");
+      return parsed.pathname.startsWith(base);
+    } catch {
+      return url.startsWith(base);
+    }
+  }
+  return url.startsWith(base);
+}
+
+export function shouldAttachCsrf(method: string, url: string): boolean {
+  return UNSAFE_METHODS.has(method.toUpperCase()) && isOwnApiUrl(url);
+}
+
 interface RequestOptions {
-  method?: "GET" | "POST";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" | "HEAD" | "OPTIONS";
   body?: unknown;
   signal?: AbortSignal;
   json?: boolean;
+  csrf?: boolean;
+  csrfRetried?: boolean;
+  headers?: HeadersInit;
 }
 
 interface ErrorPayload {
@@ -57,25 +90,59 @@ async function parseBody(response: Response): Promise<unknown> {
   }
 }
 
+export async function getCsrfToken(signal?: AbortSignal): Promise<string> {
+  const cached = getCachedCsrfToken();
+  if (cached) return cached;
+
+  const existing = getCsrfInFlight();
+  if (existing) return existing;
+
+  const request = (async () => {
+    const payload = await apiRequest<{ data: { csrf_token: string } }>("/auth/csrf", {
+      signal,
+      csrf: false,
+    });
+    const token = payload.data?.csrf_token;
+    if (!token) {
+      throw new ApiClientError(500, "CSRF_TOKEN_MISSING", "OneClub could not issue a security token.");
+    }
+    setCachedCsrfToken(token);
+    return token;
+  })();
+
+  setCsrfInFlight(request);
+  try {
+    return await request;
+  } finally {
+    setCsrfInFlight(null);
+  }
+}
+
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = "GET", body, signal, json = true } = options;
-  const headers = new Headers();
+  const { method = "GET", body, signal, json = true, csrf, csrfRetried = false } = options;
+  const url = joinApiPath(path);
+  const headers = new Headers(options.headers);
 
   if (json && body !== undefined) {
     headers.set("Content-Type", "application/json");
     headers.set("Accept", "application/json");
-  } else {
+  } else if (!headers.has("Accept")) {
     headers.set("Accept", "application/json");
+  }
+
+  const attachCsrf = csrf !== false && shouldAttachCsrf(method, url);
+  if (attachCsrf) {
+    headers.set("X-CSRF-Token", await getCsrfToken(signal));
   }
 
   let response: Response;
   try {
-    response = await fetch(joinApiPath(path), {
+    response = await fetch(url, {
       method,
       headers,
       credentials: "include",
       signal,
-      body: json && body !== undefined ? JSON.stringify(body) : undefined,
+      body: json && body !== undefined ? JSON.stringify(body) : (body as BodyInit | undefined),
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") {
@@ -90,6 +157,16 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     const errorPayload = payload as ErrorPayload | null;
     const code = errorPayload?.error?.code || `HTTP_${response.status}`;
     const message = errorPayload?.error?.message || "Request failed";
+
+    if (response.status === 401) {
+      clearCsrfToken();
+    }
+
+    if (attachCsrf && CSRF_RETRY_CODES.has(code) && !csrfRetried) {
+      clearCsrfToken();
+      return apiRequest<T>(path, { ...options, csrfRetried: true });
+    }
+
     throw new ApiClientError(response.status, code, message, errorPayload?.error?.details);
   }
 
@@ -100,3 +177,5 @@ export function campusOneLoginUrl(returnTo: string): string {
   const params = new URLSearchParams({ return_to: safeReturnTo(returnTo) });
   return joinApiPath(`/auth/campus-one/login?${params.toString()}`);
 }
+
+export { clearCsrfToken };

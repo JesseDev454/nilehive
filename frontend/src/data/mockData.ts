@@ -1,3 +1,5 @@
+import type { OneClubProposalStatus } from "@/lib/proposalStatus";
+
 export interface Club {
   id: string;
   name: string;
@@ -308,13 +310,7 @@ export const MOCK_USERS: Record<OneClubRole, UserProfile> = {
   }
 };
 
-export type ProposalStatus =
-  | "draft"
-  | "pending_advisor_review"
-  | "pending_admin_review"
-  | "approved"
-  | "revisions_requested"
-  | "rejected";
+export type ProposalStatus = OneClubProposalStatus;
 
 export interface Proposal {
   id: string;

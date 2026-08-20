@@ -7,6 +7,7 @@ import { AdminRecentActivity, type RecentActivityItem } from "@/components/admin
 import { AdminAnnouncementComposer } from "@/components/admin/AdminAnnouncementComposer";
 import { AdminRecordDetailModal } from "@/components/admin/AdminRecordDetailModal";
 import { Button } from "@/components/ui/button";
+import type { OneClubProposalStatus } from "@/lib/proposalStatus";
 
 export interface ProposalMock {
   id: string;
@@ -19,7 +20,7 @@ export interface ProposalMock {
   budget: number;
   description: string;
   advisor_name: string;
-  status: "pending_admin" | "approved" | "revisions_requested" | "rejected";
+  status: OneClubProposalStatus;
 }
 
 export interface JoinRequestMock {
@@ -87,7 +88,7 @@ export function AdminHomeView() {
       budget: 150000,
       description: "Hands-on engineering hackathon building solutions on Vertex AI for student teams.",
       advisor_name: "Dr. Aliyu Bello",
-      status: "pending_admin"
+      status: "pending_admin_review"
     },
     {
       id: "prop-02",
@@ -100,7 +101,7 @@ export function AdminHomeView() {
       budget: 220000,
       description: "Diplomatic simulation addressing regional climate policies with visiting delegates.",
       advisor_name: "Prof. Halima Yusuf",
-      status: "pending_admin"
+      status: "pending_admin_review"
     }
   ]);
 

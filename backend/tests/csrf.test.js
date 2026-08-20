@@ -1,0 +1,537 @@
+const test = require("node:test");
+const assert = require("node:assert/strict");
+const crypto = require("node:crypto");
+const { createApp } = require("../src/app");
+const { clearEnvCache } = require("../src/config/env");
+const { CAMPUS_ONE_SESSION_COOKIE, createCampusOneSessionToken } = require("../src/shared/campusOneSession");
+const { createCsrfToken, verifyCsrfToken } = require("../src/shared/csrf");
+const { isStagingE2EAuthBridgeEnabled } = require("../src/modules/auth/campusOneOidc");
+
+const FRONTEND_ORIGIN = "https://clubs.campusone.com.ng";
+const WEBHOOK_SECRET = "csrf-test-webhook-secret";
+const STAGING_BRIDGE_SECRET = "csrf-test-staging-bridge-secret";
+
+function createFakeDatabase(profileOverrides = {}) {
+  const profile = {
+    id: "profile-1",
+    portal_user_id: "campus-user-1",
+    email: "student@nileuniversity.edu.ng",
+    full_name: "Campus Student",
+    role: "student",
+    club_id: null,
+    student_id: "020232255",
+    requested_role: "student",
+    onboarding_status: "complete",
+    account_status: "active",
+    created_at: "2026-05-24T10:00:00.000Z",
+    updated_at: "2026-05-24T10:00:00.000Z",
+    ...profileOverrides
+  };
+
+  return {
+    async getProfileById(profileId) {
+      return profileId === profile.id ? profile : null;
+    },
+    async createCampusOneWebhookEvent() {
+      return { id: "delivery-1" };
+    },
+    async updateCampusOneWebhookEvent() {
+      return undefined;
+    }
+  };
+}
+
+async function createTestServer(database) {
+  const app = createApp({ database });
+  const server = await new Promise((resolve) => {
+    const instance = app.listen(0, () => resolve(instance));
+  });
+  const address = server.address();
+
+  return {
+    baseUrl: `http://127.0.0.1:${address.port}`,
+    close: () =>
+      new Promise((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+      })
+  };
+}
+
+function sessionCookie(token) {
+  return `${CAMPUS_ONE_SESSION_COOKIE}=${encodeURIComponent(token)}`;
+}
+
+function createSessionToken(overrides = {}) {
+  return createCampusOneSessionToken({
+    profileId: "profile-1",
+    portalUserId: "campus-user-1",
+    portalRole: "student",
+    email: "student@nileuniversity.edu.ng",
+    ...overrides
+  });
+}
+
+function withCsrfEnv(t, extra = {}) {
+  const keys = [
+    "AUTH_PROVIDER",
+    "CAMPUS_ONE_CLIENT_ID",
+    "CAMPUS_ONE_CLIENT_SECRET",
+    "CAMPUS_ONE_SESSION_SECRET",
+    "CAMPUS_ONE_REDIRECT_URI",
+    "CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN",
+    "CAMPUS_ONE_WEBHOOK_SECRET",
+    "NODE_ENV",
+    "APP_ENV",
+    "FRONTEND_APP_URL",
+    "CORS_ALLOWED_ORIGINS",
+    "E2E_STAGING_AUTH_BRIDGE_ENABLED",
+    "E2E_STAGING_AUTH_BRIDGE_SECRET",
+    "E2E_STAGING_ALLOWED_PROFILE_IDS",
+    "SUPABASE_URL",
+    "SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ];
+  const previousEnv = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+
+  process.env.AUTH_PROVIDER = "campus_one_oidc";
+  process.env.NODE_ENV = extra.NODE_ENV || "test";
+  process.env.APP_ENV = extra.APP_ENV || "test";
+  process.env.CAMPUS_ONE_CLIENT_ID = "test-campus-one-client";
+  process.env.CAMPUS_ONE_CLIENT_SECRET = "test-campus-one-secret";
+  process.env.CAMPUS_ONE_SESSION_SECRET = "test-campus-one-session-secret";
+  process.env.CAMPUS_ONE_REDIRECT_URI = "http://localhost:4000/api/v1/auth/campus-one/callback";
+  process.env.CAMPUS_ONE_ENFORCE_EMAIL_DOMAIN = "false";
+  process.env.CAMPUS_ONE_WEBHOOK_SECRET = WEBHOOK_SECRET;
+  process.env.FRONTEND_APP_URL = FRONTEND_ORIGIN;
+  process.env.CORS_ALLOWED_ORIGINS = FRONTEND_ORIGIN;
+  process.env.E2E_STAGING_AUTH_BRIDGE_ENABLED = extra.E2E_STAGING_AUTH_BRIDGE_ENABLED || "false";
+  process.env.E2E_STAGING_AUTH_BRIDGE_SECRET = extra.E2E_STAGING_AUTH_BRIDGE_SECRET || "";
+  process.env.E2E_STAGING_ALLOWED_PROFILE_IDS = extra.E2E_STAGING_ALLOWED_PROFILE_IDS || "";
+  process.env.SUPABASE_URL = process.env.SUPABASE_URL || "https://example.supabase.co";
+  process.env.SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || "anon";
+  process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "service";
+  clearEnvCache();
+
+  t.after(() => {
+    for (const [key, value] of Object.entries(previousEnv)) {
+      if (value === undefined) {
+        delete process.env[key];
+      } else {
+        process.env[key] = value;
+      }
+    }
+    clearEnvCache();
+  });
+}
+
+async function fetchJson(url, options = {}) {
+  const response = await fetch(url, options);
+  const text = await response.text();
+  let payload = null;
+  if (text) {
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      payload = text;
+    }
+  }
+  return { response, payload, text };
+}
+
+async function getCsrfToken(baseUrl, token, extraHeaders = {}) {
+  const { response, payload } = await fetchJson(`${baseUrl}/api/v1/auth/csrf`, {
+    headers: {
+      Cookie: sessionCookie(token),
+      ...extraHeaders
+    }
+  });
+  assert.equal(response.status, 200);
+  assert.match(String(response.headers.get("cache-control") || ""), /no-store/i);
+  assert.equal(typeof payload.data.csrf_token, "string");
+  assert.ok(payload.data.csrf_token.length > 16);
+  return payload.data.csrf_token;
+}
+
+test("CSRF token is unavailable without authentication", async (t) => {
+  withCsrfEnv(t);
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  const { response, payload, text } = await fetchJson(`${server.baseUrl}/api/v1/auth/csrf`);
+  assert.equal(response.status, 401);
+  assert.equal(payload.error.code, "AUTH_REQUIRED");
+  assert.equal(text.includes("csrf_token"), false);
+});
+
+test("authenticated mutation with a valid CSRF token succeeds", async (t) => {
+  withCsrfEnv(t);
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+  const token = createSessionToken();
+  const csrf = await getCsrfToken(server.baseUrl, token);
+
+  const { response, payload } = await fetchJson(`${server.baseUrl}/api/v1/auth/campus-one/logout`, {
+    method: "POST",
+    headers: {
+      Cookie: sessionCookie(token),
+      Origin: FRONTEND_ORIGIN,
+      "X-CSRF-Token": csrf,
+      "Content-Type": "application/json"
+    }
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.signed_out, true);
+  assert.equal(JSON.stringify(payload).includes(csrf), false);
+});
+
+test("missing CSRF token is rejected", async (t) => {
+  withCsrfEnv(t);
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+  const token = createSessionToken();
+
+  const { response, payload } = await fetchJson(`${server.baseUrl}/api/v1/auth/campus-one/logout`, {
+    method: "POST",
+    headers: {
+      Cookie: sessionCookie(token),
+      Origin: FRONTEND_ORIGIN,
+      "Content-Type": "application/json"
+    }
+  });
+
+  assert.equal(response.status, 403);
+  assert.equal(payload.error.code, "CSRF_TOKEN_REQUIRED");
+});
+
+test("invalid CSRF token is rejected and never echoed", async (t) => {
+  withCsrfEnv(t);
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+  const token = createSessionToken();
+  const forged = "leak-me-csrf-token-value.not-a-real-signature";
+  const logs = [];
+  const originalWarn = console.warn;
+  console.warn = (...args) => {
+    logs.push(args.map((value) => String(value)).join(" "));
+  };
+  t.after(() => {
+    console.warn = originalWarn;
+  });
+
+  const { response, payload, text } = await fetchJson(`${server.baseUrl}/api/v1/auth/campus-one/logout`, {
+    method: "POST",
+    headers: {
+      Cookie: sessionCookie(token),
+      Origin: FRONTEND_ORIGIN,
+      "X-CSRF-Token": forged,
+      "Content-Type": "application/json"
+    }
+  });
+
+  assert.equal(response.status, 403);
+  assert.equal(payload.error.code, "CSRF_TOKEN_INVALID");
+  assert.equal(text.includes(forged), false);
+  assert.equal(JSON.stringify(payload).includes(forged), false);
+  assert.equal(logs.join("\n").includes(forged), false);
+});
+
+test("CSRF token from another session is rejected", async (t) => {
+  withCsrfEnv(t);
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+  const tokenA = createSessionToken({ portalUserId: "campus-user-a" });
+  const tokenB = createSessionToken({ portalUserId: "campus-user-b" });
+  const csrfA = await getCsrfToken(server.baseUrl, tokenA);
+
+  const { response, payload } = await fetchJson(`${server.baseUrl}/api/v1/auth/campus-one/logout`, {
+    method: "POST",
+    headers: {
+      Cookie: sessionCookie(tokenB),
+      Origin: FRONTEND_ORIGIN,
+      "X-CSRF-Token": csrfA
+    }
+  });
+
+  assert.equal(response.status, 403);
+  assert.equal(payload.error.code, "CSRF_TOKEN_INVALID");
+});
+
+test("expired CSRF token is rejected", async (t) => {
+  withCsrfEnv(t);
+  const token = createSessionToken();
+  const encodedPayload = token.split(".")[0];
+  const normalized = encodedPayload.replace(/-/g, "+").replace(/_/g, "/");
+  const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
+  const sessionPayload = JSON.parse(Buffer.from(padded, "base64").toString("utf8"));
+  const expired = createCsrfToken(sessionPayload, token, {
+    now: Math.floor(Date.now() / 1000) - 30,
+    exp: Math.floor(Date.now() / 1000) - 5
+  });
+
+  assert.throws(
+    () => verifyCsrfToken(expired, sessionPayload, token),
+    (error) => error.code === "CSRF_TOKEN_EXPIRED"
+  );
+
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+  const { response, payload } = await fetchJson(`${server.baseUrl}/api/v1/auth/campus-one/logout`, {
+    method: "POST",
+    headers: {
+      Cookie: sessionCookie(token),
+      Origin: FRONTEND_ORIGIN,
+      "X-CSRF-Token": expired
+    }
+  });
+
+  assert.equal(response.status, 403);
+  assert.equal(payload.error.code, "CSRF_TOKEN_EXPIRED");
+});
+
+test("approved origin succeeds and rejected origin fails", async (t) => {
+  withCsrfEnv(t);
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+  const token = createSessionToken();
+  const csrf = await getCsrfToken(server.baseUrl, token);
+
+  const allowed = await fetchJson(`${server.baseUrl}/api/v1/auth/campus-one/logout`, {
+    method: "POST",
+    headers: {
+      Cookie: sessionCookie(token),
+      Origin: FRONTEND_ORIGIN,
+      "X-CSRF-Token": csrf
+    }
+  });
+  assert.equal(allowed.response.status, 200);
+  assert.equal(allowed.response.headers.get("access-control-allow-origin"), FRONTEND_ORIGIN);
+  assert.equal(allowed.response.headers.get("access-control-allow-credentials"), "true");
+  assert.notEqual(allowed.response.headers.get("access-control-allow-origin"), "*");
+
+  const token2 = createSessionToken();
+  const csrf2 = await getCsrfToken(server.baseUrl, token2);
+  const rejected = await fetchJson(`${server.baseUrl}/api/v1/auth/campus-one/logout`, {
+    method: "POST",
+    headers: {
+      Cookie: sessionCookie(token2),
+      Origin: "https://evil.example",
+      "X-CSRF-Token": csrf2
+    }
+  });
+  assert.equal(rejected.response.status, 403);
+  assert.equal(rejected.payload.error.code, "CSRF_ORIGIN_REJECTED");
+});
+
+test("CSRF header is allowed on credentialed preflight", async (t) => {
+  withCsrfEnv(t);
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/auth/campus-one/logout`, {
+    method: "OPTIONS",
+    headers: {
+      Origin: FRONTEND_ORIGIN,
+      "Access-Control-Request-Method": "POST",
+      "Access-Control-Request-Headers": "content-type,x-csrf-token"
+    }
+  });
+
+  assert.equal(response.status, 204);
+  assert.equal(response.headers.get("access-control-allow-origin"), FRONTEND_ORIGIN);
+  assert.equal(response.headers.get("access-control-allow-credentials"), "true");
+  assert.match(String(response.headers.get("access-control-allow-headers") || ""), /X-CSRF-Token/i);
+});
+
+test("GET requests remain unaffected by CSRF", async (t) => {
+  withCsrfEnv(t);
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+  const token = createSessionToken();
+
+  const { response, payload } = await fetchJson(`${server.baseUrl}/api/v1/profile/me`, {
+    headers: {
+      Cookie: sessionCookie(token),
+      Origin: FRONTEND_ORIGIN
+    }
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.profile.id, "profile-1");
+});
+
+test("OIDC login still works without a CSRF header", async (t) => {
+  withCsrfEnv(t);
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/auth/campus-one/login?return_to=/admin/home`, {
+    redirect: "manual"
+  });
+
+  assert.equal(response.status, 302);
+  assert.match(String(response.headers.get("location") || ""), /auth\.campusone\.com\.ng/);
+});
+
+test("OIDC callback still works without a CSRF header", async (t) => {
+  withCsrfEnv(t);
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/auth/campus-one/callback?error=access_denied`, {
+    redirect: "manual"
+  });
+
+  assert.equal(response.status, 302);
+  assert.equal(response.headers.get("location"), `${FRONTEND_ORIGIN}/login?auth_error=cancelled`);
+});
+
+test("signed Campus One webhook is exempt from CSRF", async (t) => {
+  withCsrfEnv(t);
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+  const body = JSON.stringify({
+    id: "delivery-csrf-1",
+    event: "session.revoked",
+    data: {}
+  });
+  const signature = `sha256=${crypto.createHmac("sha256", WEBHOOK_SECRET).update(body).digest("hex")}`;
+
+  const { response, payload } = await fetchJson(`${server.baseUrl}/api/v1/webhooks/campus-one`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Campus-One-Signature": signature,
+      "X-Campus-One-Delivery": "delivery-csrf-1",
+      "X-Campus-One-Event": "session.revoked"
+    },
+    body
+  });
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.accepted, true);
+  assert.notEqual(payload.error?.code, "CSRF_TOKEN_REQUIRED");
+});
+
+test("staging session bridge remains staging-only and works under its explicit exemption", async (t) => {
+  withCsrfEnv(t, {
+    APP_ENV: "staging",
+    NODE_ENV: "test",
+    E2E_STAGING_AUTH_BRIDGE_ENABLED: "true",
+    E2E_STAGING_AUTH_BRIDGE_SECRET: STAGING_BRIDGE_SECRET
+  });
+  assert.equal(isStagingE2EAuthBridgeEnabled(), true);
+  const server = await createTestServer(createFakeDatabase({ email: "e2e+student@nilehive.test" }));
+  t.after(() => server.close());
+
+  const { response } = await fetchJson(`${server.baseUrl}/api/v1/auth/e2e/staging-session`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-e2e-staging-auth": STAGING_BRIDGE_SECRET
+    },
+    body: JSON.stringify({ profile_id: "profile-1" })
+  });
+
+  assert.equal(response.status, 204);
+});
+
+test("production cannot enable the staging session bridge", async (t) => {
+  withCsrfEnv(t, {
+    APP_ENV: "production",
+    NODE_ENV: "test",
+    E2E_STAGING_AUTH_BRIDGE_ENABLED: "true",
+    E2E_STAGING_AUTH_BRIDGE_SECRET: STAGING_BRIDGE_SECRET
+  });
+  assert.equal(isStagingE2EAuthBridgeEnabled(), false);
+  const server = await createTestServer(createFakeDatabase({ email: "e2e+student@nilehive.test" }));
+  t.after(() => server.close());
+
+  const { response, payload } = await fetchJson(`${server.baseUrl}/api/v1/auth/e2e/staging-session`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-e2e-staging-auth": STAGING_BRIDGE_SECRET
+    },
+    body: JSON.stringify({ profile_id: "profile-1" })
+  });
+
+  assert.equal(response.status, 404);
+  assert.equal(payload.error.code, "NOT_FOUND");
+});
+
+test("multipart mutation supports the CSRF header", async (t) => {
+  withCsrfEnv(t);
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+  const token = createSessionToken();
+  const csrf = await getCsrfToken(server.baseUrl, token);
+
+  const missing = await fetchJson(`${server.baseUrl}/api/v1/storage/upload`, {
+    method: "POST",
+    headers: {
+      Cookie: sessionCookie(token),
+      Origin: FRONTEND_ORIGIN
+    },
+    body: new FormData()
+  });
+  assert.equal(missing.response.status, 403);
+  assert.equal(missing.payload.error.code, "CSRF_TOKEN_REQUIRED");
+
+  const form = new FormData();
+  form.append("file", new Blob(["demo"]), "demo.txt");
+  const withToken = await fetch(`${server.baseUrl}/api/v1/storage/upload`, {
+    method: "POST",
+    headers: {
+      Cookie: sessionCookie(token),
+      Origin: FRONTEND_ORIGIN,
+      "X-CSRF-Token": csrf
+    },
+    body: form
+  });
+  const withPayload = await withToken.json();
+  assert.notEqual(withToken.status, 403);
+  assert.notEqual(withPayload.error?.code, "CSRF_TOKEN_REQUIRED");
+  assert.notEqual(withPayload.error?.code, "CSRF_TOKEN_INVALID");
+});
+
+test("GET logout does not clear the session cookie", async (t) => {
+  withCsrfEnv(t);
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+  const token = createSessionToken();
+
+  const logout = await fetch(`${server.baseUrl}/api/v1/auth/campus-one/logout`, {
+    method: "GET",
+    redirect: "manual",
+    headers: { Cookie: sessionCookie(token) }
+  });
+  assert.equal(logout.status, 302);
+  assert.equal(logout.headers.get("location"), `${FRONTEND_ORIGIN}/login`);
+  const setCookie = String(logout.headers.get("set-cookie") || "");
+  assert.equal(setCookie.includes(CAMPUS_ONE_SESSION_COOKIE), false);
+
+  const profile = await fetchJson(`${server.baseUrl}/api/v1/profile/me`, {
+    headers: { Cookie: sessionCookie(token) }
+  });
+  assert.equal(profile.response.status, 200);
+});
+
+test("POST logout requires CSRF while a valid session exists", async (t) => {
+  withCsrfEnv(t);
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+  const token = createSessionToken();
+
+  const blocked = await fetchJson(`${server.baseUrl}/api/v1/auth/campus-one/logout`, {
+    method: "POST",
+    headers: { Cookie: sessionCookie(token) }
+  });
+  assert.equal(blocked.response.status, 403);
+  assert.equal(blocked.payload.error.code, "CSRF_TOKEN_REQUIRED");
+
+  const stillAuthed = await fetchJson(`${server.baseUrl}/api/v1/profile/me`, {
+    headers: { Cookie: sessionCookie(token) }
+  });
+  assert.equal(stillAuthed.response.status, 200);
+});

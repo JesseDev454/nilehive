@@ -364,7 +364,8 @@ test("duplicate or late transitions fail cleanly without new approval history", 
     "proposal-admin-review",
     "advisor-token",
     {
-      decision: "reject"
+      decision: "reject",
+      remarks: "Late reject still needs remarks so the state-machine 409 is reached."
     }
   );
 
@@ -432,4 +433,131 @@ test("advisor cannot act on a proposal outside assigned clubs", async (t) => {
   assert.equal(payload.error.code, "FORBIDDEN");
   assert.equal(database.approvals.length, 0);
   assert.equal(database.notifications.length, 0);
+});
+
+test("advisor reject without remarks is a 400 and does not mutate the proposal", async (t) => {
+  const database = createFakeDatabase();
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+  const before = await database.getProposalById("proposal-pending");
+
+  const { response, payload } = await postAdvisorDecision(
+    server.baseUrl,
+    "proposal-pending",
+    "advisor-token",
+    { decision: "reject" }
+  );
+
+  assert.equal(response.status, 400);
+  assert.equal(payload.error.code, "VALIDATION_ERROR");
+  assert.equal(payload.error.details.fields[0].field, "remarks");
+  assert.equal((await database.getProposalById("proposal-pending")).status, before.status);
+  assert.equal((await database.getProposalById("proposal-pending")).advisor_remarks, null);
+  assert.equal(database.approvals.length, 0);
+  assert.equal(database.notifications.length, 0);
+});
+
+test("advisor reject with null remarks is a 400", async (t) => {
+  const database = createFakeDatabase();
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const { response, payload } = await postAdvisorDecision(
+    server.baseUrl,
+    "proposal-pending",
+    "advisor-token",
+    { decision: "reject", remarks: null }
+  );
+
+  assert.equal(response.status, 400);
+  assert.equal(payload.error.code, "VALIDATION_ERROR");
+  assert.equal(database.approvals.length, 0);
+  assert.equal(database.notifications.length, 0);
+});
+
+test("advisor reject with empty remarks is a 400", async (t) => {
+  const database = createFakeDatabase();
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const { response, payload } = await postAdvisorDecision(
+    server.baseUrl,
+    "proposal-pending",
+    "advisor-token",
+    { decision: "reject", remarks: "" }
+  );
+
+  assert.equal(response.status, 400);
+  assert.equal(payload.error.code, "VALIDATION_ERROR");
+  assert.equal(database.approvals.length, 0);
+  assert.equal(database.notifications.length, 0);
+});
+
+test("advisor reject with whitespace-only remarks is a 400", async (t) => {
+  const database = createFakeDatabase();
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const { response, payload } = await postAdvisorDecision(
+    server.baseUrl,
+    "proposal-pending",
+    "advisor-token",
+    { decision: "reject", remarks: "   \n\t  " }
+  );
+
+  assert.equal(response.status, 400);
+  assert.equal(payload.error.code, "VALIDATION_ERROR");
+  assert.equal(database.approvals.length, 0);
+  assert.equal(database.notifications.length, 0);
+});
+
+test("advisor reject trims remarks before persistence", async (t) => {
+  const database = createFakeDatabase();
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const { response, payload } = await postAdvisorDecision(
+    server.baseUrl,
+    "proposal-pending",
+    "advisor-token",
+    { decision: "reject", remarks: "  Please revise the venue.  " }
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.status, "advisor_rejected");
+  assert.equal(payload.data.advisor_remarks, "Please revise the venue.");
+  assert.equal(database.approvals[0].remarks, "Please revise the venue.");
+});
+
+test("advisor reject remarks cannot exceed the maximum length", async (t) => {
+  const { ADVISOR_REMARKS_MAX_LENGTH } = require("../src/modules/proposals/proposals.validation");
+  const database = createFakeDatabase();
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const tooLong = "a".repeat(ADVISOR_REMARKS_MAX_LENGTH + 1);
+  const { response, payload } = await postAdvisorDecision(
+    server.baseUrl,
+    "proposal-pending",
+    "advisor-token",
+    { decision: "reject", remarks: tooLong }
+  );
+
+  assert.equal(response.status, 400);
+  assert.equal(payload.error.code, "VALIDATION_ERROR");
+  assert.equal(database.approvals.length, 0);
+  assert.equal(database.notifications.length, 0);
+  assert.equal((await database.getProposalById("proposal-pending")).status, "pending_advisor_review");
+
+  const allowed = "a".repeat(ADVISOR_REMARKS_MAX_LENGTH);
+  const ok = await postAdvisorDecision(
+    server.baseUrl,
+    "proposal-pending",
+    "advisor-token",
+    { decision: "reject", remarks: allowed }
+  );
+
+  assert.equal(ok.response.status, 200);
+  assert.equal(ok.payload.data.status, "advisor_rejected");
+  assert.equal(ok.payload.data.advisor_remarks.length, ADVISOR_REMARKS_MAX_LENGTH);
 });

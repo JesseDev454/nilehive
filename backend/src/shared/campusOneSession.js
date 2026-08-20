@@ -95,6 +95,7 @@ module.exports = {
   CAMPUS_ONE_SESSION_COOKIE,
   SESSION_MAX_AGE_SECONDS,
   createCampusOneSessionToken,
+  getSessionSecret,
   readCampusOneSessionFromRequest,
   verifyCampusOneSessionToken
 };

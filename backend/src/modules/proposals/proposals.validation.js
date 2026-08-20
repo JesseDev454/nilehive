@@ -3,6 +3,7 @@ const { assertPlainText } = require("../../shared/plainText");
 const { isValidStudentId, STUDENT_ID_ERROR_MESSAGE } = require("../../shared/studentId");
 
 const MAX_RESPONSIBLE_MEMBERS = 10;
+const ADVISOR_REMARKS_MAX_LENGTH = 2000;
 
 function normalizeString(value) {
   return typeof value === "string" ? value.trim() : "";
@@ -336,9 +337,12 @@ function readSaveAsDraft(payload = {}) {
   return payload.save_as_draft === true || payload.status === "draft";
 }
 
-function validateAdvisorDecisionPayload(payload = {}) {
+function validateDecisionPayload(payload = {}, options = {}) {
+  const requireRejectRemarks = options.requireRejectRemarks === true;
+  const errorMessage = requireRejectRemarks
+    ? "Invalid advisor decision payload"
+    : "Invalid admin decision payload";
   const decision = normalizeString(payload.decision);
-  const remarks = payload.remarks === undefined ? "" : assertPlainText(payload.remarks, "remarks", "Remarks");
   const fieldErrors = [];
 
   if (!decision) {
@@ -347,25 +351,67 @@ function validateAdvisorDecisionPayload(payload = {}) {
     fieldErrors.push({ field: "decision", message: 'decision must be "approve" or "reject"' });
   }
 
-  if (payload.remarks !== undefined && typeof payload.remarks !== "string") {
-    fieldErrors.push({ field: "remarks", message: "remarks must be a string when provided" });
+  let remarks = null;
+
+  if (decision === "reject" && requireRejectRemarks) {
+    if (payload.remarks === undefined || payload.remarks === null) {
+      fieldErrors.push({ field: "remarks", message: "remarks are required when returning a proposal" });
+    } else if (typeof payload.remarks !== "string") {
+      fieldErrors.push({ field: "remarks", message: "remarks must be a string" });
+    } else {
+      const normalizedRemarks = normalizeString(assertPlainText(payload.remarks, "remarks", "Remarks"));
+      if (!normalizedRemarks) {
+        fieldErrors.push({ field: "remarks", message: "remarks are required when returning a proposal" });
+      } else if (normalizedRemarks.length > ADVISOR_REMARKS_MAX_LENGTH) {
+        fieldErrors.push({
+          field: "remarks",
+          message: `remarks must be ${ADVISOR_REMARKS_MAX_LENGTH} characters or fewer`
+        });
+      } else {
+        remarks = normalizedRemarks;
+      }
+    }
+  } else if (payload.remarks !== undefined && payload.remarks !== null) {
+    if (typeof payload.remarks !== "string") {
+      fieldErrors.push({ field: "remarks", message: "remarks must be a string when provided" });
+    } else {
+      const normalizedRemarks = normalizeString(assertPlainText(payload.remarks, "remarks", "Remarks"));
+      if (normalizedRemarks.length > ADVISOR_REMARKS_MAX_LENGTH) {
+        fieldErrors.push({
+          field: "remarks",
+          message: `remarks must be ${ADVISOR_REMARKS_MAX_LENGTH} characters or fewer`
+        });
+      } else {
+        remarks = normalizedRemarks || null;
+      }
+    }
   }
 
   if (fieldErrors.length) {
-    throw new ApiError(400, "Invalid advisor decision payload", "VALIDATION_ERROR", {
+    throw new ApiError(400, errorMessage, "VALIDATION_ERROR", {
       fields: fieldErrors
     });
   }
 
   return {
     decision,
-    remarks: normalizeString(remarks) || null
+    remarks
   };
 }
 
+function validateAdvisorDecisionPayload(payload = {}) {
+  return validateDecisionPayload(payload, { requireRejectRemarks: true });
+}
+
+function validateAdminDecisionPayload(payload = {}) {
+  return validateDecisionPayload(payload, { requireRejectRemarks: false });
+}
+
 module.exports = {
+  ADVISOR_REMARKS_MAX_LENGTH,
   validateCreateProposalPayload,
   validateDraftProposalPayload,
   readSaveAsDraft,
+  validateAdminDecisionPayload,
   validateAdvisorDecisionPayload
 };
