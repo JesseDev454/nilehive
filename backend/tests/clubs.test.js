@@ -28,6 +28,12 @@ function createFakeDatabase() {
       full_name: "Ada Student",
       role: "student",
       club_id: "club-1"
+    },
+    "president-1": {
+      id: "president-1",
+      full_name: "Tomi President",
+      role: "president",
+      club_id: "club-1"
     }
   };
 
@@ -66,6 +72,10 @@ function createFakeDatabase() {
     "student-token": {
       id: "student-1",
       email: "student@nilehive.test"
+    },
+    "president-token": {
+      id: "president-1",
+      email: "president@nilehive.test"
     }
   };
 
@@ -91,6 +101,26 @@ function createFakeDatabase() {
     },
     async listPublicClubs() {
       return clubs.filter((club) => club.is_public_signup !== false);
+    },
+    async getClubById(clubId) {
+      return clubs.find((club) => club.id === clubId) ?? null;
+    },
+    async updateClub(clubId, update) {
+      const index = clubs.findIndex((club) => club.id === clubId);
+      if (index < 0) return null;
+      clubs[index] = { ...clubs[index], ...update };
+      return clubs[index];
+    },
+    async createClub(payload) {
+      const club = { id: `club-${clubs.length + 1}`, created_at: "2026-08-20T10:00:00.000Z", ...payload };
+      clubs.push(club);
+      return club;
+    },
+    async listClubMembers() {
+      return [];
+    },
+    async createAuditLog() {
+      return { id: "audit-1" };
     }
   };
 }
@@ -523,4 +553,191 @@ test("student club visibility excludes private WhatsApp onboarding settings", as
   assert.equal(clubs[0].website_url, "https://clubs.campusone.com.ng/demo/nile-book-club");
   assert.equal(Object.prototype.hasOwnProperty.call(clubs[0], "whatsapp_group_name"), false);
   assert.equal(Object.prototype.hasOwnProperty.call(clubs[0], "whatsapp_onboarding_notes"), false);
+});
+
+test("student cannot create or edit clubs", async () => {
+  await assert.rejects(
+    () =>
+      createClub({
+        actor: { id: "student-1", role: "student" },
+        payload: { name: "New Club", description: "A new official club description." },
+        database: {}
+      }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
+});
+
+test("executive cannot edit clubs through admin club updates", async () => {
+  await assert.rejects(
+    () =>
+      updateClub({
+        actor: { id: "executive-1", role: "executive", clubId: "club-1" },
+        clubId: "club-1",
+        payload: { description: "Changed description for the executive club." },
+        database: {}
+      }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
+});
+
+test("advisor cannot edit clubs through admin club updates", async () => {
+  await assert.rejects(
+    () =>
+      updateClub({
+        actor: { id: "advisor-1", role: "advisor" },
+        clubId: "club-1",
+        payload: { is_public_signup: false },
+        database: {}
+      }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
+});
+
+test("admin can update public signup and dues amount", async () => {
+  const audits = [];
+  const database = {
+    async getClubById() {
+      return { id: "club-1", name: "Nile Book Club", dues_amount: 10000, is_public_signup: true };
+    },
+    async updateClub(clubId, update) {
+      return { id: clubId, name: "Nile Book Club", ...update };
+    },
+    async createAuditLog(entry) {
+      audits.push(entry);
+      return entry;
+    }
+  };
+
+  const club = await updateClub({
+    actor: { id: "admin-1", role: "admin" },
+    clubId: "club-1",
+    payload: { is_public_signup: false, dues_amount: 10000 },
+    database
+  });
+
+  assert.equal(club.is_public_signup, false);
+  assert.equal(club.dues_amount, 10000);
+  assert.equal(audits[0].action, "club_updated");
+  assert.equal(JSON.stringify(audits[0].metadata).includes("whatsapp"), false);
+});
+
+test("negative dues amount is rejected", async () => {
+  await assert.rejects(
+    () =>
+      updateClub({
+        actor: { id: "admin-1", role: "admin" },
+        clubId: "club-1",
+        payload: { dues_amount: -5 },
+        database: {
+          async getClubById() {
+            return { id: "club-1", name: "Nile Book Club" };
+          }
+        }
+      }),
+    (error) => error.statusCode === 400 && error.code === "VALIDATION_ERROR" && error.details?.field === "dues_amount"
+  );
+});
+
+test("duplicate club name maps to a 409 conflict", async () => {
+  await assert.rejects(
+    () =>
+      updateClub({
+        actor: { id: "admin-1", role: "admin" },
+        clubId: "club-1",
+        payload: { name: "Nile Book Club" },
+        database: {
+          async getClubById() {
+            return { id: "club-1", name: "Robotics Club" };
+          },
+          async updateClub() {
+            const error = new Error("duplicate key value violates unique constraint clubs_name_key");
+            error.code = "23505";
+            throw error;
+          }
+        }
+      }),
+    (error) => error.statusCode === 409 && error.code === "CLUB_ALREADY_EXISTS"
+  );
+});
+
+test("invalid club id returns not found", async () => {
+  await assert.rejects(
+    () =>
+      updateClub({
+        actor: { id: "admin-1", role: "admin" },
+        clubId: "missing",
+        payload: { description: "Updated description for a missing club." },
+        database: {
+          async getClubById() {
+            return null;
+          }
+        }
+      }),
+    (error) => error.statusCode === 404 && error.code === "CLUB_NOT_FOUND"
+  );
+});
+
+test("unauthenticated club list is 401 and admin HTTP update persists public signup", async (t) => {
+  const database = createFakeDatabase();
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const missing = await fetch(`${server.baseUrl}/api/v1/clubs`, { method: "GET" });
+  const missingPayload = await missing.json();
+  assert.equal(missing.status, 401);
+  assert.equal(missingPayload.error.code, "AUTH_REQUIRED");
+
+  const studentPatch = await fetch(`${server.baseUrl}/api/v1/clubs/club-1`, {
+    method: "PATCH",
+    headers: {
+      Authorization: "Bearer student-token",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ is_public_signup: false })
+  });
+  assert.equal(studentPatch.status, 403);
+
+  const presidentPatch = await fetch(`${server.baseUrl}/api/v1/clubs/club-1`, {
+    method: "PATCH",
+    headers: {
+      Authorization: "Bearer president-token",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ description: "President should not edit through admin club updates." })
+  });
+  assert.equal(presidentPatch.status, 403);
+
+  const executivePatch = await fetch(`${server.baseUrl}/api/v1/clubs/club-1`, {
+    method: "PATCH",
+    headers: {
+      Authorization: "Bearer executive-token",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ description: "Executive should not edit this club." })
+  });
+  assert.equal(executivePatch.status, 403);
+
+  const advisorPatch = await fetch(`${server.baseUrl}/api/v1/clubs/club-1`, {
+    method: "PATCH",
+    headers: {
+      Authorization: "Bearer advisor-token",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ is_public_signup: false })
+  });
+  assert.equal(advisorPatch.status, 403);
+
+  const adminPatch = await fetch(`${server.baseUrl}/api/v1/clubs/club-1`, {
+    method: "PATCH",
+    headers: {
+      Authorization: "Bearer admin-token",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ is_public_signup: false, dues_amount: 10000 })
+  });
+  const adminPayload = await adminPatch.json();
+  assert.equal(adminPatch.status, 200);
+  assert.equal(adminPayload.data.is_public_signup, false);
+  assert.equal(adminPayload.data.dues_amount, 10000);
+  assert.equal(Object.prototype.hasOwnProperty.call(adminPayload.data, "service_role_key"), false);
 });

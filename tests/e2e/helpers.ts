@@ -516,3 +516,254 @@ export async function mockPeopleApi(
     },
   };
 }
+
+export const E2E_OFFICIAL_CLUB_SEED = [
+  ["club-nbc", "Nile Book Club", "NBC", "Arts"],
+  ["club-nbuc", "Nile Business Club", "NBUC", "Entrepreneurship"],
+  ["club-ncc", "Nile Charity Club", "NCC", "Volunteering"],
+  ["club-ncic", "Nile Climate Initiatives Club", "NCIC", "Volunteering"],
+  ["club-ncac", "Nile Creative Arts Club", "NCAC", "Arts"],
+  ["club-ndc", "Nile Debate Club", "NDC", "Leadership"],
+  ["club-ngc", "Nile Games Club", "NGC", "Gaming"],
+  ["club-ngd", "Nile Google Developers", "NGD", "Tech"],
+  ["club-nmun", "Nile Model United Nations Club", "NMUN", "Leadership"],
+  ["club-npc", "Nile Photography Club", "NPC", "Media"],
+  ["club-nsc", "Nile Startup Campus", "NSC", "Entrepreneurship"],
+  ["club-ntc", "Nile Toastmaster's Club", "NTC", "Leadership"],
+  ["club-tedx", "TEDx Nile Club", "TEDX", "Leadership"],
+  ["club-wit", "Women in Tech Club", "WIT", "Tech"],
+] as const;
+
+export function e2eOfficialClubs() {
+  return E2E_OFFICIAL_CLUB_SEED.map(([id, name, code, category]) => ({
+    id,
+    name,
+    code,
+    description: `${name} is one of Nile University's 14 official student organizations.`,
+    advisor_id: null,
+    dues_amount: 10000,
+    is_public_signup: true,
+    whatsapp_group_name: null,
+    whatsapp_onboarding_notes: id === "club-ngd" ? "Private GDG onboarding notes." : null,
+    categories: [category],
+    skills_offered: [],
+    career_goals: [],
+    meeting_windows: [],
+    weekly_commitment: null,
+    logo_path: null,
+    website_url: null,
+    social_links: {},
+    created_at: "2026-01-01T00:00:00.000Z",
+  }));
+}
+
+export const E2E_CLUB_MEMBER = {
+  id: "member-ngd-1",
+  club_id: "club-ngd",
+  profile_id: "person-e2e-president",
+  full_name: "Farouk Aliyu",
+  student_id: "NIL/2022/UG/0101",
+  email: "farouk.aliyu@nileuniversity.edu.ng",
+  phone_number: null,
+  club_role: "president",
+  membership_status: "active",
+  dues_status: "paid",
+  dues_paid: true,
+  created_at: "2026-02-01T10:00:00.000Z",
+  updated_at: "2026-02-01T10:00:00.000Z",
+};
+
+export const E2E_CLUB_PAYMENT = {
+  id: "pay-ngd",
+  club_id: "club-ngd",
+  bank_name: "Providus Bank",
+  account_number: "1305861314",
+  account_name: "Nile Arts & Creative Hub",
+  payment_instructions: "All students pay N10,000 per session.",
+  fresher_dues_amount: 10000,
+  returning_student_dues_amount: 10000,
+};
+
+export async function mockClubsApi(
+  page: Page,
+  options: {
+    clubs?: Array<Record<string, unknown>>;
+    listStatus?: number;
+    detailStatus?: number;
+    updateResult?: { status: number; body: unknown };
+    members?: Array<Record<string, unknown>>;
+  } = {},
+) {
+  const clubs = options.clubs ?? e2eOfficialClubs();
+  const members = options.members ?? [E2E_CLUB_MEMBER];
+  const patches: Array<{ csrf: string | null; body: unknown; url: string }> = [];
+  const paymentPosts: Array<{ csrf: string | null; body: unknown; url: string }> = [];
+  const listErrorStatus = options.listStatus && options.listStatus !== 200 ? options.listStatus : null;
+  let failList = Boolean(listErrorStatus);
+
+  await page.route("**/api/v1/admin/users**", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const role = url.searchParams.get("role");
+    const items =
+      role === "president"
+        ? [
+            {
+              id: "person-e2e-president",
+              full_name: "Farouk Aliyu",
+              email: "farouk.aliyu@nileuniversity.edu.ng",
+              role: "president",
+              app_role: "president",
+              club_id: "club-ngd",
+              student_id: "NIL/2022/UG/0101",
+              advisor_assignments: [],
+              club: { id: "club-ngd", name: "Nile Google Developers", code: "NGD" },
+            },
+          ]
+        : role === "advisor"
+          ? [
+              {
+                id: "person-e2e-advisor",
+                full_name: "Dr. Kalu Okonkwo",
+                email: "kalu.okonkwo@nileuniversity.edu.ng",
+                role: "advisor",
+                app_role: "advisor",
+                club_id: "club-ngd",
+                advisor_assignments: [
+                  {
+                    id: "assignment-ngd",
+                    club_id: "club-ngd",
+                    assigned_by: "admin-1",
+                    remarks: null,
+                    created_at: "2026-01-01T00:00:00.000Z",
+                    club: { id: "club-ngd", name: "Nile Google Developers", code: "NGD" },
+                  },
+                ],
+              },
+            ]
+          : [];
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        data: { items, page: 1, page_size: 100, total: items.length, has_next: false },
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/members**", async (route) => {
+    const url = new URL(route.request().url());
+    const clubId = url.searchParams.get("club_id");
+    const items = members.filter((member) => !clubId || member.club_id === clubId);
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        data: { items, page: 1, page_size: 100, total: items.length, has_next: false },
+      }),
+    });
+  });
+
+  await page.route("**/api/v1/dues/payment-settings**", async (route) => {
+    const request = route.request();
+    if (request.method() === "POST") {
+      paymentPosts.push({
+        csrf: await request.headerValue("x-csrf-token"),
+        body: request.postDataJSON(),
+        url: request.url(),
+      });
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ data: E2E_CLUB_PAYMENT }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ data: E2E_CLUB_PAYMENT }),
+    });
+  });
+
+  await page.route("**/api/v1/clubs**", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const clubId = url.pathname.split("/").pop();
+
+    if (request.method() === "PATCH") {
+      patches.push({
+        csrf: await request.headerValue("x-csrf-token"),
+        body: request.postDataJSON(),
+        url: request.url(),
+      });
+      const result = options.updateResult;
+      if (result) {
+        await route.fulfill({
+          status: result.status,
+          contentType: "application/json",
+          headers: result.status === 429 ? { "Retry-After": "12" } : {},
+          body: JSON.stringify(result.body),
+        });
+        return;
+      }
+      const body = request.postDataJSON() as Record<string, unknown>;
+      const current = clubs.find((club) => club.id === clubId) ?? clubs[0];
+      const updated = { ...current, ...body };
+      const index = clubs.findIndex((club) => club.id === clubId);
+      if (index >= 0) clubs[index] = updated;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ data: updated }),
+      });
+      return;
+    }
+
+    if (request.method() !== "GET") {
+      await route.continue();
+      return;
+    }
+
+    if (failList) {
+      await route.fulfill({
+        status: listErrorStatus || 500,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { code: "SERVER_ERROR", message: "Clubs unavailable" } }),
+      });
+      return;
+    }
+
+    if (clubId && clubId !== "clubs") {
+      if (options.detailStatus && options.detailStatus !== 200) {
+        await route.fulfill({
+          status: options.detailStatus,
+          contentType: "application/json",
+          body: JSON.stringify({ error: { code: "CLUB_NOT_FOUND", message: "Club not found" } }),
+        });
+        return;
+      }
+      const club = clubs.find((item) => item.id === clubId) ?? clubs[0];
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ data: { ...club, gallery: [] } }),
+      });
+      return;
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ data: clubs }),
+    });
+  });
+
+  return {
+    patches,
+    paymentPosts,
+    allowList() {
+      failList = false;
+    },
+  };
+}

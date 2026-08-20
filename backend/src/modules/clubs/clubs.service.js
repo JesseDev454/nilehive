@@ -96,6 +96,30 @@ async function listRecommendations(options = {}) {
   return rankClubs(preferences, clubs, joinedClubIds).slice(0, 3);
 }
 
+function isDuplicateClubError(error) {
+  const message = `${error?.message || ""} ${error?.details || ""} ${error?.constraint || ""}`.toLowerCase();
+  return (
+    error?.code === "23505" &&
+    (message.includes("clubs_name") ||
+      message.includes("clubs_code") ||
+      message.includes("(name)") ||
+      message.includes("(code)") ||
+      message.includes("duplicate"))
+  );
+}
+
+function mapClubWriteError(error) {
+  if (error instanceof ApiError) {
+    throw error;
+  }
+
+  if (isDuplicateClubError(error)) {
+    throw new ApiError(409, "A club with this name or code already exists", "CLUB_ALREADY_EXISTS");
+  }
+
+  throw error;
+}
+
 function requireAdmin(actor) {
   if (!actor) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
@@ -157,10 +181,16 @@ async function createClub(options) {
   const sharedSettings = existingClubs[0]?.id && database.getClubPaymentSettings
     ? await database.getClubPaymentSettings(existingClubs[0].id)
     : null;
-  const club = await database.createClub({
-    ...validateClubPayload(payload),
-    dues_amount: 10000
-  });
+
+  let club;
+  try {
+    club = await database.createClub({
+      ...validateClubPayload(payload),
+      dues_amount: 10000
+    });
+  } catch (error) {
+    mapClubWriteError(error);
+  }
 
   if (database.upsertClubPaymentSettings) {
     await database.upsertClubPaymentSettings({
@@ -173,6 +203,17 @@ async function createClub(options) {
       returning_student_dues_amount: 10000
     });
   }
+
+  await writeAuditLog(database, {
+    actor_id: actor.id,
+    entity_type: "club",
+    action: "club_created",
+    club_id: club.id,
+    remarks: club.name,
+    metadata: {
+      code: club.code ?? null
+    }
+  });
 
   return club;
 }
@@ -187,7 +228,31 @@ async function updateClub(options) {
     throw new ApiError(404, "Club not found", "CLUB_NOT_FOUND");
   }
 
-  return database.updateClub(clubId, validateClubPayload(payload, { partial: true }));
+  const update = validateClubPayload(payload, { partial: true });
+
+  if (Object.keys(update).length === 0) {
+    throw new ApiError(400, "Provide at least one club field to update", "VALIDATION_ERROR");
+  }
+
+  let updated;
+  try {
+    updated = await database.updateClub(clubId, update);
+  } catch (error) {
+    mapClubWriteError(error);
+  }
+
+  await writeAuditLog(database, {
+    actor_id: actor.id,
+    entity_type: "club",
+    action: "club_updated",
+    club_id: clubId,
+    remarks: updated.name,
+    metadata: {
+      fields: Object.keys(update)
+    }
+  });
+
+  return updated;
 }
 
 async function deleteClub(options) {

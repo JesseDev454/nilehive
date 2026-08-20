@@ -38,6 +38,10 @@ async function loadModules(env) {
       peopleErrors: await server.ssrLoadModule("/src/lib/people/errors.ts"),
       peopleApi: await server.ssrLoadModule("/src/lib/api/people.ts"),
       peopleTypes: await server.ssrLoadModule("/src/lib/people/types.ts"),
+      clubsAdapters: await server.ssrLoadModule("/src/lib/clubs/adapters.ts"),
+      clubsErrors: await server.ssrLoadModule("/src/lib/clubs/errors.ts"),
+      clubsApi: await server.ssrLoadModule("/src/lib/api/clubs.ts"),
+      clubsTypes: await server.ssrLoadModule("/src/lib/clubs/types.ts"),
     };
   } finally {
     await server.close();
@@ -622,6 +626,145 @@ test("People API functions use CSRF on mutations and honor abort", async () => {
 });
 
 test("integrated mode never falls back to mock People records", () => {
+  assert.equal(integrated.mode.isMockPreviewMode(), false);
+  assert.equal(mockMode.mode.isMockPreviewMode(), true);
+});
+
+test("Clubs adapters preserve backend IDs and do not invent counts or leadership", () => {
+  const { adaptClubRecord, adaptClubList, adaptAdminClubView, adaptClubMemberPage, adaptPaymentSettings } = integrated.clubsAdapters;
+  const club = adaptClubRecord({
+    id: "club-uuid-1",
+    name: "Nile Google Developers",
+    code: "NGD",
+    description: "Developer community",
+    advisor_id: null,
+    dues_amount: 10000,
+    is_public_signup: true,
+    whatsapp_onboarding_notes: "Private note",
+    categories: ["Tech"],
+    logo_path: "club-uuid-1/logo.png",
+    created_at: "2026-01-01T00:00:00.000Z",
+  });
+  assert.equal(club.id, "club-uuid-1");
+  assert.equal(club.code, "NGD");
+  assert.equal(club.dues_amount, 10000);
+  const view = adaptAdminClubView(club);
+  assert.equal(view.presidentName, null);
+  assert.equal(view.advisorName, null);
+  assert.equal(view.memberCount, null);
+  assert.equal(view.location, null);
+  assert.equal(view.coverImage, null);
+  assert.equal(view.supportsDelete, false);
+  assert.equal(view.supportsLogoUpload, false);
+  assert.equal(integrated.clubsTypes.AUTHORITATIVE_OFFICIAL_CLUBS.length, 14);
+  assert.equal(integrated.clubsTypes.AUTHORITATIVE_OFFICIAL_CLUBS.find((item) => item.name === "Nile Google Developers").code, "NGD");
+  assert.equal(integrated.clubsTypes.AUTHORITATIVE_OFFICIAL_CLUBS.find((item) => item.name === "Women in Tech Club").code, "WIT");
+
+  const page = adaptClubMemberPage({
+    items: [{ id: "member-1", club_id: "club-uuid-1", full_name: "Amina Bello", student_id: "NIL/1", club_role: "member", membership_status: "active" }],
+    page: 1,
+    page_size: 20,
+    total: 1,
+    has_next: false,
+  });
+  assert.equal(page.total, 1);
+  assert.equal(page.items[0].clubId, "club-uuid-1");
+  assert.equal(adaptClubList([{ id: "x" }]).length, 0);
+  assert.equal(adaptPaymentSettings({ club_id: "club-uuid-1", bank_name: "Providus Bank", account_number: "1305861314" }).bank_name, "Providus Bank");
+});
+
+test("Clubs error normalization covers 401 403 404 409 429 and duplicate names", () => {
+  const { ApiClientError } = integrated.client;
+  const { normalizeClubsError } = integrated.clubsErrors;
+  assert.equal(normalizeClubsError(new ApiClientError(401, "AUTH_REQUIRED", "Please sign in")).kind, "unauthorized");
+  assert.equal(normalizeClubsError(new ApiClientError(403, "FORBIDDEN", "No")).kind, "forbidden");
+  assert.equal(normalizeClubsError(new ApiClientError(404, "CLUB_NOT_FOUND", "Missing")).kind, "not_found");
+  const conflict = normalizeClubsError(new ApiClientError(409, "CLUB_ALREADY_EXISTS", "Duplicate"));
+  assert.equal(conflict.kind, "conflict");
+  assert.match(conflict.message, /already exists/);
+  const limited = normalizeClubsError(new ApiClientError(429, "CLUB_WRITE_RATE_LIMITED", "Wait", null, 8));
+  assert.equal(limited.kind, "rate_limited");
+  assert.match(limited.message, /8 seconds/);
+  assert.equal(normalizeClubsError(new ApiClientError(400, "VALIDATION_ERROR", "Bad", { field: "dues_amount" })).field, "dues_amount");
+  assert.equal(normalizeClubsError(new ApiClientError(500, "SERVER", "Boom")).kind, "server");
+});
+
+test("Clubs API functions use CSRF on mutations and honor abort", async () => {
+  const calls = [];
+  await withMockFetch(async (url, init = {}) => {
+    const headers = new Headers(init.headers);
+    calls.push({
+      url: String(url),
+      method: init.method || "GET",
+      csrf: headers.get("X-CSRF-Token"),
+      body: init.body ? JSON.parse(String(init.body)) : null,
+    });
+    if (String(url).endsWith("/auth/csrf")) {
+      return jsonResponse({ data: { csrf_token: "csrf-clubs" } });
+    }
+    if (String(url).includes("/members")) {
+      return jsonResponse({
+        data: { items: [{ id: "member-1", club_id: "club-1", full_name: "Amina Bello" }], page: 1, page_size: 20, total: 1, has_next: false },
+      });
+    }
+    if (String(url).includes("/dues/payment-settings")) {
+      return jsonResponse({ data: { club_id: "club-1", bank_name: "Providus Bank", account_number: "1305861314", account_name: "Nile Arts" } });
+    }
+    if (String(url).endsWith("/clubs") && (init.method || "GET") === "GET") {
+      return jsonResponse({
+        data: [{ id: "club-1", name: "Nile Book Club", code: "NBC", dues_amount: 10000, is_public_signup: true, categories: [] }],
+      });
+    }
+    if (String(url).endsWith("/clubs") && init.method === "POST") {
+      return jsonResponse({
+        data: { id: "club-new", name: "Nile Robotics Club", code: "NRC", description: "A new official club description.", dues_amount: 10000, is_public_signup: true, categories: [] },
+      });
+    }
+    return jsonResponse({
+      data: { id: "club-1", name: "Nile Book Club", code: "NBC", description: "Updated club description for tests.", dues_amount: 10000, is_public_signup: false, categories: [] },
+    });
+  }, async () => {
+    await integrated.clubsApi.listClubs();
+    await integrated.clubsApi.getClub("club-1");
+    await integrated.clubsApi.createClub({ name: "Nile Robotics Club", description: "A new official club description." });
+    await integrated.clubsApi.updateClub("club-1", { is_public_signup: false, dues_amount: 10000 });
+    await integrated.clubsApi.listClubMembers({ club_id: "club-1", page: 1, page_size: 20 });
+    await integrated.clubsApi.getClubPaymentSettings("club-1");
+    await integrated.clubsApi.upsertClubPaymentSettings({
+      bank_name: "Providus Bank",
+      account_number: "1305861314",
+      account_name: "Nile Arts",
+    });
+
+    const listCall = calls.find((call) => call.method === "GET" && call.url.endsWith("/clubs"));
+    assert.equal(listCall.csrf, null);
+    const createCall = calls.find((call) => call.method === "POST" && call.url.endsWith("/clubs"));
+    assert.equal(createCall.csrf, "csrf-clubs");
+    const updateCall = calls.find((call) => call.method === "PATCH" && call.url.endsWith("/clubs/club-1"));
+    assert.equal(updateCall.csrf, "csrf-clubs");
+    assert.deepEqual(updateCall.body, { is_public_signup: false, dues_amount: 10000 });
+    const paymentCall = calls.find((call) => call.method === "POST" && call.url.includes("/dues/payment-settings"));
+    assert.equal(paymentCall.csrf, "csrf-clubs");
+    const membersCall = calls.find((call) => call.url.includes("/members?"));
+    assert.match(membersCall.url, /club_id=club-1/);
+  });
+
+  const controller = new AbortController();
+  controller.abort();
+  await withMockFetch(async (_url, init = {}) => {
+    if (init.signal?.aborted) {
+      throw new DOMException("The operation was aborted.", "AbortError");
+    }
+    return jsonResponse({ data: [] });
+  }, async () => {
+    await assert.rejects(
+      () => integrated.clubsApi.listClubs(controller.signal),
+      (error) => error.name === "AbortError",
+    );
+  });
+});
+
+test("integrated mode never falls back to mock club records", () => {
   assert.equal(integrated.mode.isMockPreviewMode(), false);
   assert.equal(mockMode.mode.isMockPreviewMode(), true);
 });

@@ -1,6 +1,6 @@
-import { Filter, Lock, School, Search, Sparkles } from "lucide-react";
+import { Lock, School, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 
 interface AdminClubsHeaderProps {
   totalClubs: number;
@@ -17,7 +17,7 @@ export function AdminClubsHeader({
   onSearchChange,
   selectedCategory,
   onCategoryChange,
-  categories
+  categories,
 }: AdminClubsHeaderProps) {
   return (
     <div className="space-y-4 border-b border-border/80 pb-5">
@@ -48,11 +48,14 @@ export function AdminClubsHeader({
         </div>
       </div>
 
-      {/* Search Bar & Category Chips */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-2">
         <div className="relative w-full sm:max-w-xs">
-          <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+          <Label htmlFor="admin-clubs-search" className="sr-only">
+            Search clubs by name, code or president
+          </Label>
+          <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
           <Input
+            id="admin-clubs-search"
             placeholder="Search by club name, code, president, tags..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -60,16 +63,22 @@ export function AdminClubsHeader({
           />
         </div>
 
-        {/* Category Filter Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
+        <div
+          className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none"
+          role="radiogroup"
+          aria-label="Filter clubs by category"
+        >
           {categories.map((cat) => {
             const isSelected = selectedCategory === cat;
             return (
               <button
                 key={cat}
                 type="button"
+                role="radio"
+                aria-checked={isSelected}
+                aria-label={cat === "All" ? "Show all club categories" : `Filter clubs by ${cat}`}
                 onClick={() => onCategoryChange(cat)}
-                className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-medium transition-all duration-180 ${
+                className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-medium transition-all duration-180 min-h-8 ${
                   isSelected
                     ? "bg-primary text-primary-foreground shadow-2xs font-semibold"
                     : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground"

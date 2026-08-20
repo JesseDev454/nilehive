@@ -702,3 +702,63 @@ test("Admin People mutations require a valid CSRF token", async (t) => {
   assert.equal(advisor.response.status, 404);
   assert.equal(advisor.payload.error.code, "PROFILE_NOT_FOUND");
 });
+
+test("cookie club update requires CSRF and does not leak secrets", async (t) => {
+  withCsrfEnv(t);
+  const audits = [];
+  const database = createFakeDatabase({ role: "student" });
+  database.getClubById = async () => ({
+    id: "club-1",
+    name: "Nile Book Club",
+    description: "Literature club",
+    is_public_signup: true,
+    dues_amount: 10000
+  });
+  database.updateClub = async (_clubId, update) => ({
+    id: "club-1",
+    name: "Nile Book Club",
+    description: "Literature club",
+    is_public_signup: true,
+    dues_amount: 10000,
+    ...update
+  });
+  database.createAuditLog = async (entry) => {
+    audits.push(entry);
+    return entry;
+  };
+
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+  const token = createSessionToken({
+    portalRole: "admin",
+    email: "admin@nileuniversity.edu.ng"
+  });
+
+  const missing = await fetchJson(`${server.baseUrl}/api/v1/clubs/club-1`, {
+    method: "PATCH",
+    headers: {
+      Cookie: sessionCookie(token),
+      Origin: FRONTEND_ORIGIN,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ is_public_signup: false })
+  });
+  assert.equal(missing.response.status, 403);
+  assert.equal(missing.payload.error.code, "CSRF_TOKEN_REQUIRED");
+
+  const csrf = await getCsrfToken(server.baseUrl, token);
+  const updated = await fetchJson(`${server.baseUrl}/api/v1/clubs/club-1`, {
+    method: "PATCH",
+    headers: {
+      Cookie: sessionCookie(token),
+      Origin: FRONTEND_ORIGIN,
+      "Content-Type": "application/json",
+      "X-CSRF-Token": csrf
+    },
+    body: JSON.stringify({ is_public_signup: false })
+  });
+  assert.equal(updated.response.status, 200);
+  assert.equal(updated.payload.data.is_public_signup, false);
+  assert.equal(JSON.stringify(updated.payload).includes(csrf), false);
+  assert.equal(audits[0].action, "club_updated");
+});

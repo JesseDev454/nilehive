@@ -165,6 +165,14 @@ function validateClubPayload(payload = {}, { partial = false } = {}) {
     update.weekly_commitment = commitment;
   }
 
+  if (payload.dues_amount !== undefined) {
+    const amount = Number(payload.dues_amount);
+    if (!Number.isFinite(amount) || amount < 0) {
+      throw new ApiError(400, "Dues amount must be ₦0 or greater", "VALIDATION_ERROR", { field: "dues_amount" });
+    }
+    update.dues_amount = Math.round(amount);
+  }
+
   return update;
 }
 

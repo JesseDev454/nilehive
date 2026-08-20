@@ -600,6 +600,44 @@ test("advisor cannot manage club members", async () => {
   );
 });
 
+test("admin member list is scoped to the requested club", async () => {
+  const fakeDatabase = {
+    async listClubMembers(filters) {
+      assert.equal(filters.clubId, "club-2");
+      return [
+        createMemberRecord({
+          id: "member-2",
+          club_id: "club-2",
+          full_name: "Bala Member",
+          club: { id: "club-2", name: "Nile Business Club", code: "NBUC" }
+        })
+      ];
+    }
+  };
+
+  const members = await listMembers({
+    actor: { id: "admin-1", role: "admin", clubId: null },
+    filters: { club_id: "club-2" },
+    database: fakeDatabase
+  });
+
+  assert.equal(members.length, 1);
+  assert.equal(members[0].club_id, "club-2");
+  assert.equal(members.every((member) => member.club_id === "club-2"), true);
+});
+
+test("president cannot list another club's members", async () => {
+  await assert.rejects(
+    () =>
+      listMembers({
+        actor: { id: "president-1", role: "president", clubId: "club-1" },
+        filters: { club_id: "club-2" },
+        database: {}
+      }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
+});
+
 function createRouteDatabase() {
   const profiles = {
     "president-1": {
