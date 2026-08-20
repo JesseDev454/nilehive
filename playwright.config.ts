@@ -7,7 +7,7 @@ const frontendDir = path.join(__dirname, "frontend");
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  testMatch: "smoke.spec.ts",
+  testMatch: "{smoke,auth}.spec.ts",
   fullyParallel: true,
   timeout: 30_000,
   expect: {
@@ -26,13 +26,7 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     env: {
-      VITE_ENABLE_E2E_AUTH: "true",
-      VITE_AUTH_PROVIDER: "portal",
-      VITE_AUTH_MODE: "password",
-      VITE_API_BASE_URL: "http://127.0.0.1:7777",
-      VITE_SUPABASE_URL: "http://127.0.0.1:54321",
-      VITE_SUPABASE_ANON_KEY: "e2e-local-anon-key",
-      VITE_ALLOWED_EMAIL_DOMAINS: "nilehive.test,nileuniversity.edu.ng"
+      VITE_ONECLUB_MODE: "integrated"
     }
   },
   projects: [

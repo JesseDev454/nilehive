@@ -30,7 +30,7 @@ export const INITIAL_ADMIN_NOTIFICATIONS: AdminNotificationRecord[] = [
     isRead: false,
     relatedRecordType: "proposal",
     relatedRecordId: "prop-01",
-    destinationUrl: "/approvals",
+    destinationUrl: "/admin/approvals",
     destinationLabel: "Review Proposal in Approvals",
     source: "Staff Advisor Dr. Farouk Bello"
   },
@@ -43,7 +43,7 @@ export const INITIAL_ADMIN_NOTIFICATIONS: AdminNotificationRecord[] = [
     isRead: false,
     relatedRecordType: "payment",
     relatedRecordId: "proof-01",
-    destinationUrl: "/approvals",
+    destinationUrl: "/admin/approvals",
     destinationLabel: "Verify Proof in Approvals",
     source: "Student Portal"
   },
@@ -56,7 +56,7 @@ export const INITIAL_ADMIN_NOTIFICATIONS: AdminNotificationRecord[] = [
     isRead: true,
     relatedRecordType: "membership",
     relatedRecordId: "req-01",
-    destinationUrl: "/approvals",
+    destinationUrl: "/admin/approvals",
     destinationLabel: "View Request in Approvals",
     source: "Membership Registry"
   },
@@ -69,7 +69,7 @@ export const INITIAL_ADMIN_NOTIFICATIONS: AdminNotificationRecord[] = [
     isRead: true,
     relatedRecordType: "event",
     relatedRecordId: "evt-01",
-    destinationUrl: "/events",
+    destinationUrl: "/admin/events",
     destinationLabel: "Open Event in Campus Events",
     source: "Events Coordinator"
   },
@@ -82,7 +82,7 @@ export const INITIAL_ADMIN_NOTIFICATIONS: AdminNotificationRecord[] = [
     isRead: true,
     relatedRecordType: "announcement",
     relatedRecordId: "ann-01",
-    destinationUrl: "/communications",
+    destinationUrl: "/admin/announcements",
     destinationLabel: "View Broadcast in Communications",
     source: "Directorate Broadcast Engine"
   },
@@ -94,7 +94,7 @@ export const INITIAL_ADMIN_NOTIFICATIONS: AdminNotificationRecord[] = [
     timestamp: "2026-08-15T09:00:00Z",
     isRead: true,
     relatedRecordType: "general",
-    destinationUrl: "/user-management",
+    destinationUrl: "/admin/people",
     destinationLabel: "Check Directory in People",
     source: "Campus One Identity System"
   }

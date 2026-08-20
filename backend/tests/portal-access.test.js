@@ -103,3 +103,48 @@ test("feedback manager remains a local Club Services role for Campus One staff",
   assert.equal(result.appRole, "feedback_manager");
   assert.equal(result.effectiveRole, "feedback_manager");
 });
+
+test("Campus One session does not grant admin from a local admin app_role", () => {
+  const { resolveCampusOneEffectiveRole } = require("../src/shared/portalAccess");
+  const result = resolveCampusOneEffectiveRole({
+    portalRole: "staff",
+    appRole: "admin",
+    customRoles: ["unit_admin", "admin"]
+  });
+
+  assert.equal(result.appRole, "admin");
+  assert.equal(result.effectiveRole, "student");
+});
+
+test("Campus One session maps leftover feedback_manager app_role to student", () => {
+  const { resolveCampusOneEffectiveRole } = require("../src/shared/portalAccess");
+  const result = resolveCampusOneEffectiveRole({
+    portalRole: "staff",
+    appRole: "feedback_manager"
+  });
+
+  assert.equal(result.appRole, "feedback_manager");
+  assert.equal(result.effectiveRole, "student");
+});
+
+test("Campus One session still grants admin from club_services_admin", () => {
+  const { resolveCampusOneEffectiveRole } = require("../src/shared/portalAccess");
+  const result = resolveCampusOneEffectiveRole({
+    portalRole: "staff",
+    appRole: "student",
+    customRoles: ["club_services_admin"]
+  });
+
+  assert.equal(result.effectiveRole, "admin");
+});
+
+test("Campus One session does not grant admin from local admin app_role with student portal", () => {
+  const { resolveCampusOneEffectiveRole } = require("../src/shared/portalAccess");
+  const result = resolveCampusOneEffectiveRole({
+    portalRole: "student",
+    appRole: "admin"
+  });
+
+  assert.equal(result.appRole, "admin");
+  assert.equal(result.effectiveRole, "student");
+});

@@ -92,7 +92,7 @@ export function AdminMoreWorkspace() {
           <span>About More</span>
         </div>
         <p className="leading-relaxed">
-          These tools sit outside your main navigation. You can change between light and dark mode on your <Link to="/profile" className="text-primary hover:underline font-medium">Profile</Link> page.
+          These tools sit outside your main navigation. You can change between light and dark mode on your <Link to="/admin/profile" className="text-primary hover:underline font-medium">Profile</Link> page.
         </p>
       </div>
     </div>

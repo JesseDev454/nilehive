@@ -4,7 +4,7 @@ const { getEnv } = require("../config/env");
 const { isAllowedEmail } = require("../config/emailPolicy");
 const ApiError = require("../shared/ApiError");
 const { readCampusOneSessionFromRequest } = require("../shared/campusOneSession");
-const { resolveEffectiveRole } = require("../shared/portalAccess");
+const { resolveCampusOneEffectiveRole, resolveEffectiveRole } = require("../shared/portalAccess");
 
 function extractBearerToken(authorizationHeader) {
   if (!authorizationHeader) {
@@ -170,7 +170,7 @@ async function getCampusOneOidcAuthContext(req, database) {
   }
 
   assertProfileIsAllowed(profile);
-  const roleContext = resolveEffectiveRole({
+  const roleContext = resolveCampusOneEffectiveRole({
     portalRole: session.portalRole,
     appRole: profile.role,
     customRoles: session.customRoles

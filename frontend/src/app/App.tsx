@@ -1,12 +1,35 @@
 import { lazy, Suspense, useMemo, useState, type ComponentType } from "react";
 import { Building2, CalendarDays, ClipboardCheck, Compass, FileCheck2, FileText, Home, LayoutGrid, ListTodo, MoreHorizontal, Users } from "lucide-react";
-import { BrowserRouter, useLocation } from "react-router-dom";
+import { BrowserRouter, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "@/shared/theme";
-import { PreviewAuthProvider, type PreviewRole } from "@/contexts/AuthContext";
+import { AuthProvider, useAuth, type PreviewRole } from "@/contexts/AuthContext";
 import { PreviewRoleProvider } from "@/contexts/RoleContext";
 import { WorkspaceShell, type NavigationItem } from "./WorkspaceShell";
 import { Skeleton } from "@/shared/components/Skeleton";
+import {
+  AccountSuspendedScreen,
+  CampusOneLoginScreen,
+  NotFoundScreen,
+  OfflineRetryScreen,
+  RecoverableErrorScreen,
+  SessionExpiredScreen,
+  UnauthorizedRoleScreen,
+  UnsupportedDomainScreen,
+} from "@/components/shared/system";
+import { isMockPreviewMode } from "@/lib/oneclubMode";
+import {
+  ROLE_LABELS,
+  adminAliasRedirect,
+  homePathForRole,
+  isPublicPath,
+  isSystemGalleryPath,
+  loginPath,
+  matchAdminWorkspace,
+  normalizePathname,
+  roleFromPath,
+  safeReturnTo,
+} from "@/lib/workspaceRoutes";
 
 function lazyNamed<TModule, TKey extends keyof TModule>(
   loader: () => Promise<TModule>,
@@ -110,23 +133,63 @@ const NAVIGATION: Record<PreviewRole, NavigationItem[]> = {
   ],
 };
 
-const ROLE_LABELS: Record<PreviewRole, string> = {
-  student: "Student",
-  president: "President",
-  executive: "Executive",
-  advisor: "Advisor",
-  admin: "Club Services Admin",
-};
+function WorkspaceFallback() {
+  return (
+    <div className="space-y-4" aria-label="Loading workspace">
+      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-64 w-full" />
+    </div>
+  );
+}
 
-function roleFromPath(pathname: string): PreviewRole | null {
-  const candidate = pathname.split("/")[1];
-  return ["student", "president", "executive", "advisor", "admin"].includes(candidate)
-    ? (candidate as PreviewRole)
-    : null;
+function SessionCheckingScreen() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background p-4 text-foreground" aria-label="Checking Campus One session" aria-busy="true">
+      <div className="w-full max-w-md space-y-4">
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-40 w-full" />
+      </div>
+    </div>
+  );
+}
+
+function loginStatusMessage(authError: string | null, signedOut: string | null): string | undefined {
+  if (signedOut) {
+    return "You have signed out of OneClub. Continue with Campus One to sign in again.";
+  }
+  if (authError === "cancelled") {
+    return "Campus One sign-in was cancelled. Continue when you are ready.";
+  }
+  if (authError) {
+    return "Campus One sign-in did not complete. Continue to try again.";
+  }
+  return undefined;
+}
+
+function LoginScreen() {
+  const { mode, beginLogin } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const params = new URLSearchParams(location.search);
+  const returnTo = params.get("return_to") || "/";
+
+  return (
+    <CampusOneLoginScreen
+      statusMessage={loginStatusMessage(params.get("auth_error"), params.get("signed_out"))}
+      onContinue={() => {
+        if (mode === "mock") {
+          navigate("/student/home");
+          return;
+        }
+        beginLogin(safeReturnTo(returnTo));
+      }}
+    />
+  );
 }
 
 function WorkspaceRouter({ role }: { role: PreviewRole }) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const key = pathname.toLowerCase();
 
   if (role === "student") {
@@ -174,30 +237,176 @@ function WorkspaceRouter({ role }: { role: PreviewRole }) {
     if (key.includes("more")) return <AdvisorMore />;
     return <AdvisorHome />;
   }
-  if (key.includes("approval") || key.startsWith("/dues") || key.startsWith("/user-management")) return <AdminApprovals />;
-  if (key.includes("people")) return <AdminPeople />;
-  if (key.includes("announcement") || key.startsWith("/communications")) return <AdminAnnouncements />;
-  if (key.includes("notification")) return <AdminNotifications />;
-  if (key.includes("feedback")) return <AdminFeedback />;
-  if (key.includes("analytics")) return <AdminAnalytics />;
-  if (key.includes("profile")) return <AdminProfile />;
-  if (key.includes("event") || key.includes("archive")) return <AdminEvents />;
-  if (key.includes("club")) return <AdminClubs />;
-  if (key.includes("more")) return <AdminMore />;
-  return <AdminHome />;
+
+  switch (matchAdminWorkspace(pathname)) {
+    case "approvals":
+      return <AdminApprovals />;
+    case "people":
+      return <AdminPeople />;
+    case "announcements":
+      return <AdminAnnouncements />;
+    case "notifications":
+      return <AdminNotifications />;
+    case "feedback":
+      return <AdminFeedback />;
+    case "analytics":
+      return <AdminAnalytics />;
+    case "profile":
+      return <AdminProfile />;
+    case "events":
+      return <AdminEvents />;
+    case "clubs":
+      return <AdminClubs />;
+    case "more":
+      return <AdminMore />;
+    case "home":
+      return <AdminHome />;
+    default:
+      return (
+        <NotFoundScreen
+          requestedPath={normalizePathname(pathname)}
+          onGoHome={() => navigate(homePathForRole(role))}
+        />
+      );
+  }
 }
 
-function OneClubPreview() {
+function AuthenticatedWorkspace() {
   const location = useLocation();
-  const isSystemPreview = ["/system", "/shared-screens", "/admin/shared-screens"].includes(
-    location.pathname.replace(/\/$/, "") || "/",
-  );
+  const navigate = useNavigate();
+  const { mode, effective_role } = useAuth();
   const pathRole = roleFromPath(location.pathname);
   const [previewRole, setPreviewRole] = useState<PreviewRole>(pathRole ?? "student");
-  const role = pathRole ?? previewRole;
+  const role: PreviewRole = mode === "mock" ? (pathRole ?? previewRole) : (effective_role ?? "student");
   const navigation = useMemo(() => NAVIGATION[role], [role]);
 
-  if (isSystemPreview) {
+  if (role === "admin") {
+    const alias = adminAliasRedirect(location.pathname);
+    if (alias) {
+      return <Navigate to={alias} replace />;
+    }
+  }
+
+  if (pathRole && pathRole !== role) {
+    return (
+      <UnauthorizedRoleScreen
+        currentRole={ROLE_LABELS[role]}
+        requiredRole={ROLE_LABELS[pathRole]}
+        targetWorkspaceName={`${ROLE_LABELS[pathRole]} workspace`}
+        onBackToDashboard={() => navigate(homePathForRole(role))}
+      />
+    );
+  }
+
+  return (
+    <WorkspaceShell role={role} roleLabel={ROLE_LABELS[role]} navigation={navigation} onRoleChange={setPreviewRole}>
+      <Suspense fallback={<WorkspaceFallback />}>
+        <WorkspaceRouter role={role} />
+      </Suspense>
+    </WorkspaceShell>
+  );
+}
+
+function OneClubApp() {
+  const auth = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const mockMode = isMockPreviewMode();
+  const path = normalizePathname(location.pathname);
+  const workspaceRole = mockMode ? (roleFromPath(location.pathname) ?? "student") : (auth.effective_role ?? "student");
+
+  if (!mockMode) {
+    if (auth.status === "checking") {
+      return <SessionCheckingScreen />;
+    }
+    if (auth.status === "session_expired") {
+      return (
+        <SessionExpiredScreen
+          lastActiveWorkspace={path}
+          onContinue={() => auth.beginLogin(safeReturnTo(location.pathname, location.search))}
+          onSignOut={() => {
+            void auth.signOut();
+          }}
+        />
+      );
+    }
+    if (auth.status === "suspended") {
+      return (
+        <AccountSuspendedScreen
+          name={auth.profile.full_name}
+          matricNumber={auth.profile.student_id || undefined}
+          onSignOut={() => {
+            void auth.signOut();
+          }}
+        />
+      );
+    }
+    if (auth.status === "unsupported_domain") {
+      return (
+        <UnsupportedDomainScreen
+          attemptedEmail={auth.profile.email || undefined}
+          onSwitchAccount={() => {
+            void auth.signOut();
+          }}
+        />
+      );
+    }
+    if (auth.status === "offline") {
+      return (
+        <OfflineRetryScreen
+          cachedSectionTitle="Campus One session"
+          hasCachedData={false}
+          onRetry={() => {
+            void auth.refresh();
+          }}
+        />
+      );
+    }
+    if (auth.status === "error") {
+      return (
+        <RecoverableErrorScreen
+          errorMessage={auth.errorMessage || undefined}
+          onRetry={() => {
+            void auth.refresh();
+          }}
+          onGoHome={() => auth.beginLogin("/")}
+        />
+      );
+    }
+    if (auth.status === "unauthorized") {
+      return (
+        <UnauthorizedRoleScreen
+          currentRole="Unavailable"
+          requiredRole="OneClub workspace role"
+          targetWorkspaceName="This workspace"
+          onBackToDashboard={() => {
+            void auth.signOut();
+          }}
+        />
+      );
+    }
+    if (auth.status === "unauthenticated") {
+      if (!isPublicPath(location.pathname)) {
+        return <Navigate to={loginPath(location.pathname, location.search)} replace />;
+      }
+      return <LoginScreen />;
+    }
+    if (isPublicPath(location.pathname)) {
+      return <Navigate to={homePathForRole(auth.effective_role ?? "student")} replace />;
+    }
+  } else if (isPublicPath(location.pathname)) {
+    return <LoginScreen />;
+  }
+
+  if (isSystemGalleryPath(location.pathname)) {
+    if (!mockMode) {
+      return (
+        <NotFoundScreen
+          requestedPath={path}
+          onGoHome={() => navigate(homePathForRole(workspaceRole))}
+        />
+      );
+    }
     return (
       <div className="min-h-screen bg-background px-4 py-6 text-foreground sm:px-6 lg:px-8">
         <Suspense fallback={<div className="mx-auto max-w-6xl space-y-4" aria-label="Loading shared system screens"><Skeleton className="h-24 w-full" /><Skeleton className="h-64 w-full" /></div>}>
@@ -207,26 +416,24 @@ function OneClubPreview() {
     );
   }
 
-  return (
-    <WorkspaceShell role={role} roleLabel={ROLE_LABELS[role]} navigation={navigation} onRoleChange={setPreviewRole}>
-      <Suspense fallback={<div className="space-y-4" aria-label="Loading workspace"><Skeleton className="h-24 w-full" /><Skeleton className="h-64 w-full" /></div>}>
-        <WorkspaceRouter role={role} />
-      </Suspense>
-    </WorkspaceShell>
-  );
+  if (path === "/") {
+    return <Navigate to={homePathForRole(workspaceRole)} replace />;
+  }
+
+  return <AuthenticatedWorkspace />;
 }
 
 export function App() {
   return (
     <ThemeProvider>
-      <PreviewAuthProvider>
-        <PreviewRoleProvider>
-          <BrowserRouter>
-            <OneClubPreview />
+      <BrowserRouter>
+        <AuthProvider>
+          <PreviewRoleProvider>
+            <OneClubApp />
             <Toaster position="bottom-right" richColors />
-          </BrowserRouter>
-        </PreviewRoleProvider>
-      </PreviewAuthProvider>
+          </PreviewRoleProvider>
+        </AuthProvider>
+      </BrowserRouter>
     </ThemeProvider>
   );
 }

@@ -1,4 +1,5 @@
 import { createContext, useContext, type ReactNode } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface PreviewRoleContextValue {
   currentUser: {
@@ -11,10 +12,9 @@ const PreviewRoleContext = createContext<PreviewRoleContextValue>({
 });
 
 export function PreviewRoleProvider({ children }: { children: ReactNode }) {
+  const { profile } = useAuth();
   return (
-    <PreviewRoleContext.Provider
-      value={{ currentUser: { full_name: "Zainab Ahmed" } }}
-    >
+    <PreviewRoleContext.Provider value={{ currentUser: { full_name: profile.full_name } }}>
       {children}
     </PreviewRoleContext.Provider>
   );

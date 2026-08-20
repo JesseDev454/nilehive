@@ -42,30 +42,63 @@ function canUseAdvisorFeatures(user) {
   return normalizeAppRole(user?.appRole) === "advisor";
 }
 
+function buildRoleContext({ portalRole, appRole, customRoles, effectiveRole }) {
+  return {
+    portalRole,
+    appRole,
+    customRoles,
+    effectiveRole,
+    accessPending: false,
+    roleSyncState: "active"
+  };
+}
+
 function resolveEffectiveRole({ portalRole, appRole, customRoles }) {
   const normalizedPortalRole = normalizePortalRole(portalRole);
   const normalizedAppRole = normalizeAppRole(appRole);
   const normalizedCustomRoles = normalizeCustomRoles(customRoles);
 
   if (normalizedPortalRole === "admin" || hasClubServicesAdminRole(normalizedCustomRoles)) {
-    return {
+    return buildRoleContext({
       portalRole: normalizedPortalRole,
       appRole: normalizedAppRole,
       customRoles: normalizedCustomRoles,
-      effectiveRole: "admin",
-      accessPending: false,
-      roleSyncState: "active"
-    };
+      effectiveRole: "admin"
+    });
   }
 
-  return {
+  return buildRoleContext({
     portalRole: normalizedPortalRole,
     appRole: normalizedAppRole,
     customRoles: normalizedCustomRoles,
-    effectiveRole: normalizedAppRole,
-    accessPending: false,
-    roleSyncState: "active"
-  };
+    effectiveRole: normalizedAppRole
+  });
+}
+
+function resolveCampusOneEffectiveRole({ portalRole, appRole, customRoles }) {
+  const normalizedPortalRole = normalizePortalRole(portalRole);
+  const normalizedAppRole = normalizeAppRole(appRole);
+  const normalizedCustomRoles = normalizeCustomRoles(customRoles);
+
+  if (normalizedPortalRole === "admin" || hasClubServicesAdminRole(normalizedCustomRoles)) {
+    return buildRoleContext({
+      portalRole: normalizedPortalRole,
+      appRole: normalizedAppRole,
+      customRoles: normalizedCustomRoles,
+      effectiveRole: "admin"
+    });
+  }
+
+  const workspaceRole = normalizedAppRole === "admin" || normalizedAppRole === "feedback_manager"
+    ? "student"
+    : normalizedAppRole;
+
+  return buildRoleContext({
+    portalRole: normalizedPortalRole,
+    appRole: normalizedAppRole,
+    customRoles: normalizedCustomRoles,
+    effectiveRole: workspaceRole
+  });
 }
 
 module.exports = {
@@ -76,5 +109,6 @@ module.exports = {
   normalizeAppRole,
   normalizeCustomRoles,
   normalizePortalRole,
+  resolveCampusOneEffectiveRole,
   resolveEffectiveRole
 };

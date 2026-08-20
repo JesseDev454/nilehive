@@ -261,7 +261,7 @@ export function AdminHomeView() {
       label: "Proposals waiting",
       whatNext: "Authorize event venue, date, and budget before publishing to campus calendar.",
       actionLabel: "Review next proposal",
-      url: "/approvals",
+      url: "/admin/approvals",
       icon: Clock,
       onInspect: () => {
         if (proposalsQueue[0]) {
@@ -277,7 +277,7 @@ export function AdminHomeView() {
       label: "Join requests waiting",
       whatNext: "Review student motivation and admit to official club rosters.",
       actionLabel: "Review join request",
-      url: "/user-management",
+      url: "/admin/people",
       icon: UserPlus,
       onInspect: () => {
         if (joinRequestsQueue[0]) {
@@ -293,7 +293,7 @@ export function AdminHomeView() {
       label: "Proofs waiting",
       whatNext: "Verify bank transfer receipt reference against dues record.",
       actionLabel: "Verify payment proof",
-      url: "/dues",
+      url: "/admin/approvals",
       icon: CreditCard,
       onInspect: () => {
         if (proofsQueue[0]) {
@@ -309,7 +309,7 @@ export function AdminHomeView() {
       label: "Reports submitted",
       whatNext: "Audit verified attendee headcount and post-event budget reconciliation.",
       actionLabel: "Audit latest report",
-      url: "/archive",
+      url: "/admin/events",
       icon: FileCheck2,
       onInspect: () => {
         if (reportsQueue[0]) {

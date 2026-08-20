@@ -9,7 +9,7 @@ const {
 const { getEnv } = require("../../config/env");
 const { isAllowedEmail } = require("../../config/emailPolicy");
 const { logger: baseLogger } = require("../../config/logger");
-const { resolveEffectiveRole } = require("../../shared/portalAccess");
+const { resolveCampusOneEffectiveRole, resolveEffectiveRole } = require("../../shared/portalAccess");
 const { isValidStudentId, normalizeStudentId } = require("../../shared/studentId");
 
 const OIDC_STATE_COOKIE = "nilehive_oidc_state";
@@ -749,14 +749,14 @@ function createCampusOneAuthRouter(options = {}) {
         portal_role: portalRole,
         custom_roles: customRoles,
         claim_source: "userinfo",
-        effective_role: resolveEffectiveRole({
+        effective_role: resolveCampusOneEffectiveRole({
           portalRole,
           appRole: profile.role,
           customRoles
         }).effectiveRole
       });
 
-      const roleContext = resolveEffectiveRole({
+      const roleContext = resolveCampusOneEffectiveRole({
         portalRole,
         appRole: profile.role,
         customRoles

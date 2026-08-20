@@ -1,7 +1,8 @@
 import { Bell, ChevronDown, ShieldCheck } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ThemeToggle } from "@/shared/components/ThemeToggle";
-import type { PreviewRole } from "@/contexts/AuthContext";
+import { useAuth, type PreviewRole } from "@/contexts/AuthContext";
+import { isMockPreviewMode } from "@/lib/oneclubMode";
 
 export interface NavigationItem {
   label: string;
@@ -28,7 +29,10 @@ const PROFILE_NAMES: Record<PreviewRole, string> = {
 export function WorkspaceShell({ children, role, roleLabel, navigation, onRoleChange }: WorkspaceShellProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const initials = PROFILE_NAMES[role].split(" ").map((part) => part[0]).join("");
+  const { profile } = useAuth();
+  const mockMode = isMockPreviewMode();
+  const displayName = mockMode ? PROFILE_NAMES[role] : (profile.full_name || PROFILE_NAMES[role]);
+  const initials = displayName.split(" ").filter(Boolean).map((part) => part[0]).join("").slice(0, 2);
   const isSelected = (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`);
 
   return (
@@ -52,16 +56,26 @@ export function WorkspaceShell({ children, role, roleLabel, navigation, onRoleCh
           })}
         </nav>
         <div className="rail-account">
-          <span className="preview-badge"><ShieldCheck className="h-3.5 w-3.5" /> UI preview</span>
-          <span className="text-xs font-semibold text-foreground">{roleLabel}</span>
-          <span className="text-xs text-muted-foreground">Mock data only</span>
+          {mockMode ? (
+            <>
+              <span className="preview-badge"><ShieldCheck className="h-3.5 w-3.5" /> UI preview</span>
+              <span className="text-xs font-semibold text-foreground">{roleLabel}</span>
+              <span className="text-xs text-muted-foreground">Mock data only</span>
+            </>
+          ) : (
+            <>
+              <span className="preview-badge"><ShieldCheck className="h-3.5 w-3.5" /> Campus One</span>
+              <span className="text-xs font-semibold text-foreground">{roleLabel}</span>
+              <span className="text-xs text-muted-foreground">{displayName}</span>
+            </>
+          )}
         </div>
       </aside>
 
       <div className="workspace-column">
         <header className="workspace-topbar">
           <Link className="mobile-brand" to={`/${role}/home`}><span>1</span><strong>OneClub</strong></Link>
-          {import.meta.env.DEV ? (
+          {mockMode ? (
             <label className="preview-role-control">
               <span>Preview role</span>
               <span className="preview-role-select-wrap">
@@ -87,7 +101,7 @@ export function WorkspaceShell({ children, role, roleLabel, navigation, onRoleCh
           <div className="topbar-actions">
             <Link className="topbar-icon" to={`/${role}/notifications`} aria-label="Open notifications"><Bell className="h-5 w-5" /></Link>
             <ThemeToggle />
-            <Link className="profile-avatar" to={`/${role}/profile`} aria-label={`Open profile for ${PROFILE_NAMES[role]}`}>{initials}</Link>
+            <Link className="profile-avatar" to={`/${role}/profile`} aria-label={`Open profile for ${displayName}`}>{initials}</Link>
           </div>
         </header>
         <main id="workspace-content" className="workspace-main" tabIndex={-1}>{children}</main>
