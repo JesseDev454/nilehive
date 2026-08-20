@@ -627,3 +627,78 @@ test("Admin approval mutations require a valid CSRF token", async (t) => {
   assert.equal(dues.response.status, 404);
   assert.equal(dues.payload.error.code, "DUE_PAYMENT_NOT_FOUND");
 });
+
+test("Admin People mutations require a valid CSRF token", async (t) => {
+  withCsrfEnv(t);
+  const database = createFakeDatabase({
+    role: "admin",
+    email: "admin@nileuniversity.edu.ng",
+    custom_roles: ["club_services_admin"]
+  });
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+  const token = createSessionToken({
+    portalRole: "staff",
+    email: "admin@nileuniversity.edu.ng",
+    customRoles: ["club_services_admin"]
+  });
+
+  const endpoints = [
+    "/api/v1/admin/users/profile-2/role",
+    "/api/v1/admin/users/profile-2/advisor-assignment"
+  ];
+
+  for (const path of endpoints) {
+    const missing = await fetchJson(`${server.baseUrl}${path}`, {
+      method: "POST",
+      headers: {
+        Cookie: sessionCookie(token),
+        Origin: FRONTEND_ORIGIN,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ role: "student", club_id: "club-1" })
+    });
+    assert.equal(missing.response.status, 403);
+    assert.equal(missing.payload.error.code, "CSRF_TOKEN_REQUIRED");
+  }
+
+  const csrf = await getCsrfToken(server.baseUrl, token);
+  const invalid = await fetchJson(`${server.baseUrl}/api/v1/admin/users/profile-2/role`, {
+    method: "POST",
+    headers: {
+      Cookie: sessionCookie(token),
+      Origin: FRONTEND_ORIGIN,
+      "Content-Type": "application/json",
+      "X-CSRF-Token": "not-a-valid-token"
+    },
+    body: JSON.stringify({ role: "student" })
+  });
+  assert.equal(invalid.response.status, 403);
+  assert.equal(invalid.payload.error.code, "CSRF_TOKEN_INVALID");
+
+  const role = await fetchJson(`${server.baseUrl}/api/v1/admin/users/profile-2/role`, {
+    method: "POST",
+    headers: {
+      Cookie: sessionCookie(token),
+      Origin: FRONTEND_ORIGIN,
+      "Content-Type": "application/json",
+      "X-CSRF-Token": csrf
+    },
+    body: JSON.stringify({ role: "student" })
+  });
+  assert.equal(role.response.status, 404);
+  assert.equal(role.payload.error.code, "PROFILE_NOT_FOUND");
+
+  const advisor = await fetchJson(`${server.baseUrl}/api/v1/admin/users/profile-2/advisor-assignment`, {
+    method: "POST",
+    headers: {
+      Cookie: sessionCookie(token),
+      Origin: FRONTEND_ORIGIN,
+      "Content-Type": "application/json",
+      "X-CSRF-Token": csrf
+    },
+    body: JSON.stringify({ club_id: "club-1" })
+  });
+  assert.equal(advisor.response.status, 404);
+  assert.equal(advisor.payload.error.code, "PROFILE_NOT_FOUND");
+});

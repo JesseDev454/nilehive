@@ -34,6 +34,10 @@ async function loadModules(env) {
       adapters: await server.ssrLoadModule("/src/lib/approvals/adapters.ts"),
       errors: await server.ssrLoadModule("/src/lib/approvals/errors.ts"),
       approvals: await server.ssrLoadModule("/src/lib/api/approvals.ts"),
+      peopleAdapters: await server.ssrLoadModule("/src/lib/people/adapters.ts"),
+      peopleErrors: await server.ssrLoadModule("/src/lib/people/errors.ts"),
+      peopleApi: await server.ssrLoadModule("/src/lib/api/people.ts"),
+      peopleTypes: await server.ssrLoadModule("/src/lib/people/types.ts"),
     };
   } finally {
     await server.close();
@@ -479,4 +483,147 @@ test("integrated mode never falls back to mock approval records", () => {
   assert.equal(integrated.mode.isMockPreviewMode(), false);
   assert.equal(mockMode.mode.isMockPreviewMode(), true);
 });
+
+test("People adapters preserve backend IDs and do not fabricate Campus One fields", () => {
+  const { adaptAdminUser, unwrapPaginated, isAssignableOneClubRole, accountStatusLabel } = integrated.peopleAdapters;
+  const person = adaptAdminUser({
+    id: "profile-9",
+    full_name: "Amina Bello",
+    email: null,
+    portal_user_id: "campus-9",
+    department: null,
+    student_type: null,
+    role: "president",
+    app_role: "president",
+    effective_role: "president",
+    portal_role: null,
+    custom_roles: [],
+    club_id: "club-8",
+    student_id: "NIL/2023/UG/0458",
+    requested_role: null,
+    onboarding_status: "complete",
+    account_status: "active",
+    club: { id: "club-8", name: "Nile Google Developers", code: "NGDC" },
+    advisor_assignments: [],
+    created_at: "2026-01-01T00:00:00.000Z",
+    updated_at: "2026-01-01T00:00:00.000Z",
+  });
+  assert.equal(person.id, "profile-9");
+  assert.equal(person.email, null);
+  assert.equal(person.faculty, null);
+  assert.equal(person.department, null);
+  assert.equal(person.campusOneBaseRole, null);
+  assert.equal(person.oneClubRole, "president");
+  assert.equal(person.assignedClubId, "club-8");
+  assert.equal(person.joinedClubsCount, null);
+  assert.equal(accountStatusLabel("suspended"), "Suspended");
+  assert.equal(isAssignableOneClubRole("admin"), false);
+  assert.equal(isAssignableOneClubRole("feedback_manager"), false);
+  assert.deepEqual(integrated.peopleTypes.ASSIGNABLE_ONECLUB_ROLES, ["student", "executive", "president", "advisor"]);
+
+  const page = unwrapPaginated({ items: [{ id: "a" }], page: 2, page_size: 20, total: 21, has_next: true });
+  assert.equal(page.page, 2);
+  assert.equal(page.has_next, true);
+  assert.equal(page.total, 21);
+});
+
+test("People error normalization covers 401 403 404 409 429 and president conflict details", () => {
+  const { ApiClientError } = integrated.client;
+  const { normalizePeopleError } = integrated.peopleErrors;
+  assert.equal(normalizePeopleError(new ApiClientError(401, "AUTH_REQUIRED", "Please sign in")).kind, "unauthorized");
+  assert.equal(normalizePeopleError(new ApiClientError(403, "FORBIDDEN", "No")).kind, "forbidden");
+  assert.equal(normalizePeopleError(new ApiClientError(404, "PROFILE_NOT_FOUND", "Missing")).kind, "not_found");
+  const conflict = normalizePeopleError(new ApiClientError(
+    409,
+    "PRESIDENT_ALREADY_EXISTS",
+    "Club has a president",
+    { current_president: { id: "pres-1", full_name: "Farouk Aliyu", student_id: "NIL/1", club_id: "club-8" } },
+  ));
+  assert.equal(conflict.kind, "conflict");
+  assert.equal(conflict.currentPresident.full_name, "Farouk Aliyu");
+  const limited = normalizePeopleError(new ApiClientError(429, "RATE_LIMITED", "Wait", null, 8));
+  assert.equal(limited.kind, "rate_limited");
+  assert.match(limited.message, /8 seconds/);
+  assert.equal(normalizePeopleError(new ApiClientError(500, "SERVER", "Boom")).kind, "server");
+});
+
+test("People API functions use CSRF on mutations and honor abort", async () => {
+  const calls = [];
+  await withMockFetch(async (url, init = {}) => {
+    const headers = new Headers(init.headers);
+    calls.push({
+      url: String(url),
+      method: init.method || "GET",
+      csrf: headers.get("X-CSRF-Token"),
+      body: init.body ? JSON.parse(String(init.body)) : null,
+    });
+    if (String(url).endsWith("/auth/csrf")) {
+      return jsonResponse({ data: { csrf_token: "csrf-people" } });
+    }
+    if (String(url).includes("/admin/users") && (init.method || "GET") === "GET") {
+      return jsonResponse({
+        data: {
+          items: [{
+            id: "profile-1",
+            full_name: "Amina Bello",
+            email: null,
+            role: "student",
+            app_role: "student",
+            club_id: null,
+            advisor_assignments: [],
+          }],
+          page: 1,
+          page_size: 20,
+          total: 1,
+          has_next: false,
+        },
+      });
+    }
+    if (String(url).endsWith("/clubs")) {
+      return jsonResponse({ data: [{ id: "club-8", name: "Nile Google Developers", code: "NGDC" }] });
+    }
+    return jsonResponse({
+      data: {
+        profile: { id: "profile-1", role: "president", app_role: "president", club_id: "club-8", advisor_assignments: [] },
+        history: { id: "history-1" },
+      },
+    });
+  }, async () => {
+    await integrated.peopleApi.listAdminUsers({ q: "Amina", page: 1, page_size: 20 });
+    await integrated.peopleApi.getAdminUser("profile-1");
+    await integrated.peopleApi.assignOneClubRole("profile-1", { role: "president", club_id: "club-8" });
+    await integrated.peopleApi.updateAdvisorAssignment("profile-1", { club_id: "club-8" });
+    await integrated.peopleApi.listClubsForAssignment();
+
+    const listCall = calls.find((call) => call.method === "GET" && call.url.includes("/admin/users?"));
+    assert.equal(listCall.csrf, null);
+    assert.match(listCall.url, /q=Amina/);
+    const roleCall = calls.find((call) => call.url.endsWith("/admin/users/profile-1/role"));
+    assert.equal(roleCall.csrf, "csrf-people");
+    assert.deepEqual(roleCall.body, { role: "president", club_id: "club-8" });
+    const advisorCall = calls.find((call) => call.url.endsWith("/admin/users/profile-1/advisor-assignment"));
+    assert.equal(advisorCall.csrf, "csrf-people");
+    assert.deepEqual(advisorCall.body, { club_id: "club-8" });
+  });
+
+  const controller = new AbortController();
+  controller.abort();
+  await withMockFetch(async (_url, init = {}) => {
+    if (init.signal?.aborted) {
+      throw new DOMException("The operation was aborted.", "AbortError");
+    }
+    return jsonResponse({ data: { items: [] } });
+  }, async () => {
+    await assert.rejects(
+      () => integrated.peopleApi.listAdminUsers({ signal: controller.signal }),
+      (error) => error.name === "AbortError",
+    );
+  });
+});
+
+test("integrated mode never falls back to mock People records", () => {
+  assert.equal(integrated.mode.isMockPreviewMode(), false);
+  assert.equal(mockMode.mode.isMockPreviewMode(), true);
+});
+
 

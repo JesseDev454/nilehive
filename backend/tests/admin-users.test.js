@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 const { createApp } = require("../src/app");
 const {
   assignAdvisorToClub,
+  getAdminUser,
   listAdminUsers,
   updateAdminUserRole
 } = require("../src/modules/admin-users/admin-users.service");
@@ -729,6 +730,16 @@ function createRouteDatabase() {
       id: "executive-1",
       role: "executive",
       requested_role: "executive"
+    }),
+    "president-1": createProfile({
+      id: "president-1",
+      role: "president",
+      requested_role: "president"
+    }),
+    "advisor-1": createProfile({
+      id: "advisor-1",
+      role: "advisor",
+      requested_role: "advisor"
     })
   };
 
@@ -736,7 +747,10 @@ function createRouteDatabase() {
     async getUserByAccessToken(accessToken) {
       const tokenProfiles = {
         "admin-token": "admin-1",
-        "executive-token": "executive-1"
+        "executive-token": "executive-1",
+        "student-token": "student-1",
+        "president-token": "president-1",
+        "advisor-token": "advisor-1"
       };
       const profileId = tokenProfiles[accessToken];
 
@@ -791,8 +805,8 @@ test("admin can list users through the route", async (t) => {
   const payload = await response.json();
 
   assert.equal(response.status, 200);
-  assert.equal(payload.data.items.length, 3);
-  assert.equal(payload.data.total, 3);
+  assert.equal(payload.data.items.length, 5);
+  assert.equal(payload.data.total, 5);
   assert.equal(payload.data.page, 1);
 });
 
@@ -820,4 +834,166 @@ test("invalid pagination params are rejected for admin users route", async (t) =
 
   assert.equal(response.status, 400);
   assert.equal(payload.error.code, "VALIDATION_ERROR");
+});
+
+test("admin user responses include identity fields and omit secrets", async () => {
+  const fakeDatabase = {
+    async getProfileById() {
+      return createProfile({
+        email: "ada@nileuniversity.edu.ng",
+        portal_user_id: "campus-ada",
+        department: "Computer Science",
+        student_type: "undergraduate",
+        access_token: "should-not-leak"
+      });
+    },
+    async listClubAdvisorAssignments() {
+      return [];
+    }
+  };
+
+  const user = await getAdminUser({
+    actor: { id: "admin-1", role: "admin" },
+    profileId: "student-1",
+    database: fakeDatabase
+  });
+
+  assert.equal(user.email, "ada@nileuniversity.edu.ng");
+  assert.equal(user.portal_user_id, "campus-ada");
+  assert.equal(user.department, "Computer Science");
+  assert.equal(user.student_type, "undergraduate");
+  assert.equal(user.access_token, undefined);
+  assert.equal(user.password, undefined);
+  assert.doesNotMatch(JSON.stringify(user), /should-not-leak|service_role|refresh_token/);
+});
+
+test("admin cannot assign admin, feedback_manager, or club_services_admin", async () => {
+  const fakeDatabase = {
+    async getProfileById() {
+      return createProfile();
+    }
+  };
+
+  for (const role of ["admin", "feedback_manager", "club_services_admin"]) {
+    await assert.rejects(
+      () =>
+        updateAdminUserRole({
+          actor: { id: "admin-1", role: "admin" },
+          profileId: "student-1",
+          payload: { role },
+          database: fakeDatabase
+        }),
+      (error) => error.statusCode === 400 && error.code === "VALIDATION_ERROR"
+    );
+  }
+});
+
+test("president and executive assignments require a valid club", async () => {
+  const fakeDatabase = {
+    async getProfileById() {
+      return createProfile();
+    },
+    async getClubById() {
+      return null;
+    }
+  };
+
+  await assert.rejects(
+    () =>
+      updateAdminUserRole({
+        actor: { id: "admin-1", role: "admin" },
+        profileId: "student-1",
+        payload: { role: "president" },
+        database: fakeDatabase
+      }),
+    (error) => error.statusCode === 400 && error.details?.field === "club_id"
+  );
+
+  await assert.rejects(
+    () =>
+      updateAdminUserRole({
+        actor: { id: "admin-1", role: "admin" },
+        profileId: "student-1",
+        payload: { role: "executive", club_id: "missing-club" },
+        database: fakeDatabase
+      }),
+    (error) => error.statusCode === 400 && error.code === "INVALID_CLUB"
+  );
+});
+
+test("missing profiles return 404 for People inspect", async () => {
+  await assert.rejects(
+    () =>
+      getAdminUser({
+        actor: { id: "admin-1", role: "admin" },
+        profileId: "missing",
+        database: {
+          async getProfileById() {
+            return null;
+          }
+        }
+      }),
+    (error) => error.statusCode === 404 && error.code === "PROFILE_NOT_FOUND"
+  );
+});
+
+test("students presidents executives and advisors cannot manage users", async () => {
+  for (const role of ["student", "president", "executive", "advisor"]) {
+    await assert.rejects(
+      () =>
+        listAdminUsers({
+          actor: { id: `${role}-1`, role },
+          database: {}
+        }),
+      (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+    );
+  }
+});
+
+test("unauthenticated People list is rejected", async (t) => {
+  const server = await createTestServer(createRouteDatabase());
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/admin/users`);
+  const payload = await response.json();
+
+  assert.equal(response.status, 401);
+  assert.equal(payload.error.code, "AUTH_REQUIRED");
+});
+
+test("student president and advisor tokens cannot list or assign users", async (t) => {
+  const server = await createTestServer(createRouteDatabase());
+  t.after(() => server.close());
+
+  for (const token of ["student-token", "president-token", "advisor-token"]) {
+    const list = await fetch(`${server.baseUrl}/api/v1/admin/users`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    assert.equal(list.status, 403);
+
+    const assign = await fetch(`${server.baseUrl}/api/v1/admin/users/student-1/role`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ role: "student" })
+    });
+    assert.equal(assign.status, 403);
+  }
+});
+
+test("admin can inspect a person through the route", async (t) => {
+  const server = await createTestServer(createRouteDatabase());
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/admin/users/student-1`, {
+    headers: { Authorization: "Bearer admin-token" }
+  });
+  const payload = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.id, "student-1");
+  assert.equal(payload.data.role, "student");
+  assert.equal(payload.data.access_token, undefined);
 });

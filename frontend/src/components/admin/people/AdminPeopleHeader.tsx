@@ -1,12 +1,10 @@
-import { Filter, Search, ShieldCheck, UserCheck, Users } from "lucide-react";
+import { Search, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { OFFICIAL_14_CLUBS } from "@/data/mockData";
-import type { AssignableOneClubRole } from "@/data/adminPeopleData";
+import type { AssignmentClub } from "@/lib/people/types";
 
 interface AdminPeopleHeaderProps {
   counts: {
-    total: number;
     presidents: number;
     executives: number;
     advisors: number;
@@ -18,6 +16,7 @@ interface AdminPeopleHeaderProps {
   onRoleFilterChange: (val: string) => void;
   clubFilter: string;
   onClubFilterChange: (val: string) => void;
+  clubs: AssignmentClub[];
 }
 
 export function AdminPeopleHeader({
@@ -27,7 +26,8 @@ export function AdminPeopleHeader({
   roleFilter,
   onRoleFilterChange,
   clubFilter,
-  onClubFilterChange
+  onClubFilterChange,
+  clubs,
 }: AdminPeopleHeaderProps) {
   return (
     <div className="space-y-4 border-b border-border/80 pb-5">
@@ -45,7 +45,6 @@ export function AdminPeopleHeader({
           </p>
         </div>
 
-        {/* Counts summary pill group */}
         <div className="flex flex-wrap items-center gap-1.5 pt-1 sm:pt-0">
           <div className="rounded-xl border border-border bg-card px-2.5 py-1 text-center shadow-2xs">
             <span className="block text-[9px] uppercase font-semibold text-muted-foreground">Presidents</span>
@@ -66,11 +65,12 @@ export function AdminPeopleHeader({
         </div>
       </div>
 
-      {/* Controls row: Search & Filters */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-1">
         <div className="relative w-full sm:max-w-xs">
-          <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+          <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
           <Input
+            id="admin-people-search"
+            aria-label="Search people by name, campus ID or email"
             placeholder="Search by name, ID, email, club..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -79,9 +79,8 @@ export function AdminPeopleHeader({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* Role Filter */}
           <Select value={roleFilter} onValueChange={onRoleFilterChange}>
-            <SelectTrigger className="w-[140px] text-xs h-9 bg-background">
+            <SelectTrigger className="w-[140px] text-xs h-9 bg-background" aria-label="Filter by OneClub role">
               <SelectValue placeholder="All Roles" />
             </SelectTrigger>
             <SelectContent>
@@ -93,16 +92,15 @@ export function AdminPeopleHeader({
             </SelectContent>
           </Select>
 
-          {/* Club Filter */}
           <Select value={clubFilter} onValueChange={onClubFilterChange}>
-            <SelectTrigger className="w-[180px] text-xs h-9 bg-background">
+            <SelectTrigger className="w-[180px] text-xs h-9 bg-background" aria-label="Filter by assigned club">
               <SelectValue placeholder="All Clubs" />
             </SelectTrigger>
             <SelectContent className="max-h-60">
               <SelectItem value="all">All 14 Clubs</SelectItem>
-              {OFFICIAL_14_CLUBS.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
+              {clubs.map((club) => (
+                <SelectItem key={club.id} value={club.id}>
+                  {club.name}
                 </SelectItem>
               ))}
             </SelectContent>

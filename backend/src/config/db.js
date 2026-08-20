@@ -817,7 +817,9 @@ function createDatabase(options = {}) {
         const search = filters.q.replace(/[%(),]/g, "").trim();
 
         if (search) {
-          query = query.or(`full_name.ilike.%${search}%,student_id.ilike.%${search}%`);
+          query = query.or(
+            `full_name.ilike.%${search}%,student_id.ilike.%${search}%,email.ilike.%${search}%`
+          );
         }
       }
 

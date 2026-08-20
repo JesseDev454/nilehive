@@ -291,3 +291,228 @@ export async function mockApprovalsApi(
 export async function expectNoFeedbackManager(page: Page) {
   await expect(page.getByText("Feedback Manager")).toHaveCount(0);
 }
+
+export const E2E_CLUBS = [
+  { id: "club-8", name: "Nile Google Developers", code: "NGDC" },
+  { id: "club-2", name: "Nile Business Club", code: "NBUC" },
+];
+
+export const E2E_PERSON = {
+  id: "person-e2e-1",
+  full_name: "Amina Bello",
+  email: "amina.bello@nileuniversity.edu.ng",
+  portal_user_id: "campus-amina",
+  department: "Computer Science",
+  student_type: "undergraduate",
+  role: "student",
+  app_role: "student",
+  effective_role: "student",
+  portal_role: null,
+  custom_roles: [],
+  club_id: null,
+  student_id: "NIL/2023/UG/0458",
+  requested_role: null,
+  onboarding_status: "complete",
+  account_status: "active",
+  club: null,
+  advisor_assignments: [],
+  created_at: "2026-01-01T00:00:00.000Z",
+  updated_at: "2026-01-01T00:00:00.000Z",
+};
+
+export const E2E_ADVISOR = {
+  id: "person-e2e-advisor",
+  full_name: "Dr. Kalu Okonkwo",
+  email: "kalu.okonkwo@nileuniversity.edu.ng",
+  portal_user_id: "campus-kalu",
+  department: "Computer Science",
+  student_type: "staff",
+  role: "advisor",
+  app_role: "advisor",
+  effective_role: "advisor",
+  portal_role: null,
+  custom_roles: [],
+  club_id: "club-8",
+  student_id: "NIL/STAFF/FNS/044",
+  requested_role: null,
+  onboarding_status: "complete",
+  account_status: "active",
+  club: { id: "club-8", name: "Nile Google Developers", code: "NGDC" },
+  advisor_assignments: [
+    {
+      id: "assignment-e2e-1",
+      club_id: "club-8",
+      assigned_by: "admin-1",
+      remarks: null,
+      created_at: "2026-01-01T00:00:00.000Z",
+      club: { id: "club-8", name: "Nile Google Developers", code: "NGDC" },
+    },
+  ],
+  created_at: "2026-01-01T00:00:00.000Z",
+  updated_at: "2026-01-01T00:00:00.000Z",
+};
+
+export async function mockPeopleApi(
+  page: Page,
+  options: {
+    people?: Array<Record<string, unknown>>;
+    listStatus?: number;
+    detailStatus?: number;
+    roleResult?: { status: number; body: unknown };
+    advisorResult?: { status: number; body: unknown };
+  } = {},
+) {
+  const people = options.people ?? [E2E_PERSON, E2E_ADVISOR];
+  const rolePosts: Array<{ csrf: string | null; body: unknown; url: string }> = [];
+  const advisorPosts: Array<{ csrf: string | null; body: unknown; url: string }> = [];
+  const listErrorStatus = options.listStatus && options.listStatus !== 200 ? options.listStatus : null;
+  let failList = Boolean(listErrorStatus);
+
+  await page.route("**/api/v1/clubs**", async (route) => {
+    if (route.request().method() !== "GET") {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ data: E2E_CLUBS }),
+    });
+  });
+
+  await page.route("**/api/v1/admin/users**", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    const path = url.pathname;
+
+    if (request.method() === "POST" && path.endsWith("/role")) {
+      rolePosts.push({
+        csrf: await request.headerValue("x-csrf-token"),
+        body: request.postDataJSON(),
+        url: request.url(),
+      });
+      const result = options.roleResult ?? {
+        status: 200,
+        body: {
+          data: {
+            profile: {
+              ...E2E_PERSON,
+              role: "president",
+              app_role: "president",
+              club_id: "club-8",
+              club: E2E_CLUBS[0],
+            },
+            history: { id: "history-e2e-1" },
+          },
+        },
+      };
+      await route.fulfill({
+        status: result.status,
+        contentType: "application/json",
+        headers: result.status === 429 ? { "Retry-After": "12" } : {},
+        body: JSON.stringify(result.body),
+      });
+      return;
+    }
+
+    if (request.method() === "POST" && path.endsWith("/advisor-assignment")) {
+      advisorPosts.push({
+        csrf: await request.headerValue("x-csrf-token"),
+        body: request.postDataJSON(),
+        url: request.url(),
+      });
+      const result = options.advisorResult ?? {
+        status: 200,
+        body: {
+          data: {
+            profile: {
+              ...E2E_ADVISOR,
+              advisor_assignments: [
+                ...E2E_ADVISOR.advisor_assignments,
+                {
+                  id: "assignment-e2e-2",
+                  club_id: "club-2",
+                  assigned_by: "admin-1",
+                  remarks: null,
+                  created_at: "2026-08-20T00:00:00.000Z",
+                  club: E2E_CLUBS[1],
+                },
+              ],
+            },
+            club: E2E_CLUBS[1],
+            history: { id: "history-e2e-2" },
+          },
+        },
+      };
+      await route.fulfill({
+        status: result.status,
+        contentType: "application/json",
+        body: JSON.stringify(result.body),
+      });
+      return;
+    }
+
+    if (request.method() === "GET" && /\/admin\/users\/[^/]+$/.test(path)) {
+      if (options.detailStatus && options.detailStatus !== 200) {
+        await route.fulfill({
+          status: options.detailStatus,
+          contentType: "application/json",
+          body: JSON.stringify({ error: { code: "PROFILE_NOT_FOUND", message: "Profile not found" } }),
+        });
+        return;
+      }
+      const id = path.split("/").at(-1);
+      const person = people.find((item) => item.id === id) ?? people[0];
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ data: person }),
+      });
+      return;
+    }
+
+    if (failList) {
+      await route.fulfill({
+        status: listErrorStatus || 500,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: { code: listErrorStatus === 403 ? "FORBIDDEN" : "SERVER", message: "No access" },
+        }),
+      });
+      return;
+    }
+
+    const role = url.searchParams.get("role");
+    const query = (url.searchParams.get("q") || "").toLowerCase();
+    const clubId = url.searchParams.get("club_id");
+    let items = people.slice();
+    if (role) items = items.filter((item) => item.role === role || item.app_role === role);
+    if (query) {
+      items = items.filter((item) =>
+        `${item.full_name ?? ""} ${item.student_id ?? ""} ${item.email ?? ""}`.toLowerCase().includes(query),
+      );
+    }
+    if (clubId) items = items.filter((item) => item.club_id === clubId);
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        data: {
+          items,
+          page: Number(url.searchParams.get("page") || 1),
+          page_size: Number(url.searchParams.get("page_size") || 20),
+          total: items.length,
+          has_next: false,
+        },
+      }),
+    });
+  });
+
+  return {
+    rolePosts,
+    advisorPosts,
+    allowList() {
+      failList = false;
+    },
+  };
+}

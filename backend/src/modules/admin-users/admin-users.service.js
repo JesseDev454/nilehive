@@ -43,6 +43,10 @@ function formatProfile(profile, actor = null) {
   return {
     id: profile.id,
     full_name: profile.full_name,
+    email: profile.email ?? null,
+    portal_user_id: profile.portal_user_id ?? null,
+    department: profile.department ?? null,
+    student_type: profile.student_type ?? null,
     role: profile.role,
     app_role: profile.role,
     effective_role: effectiveRole,
