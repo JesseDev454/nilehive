@@ -1,18 +1,19 @@
+import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { preconnect } from "react-dom";
-import App from "./App.tsx";
-import "./index.css";
-import { getApiBaseUrl, getSupabaseUrl } from "@/lib/env";
+import { App } from "@/app/App";
+import { ErrorBoundary } from "@/app/ErrorBoundary";
+import "@/styles/global.css";
 
-// Warm up the connection to our API and Supabase before the first request
-// (auth/profile fetch) fires, so the DNS/TCP/TLS handshake isn't on the
-// critical path of the initial load.
-[getApiBaseUrl, getSupabaseUrl].forEach((getUrl) => {
-  try {
-    preconnect(getUrl());
-  } catch {
-    // Env var not configured in this environment; nothing to preconnect to.
-  }
-});
+const root = document.getElementById("root");
 
-createRoot(document.getElementById("root")!).render(<App />);
+if (!root) {
+  throw new Error("OneClub root element was not found.");
+}
+
+createRoot(root).render(
+  <StrictMode>
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  </StrictMode>,
+);

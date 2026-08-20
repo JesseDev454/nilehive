@@ -1,27 +1,25 @@
-import React, { createContext, useContext } from "react";
-import { type EffectiveRole, useAuth } from "@/contexts/AuthContext";
+import { createContext, useContext, type ReactNode } from "react";
 
-export type Role = EffectiveRole;
-
-interface RoleContextType {
-  role: Role | null;
-  setRole: (role: Role) => void;
+interface PreviewRoleContextValue {
+  currentUser: {
+    full_name: string;
+  };
 }
 
-const RoleContext = createContext<RoleContextType>({
-  role: null,
-  setRole: () => {},
+const PreviewRoleContext = createContext<PreviewRoleContextValue>({
+  currentUser: { full_name: "Zainab Ahmed" },
 });
 
-export const useRole = () => useContext(RoleContext);
-
-export const RoleProvider = ({ children }: { children: React.ReactNode }) => {
-  const { role: authenticatedRole } = useAuth();
-  const setRole = () => {};
-
+export function PreviewRoleProvider({ children }: { children: ReactNode }) {
   return (
-    <RoleContext.Provider value={{ role: authenticatedRole, setRole }}>
+    <PreviewRoleContext.Provider
+      value={{ currentUser: { full_name: "Zainab Ahmed" } }}
+    >
       {children}
-    </RoleContext.Provider>
+    </PreviewRoleContext.Provider>
   );
-};
+}
+
+export function useRole() {
+  return useContext(PreviewRoleContext);
+}
