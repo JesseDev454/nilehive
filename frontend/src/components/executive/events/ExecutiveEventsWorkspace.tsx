@@ -23,7 +23,6 @@ import {
   Users,
   X
 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/shared/components/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/Card";
 import { StatusBadge } from "@/shared/components/StatusBadge";
@@ -133,9 +132,8 @@ export const OFFICIAL_CLUB_EVENTS: ClubEventDetail[] = [
 ];
 
 export function ExecutiveEventsWorkspace() {
-  const { profile } = useAuth();
-  const executiveName = profile?.full_name || "Fatima Al-Hassan";
-  const clubName = profile?.club_name || "Nile Google Developers";
+  const executiveName = "Fatima Al-Hassan";
+  const clubName = "Nile Google Developers";
   const clubCode = "NGD";
 
   const [events] = useState<ClubEventDetail[]>(OFFICIAL_CLUB_EVENTS);
@@ -182,22 +180,22 @@ export function ExecutiveEventsWorkspace() {
         </div>
 
         {/* Action: Jump to My Work */}
-        <Link to="/tasks">
-          <Button size="sm" className="text-xs font-bold gap-1.5">
+        <Button asChild size="sm" className="text-xs font-bold gap-1.5">
+          <Link to="/executive/work">
             <CheckCircle2 className="h-3.5 w-3.5" />
             <span>Event Logistics Tasks</span>
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </header>
 
       {/* READ-ONLY & ATTENDANCE BOUNDARY CARD */}
       <div className="rounded-2xl border border-border/70 bg-card p-4 text-xs space-y-1.5 shadow-xs">
         <div className="flex items-center gap-2 font-bold text-foreground">
           <Info className="h-4 w-4 text-primary" />
-          <span>Attendance Scanning &amp; Event Operations Governance</span>
+          <span>Event details are read-only</span>
         </div>
         <p className="text-muted-foreground text-[11px] leading-relaxed">
-          Event details, required hardware, and agendas are available for executive coordination. Live QR attendance scanning and attendance verification are managed by the Club President and designated check-in leads.
+          Review the schedule, venue, agenda, and equipment notes for your club. Attendance tools are not available in the Executive workspace.
         </p>
       </div>
 

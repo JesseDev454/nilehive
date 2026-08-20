@@ -115,16 +115,17 @@ export function UpcomingEventsSection() {
           </h2>
         </div>
 
-        <Link to="/events">
-          <Button
+        <Button
+          asChild
             variant="ghost"
             size="sm"
             className="text-xs font-semibold text-primary hover:text-primary/80 hover:bg-primary/5 gap-1 h-8 px-2.5"
-          >
+        >
+          <Link to="/executive/events">
             <span>Full Event Calendar</span>
             <ChevronRight className="h-3.5 w-3.5" />
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
 
       {/* Events Grid */}
@@ -194,7 +195,7 @@ export function UpcomingEventsSection() {
       <div className="rounded-2xl border border-border/60 bg-muted/20 p-3.5 text-xs flex items-start gap-2.5 text-muted-foreground">
         <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
         <p className="text-[11px] leading-relaxed">
-          <strong>Read-Only Logistics View:</strong> Live QR check-in scanning and official attendance record approvals are administered by the Club President and Student Affairs. Executive officers coordinate on-site equipment, code labs, and room management.
+          <strong>Event details are read-only:</strong> You can review the schedule, venue, and equipment notes for your club. Attendance tools are not available in the Executive workspace.
         </p>
       </div>
 

@@ -24,7 +24,6 @@ import {
   Users,
   X
 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/shared/components/Button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/components/Card";
 import { StatusBadge } from "@/shared/components/StatusBadge";
@@ -117,9 +116,8 @@ export const INITIAL_EXECUTIVE_TASKS: ExecutiveTask[] = [
 ];
 
 export function ExecutiveWorkWorkspace() {
-  const { profile } = useAuth();
-  const executiveName = profile?.full_name || "Fatima Al-Hassan";
-  const clubName = profile?.club_name || "Nile Google Developers";
+  const executiveName = "Fatima Al-Hassan";
+  const clubName = "Nile Google Developers";
 
   const [tasks, setTasks] = useState<ExecutiveTask[]>(INITIAL_EXECUTIVE_TASKS);
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<"All" | ExecutiveTaskStatus>("All");

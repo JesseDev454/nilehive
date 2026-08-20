@@ -7,7 +7,6 @@ import { PreviewAuthProvider, type PreviewRole } from "@/contexts/AuthContext";
 import { PreviewRoleProvider } from "@/contexts/RoleContext";
 import { WorkspaceShell, type NavigationItem } from "./WorkspaceShell";
 import { Skeleton } from "@/shared/components/Skeleton";
-import { AdvisorWorkspace } from "@/components/advisor/AdvisorWorkspace";
 
 function lazyNamed<TModule, TKey extends keyof TModule>(
   loader: () => Promise<TModule>,
@@ -52,6 +51,14 @@ const ExecutiveNotifications = lazyNamed(() => import("@/components/executive/no
 const ExecutiveMore = lazyNamed(() => import("@/components/executive/more/ExecutiveMoreWorkspace"), "ExecutiveMoreWorkspace");
 const ExecutiveProfile = lazyNamed(() => import("@/components/executive/profile/ExecutiveProfileWorkspace"), "ExecutiveProfileWorkspace");
 
+const AdvisorHome = lazyNamed(() => import("@/components/advisor/home/AdvisorHomeWorkspace"), "AdvisorHomeWorkspace");
+const AdvisorReviews = lazyNamed(() => import("@/components/advisor/reviews/AdvisorReviewsWorkspace"), "AdvisorReviewsWorkspace");
+const AdvisorClubs = lazyNamed(() => import("@/components/advisor/clubs/AdvisorClubsWorkspace"), "AdvisorClubsWorkspace");
+const AdvisorReports = lazyNamed(() => import("@/components/advisor/reports/AdvisorReportsWorkspace"), "AdvisorReportsWorkspace");
+const AdvisorNotifications = lazyNamed(() => import("@/components/advisor/notifications/AdvisorNotificationsWorkspace"), "AdvisorNotificationsWorkspace");
+const AdvisorProfile = lazyNamed(() => import("@/components/advisor/profile/AdvisorProfileWorkspace"), "AdvisorProfileWorkspace");
+const AdvisorMore = lazyNamed(() => import("@/components/advisor/more/AdvisorMoreWorkspace"), "AdvisorMoreWorkspace");
+
 const AdminHome = lazyNamed(() => import("@/components/AdminHomeView"), "AdminHomeView");
 const AdminApprovals = lazyNamed(() => import("@/components/admin/approvals/AdminApprovalsWorkspace"), "AdminApprovalsWorkspace");
 const AdminClubs = lazyNamed(() => import("@/components/admin/clubs/AdminClubsWorkspace"), "AdminClubsWorkspace");
@@ -63,6 +70,7 @@ const AdminFeedback = lazyNamed(() => import("@/components/admin/feedback/AdminF
 const AdminAnalytics = lazyNamed(() => import("@/components/admin/analytics/AdminAnalyticsWorkspace"), "AdminAnalyticsWorkspace");
 const AdminMore = lazyNamed(() => import("@/components/admin/more/AdminMoreWorkspace"), "AdminMoreWorkspace");
 const AdminProfile = lazyNamed(() => import("@/components/admin/profile/AdminProfileWorkspace"), "AdminProfileWorkspace");
+const SharedScreens = lazyNamed(() => import("@/components/shared/system/SharedScreensWorkspace"), "SharedScreensWorkspace");
 
 const NAVIGATION: Record<PreviewRole, NavigationItem[]> = {
   student: [
@@ -158,8 +166,13 @@ function WorkspaceRouter({ role }: { role: PreviewRole }) {
     return <ExecutiveHome />;
   }
   if (role === "advisor") {
-    const section = key.includes("review") ? "reviews" : key.includes("club") ? "clubs" : key.includes("report") ? "reports" : key.includes("notification") ? "notifications" : key.includes("profile") ? "profile" : key.includes("more") ? "more" : "home";
-    return <AdvisorWorkspace section={section} />;
+    if (key.includes("review")) return <AdvisorReviews />;
+    if (key.includes("club")) return <AdvisorClubs />;
+    if (key.includes("report") || key.includes("archive")) return <AdvisorReports />;
+    if (key.includes("notification")) return <AdvisorNotifications />;
+    if (key.includes("profile")) return <AdvisorProfile />;
+    if (key.includes("more")) return <AdvisorMore />;
+    return <AdvisorHome />;
   }
   if (key.includes("approval") || key.startsWith("/dues") || key.startsWith("/user-management")) return <AdminApprovals />;
   if (key.includes("people")) return <AdminPeople />;
@@ -176,10 +189,23 @@ function WorkspaceRouter({ role }: { role: PreviewRole }) {
 
 function OneClubPreview() {
   const location = useLocation();
+  const isSystemPreview = ["/system", "/shared-screens", "/admin/shared-screens"].includes(
+    location.pathname.replace(/\/$/, "") || "/",
+  );
   const pathRole = roleFromPath(location.pathname);
   const [previewRole, setPreviewRole] = useState<PreviewRole>(pathRole ?? "student");
   const role = pathRole ?? previewRole;
   const navigation = useMemo(() => NAVIGATION[role], [role]);
+
+  if (isSystemPreview) {
+    return (
+      <div className="min-h-screen bg-background px-4 py-6 text-foreground sm:px-6 lg:px-8">
+        <Suspense fallback={<div className="mx-auto max-w-6xl space-y-4" aria-label="Loading shared system screens"><Skeleton className="h-24 w-full" /><Skeleton className="h-64 w-full" /></div>}>
+          <SharedScreens />
+        </Suspense>
+      </div>
+    );
+  }
 
   return (
     <WorkspaceShell role={role} roleLabel={ROLE_LABELS[role]} navigation={navigation} onRoleChange={setPreviewRole}>

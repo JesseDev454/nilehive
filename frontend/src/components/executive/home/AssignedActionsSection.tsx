@@ -72,7 +72,7 @@ export function AssignedActionsSection({
         </div>
 
         <Link
-          to="/tasks"
+          to="/executive/work"
           className="text-xs text-primary font-bold hover:underline flex items-center gap-1 self-start sm:self-auto"
         >
           <span>View All Tasks in My Work</span>

@@ -24,7 +24,6 @@ import {
   WifiOff,
   X
 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/shared/components/Button";
 import { Banner } from "@/shared/components/Banner";
 import { AssignedClubSection } from "./AssignedClubSection";
@@ -99,9 +98,8 @@ export const INITIAL_EXECUTIVE_ACTIONS: ExecutiveActionItem[] = [
 ];
 
 export function ExecutiveHomeWorkspace() {
-  const { profile } = useAuth();
-  const executiveName = profile?.full_name || "Fatima Al-Hassan";
-  const clubName = profile?.club_name || "Nile Google Developers";
+  const executiveName = "Fatima Al-Hassan";
+  const clubName = "Nile Google Developers";
   const clubCode = "NGD";
   const officerRole = "Workshops Coordinator & Technical Logistics";
 
@@ -229,12 +227,12 @@ export function ExecutiveHomeWorkspace() {
             <span>Sync</span>
           </Button>
 
-          <Link to="/tasks">
-            <Button size="sm" className="text-xs font-bold gap-1.5 h-8.5 bg-primary text-primary-foreground shadow-xs">
+          <Button asChild size="sm" className="text-xs font-bold gap-1.5 h-8.5 bg-primary text-primary-foreground shadow-xs">
+            <Link to="/executive/work">
               <CheckSquare className="h-3.5 w-3.5" />
               <span>My Work ({activeCount})</span>
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </header>
 

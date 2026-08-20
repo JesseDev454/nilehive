@@ -55,16 +55,17 @@ export function AssignedClubSection({
             Assigned Club Profile
           </h2>
         </div>
-        <Link to="/clubs">
-          <Button
+        <Button
+          asChild
             variant="ghost"
             size="sm"
             className="text-xs font-semibold text-primary hover:text-primary/80 hover:bg-primary/5 gap-1 h-8 px-2.5"
-          >
+        >
+          <Link to="/executive/club">
             <span>View Full Roster &amp; Charter</span>
             <ChevronRight className="h-3.5 w-3.5" />
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
 
       <Card className="border-border/80 bg-card shadow-xs overflow-hidden">
