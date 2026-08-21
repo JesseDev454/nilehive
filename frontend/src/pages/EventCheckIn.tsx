@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Loader2, QrCode, XCircle } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
-import { ClublyLoadingState, ClublyStateCard } from "@/components/OneClub";
+import { OneClubLoadingState, OneClubStateCard } from "@/components/OneClub";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { ApiClientError, getEventEngagement, submitEventSelfCheckIn } from "@/lib/api";
@@ -124,7 +124,7 @@ export default function EventCheckIn() {
   if (!proposalId) {
     return (
       <div className="mx-auto flex min-h-[60vh] w-full max-w-2xl items-center justify-center">
-        <ClublyStateCard
+        <OneClubStateCard
           icon={XCircle}
           title="Invalid check-in link"
           message="This event QR link is incomplete. Please ask the organizer to open the event QR again."
@@ -137,7 +137,7 @@ export default function EventCheckIn() {
   if (isLoading) {
     return (
       <div className="mx-auto flex min-h-[60vh] w-full max-w-2xl items-center justify-center">
-        <ClublyLoadingState
+        <OneClubLoadingState
           title="Opening event check-in"
           message="We are confirming your access and checking today's event details."
         />
@@ -148,7 +148,7 @@ export default function EventCheckIn() {
   if (isError || !engagement) {
     return (
       <div className="mx-auto flex min-h-[60vh] w-full max-w-2xl items-center justify-center">
-        <ClublyStateCard
+        <OneClubStateCard
           icon={XCircle}
           title={getCheckInErrorTitle(error)}
           message={getErrorMessage(error)}
@@ -159,7 +159,7 @@ export default function EventCheckIn() {
               <Link to="/events">View Events</Link>
             </Button>
           </div>
-        </ClublyStateCard>
+        </OneClubStateCard>
       </div>
     );
   }
@@ -169,7 +169,7 @@ export default function EventCheckIn() {
   if (role !== "student") {
     return (
       <div className="mx-auto flex min-h-[60vh] w-full max-w-2xl items-center justify-center">
-        <ClublyStateCard
+        <OneClubStateCard
           icon={QrCode}
           title="Student check-in only"
           message={`This QR code is for student attendance check-in. ${event.title} is still available in the events section.`}
@@ -179,7 +179,7 @@ export default function EventCheckIn() {
               <Link to="/events">View Events</Link>
             </Button>
           </div>
-        </ClublyStateCard>
+        </OneClubStateCard>
       </div>
     );
   }
@@ -187,7 +187,7 @@ export default function EventCheckIn() {
   if (checkInState === "success") {
     return (
       <div className="mx-auto flex min-h-[60vh] w-full max-w-2xl items-center justify-center">
-        <ClublyStateCard
+        <OneClubStateCard
           icon={CheckCircle2}
           title="Check-in recorded"
           message={`Your attendance for ${event.title} has been saved successfully.`}
@@ -198,7 +198,7 @@ export default function EventCheckIn() {
               <Link to="/events">View Events</Link>
             </Button>
           </div>
-        </ClublyStateCard>
+        </OneClubStateCard>
       </div>
     );
   }
@@ -206,7 +206,7 @@ export default function EventCheckIn() {
   if (engagement.current_user_attendance?.attended) {
     return (
       <div className="mx-auto flex min-h-[60vh] w-full max-w-2xl items-center justify-center">
-        <ClublyStateCard
+        <OneClubStateCard
           icon={CheckCircle2}
           title="Already checked in"
           message={`Your attendance for ${event.title} has already been recorded.`}
@@ -220,7 +220,7 @@ export default function EventCheckIn() {
               </Button>
             </div>
           </div>
-        </ClublyStateCard>
+        </OneClubStateCard>
       </div>
     );
   }
@@ -228,7 +228,7 @@ export default function EventCheckIn() {
   if (event.event_lifecycle !== "happening_today") {
     return (
       <div className="mx-auto flex min-h-[60vh] w-full max-w-2xl items-center justify-center">
-        <ClublyStateCard
+        <OneClubStateCard
           icon={QrCode}
           title="Check-in unavailable right now"
           message={`Attendance for ${event.title} can only be recorded while OneClub check-in is active for the event date.`}
@@ -241,7 +241,7 @@ export default function EventCheckIn() {
               </Button>
             </div>
           </div>
-        </ClublyStateCard>
+        </OneClubStateCard>
       </div>
     );
   }
@@ -249,7 +249,7 @@ export default function EventCheckIn() {
   if (checkInState === "error") {
     return (
       <div className="mx-auto flex min-h-[60vh] w-full max-w-2xl items-center justify-center">
-        <ClublyStateCard
+        <OneClubStateCard
           icon={XCircle}
           title={getMutationErrorTitle(checkInError)}
           message={checkInError || `We could not record attendance for ${event.title}.`}
@@ -260,14 +260,14 @@ export default function EventCheckIn() {
               <Link to="/events">View Events</Link>
             </Button>
           </div>
-        </ClublyStateCard>
+        </OneClubStateCard>
       </div>
     );
   }
 
   return (
     <div className="mx-auto flex min-h-[60vh] w-full max-w-2xl items-center justify-center">
-      <ClublyStateCard
+      <OneClubStateCard
         icon={Loader2}
         title="Recording attendance"
         message={`Please wait while we mark your attendance for ${event.title}.`}
@@ -275,7 +275,7 @@ export default function EventCheckIn() {
         <div className="flex justify-center">
           <Loader2 className="h-5 w-5 animate-spin" />
         </div>
-      </ClublyStateCard>
+      </OneClubStateCard>
     </div>
   );
 }

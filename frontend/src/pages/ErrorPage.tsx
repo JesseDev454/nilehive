@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { AlertTriangle, Home, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ClublyStateCard } from "@/components/OneClub";
+import { OneClubStateCard } from "@/components/OneClub";
 
 export default function ErrorPage() {
   const [searchParams] = useSearchParams();
@@ -13,7 +13,7 @@ export default function ErrorPage() {
   return (
     <main className="clb-screen flex min-h-screen items-center justify-center p-6">
       <div className="w-full max-w-2xl">
-        <ClublyStateCard icon={AlertTriangle} title="Something needs another try" message={message} tone="danger">
+        <OneClubStateCard icon={AlertTriangle} title="Something needs another try" message={message} tone="danger">
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Button type="button" onClick={() => window.location.reload()}>
               <RefreshCw className="mr-2 h-4 w-4" />
@@ -26,7 +26,7 @@ export default function ErrorPage() {
               </Link>
             </Button>
           </div>
-        </ClublyStateCard>
+        </OneClubStateCard>
       </div>
     </main>
   );

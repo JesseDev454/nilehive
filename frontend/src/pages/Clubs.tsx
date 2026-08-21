@@ -4,8 +4,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, CheckCircle2, Circle, Loader2, Pencil, Plus, School, Trash2 } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { AccessDenied } from "@/components/AccessDenied";
-import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/OneClub";
-import { ClublySkeleton } from "@/components/ClublySkeleton";
+import { OneClubLoadingState, OneClubPageHeader, OneClubStateCard } from "@/components/OneClub";
+import { OneClubSkeleton } from "@/components/OneClubSkeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -247,17 +247,17 @@ export default function Clubs() {
   if (role === "executive") {
     return (
       <div className="clb-screen">
-        <ClublyPageHeader
+        <OneClubPageHeader
           eyebrow="Club leadership"
           title="My Club"
           description="View your club profile and public information. Presidents and Club Services manage changes."
         />
         {isLoading ? (
-          <ClublyLoadingState title="Loading club profile" message="Opening your club information." />
+          <OneClubLoadingState title="Loading club profile" message="Opening your club information." />
         ) : isError ? (
-          <ClublyStateCard icon={School} title="Unable to load club profile" message={getErrorMessage(error)} tone="danger" />
+          <OneClubStateCard icon={School} title="Unable to load club profile" message={getErrorMessage(error)} tone="danger" />
         ) : clubs.length === 0 ? (
-          <ClublyStateCard icon={School} title="No club assignment found" message="Ask your club president or Club Services to confirm your executive assignment." />
+          <OneClubStateCard icon={School} title="No club assignment found" message="Ask your club president or Club Services to confirm your executive assignment." />
         ) : (
           <div className="grid gap-4 md:grid-cols-2">
             {clubs.slice(0, 1).map((club) => (
@@ -280,7 +280,7 @@ export default function Clubs() {
 
   return (
     <div className="clb-screen">
-      <ClublyPageHeader
+      <OneClubPageHeader
         eyebrow="Club Services"
         title={isFocusedEdit ? "Edit Club Profile" : "Clubs"}
         description={isFocusedEdit ? "Update this club profile in a focused editor." : role === "president" ? "Maintain the public profile for your assigned club." : "Create and maintain the clubs students discover in the app."}
@@ -296,9 +296,9 @@ export default function Clubs() {
       ) : null}
 
       {isFocusedEdit && isLoading ? (
-        <ClublyLoadingState title="Opening club editor" message="We are loading the selected club profile." compact />
+        <OneClubLoadingState title="Opening club editor" message="We are loading the selected club profile." compact />
       ) : isFocusedEdit && !editingClub ? (
-        <ClublyStateCard icon={School} title="Club editor unavailable" message="This club is not available for your role, or it no longer exists." />
+        <OneClubStateCard icon={School} title="Club editor unavailable" message="This club is not available for your role, or it no longer exists." />
       ) : (canCreateClubs || editingClub) ? (
         <Card>
           <CardHeader>
@@ -372,7 +372,7 @@ export default function Clubs() {
                   <Label>Weekly time commitment</Label>
                   <Select value={form.weekly_commitment || "unset"} onValueChange={(value) => setForm({ ...form, weekly_commitment: value === "unset" ? "" : value as typeof form.weekly_commitment })}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent><SelectItem value="unset">Not set</SelectItem><SelectItem value="1-2">1–2 hours</SelectItem><SelectItem value="3-5">3–5 hours</SelectItem><SelectItem value="6+">6+ hours</SelectItem></SelectContent>
+                    <SelectContent><SelectItem value="unset">Not set</SelectItem><SelectItem value="1-2">1-2 hours</SelectItem><SelectItem value="3-5">3-5 hours</SelectItem><SelectItem value="6+">6+ hours</SelectItem></SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
@@ -453,10 +453,10 @@ export default function Clubs() {
       {!isFocusedEdit ? <Card>
         <CardHeader><CardTitle className="text-lg">Configured clubs</CardTitle></CardHeader>
         <CardContent>
-          {isLoading ? <ClublySkeleton variant="cards" rows={3} /> : isError ? (
-            <ClublyStateCard icon={School} title="Could not load clubs" message={getErrorMessage(error)} tone="danger" />
+          {isLoading ? <OneClubSkeleton variant="cards" rows={3} /> : isError ? (
+            <OneClubStateCard icon={School} title="Could not load clubs" message={getErrorMessage(error)} tone="danger" />
           ) : !clubs.length ? (
-            <ClublyStateCard
+            <OneClubStateCard
               icon={School}
               title={role === "president" ? "No assigned club found" : "No clubs configured yet"}
               message={role === "president" ? "Ask a Club Services admin to assign your president profile to a club." : "Admins can add a club from the form above."}

@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import QRCode from "qrcode";
 import { Bell, CalendarDays, CheckCircle2, Clock, Copy, Loader2, MapPin, Printer, QrCode, Share2, Users } from "lucide-react";
-import { ClublyLoadingState, ClublyPageHeader } from "@/components/OneClub";
+import { OneClubLoadingState, OneClubPageHeader } from "@/components/OneClub";
 import { DataPagination } from "@/components/DataPagination";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -412,7 +412,7 @@ function EventEngagementPanel({ event }: { event: ApprovedEventRecord }) {
   }
 
   if (isLoading) {
-    return <ClublyLoadingState title="Loading event engagement" message="We are checking RSVPs and attendance." compact />;
+    return <OneClubLoadingState title="Loading event engagement" message="We are checking RSVPs and attendance." compact />;
   }
 
   if (isError) {
@@ -604,7 +604,7 @@ function EventDetailDialog({
           <div className="space-y-3">
             <p className="text-sm font-semibold">Related announcements</p>
             {announcementsLoading ? (
-              <ClublyLoadingState title="Loading announcements" message="Checking recent club updates." compact />
+              <OneClubLoadingState title="Loading announcements" message="Checking recent club updates." compact />
             ) : announcementsError ? (
               <p className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-sm text-destructive">
                 {getErrorMessage(announcementsErrorValue)}
@@ -942,7 +942,7 @@ export default function EventCalendar() {
 
   return (
     <div className="clb-screen">
-      <ClublyPageHeader
+      <OneClubPageHeader
         eyebrow="Events"
         title="Events"
         description="Find today's events, RSVP for what is coming up, and check in when an event is live."
@@ -980,7 +980,7 @@ export default function EventCalendar() {
             </CardHeader>
             <CardContent className="space-y-3">
               {eventsLoading ? (
-                <ClublyLoadingState
+                <OneClubLoadingState
                   title="Getting events ready"
                   message="Please wait while we load the events you can see."
                   delayedMessage="This is taking longer than usual. Please check your network connection."
@@ -1090,7 +1090,7 @@ export default function EventCalendar() {
           </CardHeader>
           <CardContent className="space-y-3">
             {remindersLoading ? (
-              <ClublyLoadingState
+              <OneClubLoadingState
                 title="Getting reminders ready"
                 message="Please wait while we load your event reminders."
                 delayedMessage="This is taking longer than usual. Please check your network connection."

@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Banknote, CalendarDays, ClipboardList, FileText, MessageSquare, Users } from "lucide-react";
 import { AccessDenied } from "@/components/AccessDenied";
-import { ClublyLoadingState, ClublyMetricCard, ClublyPageHeader, ClublyStateCard } from "@/components/OneClub";
+import { OneClubLoadingState, OneClubMetricCard, OneClubPageHeader, OneClubStateCard } from "@/components/OneClub";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -103,7 +103,7 @@ export default function AdminClubDashboard() {
   if (role !== "admin") {
     return (
       <div className="clb-screen">
-        <ClublyPageHeader eyebrow="Club Services" title="Club dashboard" description="This club operations view is for Club Services admins." />
+        <OneClubPageHeader eyebrow="Club Services" title="Club dashboard" description="This club operations view is for Club Services admins." />
         <AccessDenied icon={Users} title="Club dashboard access is restricted" reason="Only Club Services admins can inspect all-club progress." />
       </div>
     );
@@ -112,7 +112,7 @@ export default function AdminClubDashboard() {
   if (isLoading) {
     return (
       <div className="clb-screen">
-        <ClublyLoadingState title="Loading club progress" message="We are gathering proposals, members, dues, tasks, reports, and feedback for this club." />
+        <OneClubLoadingState title="Loading club progress" message="We are gathering proposals, members, dues, tasks, reports, and feedback for this club." />
       </div>
     );
   }
@@ -120,8 +120,8 @@ export default function AdminClubDashboard() {
   if (isError || !dashboard) {
     return (
       <div className="clb-screen">
-        <ClublyPageHeader eyebrow="Club Services" title="Club dashboard" description="We could not load this club operations view." />
-        <ClublyStateCard icon={Users} title="Unable to load club dashboard" message={getErrorMessage(error)} />
+        <OneClubPageHeader eyebrow="Club Services" title="Club dashboard" description="We could not load this club operations view." />
+        <OneClubStateCard icon={Users} title="Unable to load club dashboard" message={getErrorMessage(error)} />
       </div>
     );
   }
@@ -145,7 +145,7 @@ export default function AdminClubDashboard() {
   return (
     <div className="clb-screen">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <ClublyPageHeader
+        <OneClubPageHeader
           eyebrow="Club Services Drilldown"
           title={club.name}
           description={`${club.code || "No club code"} - Full operations view for this club.`}
@@ -170,10 +170,10 @@ export default function AdminClubDashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <ClublyMetricCard title="Active Members" value={`${summary.active_members}/${summary.total_members}`} icon={Users} tone="green" />
-        <ClublyMetricCard title="Pending Proposals" value={summary.pending_proposals} icon={FileText} tone="gold" />
-        <ClublyMetricCard title="Open Tasks" value={summary.open_tasks} icon={ClipboardList} tone="navy" />
-        <ClublyMetricCard title="Dues Collected" value={formatCurrency(summary.dues_collected_amount)} icon={Banknote} tone="green" />
+        <OneClubMetricCard title="Active Members" value={`${summary.active_members}/${summary.total_members}`} icon={Users} tone="green" />
+        <OneClubMetricCard title="Pending Proposals" value={summary.pending_proposals} icon={FileText} tone="gold" />
+        <OneClubMetricCard title="Open Tasks" value={summary.open_tasks} icon={ClipboardList} tone="navy" />
+        <OneClubMetricCard title="Dues Collected" value={formatCurrency(summary.dues_collected_amount)} icon={Banknote} tone="green" />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">

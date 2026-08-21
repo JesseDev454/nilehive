@@ -6,11 +6,11 @@ import { CreditCard } from "lucide-react";
 import { AccessDenied } from "@/components/AccessDenied";
 import { DataPagination } from "@/components/DataPagination";
 import {
-  ClublyLoadingState,
-  ClublyPageHeader,
-  ClublyProgressHero,
-  ClublySectionHeader,
-  ClublyStateCard
+  OneClubLoadingState,
+  OneClubPageHeader,
+  OneClubProgressHero,
+  OneClubSectionHeader,
+  OneClubStateCard
 } from "@/components/OneClub";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -210,7 +210,7 @@ export default function Dues() {
   if (!canViewDues) {
     return (
       <div className="clb-screen">
-        <ClublyPageHeader
+        <OneClubPageHeader
           eyebrow="Finance"
           title="Dues & Payments"
           description="Dues tracking is available only to OneClub admins."
@@ -232,13 +232,13 @@ export default function Dues() {
 
   return (
     <div className="clb-screen">
-      <ClublyPageHeader
+      <OneClubPageHeader
         eyebrow="Finance"
         title="Dues & Payment Review"
         description="Open each submitted receipt, review the image, then verify or reject the payment."
       />
 
-      <ClublyProgressHero
+      <OneClubProgressHero
         eyebrow="Collection progress"
         title="Semester dues"
         value={`${formatCurrency(collectedAmount)} / ${formatCurrency(expectedAmount)}`}
@@ -254,7 +254,7 @@ export default function Dues() {
 
       <Card>
         <CardHeader>
-          <ClublySectionHeader
+          <OneClubSectionHeader
             title="Dues ledger"
             description="Dues status across all clubs. Tap View Proof to review a receipt."
           />
@@ -303,11 +303,11 @@ export default function Dues() {
             </div>
           </div>
           {isLoading ? (
-            <ClublyLoadingState title="Loading dues records" message="We are checking payment status and receipts." compact />
+            <OneClubLoadingState title="Loading dues records" message="We are checking payment status and receipts." compact />
           ) : isError ? (
-            <ClublyStateCard title="Unable to load dues" message={getErrorMessage(error)} tone="danger" />
+            <OneClubStateCard title="Unable to load dues" message={getErrorMessage(error)} tone="danger" />
           ) : !searchedPayments.length ? (
-            <ClublyStateCard icon={CreditCard} title="No matching dues" message="Try another club, status, or clear your search." />
+            <OneClubStateCard icon={CreditCard} title="No matching dues" message="Try another club, status, or clear your search." />
           ) : (
             <div className="clb-table-wrap">
               <table className="clb-table">

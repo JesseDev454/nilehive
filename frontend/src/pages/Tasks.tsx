@@ -5,7 +5,7 @@ import { ClipboardList, Loader2, Target, UserCheck } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { AccessDenied } from "@/components/AccessDenied";
 import { DataPagination } from "@/components/DataPagination";
-import { ClublyLoadingState, ClublyMetricCard, ClublyPageHeader, ClublyStateCard } from "@/components/OneClub";
+import { OneClubLoadingState, OneClubMetricCard, OneClubPageHeader, OneClubStateCard } from "@/components/OneClub";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -229,7 +229,7 @@ export default function Tasks() {
   if (!canUseTasks) {
     return (
       <div className="clb-screen">
-        <ClublyPageHeader
+        <OneClubPageHeader
           eyebrow="Operations"
           title="Tasks"
           description="Task delegation is available to club presidents, executives, and OneClub oversight."
@@ -245,7 +245,7 @@ export default function Tasks() {
 
   return (
     <div className="clb-screen">
-      <ClublyPageHeader
+      <OneClubPageHeader
         eyebrow="Operations"
         title={role === "admin" ? "All Club Tasks" : role === "president" ? "Task Delegation" : "My Tasks"}
         description={
@@ -258,9 +258,9 @@ export default function Tasks() {
       />
 
       <div className="grid gap-4 md:grid-cols-3">
-        <ClublyMetricCard title="Total Tasks" value={tasksPage.total} icon={ClipboardList} tone="navy" />
-        <ClublyMetricCard title="In Progress" value={tasks.filter((task) => task.status === "in_progress").length} icon={Target} tone="gold" />
-        <ClublyMetricCard title="Completed" value={tasks.filter((task) => task.status === "completed").length} icon={UserCheck} tone="green" />
+        <OneClubMetricCard title="Total Tasks" value={tasksPage.total} icon={ClipboardList} tone="navy" />
+        <OneClubMetricCard title="In Progress" value={tasks.filter((task) => task.status === "in_progress").length} icon={Target} tone="gold" />
+        <OneClubMetricCard title="Completed" value={tasks.filter((task) => task.status === "completed").length} icon={UserCheck} tone="green" />
       </div>
 
       {role === "president" ? (
@@ -399,7 +399,7 @@ export default function Tasks() {
         </CardHeader>
         <CardContent className="space-y-3">
           {isLoading ? (
-            <ClublyLoadingState title="Preparing task board" message="We are loading assigned work and progress updates." compact />
+            <OneClubLoadingState title="Preparing task board" message="We are loading assigned work and progress updates." compact />
           ) : isError ? (
             <div className="clb-empty border-destructive bg-destructive/5">
               <p className="font-medium">Unable to load tasks</p>

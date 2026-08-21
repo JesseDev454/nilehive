@@ -4,7 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { Users } from "lucide-react";
 import { AccessDenied } from "@/components/AccessDenied";
 import { DataPagination } from "@/components/DataPagination";
-import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/OneClub";
+import { OneClubLoadingState, OneClubPageHeader, OneClubStateCard } from "@/components/OneClub";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -297,7 +297,7 @@ export default function Members() {
   if (!canViewMembers) {
     return (
       <div className="clb-screen">
-        <ClublyPageHeader
+        <OneClubPageHeader
           eyebrow="Club Records"
           title="Member Database"
           description="Member records are available to executives, presidents, and Club Services admins."
@@ -319,7 +319,7 @@ export default function Members() {
   return (
     <>
       <div className="clb-screen">
-        <ClublyPageHeader
+        <OneClubPageHeader
           eyebrow="Club Records"
           title="Member Database"
           description="View signed-up members, track club roles, and keep your club records organized."
@@ -376,7 +376,7 @@ export default function Members() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <ClublyLoadingState title="Loading member database" message="We are organizing club member records." compact />
+              <OneClubLoadingState title="Loading member database" message="We are organizing club member records." compact />
             ) : isError ? (
               <div className="clb-empty border-destructive bg-destructive/5">
                 <p className="font-medium">Unable to load members</p>

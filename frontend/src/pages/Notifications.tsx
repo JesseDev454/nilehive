@@ -23,8 +23,8 @@ import { DataPagination } from "@/components/DataPagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/OneClub";
-import { ClublySkeleton } from "@/components/ClublySkeleton";
+import { OneClubLoadingState, OneClubPageHeader, OneClubStateCard } from "@/components/OneClub";
+import { OneClubSkeleton } from "@/components/OneClubSkeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   ApiClientError,
@@ -212,9 +212,7 @@ function canOpenFeedback(role: string | null) {
 }
 
 function getNotificationLink(notification: NotificationRecord, role: string | null, meta: NotificationMeta) {
-  if (false) {
-    return meta.category === "feedback" || isActionNeeded(notification) ? "/feedback" : "/notifications";
-  }
+
 
   if (meta.category === "announcement") {
     return "/communications";
@@ -408,7 +406,7 @@ export default function Notifications() {
 
   return (
     <div className="clb-screen">
-      <ClublyPageHeader
+      <OneClubPageHeader
         eyebrow="Inbox"
         title="Notification Center"
         description={
@@ -523,9 +521,9 @@ export default function Notifications() {
       </div>
 
       {isLoading ? (
-        <ClublySkeleton variant="list" rows={4} />
+        <OneClubSkeleton variant="list" rows={4} />
       ) : isError ? (
-        <ClublyStateCard icon={Bell} title="Unable to load notifications" message={getErrorMessage(error)} tone="danger" />
+        <OneClubStateCard icon={Bell} title="Unable to load notifications" message={getErrorMessage(error)} tone="danger" />
       ) : (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
           <div className="space-y-4">
@@ -560,7 +558,7 @@ export default function Notifications() {
             </div>
 
             {filteredNotifications.length === 0 ? (
-              <ClublyStateCard
+              <OneClubStateCard
                 icon={Bell}
                 title={activeFilter === "all" ? "No notifications yet" : "Nothing in this view"}
                 message={getFilteredEmptyMessage(activeFilter)}
@@ -573,12 +571,7 @@ export default function Notifications() {
                   const isLinked = target !== "/notifications";
                   const deliveryLabel = getDeliveryLabel(notification.delivery_status);
                   const needsAction = isActionNeeded(notification);
-                  const feedbackManagerRouteCopy =
-                    false
-                      ? target === "/feedback"
-                        ? "Feedback Managers can only open app-feedback workflows. This action opens the feedback workspace."
-                        : "Feedback Managers can view this update here; the linked workflow is outside app-feedback access."
-                      : null;
+                  const feedbackManagerRouteCopy = null;
 
                   const card = (
                     <Card className={cn("transition hover:-translate-y-0.5", needsAction && "border-primary bg-primary/5")}>
@@ -653,7 +646,7 @@ export default function Notifications() {
               </div>
 
               {isLoadingAnnouncements ? (
-                <ClublyLoadingState title="Loading announcements" message="Checking recent club updates." compact />
+                <OneClubLoadingState title="Loading announcements" message="Checking recent club updates." compact />
               ) : isAnnouncementsError ? (
                 <p className="text-sm text-destructive">Unable to load announcements right now.</p>
               ) : announcementsPage.items.length === 0 ? (

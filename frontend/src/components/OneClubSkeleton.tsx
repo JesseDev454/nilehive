@@ -1,7 +1,7 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
-export function ClublySkeleton({ variant = "cards", rows = 3, className }: { variant?: "page" | "cards" | "list" | "table"; rows?: number; className?: string }) {
+export function OneClubSkeleton({ variant = "cards", rows = 3, className }: { variant?: "page" | "cards" | "list" | "table"; rows?: number; className?: string }) {
   if (variant === "page") {
     return <div className={cn("space-y-5", className)} aria-label="Loading page" aria-busy="true"><Skeleton className="h-10 w-2/3" /><Skeleton className="h-5 w-full max-w-xl" /><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{Array.from({ length: rows }, (_, index) => <Skeleton key={index} className="h-44 rounded-[24px]" />)}</div></div>;
   }

@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Loader2, ShieldCheck, UserCog, Users } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { DataPagination } from "@/components/DataPagination";
-import { ClublyLoadingState, ClublyMetricCard, ClublyPageHeader, ClublyStateCard } from "@/components/OneClub";
+import { OneClubLoadingState, OneClubMetricCard, OneClubPageHeader, OneClubStateCard } from "@/components/OneClub";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -395,7 +395,7 @@ export default function UserManagement() {
   if (role !== "admin") {
     return (
       <div className="clb-screen">
-        <ClublyStateCard
+        <OneClubStateCard
           icon={ShieldCheck}
           title="Admin area"
           message="User Management is only available to Campus One admins."
@@ -406,7 +406,7 @@ export default function UserManagement() {
 
   return (
     <div className="clb-screen">
-      <ClublyPageHeader
+      <OneClubPageHeader
         eyebrow="Admin Controls"
         title={isFocusedAccess ? "Manage User Access" : "User Management"}
         description={isFocusedAccess ? "Update one user's local Club Services role and club assignment." : "Review signed-up users, adjust local club roles, and assign club access from one place."}
@@ -421,9 +421,9 @@ export default function UserManagement() {
             </Link>
           </Button>
           {isLoadingFocusedUser ? (
-            <ClublyLoadingState title="Opening access editor" message="We are loading this user's role and club details." compact />
+            <OneClubLoadingState title="Opening access editor" message="We are loading this user's role and club details." compact />
           ) : focusedUserFailed || !focusedUser ? (
-            <ClublyStateCard icon={UserCog} title="User access editor unavailable" message={getErrorMessage(focusedUserError)} />
+            <OneClubStateCard icon={UserCog} title="User access editor unavailable" message={getErrorMessage(focusedUserError)} />
           ) : (
             <UserActionPanel user={focusedUser} onClose={() => navigate("/user-management")} />
           )}
@@ -431,10 +431,10 @@ export default function UserManagement() {
       ) : (
         <>
       <div className="clb-metric-grid">
-        <ClublyMetricCard title="Users" value={summary.total} icon={Users} tone="navy" />
-        <ClublyMetricCard title="Students" value={summary.students} icon={UserCog} tone="gold" />
-        <ClublyMetricCard title="Presidents" value={summary.presidents} icon={ShieldCheck} tone="green" />
-        <ClublyMetricCard title="Advisors" value={summary.advisors} icon={Users} />
+        <OneClubMetricCard title="Users" value={summary.total} icon={Users} tone="navy" />
+        <OneClubMetricCard title="Students" value={summary.students} icon={UserCog} tone="gold" />
+        <OneClubMetricCard title="Presidents" value={summary.presidents} icon={ShieldCheck} tone="green" />
+        <OneClubMetricCard title="Advisors" value={summary.advisors} icon={Users} />
       </div>
 
       <Card>
@@ -517,7 +517,7 @@ export default function UserManagement() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <ClublyLoadingState title="Loading Club Services controls" message="We are preparing the user directory." compact />
+            <OneClubLoadingState title="Loading Club Services controls" message="We are preparing the user directory." compact />
           ) : isError ? (
             <div className="clb-empty border-destructive bg-destructive/5">
               <p className="font-medium">Unable to load users</p>

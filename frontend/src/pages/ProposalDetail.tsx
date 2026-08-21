@@ -5,7 +5,7 @@ import { ArrowLeft, Clock, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { AccessDenied } from "@/components/AccessDenied";
 import { ApprovalStepper } from "@/components/ApprovalStepper";
-import { ClublyLoadingState, ClublyMetaChip, ClublyPageHeader, ClublyStateCard } from "@/components/OneClub";
+import { OneClubLoadingState, OneClubMetaChip, OneClubPageHeader, OneClubStateCard } from "@/components/OneClub";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -284,12 +284,12 @@ export default function ProposalDetail() {
       </Button>
 
       {isLoading ? (
-        <ClublyLoadingState title="Loading proposal" message="We are getting the latest workflow status." />
+        <OneClubLoadingState title="Loading proposal" message="We are getting the latest workflow status." />
       ) : isError || !proposal ? (
-        <ClublyStateCard icon={FileText} title="Proposal not found" message={getErrorMessage(error)} tone="danger" />
+        <OneClubStateCard icon={FileText} title="Proposal not found" message={getErrorMessage(error)} tone="danger" />
       ) : (
         <>
-          <ClublyPageHeader
+          <OneClubPageHeader
             eyebrow={role === "admin" ? "OneClub Review" : role === "advisor" ? "Advisor Review" : "Club Proposal"}
             title={proposal.title}
             description={`${
@@ -303,10 +303,10 @@ export default function ProposalDetail() {
           <Card>
             <CardContent className="space-y-4 p-5">
               <div className="flex flex-wrap gap-2">
-                <ClublyMetaChip label="Status" value={getProposalStatusMeta(proposal.status, proposal.event_date).label} />
-                <ClublyMetaChip label="Waiting on" value={getProposalOwnerLabel(proposal.current_owner_role)} />
-                <ClublyMetaChip label="Updated" value={getDateLabel(proposal.updated_at)} />
-                <ClublyMetaChip label="Resubmissions" value={getResubmissionLabel(proposal.revision_count)} />
+                <OneClubMetaChip label="Status" value={getProposalStatusMeta(proposal.status, proposal.event_date).label} />
+                <OneClubMetaChip label="Waiting on" value={getProposalOwnerLabel(proposal.current_owner_role)} />
+                <OneClubMetaChip label="Updated" value={getDateLabel(proposal.updated_at)} />
+                <OneClubMetaChip label="Resubmissions" value={getResubmissionLabel(proposal.revision_count)} />
               </div>
               <div className="rounded-[18px] border border-primary/15 bg-primary/5 p-4">
                 <p className="clb-eyebrow text-primary">Next action</p>
@@ -355,13 +355,13 @@ export default function ProposalDetail() {
                     <p className="mt-1">{proposal.description}</p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <ClublyMetaChip label="Date" value={getDateLabel(proposal.event_date)} />
-                    {proposal.event_time ? <ClublyMetaChip label="Time" value={proposal.event_time.slice(0, 5)} /> : null}
-                    <ClublyMetaChip label="Venue" value={proposal.location ?? "-"} />
-                    <ClublyMetaChip label="Participants" value={proposal.number_of_participants ?? "-"} />
-                    <ClublyMetaChip label="Budget" value={formatCurrency(proposal.budget_estimate)} />
-                    {proposal.resubmitted_at ? <ClublyMetaChip label="Resubmitted" value={getDateLabel(proposal.resubmitted_at)} /> : null}
-                    {proposal.advisor_decided_at ? <ClublyMetaChip label="Advisor decision" value={getDateLabel(proposal.advisor_decided_at)} /> : null}
+                    <OneClubMetaChip label="Date" value={getDateLabel(proposal.event_date)} />
+                    {proposal.event_time ? <OneClubMetaChip label="Time" value={proposal.event_time.slice(0, 5)} /> : null}
+                    <OneClubMetaChip label="Venue" value={proposal.location ?? "-"} />
+                    <OneClubMetaChip label="Participants" value={proposal.number_of_participants ?? "-"} />
+                    <OneClubMetaChip label="Budget" value={formatCurrency(proposal.budget_estimate)} />
+                    {proposal.resubmitted_at ? <OneClubMetaChip label="Resubmitted" value={getDateLabel(proposal.resubmitted_at)} /> : null}
+                    {proposal.advisor_decided_at ? <OneClubMetaChip label="Advisor decision" value={getDateLabel(proposal.advisor_decided_at)} /> : null}
                   </div>
                 </CardContent>
               </Card>

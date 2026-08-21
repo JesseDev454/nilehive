@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { ElementType, ReactNode } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
@@ -14,11 +14,11 @@ import { Button } from "@/components/ui/button";
 import { StitchPageHeader } from "@/components/StitchPageHeader";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
-  ClublyEmptyState,
-  ClublyErrorState,
-  ClublyLoadingState,
-  ClublyMetaChip,
-  ClublySectionHeader
+  OneClubEmptyState,
+  OneClubErrorState,
+  OneClubLoadingState,
+  OneClubMetaChip,
+  OneClubSectionHeader
 } from "@/components/OneClub";
 import {
   getAdminOperationsDashboard,
@@ -225,14 +225,14 @@ function ProposalListState({
   emptyMessage?: string;
 }) {
   if (isLoading) {
-    return <ClublyLoadingState title="Loading proposal records" message="We are checking the latest workflow state." compact />;
+    return <OneClubLoadingState title="Loading proposal records" message="We are checking the latest workflow state." compact />;
   }
 
   if (isError) {
-    return <ClublyErrorState title="Unable to load proposals" message={getErrorMessage(error)} />;
+    return <OneClubErrorState title="Unable to load proposals" message={getErrorMessage(error)} />;
   }
 
-  return <ClublyEmptyState title="No proposals found yet" message={emptyMessage || "Proposal records will appear here once work starts."} />;
+  return <OneClubEmptyState title="No proposals found yet" message={emptyMessage || "Proposal records will appear here once work starts."} />;
 }
 
 function ProposalSummaryList({
@@ -402,9 +402,9 @@ function PresidentAnnouncementsPreview({
       </CardHeader>
       <CardContent className="space-y-3">
         {isLoading ? (
-          <ClublyLoadingState title="Loading updates" message="We are checking club announcements and notices." compact />
+          <OneClubLoadingState title="Loading updates" message="We are checking club announcements and notices." compact />
         ) : announcements.length === 0 && notifications.length === 0 ? (
-          <ClublyEmptyState title="No recent updates yet" message="Announcements and role-specific notices will appear here." />
+          <OneClubEmptyState title="No recent updates yet" message="Announcements and role-specific notices will appear here." />
         ) : (
           <>
             {announcements.slice(0, 3).map((announcement) => (
@@ -724,7 +724,7 @@ function AdminTodayQueueCard({
 
 function AdminLoadingSkeleton() {
   return (
-    <ClublyLoadingState
+    <OneClubLoadingState
       title="Loading OneClub controls"
       message="We are preparing dashboards, queues, dues records, and club health data."
     />
@@ -1016,11 +1016,11 @@ function ExecutiveDashboard() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <ClublyLoadingState title="Preparing task board" message="We are loading assigned work." compact />
+              <OneClubLoadingState title="Preparing task board" message="We are loading assigned work." compact />
             ) : isError ? (
-              <ClublyErrorState title="Unable to load tasks" message={getErrorMessage(error)} />
+              <OneClubErrorState title="Unable to load tasks" message={getErrorMessage(error)} />
             ) : prioritizedTasks.length === 0 ? (
-              <ClublyEmptyState title="No assigned tasks" message="Tasks assigned by your president will appear here." />
+              <OneClubEmptyState title="No assigned tasks" message="Tasks assigned by your president will appear here." />
             ) : (
               <div className="space-y-3">
                 {prioritizedTasks.map((task) => (
@@ -1116,11 +1116,11 @@ function ExecutiveDashboard() {
           </CardHeader>
           <CardContent className="space-y-3">
             {isAnnouncementsLoading ? (
-              <ClublyLoadingState title="Loading announcements" message="We are checking club updates." compact />
+              <OneClubLoadingState title="Loading announcements" message="We are checking club updates." compact />
             ) : isAnnouncementsError ? (
-              <ClublyErrorState title="Unable to load announcements" message={getErrorMessage(announcementsError)} />
+              <OneClubErrorState title="Unable to load announcements" message={getErrorMessage(announcementsError)} />
             ) : announcementsPage.items.length === 0 ? (
-              <ClublyEmptyState title="No announcements yet" message="Club announcements for your role will appear here." />
+              <OneClubEmptyState title="No announcements yet" message="Club announcements for your role will appear here." />
             ) : (
               announcementsPage.items.slice(0, 4).map((announcement) => (
                 <Link key={announcement.id} to="/communications" className="block">
@@ -1146,9 +1146,9 @@ function ExecutiveDashboard() {
           </CardHeader>
           <CardContent className="space-y-3">
             {isLoading ? (
-              <ClublyLoadingState title="Loading notifications" message="We are checking your latest updates." compact />
+              <OneClubLoadingState title="Loading notifications" message="We are checking your latest updates." compact />
             ) : notifications.length === 0 ? (
-              <ClublyEmptyState title="No notifications" message="Task, event, and club notices will appear here." />
+              <OneClubEmptyState title="No notifications" message="Task, event, and club notices will appear here." />
             ) : (
               notifications.slice(0, 4).map((notification) => (
                 <Link key={notification.id} to="/notifications" className="block">
@@ -1295,7 +1295,7 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <ClublyLoadingState title="Loading operations queue" message="We are checking pending OneClub actions." compact />
+                  <OneClubLoadingState title="Loading operations queue" message="We are checking pending OneClub actions." compact />
                 ) : !dashboard?.pending_actions.length ? (
                   <p className="text-sm text-muted-foreground">No pending operational actions right now.</p>
                 ) : (
@@ -1317,7 +1317,7 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <ClublyLoadingState title="Loading proposal states" message="We are checking workflow bottlenecks." compact />
+                  <OneClubLoadingState title="Loading proposal states" message="We are checking workflow bottlenecks." compact />
                 ) : (
                   <div className="space-y-3">
                     {dashboard?.proposal_bottlenecks.map((item) => (
@@ -1339,7 +1339,7 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <ClublyLoadingState title="Loading club performance" message="We are calculating club activity health." compact />
+                  <OneClubLoadingState title="Loading club performance" message="We are calculating club activity health." compact />
                 ) : !dashboard?.club_performance.length ? (
                   <p className="text-sm text-muted-foreground">No club records available yet.</p>
                 ) : (
@@ -1385,7 +1385,7 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {isLoading ? (
-                  <ClublyLoadingState title="Loading institution snapshot" message="We are preparing the latest totals." compact />
+                  <OneClubLoadingState title="Loading institution snapshot" message="We are preparing the latest totals." compact />
                 ) : (
                   <>
                     <div className="clb-card-soft p-3">
@@ -1416,7 +1416,7 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <ClublyLoadingState title="Checking report gaps" message="We are finding events that still need documentation." compact />
+                  <OneClubLoadingState title="Checking report gaps" message="We are finding events that still need documentation." compact />
                 ) : !dashboard?.missing_reports.length ? (
                   <p className="text-sm text-muted-foreground">No past events are missing reports.</p>
                 ) : (
@@ -1442,7 +1442,7 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <ClublyLoadingState title="Loading recent movement" message="We are checking the latest operations activity." compact />
+                  <OneClubLoadingState title="Loading recent movement" message="We are checking the latest operations activity." compact />
                 ) : !dashboard?.recent_activity.length ? (
                   <p className="text-sm text-muted-foreground">No recent operations activity yet.</p>
                 ) : (
@@ -1506,7 +1506,7 @@ function PolishedAdminDashboard() {
       />
 
       {isError ? (
-        <ClublyErrorState title="We couldn't load the operations dashboard" message={getErrorMessage(error)} />
+        <OneClubErrorState title="We couldn't load the operations dashboard" message={getErrorMessage(error)} />
       ) : isLoading ? (
         <AdminLoadingSkeleton />
       ) : (
@@ -2065,11 +2065,11 @@ function StudentDashboard() {
       </Card>
 
       {(membershipsFailed || duesFailed || eventsFailed || announcementsFailed) ? (
-        <ClublyErrorState title="Some student data could not load" message={getErrorMessage(membershipsError || duesError || eventsError || announcementsError)} />
+        <OneClubErrorState title="Some student data could not load" message={getErrorMessage(membershipsError || duesError || eventsError || announcementsError)} />
       ) : null}
 
       <section className="space-y-4">
-        <ClublySectionHeader
+        <OneClubSectionHeader
           title="My clubs"
           description="A compact view of your current club memberships."
           action={<Button asChild variant="outline" size="sm"><Link to="/membership">Manage</Link></Button>}
@@ -2077,7 +2077,7 @@ function StudentDashboard() {
         {(membershipsLoading || duesLoading) ? (
           <AdminLoadingSkeleton />
         ) : clubPreview.length === 0 ? (
-          <ClublyEmptyState icon={UserPlus} title="No club yet" message="Choose a club to start your membership request." />
+          <OneClubEmptyState icon={UserPlus} title="No club yet" message="Choose a club to start your membership request." />
         ) : (
           <div className="grid gap-3 md:grid-cols-2">
             {clubPreview.map((request) => {
@@ -2097,15 +2097,15 @@ function StudentDashboard() {
       </section>
 
       <section className="space-y-4">
-        <ClublySectionHeader
+        <OneClubSectionHeader
           title="Discover clubs"
           description="A few clubs to explore. Open the full directory when you are ready."
           action={<Button asChild variant="outline" size="sm"><Link to="/membership">Browse all</Link></Button>}
         />
         {publicClubsLoading ? (
-          <ClublyLoadingState title="Loading club discovery" message="We are gathering public clubs." compact />
+          <OneClubLoadingState title="Loading club discovery" message="We are gathering public clubs." compact />
         ) : discoveryPreview.length === 0 ? (
-          <ClublyEmptyState icon={School} title="No new clubs to show" message="Your full directory is still available from Discover Clubs." />
+          <OneClubEmptyState icon={School} title="No new clubs to show" message="Your full directory is still available from Discover Clubs." />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
             {discoveryPreview.map((club) => (
@@ -2136,7 +2136,7 @@ function StudentDashboard() {
           </CardHeader>
           <CardContent className="space-y-3">
             {announcementsLoading ? (
-              <ClublyLoadingState title="Loading announcements" message="Checking your latest club updates." compact />
+              <OneClubLoadingState title="Loading announcements" message="Checking your latest club updates." compact />
             ) : announcementPreview.length === 0 ? (
               <p className="text-sm text-muted-foreground">Updates from your active clubs and public OneClub posts will appear here.</p>
             ) : (
@@ -2232,7 +2232,7 @@ function StudentStitchHome({
         <p className="mt-2 text-lg leading-relaxed text-muted-foreground">Let's continue your campus journey.</p>
       </header>
 
-      {error ? <ClublyErrorState title="We couldn't load your full workspace" message={error} /> : null}
+      {error ? <OneClubErrorState title="We couldn't load your full workspace" message={error} /> : null}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="flex min-w-0 flex-col gap-8 lg:col-span-8">
@@ -2279,7 +2279,7 @@ function StudentStitchHome({
               <Link to="/events" className="text-xs font-semibold text-primary hover:underline">View All</Link>
             </div>
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft-sm">
-              {isLoading ? <ClublyLoadingState title="Loading events" message="Checking approved events." compact /> : events.length ? events.map((event) => {
+              {isLoading ? <OneClubLoadingState title="Loading events" message="Checking approved events." compact /> : events.length ? events.map((event) => {
                 const date = new Date(`${event.event_date}T00:00:00`);
                 return <Link key={event.proposal_id} to="/events" className="flex gap-4 border-b border-border p-4 last:border-0 hover:bg-muted/40">
                   <span className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-accent text-primary"><span className="text-[10px] font-semibold uppercase">{date.toLocaleString("en-NG", { month: "short" })}</span><span className="text-xl font-bold leading-none">{date.getDate()}</span></span>
@@ -2292,7 +2292,7 @@ function StudentStitchHome({
           <section>
             <h2 className="mb-4 text-xl font-semibold tracking-[-0.02em] text-primary">Recent Updates</h2>
             <div className="space-y-4">
-              {isLoading ? <ClublyLoadingState title="Loading updates" message="Checking Club Services updates." compact /> : announcements.length ? announcements.map((announcement, index) => (
+              {isLoading ? <OneClubLoadingState title="Loading updates" message="Checking Club Services updates." compact /> : announcements.length ? announcements.map((announcement, index) => (
                 <Link key={announcement.id} to="/communications" className="flex gap-4 rounded-xl border border-border bg-card p-4 shadow-soft-sm hover:bg-muted/40">
                   <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${index === 0 ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}`}><MessageSquare className="h-4 w-4" /></span>
                   <span className="min-w-0"><span className="block text-sm leading-6 text-foreground">{announcement.title || announcement.message}</span><span className="mt-2 block text-xs text-muted-foreground">{getDateLabel(announcement.created_at)}</span></span>
@@ -2419,7 +2419,7 @@ function PresidentDashboard() {
       />
 
       {isError ? (
-        <ClublyErrorState title="We couldn't load the president dashboard" message={getErrorMessage(error)} />
+        <OneClubErrorState title="We couldn't load the president dashboard" message={getErrorMessage(error)} />
       ) : (
         <>
           <div className="grid gap-3 md:grid-cols-3">
@@ -2440,7 +2440,7 @@ function PresidentDashboard() {
           <div className="grid min-w-0 gap-5 lg:grid-cols-[1.1fr_0.9fr] [&>*]:min-w-0">
             <Card className="min-w-0 overflow-hidden">
               <CardHeader>
-                <ClublySectionHeader
+                <OneClubSectionHeader
                   title="Pending proposals"
                   description={`${formatNumber(pendingCount)} proposal${pendingCount === 1 ? "" : "s"} currently need review or follow-up.`}
                   action={<Button asChild variant="outline" size="sm"><Link to="/proposals">View all</Link></Button>}
@@ -2457,7 +2457,7 @@ function PresidentDashboard() {
 
             <Card className="min-w-0 overflow-hidden">
               <CardHeader>
-                <ClublySectionHeader
+                <OneClubSectionHeader
                   title="Next tasks"
                   description={`${formatNumber(openTaskCount)} open task${openTaskCount === 1 ? "" : "s"} in the club workspace.`}
                   action={<Button asChild variant="outline" size="sm"><Link to="/tasks">Open tasks</Link></Button>}
@@ -2465,9 +2465,9 @@ function PresidentDashboard() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {isLoadingTasks ? (
-                  <ClublyLoadingState title="Loading tasks" message="Checking open task work." compact />
+                  <OneClubLoadingState title="Loading tasks" message="Checking open task work." compact />
                 ) : openTasks.length === 0 ? (
-                  <ClublyEmptyState icon={ClipboardList} title="No open tasks" message="Completed tasks stay out of the dashboard so your team can focus." />
+                  <OneClubEmptyState icon={ClipboardList} title="No open tasks" message="Completed tasks stay out of the dashboard so your team can focus." />
                 ) : (
                   openTasks.map((task) => (
                     <Link key={task.id} to="/tasks" className="clb-list-card block">
@@ -2500,7 +2500,7 @@ function PresidentDashboard() {
           </div>
 
           <section className="space-y-4">
-            <ClublySectionHeader title="Quick actions" description="Common actions kept as compact links." />
+            <OneClubSectionHeader title="Quick actions" description="Common actions kept as compact links." />
             <div className="grid gap-3 md:grid-cols-3">
               {[
                 { label: "Track Proposal Status", to: "/proposals", icon: FileText },
@@ -2741,9 +2741,9 @@ function PresidentDashboard() {
               <CardContent>
                 {isLoading || !dashboard?.executive_team.length ? (
                   isLoading ? (
-                    <ClublyLoadingState title="Loading executive team" message="We are checking club leadership records." compact />
+                    <OneClubLoadingState title="Loading executive team" message="We are checking club leadership records." compact />
                   ) : (
-                    <ClublyEmptyState title="No executives linked yet" message="Executives connected to this club will appear here." />
+                    <OneClubEmptyState title="No executives linked yet" message="Executives connected to this club will appear here." />
                   )
                 ) : (
                   <div className="space-y-3">
@@ -2767,9 +2767,9 @@ function PresidentDashboard() {
               <CardContent>
                 {isLoading || !dashboard?.recent_activity.length ? (
                   isLoading ? (
-                    <ClublyLoadingState title="Loading recent movement" message="We are checking proposal activity." compact />
+                    <OneClubLoadingState title="Loading recent movement" message="We are checking proposal activity." compact />
                   ) : (
-                    <ClublyEmptyState title="No proposal activity yet" message="Proposal updates will appear here once the club starts submitting." />
+                    <OneClubEmptyState title="No proposal activity yet" message="Proposal updates will appear here once the club starts submitting." />
                   )
                 ) : (
                   <RecentActivityList activity={dashboard.recent_activity} />
@@ -2794,7 +2794,7 @@ export default function Dashboard() {
   if (role === "student") return <StudentDashboard />;
   return (
     <div className="flex min-h-[50vh] items-center justify-center">
-      <ClublyLoadingState title="Opening your OneClub workspace" message="We are loading your profile and dashboard access." />
+      <OneClubLoadingState title="Opening your OneClub workspace" message="We are loading your profile and dashboard access." />
     </div>
   );
 }

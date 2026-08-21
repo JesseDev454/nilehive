@@ -5,7 +5,7 @@ import { Download, FileText, ImageIcon, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { DataPagination } from "@/components/DataPagination";
 import { AccessDenied } from "@/components/AccessDenied";
-import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/OneClub";
+import { OneClubLoadingState, OneClubPageHeader, OneClubStateCard } from "@/components/OneClub";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -460,7 +460,7 @@ export default function MediaArchive() {
   if (!canViewReports) {
     return (
       <div className="clb-screen">
-        <ClublyPageHeader
+        <OneClubPageHeader
           eyebrow="Archive"
           title="Reports & Media Archive"
           description="Post-event reports are available to presidents, advisors, and Club Services admins."
@@ -472,7 +472,7 @@ export default function MediaArchive() {
 
   return (
     <div className="clb-screen">
-      <ClublyPageHeader
+      <OneClubPageHeader
         eyebrow="Archive"
         title="Reports & Media Archive"
         description="Document completed events and keep a central Club Services record."
@@ -651,7 +651,7 @@ export default function MediaArchive() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <ClublyLoadingState title="Loading report archive" message="We are gathering post-event records." compact />
+            <OneClubLoadingState title="Loading report archive" message="We are gathering post-event records." compact />
           ) : isError ? (
             <div className="clb-empty border-destructive bg-destructive/5">
               <p className="font-medium">Unable to load reports</p>

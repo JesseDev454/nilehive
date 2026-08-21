@@ -10,7 +10,7 @@ import { AccessDenied } from "@/components/AccessDenied";
 import { AuthProvider, resolveEffectiveRole, useAuth } from "@/contexts/AuthContext";
 import { RoleProvider, useRole } from "@/contexts/RoleContext";
 import { AppLayout } from "@/components/AppLayout";
-import { ClublyLoadingState, ClublyStateCard, ClublyWorkspaceLoadingScreen } from "@/components/OneClub";
+import { OneClubLoadingState, OneClubStateCard, OneClubWorkspaceLoadingScreen } from "@/components/OneClub";
 import Dashboard from "@/pages/Dashboard";
 import ForgotPassword from "@/pages/ForgotPassword";
 import Login from "@/pages/Login";
@@ -45,7 +45,7 @@ function ProtectedRoutes() {
   const location = useLocation();
 
   if (isLoading) {
-    return <ClublyWorkspaceLoadingScreen title="Opening your OneClub workspace" message="Preparing your campus workspace." />;
+    return <OneClubWorkspaceLoadingScreen title="Opening your OneClub workspace" message="Preparing your campus workspace." />;
   }
 
   if (!session) {
@@ -61,7 +61,7 @@ function ProtectedRoutes() {
       return (
         <div className="flex min-h-screen items-center justify-center bg-background p-6">
           <div className="w-full max-w-xl">
-            <ClublyStateCard
+            <OneClubStateCard
               title="We couldn't open your workspace yet"
               message={profileError}
               tone="danger"
@@ -69,7 +69,7 @@ function ProtectedRoutes() {
               <Button onClick={() => void signOut()} variant="outline">
                 Sign out
               </Button>
-            </ClublyStateCard>
+            </OneClubStateCard>
           </div>
         </div>
       );

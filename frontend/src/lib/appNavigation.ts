@@ -31,8 +31,6 @@ export const roleLabels: Record<NonNullable<Role>, string> = {
   admin: "Campus One Admin",
   president: "Club President",
   student: "Student",
-  president: "Club President",
-  student: "Student",
 };
 
 const profileItem: AppNavItem = { title: "Profile", shortTitle: "Profile", url: "/profile", icon: UserCircle, onboardingTarget: "nav-profile" };
@@ -92,7 +90,6 @@ export function getRoleNavItems(role: Role | null): AppNavItem[] {
   const itemsMap: Record<NonNullable<Role>, AppNavItem[]> = {
     executive: executiveItems,
     advisor: advisorItems,
-    admin: adminItems,
     admin: adminItems,
     president: presidentItems,
     student: studentItems,

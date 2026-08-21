@@ -3,7 +3,7 @@ import type { ElementType, ReactNode } from "react";
 import { Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function ClublySectionHeader({
+export function OneClubSectionHeader({
   title,
   description,
   action,
@@ -25,7 +25,7 @@ export function ClublySectionHeader({
   );
 }
 
-export function ClublyMetaChip({
+export function OneClubMetaChip({
   icon: Icon,
   label,
   value,
@@ -50,7 +50,7 @@ export function ClublyMetaChip({
   );
 }
 
-export function ClublyStepIndicator({
+export function OneClubStepIndicator({
   steps,
   currentStep
 }: {
@@ -86,7 +86,7 @@ export function ClublyStepIndicator({
   );
 }
 
-export function ClublyProgressHero({
+export function OneClubProgressHero({
   eyebrow,
   title,
   value,
@@ -132,7 +132,7 @@ export function ClublyProgressHero({
   );
 }
 
-export function ClublyPageHeader({
+export function OneClubPageHeader({
   eyebrow,
   title,
   description,
@@ -155,7 +155,7 @@ export function ClublyPageHeader({
   );
 }
 
-export function ClublyMetricCard({
+export function OneClubMetricCard({
   title,
   value,
   detail,
@@ -194,7 +194,7 @@ export function ClublyMetricCard({
   );
 }
 
-export function ClublyCommandPanel({
+export function OneClubCommandPanel({
   eyebrow,
   title,
   description,
@@ -231,7 +231,7 @@ export function ClublyCommandPanel({
   );
 }
 
-export function ClublyActionCard({
+export function OneClubActionCard({
   icon: Icon,
   title,
   description,
@@ -270,7 +270,7 @@ export function ClublyActionCard({
   );
 }
 
-export function ClublyStateCard({
+export function OneClubStateCard({
   icon: Icon,
   title,
   message,
@@ -302,7 +302,7 @@ export function ClublyStateCard({
   );
 }
 
-export function ClublyPanel({
+export function OneClubPanel({
   title,
   description,
   eyebrow,
@@ -343,7 +343,7 @@ export function ClublyPanel({
   );
 }
 
-export function ClublyEmptyState({
+export function OneClubEmptyState({
   icon: Icon,
   title,
   message,
@@ -364,7 +364,7 @@ export function ClublyEmptyState({
   );
 }
 
-export function ClublyErrorState({
+export function OneClubErrorState({
   icon: Icon,
   title = "Unable to load this section",
   message,
@@ -389,11 +389,11 @@ export function ClublyErrorState({
   );
 }
 
-export function ClublyListItem({ children, className }: { children: ReactNode; className?: string }) {
+export function OneClubListItem({ children, className }: { children: ReactNode; className?: string }) {
   return <div className={cn("clb-list-card", className)}>{children}</div>;
 }
 
-export function ClublyLoadingState({
+export function OneClubLoadingState({
   title = "Loading OneClub",
   message = "Preparing the latest workspace data.",
   compact = false,
@@ -476,7 +476,7 @@ export function ClublyLoadingState({
             style={{ width: `${safeProgress}%` }}
           />
         ) : (
-          <div className="h-full w-1/2 rounded-full bg-primary animate-clubly-progress" />
+          <div className="h-full w-1/2 rounded-full bg-primary animate-OneClub-progress" />
         )}
       </div>
       <div className="flex flex-col gap-5 md:flex-row md:items-center">
@@ -494,7 +494,7 @@ export function ClublyLoadingState({
   );
 }
 
-export function ClublyWorkspaceLoadingScreen({
+export function OneClubWorkspaceLoadingScreen({
   title = "Opening your OneClub workspace",
   message = "Preparing your campus workspace."
 }: {
@@ -511,7 +511,7 @@ export function ClublyWorkspaceLoadingScreen({
         <p className="mt-4 text-xl text-[#b7ccff]">{title}</p>
         <p className="mt-2 text-sm text-[#b7ccff]/80">{message}</p>
         <div className="mt-10 h-2 overflow-hidden rounded-full bg-[#315486]" role="progressbar" aria-label={title} aria-valuemin={0} aria-valuemax={100} aria-valuenow={45}>
-          <div className="h-full w-1/3 rounded-full bg-[#fed65b] animate-clubly-progress" />
+          <div className="h-full w-1/3 rounded-full bg-[#fed65b] animate-OneClub-progress" />
         </div>
       </section>
     </main>

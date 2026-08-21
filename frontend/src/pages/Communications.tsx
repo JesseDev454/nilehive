@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Download, Filter, Megaphone, MessageSquare, Send, Users } from "lucide-react";
 import { DataPagination } from "@/components/DataPagination";
-import { ClublyCommandPanel, ClublyLoadingState } from "@/components/OneClub";
+import { OneClubCommandPanel, OneClubLoadingState } from "@/components/OneClub";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -551,7 +551,7 @@ export default function Communications({ defaultTab = "announcements" }: { defau
 
   return (
     <div className="clb-screen">
-      <ClublyCommandPanel
+      <OneClubCommandPanel
         eyebrow="Communication Hub"
         title={isFeedbackManager ? "Feedback Inbox" : "Announcements and Feedback"}
         description={
@@ -1146,7 +1146,7 @@ export default function Communications({ defaultTab = "announcements" }: { defau
             </CardHeader>
             <CardContent className="space-y-3">
               {isLoadingFeedback ? (
-                <ClublyLoadingState title="Loading feedback" message="We are checking recent club feedback." compact />
+                <OneClubLoadingState title="Loading feedback" message="We are checking recent club feedback." compact />
               ) : isFeedbackError ? (
                 <p className="text-sm text-destructive">{getErrorMessage(feedbackError)}</p>
               ) : feedback.length === 0 ? (

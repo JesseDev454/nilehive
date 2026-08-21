@@ -1,5 +1,5 @@
 import { StatusBadge } from "@/components/StatusBadge";
-import { ClublyLoadingState, ClublyMetaChip, ClublyPageHeader, ClublyStateCard } from "@/components/OneClub";
+import { OneClubLoadingState, OneClubMetaChip, OneClubPageHeader, OneClubStateCard } from "@/components/OneClub";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -65,23 +65,23 @@ export default function Approvals() {
 
   return (
     <div className="clb-screen">
-      <ClublyPageHeader
+      <OneClubPageHeader
         eyebrow="Advisor Review"
         title="Pending Approvals"
         description={`${pending.length} proposal${pending.length !== 1 ? "s" : ""} awaiting your review.`}
       />
 
       {isLoading ? (
-        <ClublyLoadingState title="Loading approvals" message="We are getting proposals assigned to your club." />
+        <OneClubLoadingState title="Loading approvals" message="We are getting proposals assigned to your club." />
       ) : isError ? (
-        <ClublyStateCard
+        <OneClubStateCard
           icon={Clock}
           title="Unable to load pending approvals"
           message={getAdvisorPendingProposalsErrorMessage(error)}
           tone="danger"
         />
       ) : pending.length === 0 ? (
-        <ClublyStateCard icon={Clock} title="No pending approvals" message="New president-submitted proposals will appear here." />
+        <OneClubStateCard icon={Clock} title="No pending approvals" message="New president-submitted proposals will appear here." />
       ) : (
         <div className="grid gap-4 xl:grid-cols-2">
           {pending.map((proposal) => (
@@ -91,9 +91,9 @@ export default function Approvals() {
                   <div className="min-w-0">
                     <p className="truncate text-lg font-bold">{proposal.title}</p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <ClublyMetaChip label="Event" value={proposal.eventDate} />
-                      <ClublyMetaChip label="Venue" value={proposal.location || "TBC"} />
-                      <ClublyMetaChip label="Submitted" value={proposal.submittedAt} />
+                      <OneClubMetaChip label="Event" value={proposal.eventDate} />
+                      <OneClubMetaChip label="Venue" value={proposal.location || "TBC"} />
+                      <OneClubMetaChip label="Submitted" value={proposal.submittedAt} />
                     </div>
                   </div>
                   <StatusBadge status={proposal.status} />

@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { AlertTriangle, ArrowRight, Loader2, LogOut, RefreshCw, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ClublyPanel, ClublyStateCard } from "@/components/OneClub";
+import { OneClubPanel, OneClubStateCard } from "@/components/OneClub";
 import { useAuth } from "@/contexts/AuthContext";
 
 const callbackMessages: Record<string, { title: string; message: string }> = {
@@ -47,7 +47,7 @@ export default function AuthCallback() {
     return (
       <main className="clb-screen flex min-h-screen items-center justify-center p-6">
         <div className="w-full max-w-2xl">
-          <ClublyStateCard icon={AlertTriangle} title={message.title} message={message.message} tone="danger">
+          <OneClubStateCard icon={AlertTriangle} title={message.title} message={message.message} tone="danger">
             <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
               <Button asChild>
                 <Link to="/login">
@@ -60,7 +60,7 @@ export default function AuthCallback() {
                 Sign out safely
               </Button>
             </div>
-          </ClublyStateCard>
+          </OneClubStateCard>
         </div>
       </main>
     );
@@ -68,7 +68,7 @@ export default function AuthCallback() {
 
   return (
     <main className="clb-screen flex min-h-screen items-center justify-center p-6">
-      <ClublyPanel className="w-full max-w-xl p-8 text-center">
+      <OneClubPanel className="w-full max-w-xl p-8 text-center">
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
           <Loader2 className="h-6 w-6 animate-spin" />
         </div>
@@ -92,7 +92,7 @@ export default function AuthCallback() {
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </Button>
-      </ClublyPanel>
+      </OneClubPanel>
     </main>
   );
 }

@@ -7,8 +7,8 @@ import { toast } from "sonner";
 import { DataPagination } from "@/components/DataPagination";
 import { AccessDenied } from "@/components/AccessDenied";
 import { NhStudentId } from "@/components/NhStudentId";
-import { ClublyLoadingState, ClublyMetaChip, ClublyPageHeader, ClublySectionHeader, ClublyStateCard } from "@/components/OneClub";
-import { ClublySkeleton } from "@/components/ClublySkeleton";
+import { OneClubLoadingState, OneClubMetaChip, OneClubPageHeader, OneClubSectionHeader, OneClubStateCard } from "@/components/OneClub";
+import { OneClubSkeleton } from "@/components/OneClubSkeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -984,16 +984,16 @@ function ClubDetailOverview({
                   {category}
                 </Badge>
               ))}
-              <ClublyMetaChip label="Dues" value={getClubDuesRequirementLabel(club, settings)} />
-              <ClublyMetaChip label="Members" value={`${getClubMemberCount(club)} tracked`} />
+              <OneClubMetaChip label="Dues" value={getClubDuesRequirementLabel(club, settings)} />
+              <OneClubMetaChip label="Members" value={`${getClubMemberCount(club)} tracked`} />
             </div>
 
             <section className="space-y-3">
-              <ClublySectionHeader title="About" />
+              <OneClubSectionHeader title="About" />
               <p className="max-w-3xl text-sm leading-6 text-muted-foreground">{getClubDescriptionPreview(getClubDescription(club), 260)}</p>
               {clubLinkEntries.length ? (
                 <div className="space-y-3">
-                  <ClublySectionHeader title="Club links" />
+                  <OneClubSectionHeader title="Club links" />
                   <div className="flex flex-wrap gap-2">
                     {clubLinkEntries.map((link) => (
                       <Button key={link.key} asChild variant="outline" size="sm">
@@ -1006,7 +1006,7 @@ function ClubDetailOverview({
             </section>
 
             <section className="space-y-3">
-              <ClublySectionHeader title="Executives" description="Leadership contacts appear here after club officers are connected." />
+              <OneClubSectionHeader title="Executives" description="Leadership contacts appear here after club officers are connected." />
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="clb-card-soft p-4">
                   <p className="font-semibold">Club President</p>
@@ -1021,7 +1021,7 @@ function ClubDetailOverview({
 
             {club.gallery?.length ? (
               <section className="space-y-3">
-                <ClublySectionHeader title="Gallery" />
+                <OneClubSectionHeader title="Gallery" />
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
                   {club.gallery.slice(0, 6).map((media) => (
                     <GalleryImage key={media.id} path={media.storage_path} caption={media.caption} />
@@ -1031,7 +1031,7 @@ function ClubDetailOverview({
             ) : null}
 
             <section className="space-y-3">
-              <ClublySectionHeader title="Events" />
+              <OneClubSectionHeader title="Events" />
               {clubEvents.length ? (
                 <div className="space-y-2">
                   {clubEvents.slice(0, 4).map((event) => (
@@ -1292,7 +1292,7 @@ function ClubDetailOverview({
         </CardHeader>
         <CardContent className="space-y-3">
           {announcementsLoading ? (
-            <ClublyLoadingState title="Loading announcements" message="Checking recent club updates." compact />
+            <OneClubLoadingState title="Loading announcements" message="Checking recent club updates." compact />
           ) : announcementsFailed ? (
             <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
               {getErrorMessage(announcementsError)}
@@ -1793,7 +1793,7 @@ function StudentClubJoinPage({
       </div>
 
       {isLoadingClubs || isLoadingRequests ? (
-        <ClublyLoadingState title="Opening club join form" message="We are loading the club details and your current request status." compact />
+        <OneClubLoadingState title="Opening club join form" message="We are loading the club details and your current request status." compact />
       ) : clubsFailed ? (
         <Card>
           <CardContent className="p-8">
@@ -1809,14 +1809,14 @@ function StudentClubJoinPage({
           </CardContent>
         </Card>
       ) : !club ? (
-        <ClublyStateCard
+        <OneClubStateCard
           icon={Users}
           title="Club not found"
           message="We couldn't find that club. Please go back to the discover page and choose another one."
         />
       ) : (
         <>
-          <ClublyPageHeader
+          <OneClubPageHeader
             eyebrow="Membership"
             title={`Join ${club.name}`}
             description="Review the club profile, events, dues status, and next membership step."
@@ -1984,7 +1984,7 @@ function StudentMembershipView() {
 
   return (
     <div className="clb-screen">
-      <ClublyPageHeader
+      <OneClubPageHeader
         eyebrow="Membership"
         title="Discover Clubs"
         description="Find clubs that fit your interests and next campus activity."
@@ -2063,7 +2063,7 @@ function StudentMembershipView() {
       </Card>
 
       {isLoadingClubs || isLoadingRequests ? (
-        <ClublySkeleton variant="cards" rows={3} />
+        <OneClubSkeleton variant="cards" rows={3} />
       ) : clubsFailed ? (
         <Card>
           <CardContent className="p-8">
@@ -2252,7 +2252,7 @@ function ReviewerMembershipView() {
 
   return (
     <div className="clb-screen">
-      <ClublyPageHeader
+      <OneClubPageHeader
         eyebrow="Membership"
         title="Membership Review"
         description="Students submit paid join requests first. Use the dues table to confirm the payment and activate the membership."
@@ -2301,7 +2301,7 @@ function ReviewerMembershipView() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <ClublyLoadingState title="Loading membership requests" message="We are preparing the payment-backed join queue." compact />
+            <OneClubLoadingState title="Loading membership requests" message="We are preparing the payment-backed join queue." compact />
           ) : isError ? (
             <div className="clb-empty border-destructive bg-destructive/5">
               <p className="font-medium">Unable to load membership requests</p>

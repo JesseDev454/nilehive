@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, CheckCircle2, CreditCard, Receipt, XCircle } from "lucide-react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { AccessDenied } from "@/components/AccessDenied";
-import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/OneClub";
+import { OneClubLoadingState, OneClubPageHeader, OneClubStateCard } from "@/components/OneClub";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -177,7 +177,7 @@ export default function DuesProofReview() {
   if (role !== "admin") {
     return (
       <div className="clb-screen">
-        <ClublyPageHeader
+        <OneClubPageHeader
           eyebrow="Finance"
           title="Dues Proof"
           description="Dues proof review is available only to OneClub admins."
@@ -194,7 +194,7 @@ export default function DuesProofReview() {
   if (isLoading) {
     return (
       <div className="clb-screen">
-        <ClublyLoadingState title="Loading payment proof" message="We are opening the submitted receipt." />
+        <OneClubLoadingState title="Loading payment proof" message="We are opening the submitted receipt." />
       </div>
     );
   }
@@ -202,12 +202,12 @@ export default function DuesProofReview() {
   if (isError || !payment) {
     return (
       <div className="clb-screen">
-        <ClublyPageHeader
+        <OneClubPageHeader
           eyebrow="Finance"
           title="Dues Proof"
           description="Review submitted payment evidence."
         />
-        <ClublyStateCard
+        <OneClubStateCard
           icon={Receipt}
           title="Unable to load proof"
           message={getErrorMessage(error)}
@@ -216,7 +216,7 @@ export default function DuesProofReview() {
           <Button asChild variant="outline">
             <Link to={returnTo}>{returnLabel}</Link>
           </Button>
-        </ClublyStateCard>
+        </OneClubStateCard>
       </div>
     );
   }
@@ -229,7 +229,7 @@ export default function DuesProofReview() {
   return (
     <div className="clb-screen">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <ClublyPageHeader
+        <OneClubPageHeader
           eyebrow="Finance"
           title="Payment Proof Review"
           description="Review the uploaded receipt document, then verify or reject this student's dues payment."
@@ -297,7 +297,7 @@ export default function DuesProofReview() {
                 </div>
               </div>
             ) : (
-              <ClublyLoadingState title="Preparing proof document" message="We are creating a secure proof view." compact />
+              <OneClubLoadingState title="Preparing proof document" message="We are creating a secure proof view." compact />
             )}
           </CardContent>
         </Card>

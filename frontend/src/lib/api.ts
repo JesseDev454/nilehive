@@ -1690,22 +1690,6 @@ export async function assignAdminUserAdvisor(
   return response.data;
 }
 
-export async function submitAdminDecision(
-  proposalId: string,
-  payload: { decision: "approve" | "reject"; remarks?: string },
-  token?: string
-) {
-  const response = await request<ApiEnvelope<ProposalRecord>>(
-    `/api/v1/proposals/admin/${proposalId}/decision`,
-    {
-      method: "POST",
-      token,
-      body: payload
-    }
-  );
-
-  return response.data;
-}
 
 export async function getNotifications(pagination: PaginationQuery = {}, token?: string) {
   const params = new URLSearchParams();

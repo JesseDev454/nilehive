@@ -1,7 +1,7 @@
 import type { ElementType } from "react";
 import { Link } from "react-router-dom";
 import { ShieldCheck } from "lucide-react";
-import { ClublyStateCard } from "@/components/OneClub";
+import { OneClubStateCard } from "@/components/OneClub";
 import { Button } from "@/components/ui/button";
 import { useRole } from "@/contexts/RoleContext";
 import { roleLabels } from "@/lib/appNavigation";
@@ -23,7 +23,7 @@ export function AccessDenied({
   const roleLabel = role ? roleLabels[role] : "Unknown role";
 
   return (
-    <ClublyStateCard icon={Icon} title={title} message={reason}>
+    <OneClubStateCard icon={Icon} title={title} message={reason}>
       <div className="mx-auto flex max-w-lg flex-col items-center gap-3 text-sm">
         <div className="rounded-xl border border-border bg-card px-4 py-3 text-left">
           <p className="font-semibold text-foreground">Current role: {roleLabel}</p>
@@ -33,6 +33,6 @@ export function AccessDenied({
           <Link to="/">Back to dashboard</Link>
         </Button>
       </div>
-    </ClublyStateCard>
+    </OneClubStateCard>
   );
 }

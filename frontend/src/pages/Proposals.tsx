@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { FileText, Plus } from "lucide-react";
 import { AccessDenied } from "@/components/AccessDenied";
 import { DataPagination } from "@/components/DataPagination";
-import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/OneClub";
+import { OneClubLoadingState, OneClubPageHeader, OneClubStateCard } from "@/components/OneClub";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -98,7 +98,7 @@ export default function Proposals() {
 
   return (
     <div className="clb-screen">
-      <ClublyPageHeader
+      <OneClubPageHeader
         eyebrow={pageCopy.eyebrow}
         title={pageCopy.title}
         description={pageCopy.description}
@@ -140,11 +140,11 @@ export default function Proposals() {
           reason="Presidents create proposals here, while advisors and OneClub review them. Executives can follow club work through tasks and events."
         />
       ) : isLoading ? (
-        <ClublyLoadingState title="Loading proposals" message="We are getting the latest proposal updates." />
+        <OneClubLoadingState title="Loading proposals" message="We are getting the latest proposal updates." />
       ) : isError ? (
-        <ClublyStateCard icon={FileText} title="Unable to load proposals" message={getErrorMessage(error)} tone="danger" />
+        <OneClubStateCard icon={FileText} title="Unable to load proposals" message={getErrorMessage(error)} tone="danger" />
       ) : proposals.length === 0 ? (
-        <ClublyStateCard icon={FileText} title="No proposals yet" message="Your club's proposals will appear here once one has been started.">
+        <OneClubStateCard icon={FileText} title="No proposals yet" message="Your club's proposals will appear here once one has been started.">
           {isPresident ? (
             <Button asChild>
               <Link to="/proposals/new">
@@ -153,7 +153,7 @@ export default function Proposals() {
               </Link>
             </Button>
           ) : null}
-        </ClublyStateCard>
+        </OneClubStateCard>
       ) : (
         <Card>
           <CardContent className="p-0">

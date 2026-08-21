@@ -20,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AccessDenied } from "@/components/AccessDenied";
-import { ClublyMetaChip, ClublyPageHeader, ClublyStateCard, ClublyStepIndicator } from "@/components/OneClub";
+import { OneClubMetaChip, OneClubPageHeader, OneClubStateCard, OneClubStepIndicator } from "@/components/OneClub";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/contexts/RoleContext";
 import {
@@ -642,7 +642,7 @@ export default function NewProposal() {
   if (!profile?.club_id && !editProposal?.club_id) {
     return (
       <div className="clb-screen max-w-3xl">
-        <ClublyStateCard
+        <OneClubStateCard
           icon={Building2}
           title="Your club assignment is still needed"
           message="Your president profile is not linked to a club yet. OneClub needs to assign your club before you can create or edit proposals."
@@ -689,7 +689,7 @@ export default function NewProposal() {
 
   return (
     <div className="clb-screen max-w-[720px]">
-      <ClublyPageHeader
+      <OneClubPageHeader
         eyebrow="Event Proposal"
         title={isEditMode ? "Edit Proposal" : "Create Event Proposal"}
         description="Three focused steps. OneClub sends the proposal to your advisor first, then to final review."
@@ -702,7 +702,7 @@ export default function NewProposal() {
 
       <Card>
         <CardHeader className="space-y-5">
-          <ClublyStepIndicator steps={wizardSteps} currentStep={wizardStep} />
+          <OneClubStepIndicator steps={wizardSteps} currentStep={wizardStep} />
           <CardTitle className="text-xl">
             {wizardStep === 0 ? "Basics" : wizardStep === 1 ? "Details" : "Review and submit"}
           </CardTitle>
@@ -820,10 +820,10 @@ export default function NewProposal() {
           ) : (
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
-                <ClublyMetaChip label="Club" value={clubContextName || "-"} />
-                <ClublyMetaChip label="Date" value={primaryDate || "-"} />
-                <ClublyMetaChip label="Venue" value={[selectedVenue, form.roomNumber ? `Room ${form.roomNumber}` : ""].filter(Boolean).join(", ") || "-"} />
-                <ClublyMetaChip label="Participants" value={form.numberOfParticipants || "-"} />
+                <OneClubMetaChip label="Club" value={clubContextName || "-"} />
+                <OneClubMetaChip label="Date" value={primaryDate || "-"} />
+                <OneClubMetaChip label="Venue" value={[selectedVenue, form.roomNumber ? `Room ${form.roomNumber}` : ""].filter(Boolean).join(", ") || "-"} />
+                <OneClubMetaChip label="Participants" value={form.numberOfParticipants || "-"} />
               </div>
               <div className="clb-card-soft p-4">
                 <p className="clb-eyebrow">Event title</p>
