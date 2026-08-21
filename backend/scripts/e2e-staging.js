@@ -254,6 +254,10 @@ async function seed() {
     membership_status: "inactive"
   });
 
+  const responsibleMembers = [
+    { name: "E2E president", student_id: "900000001", phone_number: "08000000001", position: "President" }
+  ];
+
   const pendingProposal = await insertRow(client, "proposals", {
     club_id: clubs.a.id,
     submitted_by: actors.president.profile_id,
@@ -261,6 +265,9 @@ async function seed() {
     description: "Advisor-reviewed proposal waiting for Club Services Admin.",
     event_date: isoDateOffset(21),
     location: "E2E Hall",
+    proposed_activity: "Workshop",
+    number_of_participants: 40,
+    responsible_members: responsibleMembers,
     status: "pending_admin_review",
     advisor_remarks: "Ready for Admin review.",
     advisor_decided_by: actors.advisor.profile_id,
@@ -274,6 +281,9 @@ async function seed() {
     description: "Approved upcoming event for Admin Events coverage.",
     event_date: isoDateOffset(14),
     location: "E2E Auditorium",
+    proposed_activity: "Seminar",
+    number_of_participants: 80,
+    responsible_members: responsibleMembers,
     status: "approved",
     advisor_remarks: "Approved by advisor.",
     admin_remarks: "Approved by Admin seed.",
