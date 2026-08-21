@@ -12,6 +12,13 @@ test(admin): complete end-to-end staging gate
 
 on `codex/oneclub-functional-integration`. Starting commit was `5884af68832e2438c5355d15ebf9c5240547a950` (Step 3H).
 
+Gate commits:
+
+- `c36c0717fe5da2c056922a184724610737845a36` — `test(admin): complete end-to-end staging gate`
+- `ece6218739a039eb810361f2fffdbd15c871978b` — seed membership_status fix
+- `fcb2d387338f2c8bb385f315ff977c13f33a462f` — seed proposal responsible_members fix
+- follow-up commit on this branch — staging environment probes and blocker reporting
+
 ## Environment tested
 
 | Layer | Target |
@@ -50,7 +57,7 @@ The staging session bridge remains unavailable unless `APP_ENV=staging` and `E2E
 
 ## Run ID / seed ID
 
-CI sets `E2E_STAGING_RUN_ID=gh-<run_id>-<attempt>`. Local seed uses `run-<timestamp>` when unset. Seeded club codes are `E2E-<runId>-A|B|C`. Official 14 clubs are not modified.
+CI sets `E2E_STAGING_RUN_ID=gh-<run_id>-<attempt>`. The successful seed used `gh-32489829536-1`. Local seed uses `run-<timestamp>` when unset. Seeded club codes are `E2E-<runId>-A|B|C`. Official 14 clubs are not modified.
 
 ## Account roles used
 
@@ -136,7 +143,22 @@ URL after dispatch is recorded in the GitHub Actions run for this branch. Secret
 
 ## Staging run result
 
-Recorded after the post-push workflow dispatch. If GitHub Environment secrets, Vercel Deployment Protection, or Render lag block the run, that exact blocker is listed in the final Step 3I response and this gate is **not** marked “ready for production.”
+Dispatched after push from `codex/oneclub-functional-integration`.
+
+| Run | Result |
+|---|---|
+| https://github.com/JesseDev454/nilehive/actions/runs/32489240789 | Seed failed: invalid `membership_status=pending` (fixed) |
+| https://github.com/JesseDev454/nilehive/actions/runs/32489509912 | Seed failed: proposal `responsible_members` 9-digit check (fixed) |
+| https://github.com/JesseDev454/nilehive/actions/runs/32489829536 | Seed passed (`E2E_STAGING_RUN_ID=gh-32489829536-1`). Playwright failed |
+
+Exact staging blockers (not hidden by mocked fallbacks):
+
+1. **Staging Vercel frontend is still Clubly.** `E2E_STAGING_BASE_URL` served the leftover Clubly “Access Portal / Sign In / Create an account” login, not OneClub “Continue with Campus One”. Session-bridge UI tests therefore remained on `/login`. This is not Vercel Deployment Protection; the page loaded publicly.
+2. **Staging Render backend has not been deployed from this branch.** `GET /api/v1/admin/audit-logs` on `E2E_STAGING_API_BASE_URL` returned 404, so Step 3H/3I Admin APIs are not live there yet.
+
+GitHub `staging` secrets/variables are present (reset + seed succeeded). Production was not used as a substitute.
+
+**Staging Admin gate: BLOCKED** until this branch is deployed to the staging Vercel frontend and staging Render backend. Local Admin gate remains PASS.
 
 ## Campus One / session result
 
@@ -213,7 +235,7 @@ Known limitation (not P0/P1 at current staging scale): `GET /dashboard/admin-ope
 
 **Local Admin gate: PASS** (zero open P0/P1; typecheck/lint/unit/build; backend 381/381; Playwright 109/109).
 
-**Staging Admin gate:** recorded from the GitHub Actions dispatch after this commit is pushed. Do not treat mocked Playwright as staging proof. Do not mark “ready for production” until that run is green or an exact external blocker is documented.
+**Staging Admin gate: BLOCKED.** Exact blockers: staging Vercel still serves Clubly; staging Render does not yet expose Step 3H Admin audit-logs. Seed/reset against isolated staging Supabase succeeded. Do not mark “ready for production.”
 
 **Not started:** President, Advisor, Student, or Executive frontend functional integration.
 

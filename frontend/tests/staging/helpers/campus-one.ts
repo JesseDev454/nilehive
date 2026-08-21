@@ -23,6 +23,10 @@ export function assertStagingConfiguration() {
   for (const name of requiredSettings) requireSetting(name);
 }
 
+export function getStagingApiOrigin() {
+  return (process.env.E2E_STAGING_API_BASE_URL || process.env.E2E_STAGING_BASE_URL || "").replace(/\/$/, "");
+}
+
 export function getStagingBrowserOrigin() {
   return origin(requireSetting("E2E_STAGING_BASE_URL"));
 }
@@ -49,6 +53,11 @@ export async function signInThroughStagingBridge(page: Page, role: StagingRole) 
   }
 
   await page.goto(`${getStagingBrowserOrigin()}/`, { waitUntil: "domcontentloaded" });
+  if (await page.getByRole("heading", { name: "Club Services" }).isVisible().catch(() => false)) {
+    throw new Error(
+      "EXTERNAL BLOCKER: staging frontend is still Clubly. Deploy the OneClub build from this branch to E2E_STAGING_BASE_URL.",
+    );
+  }
 }
 
 export async function expectRestrictedAdminRoute(page: Page, route: string) {
@@ -58,12 +67,18 @@ export async function expectRestrictedAdminRoute(page: Page, route: string) {
 
 export async function apiAsRole(request: APIRequestContext, role: StagingRole) {
   assertStagingConfiguration();
-  const session = await request.post(`${getStagingBrowserOrigin()}/api/v1/auth/e2e/staging-session`, {
+  const apiOrigin = getStagingApiOrigin();
+  const session = await request.post(`${apiOrigin}/api/v1/auth/e2e/staging-session`, {
     headers: { "x-e2e-staging-auth": requireSetting("E2E_STAGING_AUTH_BRIDGE_SECRET") },
     data: { profile_id: getStagingActorProfileId(role) },
   });
+  if (session.status() === 404) {
+    throw new Error(
+      "EXTERNAL BLOCKER: staging Render backend does not expose the staging session bridge. Deploy this branch with APP_ENV=staging.",
+    );
+  }
   if (session.status() !== 204) {
     throw new Error(`Staging auth bridge rejected ${role} API session (${session.status()}).`);
   }
-  return request;
+  return apiOrigin;
 }
