@@ -221,6 +221,7 @@ Known limitation (not P0/P1 at current staging scale): `GET /dashboard/admin-ope
 
 - Revert the Step 3I commit on `codex/oneclub-functional-integration` if the membership audit write or seed expansion misbehaves in staging
 - Seed/reset only touch `E2E-` clubs and `e2e+` profiles
+- Seeded join-request members use `membership_status=inactive` (the enum has no `pending` value)
 - Do not roll back by mutating production
 
 ## Next recommended role

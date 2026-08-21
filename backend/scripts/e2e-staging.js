@@ -251,7 +251,7 @@ async function seed() {
     student_id: "900000014",
     email: actors.student.email || null,
     club_role: "member",
-    membership_status: "pending"
+    membership_status: "inactive"
   });
 
   const pendingProposal = await insertRow(client, "proposals", {
