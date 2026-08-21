@@ -392,6 +392,63 @@ test("admin approval activates membership and verifies the submitted payment", a
   assert.equal(result.request.status, "active");
 });
 
+test("membership decisions write a membership_request_reviewed audit log", async () => {
+  const auditEntries = [];
+  const fakeDatabase = {
+    async getMembershipRequestById() {
+      return createRequest({
+        id: "request-1",
+        profile_id: "student-1",
+        club_id: "club-1",
+        member_id: "member-1",
+        due_payment_id: "payment-1",
+        status: "pending"
+      });
+    },
+    async getClubMemberById() {
+      return createMember();
+    },
+    async updateDuePayment(paymentId, update) {
+      return createPayment({ id: paymentId, ...update });
+    },
+    async updateClubMember(memberId, update) {
+      return createMember({ id: memberId, ...update });
+    },
+    async updateMembershipRequest(requestId, update) {
+      return createRequest({ id: requestId, ...update });
+    },
+    async getProfileById() {
+      return createProfile({ club_id: "club-1" });
+    },
+    async createAuditLog(entry) {
+      auditEntries.push(entry);
+      return { id: `audit-${auditEntries.length}`, ...entry };
+    }
+  };
+
+  await decideMembershipRequest({
+    actor: { id: "admin-1", role: "admin", clubId: null },
+    requestId: "request-1",
+    payload: { decision: "approve", remarks: "Payment verified." },
+    database: fakeDatabase
+  });
+
+  await decideMembershipRequest({
+    actor: { id: "admin-1", role: "admin", clubId: null },
+    requestId: "request-1",
+    payload: { decision: "reject", remarks: "Proof does not match." },
+    database: fakeDatabase
+  });
+
+  assert.equal(auditEntries.length, 2);
+  assert.equal(auditEntries[0].action, "membership_request_reviewed");
+  assert.equal(auditEntries[0].entity_type, "membership_request");
+  assert.equal(auditEntries[0].metadata.decision, "approve");
+  assert.equal(auditEntries[1].metadata.decision, "reject");
+  assert.equal(auditEntries[0].metadata.membership_request_id, "request-1");
+  assert.doesNotMatch(JSON.stringify(auditEntries), /password|token|secret/i);
+});
+
 test("approving a membership request sets club_id on a profile with no club", async () => {
   let profileUpdateCall;
   const fakeDatabase = {

@@ -5,7 +5,7 @@ on:
   schedule:
     - cron: "30 2 * * *"
 
-# The six stable tenant accounts and the resettable E2E data set are shared.
+# The five product-role tenant accounts and the resettable E2E data set are shared.
 # Queue, rather than overlap, manual, nightly, and pre-release runs.
 concurrency:
   group: clubly-staging-e2e
@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   staging-e2e:
-    name: Clubly staging role matrix
+    name: OneClub Admin staging gate
     runs-on: ubuntu-latest
     timeout-minutes: 90
     environment: staging
@@ -37,8 +37,11 @@ jobs:
           node-version: lts/*
           cache: npm
           cache-dependency-path: |
+            package-lock.json
             backend/package-lock.json
             frontend/package-lock.json
+      - name: Install root dependencies
+        run: npm ci
       - name: Install backend dependencies
         run: npm ci
         working-directory: backend
@@ -47,22 +50,22 @@ jobs:
         working-directory: frontend
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
-        working-directory: frontend
       - name: Reset isolated staging E2E data
         run: npm run e2e:staging:reset
         working-directory: backend
       - name: Seed isolated staging E2E data
         run: npm run e2e:staging:seed
         working-directory: backend
-      - name: Run staging role suite
+      - name: Run staging Admin suite
         run: npm run test:e2e:staging
-        working-directory: frontend
       - name: Upload staging E2E artifacts
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
         with:
           name: staging-e2e-${{ github.run_id }}
           path: |
+            playwright-staging-report/
+            test-results/
             frontend/playwright-staging-report/
             frontend/test-results/
           retention-days: 30

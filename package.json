@@ -11,9 +11,9 @@
     "@types/node": "^26.0.0"
   },
   "scripts": {
-    "test:e2e": "npm --prefix frontend run test:e2e --",
-    "test:e2e:mock": "npm --prefix frontend run test:e2e:mock --",
-    "test:e2e:staging": "npm --prefix frontend run test:e2e:staging --",
+    "test:e2e": "npx playwright test",
+    "test:e2e:mock": "npx playwright test",
+    "test:e2e:staging": "npx playwright test --config playwright.staging.config.ts",
     "test:e2e:ui": "npm --prefix frontend run test:e2e:ui --",
     "test:e2e:headed": "npm --prefix frontend run test:e2e:headed --",
     "test:e2e:debug": "npm --prefix frontend run test:e2e:debug --"

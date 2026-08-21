@@ -95,6 +95,7 @@ export function adaptAuditLogPage(value: unknown): PaginatedEnvelope<AuditLogRec
 
 export const ACTION_LABELS: Record<string, string> = {
   proposal_reviewed: "Proposal reviewed",
+  membership_request_reviewed: "Membership request reviewed",
   dues_payment_reviewed: "Dues payment reviewed",
   role_updated: "Role updated",
   advisor_assigned: "Advisor assigned",

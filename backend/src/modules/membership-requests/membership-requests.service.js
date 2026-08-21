@@ -305,6 +305,23 @@ async function listMembershipRequests(options) {
   return pagination ? mapPaginatedResult(requests, formatter) : requests.map(formatter);
 }
 
+async function writeMembershipDecisionAudit({ actor, request, decision, remarks, database }) {
+  await writeAuditLog(database, {
+    actor_id: actor.id,
+    entity_type: "membership_request",
+    action: "membership_request_reviewed",
+    target_profile_id: request.profile_id,
+    club_id: request.club_id,
+    due_payment_id: request.due_payment_id || null,
+    remarks: remarks || null,
+    metadata: {
+      membership_request_id: request.id,
+      decision,
+      previous_status: request.status
+    }
+  });
+}
+
 async function approveMembershipRequest({ actor, request, decisionPayload, database }) {
   const now = new Date().toISOString();
   const member = request.member_id && database.getClubMemberById
@@ -341,6 +358,14 @@ async function approveMembershipRequest({ actor, request, decisionPayload, datab
       member_id: activeMember.id,
       due_payment_id: payment?.id || request.due_payment_id,
       whatsapp_onboarding_status: "ready"
+  });
+
+  await writeMembershipDecisionAudit({
+    actor,
+    request,
+    decision: "approve",
+    remarks: decisionPayload.decision_remarks,
+    database
   });
 
   // Assign the approved club to the user's profile if they are not yet
@@ -391,6 +416,14 @@ async function decideMembershipRequest(options) {
       decision_remarks: decisionPayload.decision_remarks,
       reviewed_by: actor.id,
       reviewed_at: new Date().toISOString()
+    });
+
+    await writeMembershipDecisionAudit({
+      actor,
+      request,
+      decision: "reject",
+      remarks: decisionPayload.decision_remarks,
+      database
     });
 
     return {

@@ -1389,6 +1389,7 @@ test("audit adapters redact nested secrets and preserve actor display", () => {
   assert.equal(integrated.auditAdapters.isRedactedValue(page.items[0].metadata.nested.access_token), true);
   assert.equal(integrated.auditAdapters.actorDisplayName(null), "Unknown actor");
   assert.equal(integrated.auditAdapters.actorDisplayName({ id: "x", full_name: null, role: null, student_id: null }), "Deleted or unavailable actor");
+  assert.equal(integrated.auditAdapters.actionLabel("membership_request_reviewed"), "Membership request reviewed");
 });
 
 test("Audit API lists, paginates, filters, omits CSRF, and honors abort", async () => {

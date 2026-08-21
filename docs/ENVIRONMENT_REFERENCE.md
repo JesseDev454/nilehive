@@ -76,7 +76,7 @@ This document lists the important environment variables used by the frontend and
 
 ## Staging E2E Test Configuration
 
-The staging suite is intentionally isolated from production and does not automate Campus One login. It uses a temporary server-signed session for six dedicated `e2e+` profiles, then exercises the deployed frontend, backend, Supabase database, and storage.
+The staging suite is intentionally isolated from production and does not automate Campus One login. It uses a temporary server-signed session for five dedicated `e2e+` product-role profiles, then exercises the deployed frontend, backend, Supabase database, and storage.
 
 Set the following only on the **staging backend deployment**:
 

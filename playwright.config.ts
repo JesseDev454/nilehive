@@ -7,7 +7,7 @@ const frontendDir = path.join(__dirname, "frontend");
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  testMatch: "{smoke,auth,approvals,people,clubs,events,announcements,notifications,feedback,analytics,home,activity}.spec.ts",
+  testMatch: "{smoke,auth,approvals,people,clubs,events,announcements,notifications,feedback,analytics,home,activity,profile,more}.spec.ts",
   fullyParallel: true,
   timeout: 30_000,
   expect: {
