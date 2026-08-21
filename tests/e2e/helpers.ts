@@ -1335,4 +1335,194 @@ export async function mockAnalyticsApi(
   };
 }
 
+export function e2eAdminDashboard(zeros = false) {
+  return {
+    role: "admin",
+    generated_at: "2026-08-21T08:00:00.000Z",
+    summary: {
+      total_clubs: zeros ? 0 : 14,
+      pending_admin_proposals: zeros ? 0 : 2,
+      pending_membership_requests: zeros ? 0 : 1,
+      submitted_dues_payments: zeros ? 0 : 1,
+      missing_reports: zeros ? 0 : 1,
+      approved_events: zeros ? 0 : 3,
+      feedback_count: zeros ? 0 : 4,
+    },
+    pending_actions: zeros
+      ? []
+      : [
+          { type: "pending_admin_review", label: "Proposals waiting for admin review", count: 2 },
+          { type: "membership_requests", label: "Membership requests waiting for review", count: 1 },
+        ],
+    missing_reports: zeros
+      ? []
+      : [
+          {
+            proposal_id: "proposal-e2e-1",
+            club_id: "club-8",
+            title: "Google Cloud Buildathon",
+            event_date: "2026-08-10",
+            days_since_event: 11,
+          },
+        ],
+    recent_activity: zeros
+      ? []
+      : [
+          {
+            id: "proposal-proposal-e2e-1",
+            type: "proposal",
+            club_id: "club-8",
+            club_name: "Nile Google Developers",
+            title: "Google Cloud Buildathon",
+            message: "Proposal is pending admin review.",
+            created_at: "2026-08-21T07:00:00.000Z",
+          },
+        ],
+  };
+}
+
+export async function mockAdminHomeApi(
+  page: Page,
+  options: { zeros?: boolean; listStatus?: number } = {},
+) {
+  const requests: string[] = [];
+  const listErrorStatus = options.listStatus && options.listStatus !== 200 ? options.listStatus : null;
+  let failList = Boolean(listErrorStatus);
+
+  await page.route("**/api/v1/dashboard/admin-operations**", async (route) => {
+    requests.push(route.request().url());
+    if (failList) {
+      await route.fulfill({
+        status: listErrorStatus || 500,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { code: listErrorStatus === 403 ? "FORBIDDEN" : "SERVER_ERROR", message: "Dashboard unavailable" } }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ data: e2eAdminDashboard(options.zeros) }),
+    });
+  });
+
+  await page.route("**/api/v1/dashboard/nav-counts**", async (route) => {
+    requests.push(route.request().url());
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        data: {
+          role: "admin",
+          generated_at: "2026-08-21T08:00:00.000Z",
+          counts: {
+            notifications: options.zeros ? 0 : 2,
+            final_review: options.zeros ? 0 : 2,
+            membership_requests: options.zeros ? 0 : 1,
+            dues: options.zeros ? 0 : 1,
+            events: options.zeros ? 0 : 3,
+            reports_archive: options.zeros ? 0 : 1,
+            tasks: 0,
+          },
+        },
+      }),
+    });
+  });
+
+  return {
+    requests,
+    allowList() {
+      failList = false;
+    },
+  };
+}
+
+export function e2eAuditPage(overrides: { redacted?: boolean; empty?: boolean } = {}) {
+  if (overrides.empty) {
+    return { items: [], page: 1, page_size: 20, total: 0, has_next: false };
+  }
+  return {
+    items: [
+      {
+        id: "audit-e2e-1",
+        actor_id: "e2e-admin-profile",
+        actor: { id: "e2e-admin-profile", full_name: "Zainab Ahmed", role: "admin", student_id: "STAFF/1004" },
+        action: "proposal_reviewed",
+        entity_type: "proposal",
+        entity_id: "proposal-e2e-1",
+        club: { id: "club-8", name: "Nile Google Developers", code: "NGDC" },
+        remarks: "Approved for campus calendar.",
+        metadata: {
+          decision: "approve",
+          nested: overrides.redacted ? { access_token: { redacted: true } } : { stage: "admin" },
+        },
+        created_at: "2026-08-20T10:00:00.000Z",
+      },
+      {
+        id: "audit-e2e-2",
+        actor_id: "e2e-admin-profile",
+        actor: { id: "e2e-admin-profile", full_name: "Zainab Ahmed", role: "admin", student_id: "STAFF/1004" },
+        action: "dues_payment_reviewed",
+        entity_type: "due_payment",
+        entity_id: "due-e2e-1",
+        remarks: "Verified transfer.",
+        metadata: { status: "paid" },
+        created_at: "2026-08-19T16:15:00.000Z",
+      },
+    ],
+    page: 1,
+    page_size: 20,
+    total: 2,
+    has_next: false,
+  };
+}
+
+export async function mockAuditLogsApi(
+  page: Page,
+  options: { listStatus?: number; empty?: boolean } = {},
+) {
+  const requests: string[] = [];
+  const listErrorStatus = options.listStatus && options.listStatus !== 200 ? options.listStatus : null;
+  let failList = Boolean(listErrorStatus);
+
+  await page.route("**/api/v1/admin/audit-logs**", async (route) => {
+    const url = route.request().url();
+    requests.push(url);
+    if (route.request().method() !== "GET") {
+      await route.fulfill({
+        status: 404,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { code: "NOT_FOUND", message: "Route not found" } }),
+      });
+      return;
+    }
+    if (failList) {
+      await route.fulfill({
+        status: listErrorStatus || 500,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: {
+            code: listErrorStatus === 400 ? "VALIDATION_ERROR" : listErrorStatus === 403 ? "FORBIDDEN" : "SERVER_ERROR",
+            message: listErrorStatus === 400 ? "date_from must be on or before date_to" : "Audit log unavailable",
+          },
+        }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ data: e2eAuditPage({ redacted: true, empty: options.empty }) }),
+    });
+  });
+
+  return {
+    requests,
+    allowList() {
+      failList = false;
+    },
+  };
+}
+
+
 

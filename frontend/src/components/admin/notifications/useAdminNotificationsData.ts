@@ -5,6 +5,7 @@ import { isAbortError, normalizeNotificationsError, type NotificationsUiError } 
 import { mockAdminNotifications } from "@/lib/notifications/mockNotifications";
 import type { AdminNotificationView } from "@/lib/notifications/types";
 import { setAdminUnreadCount } from "@/lib/notifications/unreadStore";
+import { notifyAdminOpsChanged } from "@/lib/admin/opsStore";
 import { isMockPreviewMode } from "@/lib/oneclubMode";
 
 export type DirectoryStatus = "idle" | "loading" | "refreshing" | "ready" | "empty" | "error" | "forbidden";
@@ -123,6 +124,7 @@ export function useAdminNotificationsData(reportAuthFailure: (error: unknown) =>
           publishUnread(items);
           return { ...current, items };
         });
+        notifyAdminOpsChanged();
         setLiveMessage(`${item.title} marked read.`);
         return true;
       } catch (error) {

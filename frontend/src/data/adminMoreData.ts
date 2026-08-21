@@ -4,6 +4,7 @@ import {
   CalendarDays,
   FileText,
   MessageSquare,
+  ScrollText,
   UserCircle,
   type LucideIcon
 } from "lucide-react";
@@ -81,6 +82,18 @@ export const ADMIN_LAUNCHER_DESTINATIONS: AdminLauncherDestination[] = [
     keywords: ["analytics", "metrics", "counts", "stats", "telemetry", "active users", "reports", "insights"],
     badge: "Trends",
     accentClass: "text-primary bg-primary/10 border-primary/20"
+  },
+  {
+    id: "activity",
+    title: "Activity Log",
+    shortTitle: "Activity",
+    url: "/admin/activity",
+    icon: ScrollText,
+    category: "Insights",
+    description: "Read the immutable Club Services audit history.",
+    keywords: ["activity", "audit", "log", "history", "records", "mutations"],
+    badge: "Read-Only",
+    accentClass: "text-slate-600 bg-slate-500/10 border-slate-500/20 dark:text-slate-300"
   },
   {
     id: "profile",

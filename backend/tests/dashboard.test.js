@@ -743,3 +743,50 @@ test("missing-token dashboard access is blocked", async (t) => {
   assert.equal(response.status, 401);
   assert.equal(payload.error.code, "AUTH_REQUIRED");
 });
+
+test("admin can fetch navigation counts with zero-safe operational values", async (t) => {
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  const { response, payload } = await getDashboard(
+    server.baseUrl,
+    "/api/v1/dashboard/nav-counts",
+    "admin-token"
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.role, "admin");
+  assert.equal(payload.data.counts.notifications, 1);
+  assert.equal(payload.data.counts.final_review, 0);
+  assert.equal(payload.data.counts.membership_requests, 1);
+  assert.equal(payload.data.counts.dues, 1);
+  assert.equal(payload.data.counts.reports_archive, 1);
+  assert.equal(payload.data.counts.events, 1);
+  assert.equal(typeof payload.data.generated_at, "string");
+});
+
+test("non-admin navigation counts omit Admin operational queues", async (t) => {
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  const { response, payload } = await getDashboard(
+    server.baseUrl,
+    "/api/v1/dashboard/nav-counts",
+    "president-token"
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(payload.data.role, "president");
+  assert.equal(payload.data.counts.notifications, 1);
+  assert.equal(payload.data.counts.final_review, undefined);
+  assert.equal(payload.data.counts.tasks, undefined);
+});
+
+test("unauthenticated navigation counts are blocked", async (t) => {
+  const server = await createTestServer(createFakeDatabase());
+  t.after(() => server.close());
+
+  const { response, payload } = await getDashboard(server.baseUrl, "/api/v1/dashboard/nav-counts");
+  assert.equal(response.status, 401);
+  assert.equal(payload.error.code, "AUTH_REQUIRED");
+});

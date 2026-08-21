@@ -37,7 +37,8 @@ export function AdminThemePreferencesCard() {
         <button
           type="button"
           onClick={() => setTheme("light")}
-          className={`flex items-center justify-between rounded-xl border p-3.5 text-left transition-all duration-180 ${
+          aria-pressed={!isDark}
+          className={`flex items-center justify-between rounded-xl border p-3.5 text-left transition-all duration-180 min-h-11 ${
             !isDark
               ? "border-primary bg-primary/5 ring-1 ring-primary shadow-2xs"
               : "border-border bg-background hover:bg-muted/40 text-muted-foreground"
@@ -63,7 +64,8 @@ export function AdminThemePreferencesCard() {
         <button
           type="button"
           onClick={() => setTheme("dark")}
-          className={`flex items-center justify-between rounded-xl border p-3.5 text-left transition-all duration-180 ${
+          aria-pressed={isDark}
+          className={`flex items-center justify-between rounded-xl border p-3.5 text-left transition-all duration-180 min-h-11 ${
             isDark
               ? "border-primary bg-primary/5 ring-1 ring-primary shadow-2xs"
               : "border-border bg-background hover:bg-muted/40 text-muted-foreground"

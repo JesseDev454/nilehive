@@ -13,6 +13,7 @@ export function AdminMoreCard({ destination }: AdminMoreCardProps) {
     <Link
       id={`admin-launcher-${destination.id}`}
       to={destination.url}
+      aria-label={`Open ${destination.title}`}
       className="group relative flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-2xs transition-all duration-180 hover:border-primary/50 hover:bg-muted/20 hover:shadow-xs focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary"
     >
       <div className="space-y-3">

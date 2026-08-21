@@ -1,43 +1,47 @@
 import { useAuth } from "@/contexts/AuthContext";
 import {
+  ADMIN_ROLE_CAPABILITIES,
   DETERMINISTIC_ADMIN_PROFILE,
-  type AdminProfileDetails
+  displayOrNotProvided,
+  type AdminProfileDetails,
 } from "@/data/adminProfileData";
 import { AdminProfileHeader } from "@/components/admin/profile/AdminProfileHeader";
 import { AdminIdentityCard } from "@/components/admin/profile/AdminIdentityCard";
 import { AdminRoleScopeCard } from "@/components/admin/profile/AdminRoleScopeCard";
 import { AdminThemePreferencesCard } from "@/components/admin/profile/AdminThemePreferencesCard";
 import { AdminSignOutDialog } from "@/components/admin/profile/AdminSignOutDialog";
+import { isMockPreviewMode } from "@/lib/oneclubMode";
 
 export function AdminProfileWorkspace() {
-  const { profile, user } = useAuth();
+  const { sessionProfile, user, app_role, portal_role, custom_roles, effective_role, account_status } = useAuth();
+  const mockMode = isMockPreviewMode();
 
-  // Combine live auth user/profile if available with deterministic fallback
-  const adminDetails: AdminProfileDetails = {
-    ...DETERMINISTIC_ADMIN_PROFILE,
-    name: profile?.full_name || DETERMINISTIC_ADMIN_PROFILE.name,
-    email: user?.email || profile?.full_name ? `${profile?.full_name?.toLowerCase().replace(/\s+/g, ".")}@nileuniversity.edu.ng` : DETERMINISTIC_ADMIN_PROFILE.email,
-    staffId: profile?.student_id || DETERMINISTIC_ADMIN_PROFILE.staffId,
-    department: profile?.department || DETERMINISTIC_ADMIN_PROFILE.department
-  };
+  const adminDetails: AdminProfileDetails = mockMode
+    ? DETERMINISTIC_ADMIN_PROFILE
+    : {
+        id: sessionProfile?.id || "unknown",
+        name: displayOrNotProvided(sessionProfile?.full_name),
+        email: displayOrNotProvided(sessionProfile?.email || user.email),
+        staffId: displayOrNotProvided(sessionProfile?.student_id),
+        portalUserId: displayOrNotProvided(sessionProfile?.portal_user_id),
+        portalRole: displayOrNotProvided(portal_role || sessionProfile?.portal_role),
+        appRole: displayOrNotProvided(app_role || sessionProfile?.app_role),
+        effectiveRole: displayOrNotProvided(effective_role || sessionProfile?.effective_role),
+        customRoles: custom_roles.length ? custom_roles : sessionProfile?.custom_roles || [],
+        accountStatus: displayOrNotProvided(account_status || sessionProfile?.account_status),
+        department: displayOrNotProvided(""),
+        authProvider: "Nile University Campus One Single Sign-On (OIDC)",
+        governanceScope: "All official Nile University student clubs",
+        authorities: ADMIN_ROLE_CAPABILITIES,
+      };
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-6 animate-fade-in pb-16">
-      {/* Profile Header */}
+    <div className="mx-auto w-full max-w-4xl space-y-6 animate-fade-in pb-16" data-profile-source={mockMode ? "mock" : "integrated"}>
       <AdminProfileHeader profile={adminDetails} />
-
-      {/* Main Content Stack */}
       <div className="space-y-5">
-        {/* Campus One Identity (Read-Only) */}
         <AdminIdentityCard profile={adminDetails} />
-
-        {/* OneClub Role Scope & Institutional Authority (Read-Only, No Switcher) */}
         <AdminRoleScopeCard profile={adminDetails} />
-
-        {/* Interface Display Mode (Moon/Sun Theme Switcher) */}
         <AdminThemePreferencesCard />
-
-        {/* Session Security & Sign Out Confirmation */}
         <AdminSignOutDialog />
       </div>
     </div>

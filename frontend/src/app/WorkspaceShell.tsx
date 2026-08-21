@@ -3,15 +3,24 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useSyncExternalStore } from "react";
 import { ThemeToggle } from "@/shared/components/ThemeToggle";
 import { useAuth, type PreviewRole } from "@/contexts/AuthContext";
-import { listAllNotifications } from "@/lib/api/notifications";
+import { getAdminNavCounts } from "@/lib/api/dashboard";
 import { mockAdminNotifications } from "@/lib/notifications/mockNotifications";
 import { getAdminUnreadCount, setAdminUnreadCount, subscribeAdminUnreadCount } from "@/lib/notifications/unreadStore";
+import {
+  getAdminApprovalsCount,
+  getAdminOpsGeneration,
+  setAdminApprovalsCount,
+  subscribeAdminApprovalsCount,
+  subscribeAdminOpsGeneration,
+} from "@/lib/admin/opsStore";
+import { approvalsBadgeFromNavCounts } from "@/lib/dashboard/adapters";
 import { isMockPreviewMode } from "@/lib/oneclubMode";
 
 export interface NavigationItem {
   label: string;
   path: string;
   icon: typeof Bell;
+  badgeKey?: "approvals";
 }
 
 interface WorkspaceShellProps {
@@ -30,6 +39,10 @@ const PROFILE_NAMES: Record<PreviewRole, string> = {
   admin: "Zainab Ahmed",
 };
 
+function formatBadge(count: number): string {
+  return count > 99 ? "99+" : String(count);
+}
+
 export function WorkspaceShell({ children, role, roleLabel, navigation, onRoleChange }: WorkspaceShellProps) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -39,22 +52,34 @@ export function WorkspaceShell({ children, role, roleLabel, navigation, onRoleCh
   const initials = displayName.split(" ").filter(Boolean).map((part) => part[0]).join("").slice(0, 2);
   const isSelected = (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`);
   const unreadCount = useSyncExternalStore(subscribeAdminUnreadCount, getAdminUnreadCount, getAdminUnreadCount);
+  const approvalsCount = useSyncExternalStore(subscribeAdminApprovalsCount, getAdminApprovalsCount, getAdminApprovalsCount);
+  const opsGeneration = useSyncExternalStore(subscribeAdminOpsGeneration, getAdminOpsGeneration, getAdminOpsGeneration);
 
   useEffect(() => {
     if (role !== "admin") {
       setAdminUnreadCount(0);
+      setAdminApprovalsCount(0);
       return;
     }
     if (mockMode) {
       setAdminUnreadCount(mockAdminNotifications().filter((item) => !item.isRead).length);
+      setAdminApprovalsCount(4);
       return;
     }
     const controller = new AbortController();
-    void listAllNotifications(controller.signal)
-      .then((items) => setAdminUnreadCount(items.filter((item) => !item.read_at).length))
+    void getAdminNavCounts(controller.signal)
+      .then((result) => {
+        setAdminUnreadCount(result.counts.notifications);
+        setAdminApprovalsCount(approvalsBadgeFromNavCounts(result.counts));
+      })
       .catch(() => undefined);
     return () => controller.abort();
-  }, [mockMode, role]);
+  }, [mockMode, opsGeneration, role]);
+
+  const badgeFor = (item: NavigationItem) => {
+    if (role !== "admin" || item.badgeKey !== "approvals") return 0;
+    return approvalsCount;
+  };
 
   return (
     <div className="oneclub-layout">
@@ -68,10 +93,18 @@ export function WorkspaceShell({ children, role, roleLabel, navigation, onRoleCh
           {navigation.map((item) => {
             const Icon = item.icon;
             const selected = isSelected(item.path);
+            const badge = badgeFor(item);
             return (
-              <Link key={item.path} to={item.path} className={`rail-link ${selected ? "is-selected" : ""}`} aria-current={selected ? "page" : undefined}>
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`rail-link ${selected ? "is-selected" : ""}`}
+                aria-current={selected ? "page" : undefined}
+                aria-label={badge > 0 ? `${item.label}, ${badge} waiting` : item.label}
+              >
                 <Icon className="h-5 w-5" aria-hidden="true" />
                 <span>{item.label}</span>
+                {badge > 0 ? <span className="topbar-unread" aria-hidden="true">{formatBadge(badge)}</span> : null}
               </Link>
             );
           })}
@@ -127,7 +160,7 @@ export function WorkspaceShell({ children, role, roleLabel, navigation, onRoleCh
             >
               <Bell className="h-5 w-5" />
               {role === "admin" && unreadCount > 0 ? (
-                <span className="topbar-unread" aria-hidden="true">{unreadCount > 99 ? "99+" : unreadCount}</span>
+                <span className="topbar-unread" aria-hidden="true">{formatBadge(unreadCount)}</span>
               ) : null}
             </Link>
             <ThemeToggle />
@@ -139,9 +172,19 @@ export function WorkspaceShell({ children, role, roleLabel, navigation, onRoleCh
           {navigation.map((item) => {
             const Icon = item.icon;
             const selected = isSelected(item.path);
+            const badge = badgeFor(item);
             return (
-              <Link key={item.path} to={item.path} className={`mobile-nav-link ${selected ? "is-selected" : ""}`} aria-current={selected ? "page" : undefined}>
-                <Icon className="h-5 w-5" aria-hidden="true" />
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`mobile-nav-link ${selected ? "is-selected" : ""}`}
+                aria-current={selected ? "page" : undefined}
+                aria-label={badge > 0 ? `${item.label}, ${badge} waiting` : item.label}
+              >
+                <span className="relative">
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                  {badge > 0 ? <span className="topbar-unread" aria-hidden="true">{formatBadge(badge)}</span> : null}
+                </span>
                 <span>{item.label}</span>
               </Link>
             );

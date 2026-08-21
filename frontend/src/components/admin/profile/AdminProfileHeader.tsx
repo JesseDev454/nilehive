@@ -1,4 +1,4 @@
-import { CheckCircle2, Shield, ShieldCheck, UserCircle } from "lucide-react";
+import { CheckCircle2, ShieldCheck } from "lucide-react";
 import { type AdminProfileDetails } from "@/data/adminProfileData";
 
 interface AdminProfileHeaderProps {
@@ -20,7 +20,7 @@ export function AdminProfileHeader({ profile }: AdminProfileHeaderProps) {
       <div className="flex items-center gap-4">
         {/* Monogram Badge */}
         <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground font-bold text-xl shadow-xs">
-          {initials || "ZA"}
+            {initials || "AD"}
           <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-background border-2 border-background shadow-2xs">
             <ShieldCheck className="h-4 w-4 text-primary fill-primary/20" />
           </div>

@@ -2030,6 +2030,73 @@ function createDatabase(options = {}) {
       return data;
     },
 
+    async listAuditLogs(filters = {}) {
+      const auditLogListSelect = `${auditLogSelect}, actor:profiles!audit_logs_actor_id_fkey(id, full_name, role, student_id), target:profiles!audit_logs_target_profile_id_fkey(id, full_name, role, student_id), club:clubs!audit_logs_club_id_fkey(id, name, code)`;
+      const ascending = (filters.order || "desc") === "asc";
+      let query = getClient()
+        .from("audit_logs")
+        .select(auditLogListSelect, filters.pagination ? { count: "exact" } : undefined)
+        .order("created_at", { ascending })
+        .order("id", { ascending });
+
+      if (filters.actor_id) {
+        query = query.eq("actor_id", filters.actor_id);
+      }
+
+      if (filters.action) {
+        query = query.eq("action", filters.action);
+      }
+
+      if (filters.entity_type) {
+        query = query.eq("entity_type", filters.entity_type);
+      }
+
+      if (filters.club_id) {
+        query = query.eq("club_id", filters.club_id);
+      }
+
+      if (filters.entity_id) {
+        query = query.or(
+          [
+            `proposal_id.eq.${filters.entity_id}`,
+            `due_payment_id.eq.${filters.entity_id}`,
+            `announcement_id.eq.${filters.entity_id}`,
+            `leadership_application_id.eq.${filters.entity_id}`,
+            `target_profile_id.eq.${filters.entity_id}`,
+            `club_id.eq.${filters.entity_id}`
+          ].join(",")
+        );
+      }
+
+      if (filters.date_from) {
+        query = query.gte("created_at", filters.date_from);
+      }
+
+      if (filters.date_to) {
+        query = query.lte("created_at", filters.date_to);
+      }
+
+      if (filters.q) {
+        query = query.or(
+          `action.ilike.%${filters.q}%,entity_type.ilike.%${filters.q}%,remarks.ilike.%${filters.q}%`
+        );
+      }
+
+      query = applyPagination(query, filters.pagination);
+
+      const { data, error, count } = await query;
+
+      if (error && isMissingRelation(error, "audit_logs")) {
+        return formatQueryResult({ data: [], count: 0, pagination: filters.pagination });
+      }
+
+      if (error) {
+        throw error;
+      }
+
+      return formatQueryResult({ data, count, pagination: filters.pagination });
+    },
+
     async createClubMemberStatusHistory(entry) {
       const { data, error } = await getClient()
         .from("club_member_status_history")

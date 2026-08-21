@@ -58,6 +58,12 @@ async function loadModules(env) {
       analyticsAdapters: await server.ssrLoadModule("/src/lib/analytics/adapters.ts"),
       analyticsErrors: await server.ssrLoadModule("/src/lib/analytics/errors.ts"),
       analyticsApi: await server.ssrLoadModule("/src/lib/api/analytics.ts"),
+      dashboardAdapters: await server.ssrLoadModule("/src/lib/dashboard/adapters.ts"),
+      dashboardErrors: await server.ssrLoadModule("/src/lib/dashboard/errors.ts"),
+      dashboardApi: await server.ssrLoadModule("/src/lib/api/dashboard.ts"),
+      auditAdapters: await server.ssrLoadModule("/src/lib/audit/adapters.ts"),
+      auditErrors: await server.ssrLoadModule("/src/lib/audit/errors.ts"),
+      auditApi: await server.ssrLoadModule("/src/lib/api/audit.ts"),
     };
   } finally {
     await server.close();
@@ -93,6 +99,7 @@ test("matchAdminWorkspace matches exact Admin destinations", () => {
   assert.equal(matchAdminWorkspace("/admin/feedback"), "feedback");
   assert.equal(matchAdminWorkspace("/admin/analytics"), "analytics");
   assert.equal(matchAdminWorkspace("/admin/profile"), "profile");
+  assert.equal(matchAdminWorkspace("/admin/activity"), "activity");
   assert.equal(matchAdminWorkspace("/admin/more"), "more");
 });
 
@@ -163,8 +170,9 @@ test("Admin More destinations use explicit /admin prefixes", () => {
   assert.ok(urls.includes("/admin/notifications"));
   assert.ok(urls.includes("/admin/feedback"));
   assert.ok(urls.includes("/admin/analytics"));
+  assert.ok(urls.includes("/admin/activity"));
   assert.ok(urls.includes("/admin/profile"));
-  assert.equal(urls.some((url) => url === "/events" || url === "/communications"), false);
+  assert.equal(urls.some((url) => url === "/events" || url === "/communications" || url === "/admin/tasks"), false);
 });
 
 function jsonResponse(body, status = 200) {
@@ -1094,7 +1102,8 @@ test("notification adapters map types, read state, and reject unsafe deep links"
   assert.equal(integrated.notificationsDeepLinks.sanitizeAdminDeepLink("https://evil.test"), null);
   assert.equal(integrated.notificationsDeepLinks.sanitizeAdminDeepLink("javascript:alert(1)"), null);
   assert.equal(integrated.notificationsDeepLinks.sanitizeAdminDeepLink("//evil.test"), null);
-  assert.equal(integrated.notificationsDeepLinks.sanitizeAdminDeepLink("/admin/home"), null);
+  assert.equal(integrated.notificationsDeepLinks.sanitizeAdminDeepLink("/admin/home"), "/admin/home");
+  assert.equal(integrated.notificationsDeepLinks.sanitizeAdminDeepLink("/admin/activity"), "/admin/activity");
   assert.equal(integrated.notificationsDeepLinks.sanitizeAdminDeepLink("/admin/approvals"), "/admin/approvals");
 });
 
@@ -1288,5 +1297,157 @@ test("Analytics API requests the selected range, omits CSRF on GET, and honors a
       (error) => error.name === "AbortError",
     );
   });
+});
+
+test("dashboard adapters map real counts, zeros, and drop task activity", () => {
+  const view = integrated.dashboardAdapters.adaptAdminOperationsDashboard({
+    generated_at: "2026-08-21T08:00:00.000Z",
+    summary: {
+      total_clubs: 14,
+      pending_admin_proposals: 2,
+      pending_membership_requests: 0,
+      submitted_dues_payments: 1,
+      missing_reports: 0,
+      club_health_score: 91,
+    },
+    recent_activity: [
+      { id: "proposal-1", type: "proposal", title: "Summit", message: "Waiting", created_at: "2026-08-21T07:00:00.000Z" },
+      { id: "task-1", type: "task", title: "Book hall", message: "Open task", created_at: "2026-08-21T06:00:00.000Z" },
+    ],
+    pending_actions: [{ type: "open_tasks", label: "Open club tasks", count: 4 }],
+  });
+  assert.equal(view.totalClubs, 14);
+  assert.equal(view.attention.find((item) => item.id === "proposals").count, 2);
+  assert.equal(view.attention.find((item) => item.id === "join_requests").count, 0);
+  assert.equal(view.recentActivity.length, 1);
+  assert.equal(view.recentActivity[0].destinationUrl, "/admin/approvals");
+  const counts = integrated.dashboardAdapters.adaptNavCounts({
+    role: "admin",
+    generated_at: "2026-08-21T08:00:00.000Z",
+    counts: { notifications: 3, final_review: 2, membership_requests: 1, dues: 4, tasks: 9 },
+  });
+  assert.equal(counts.counts.notifications, 3);
+  assert.equal(integrated.dashboardAdapters.approvalsBadgeFromNavCounts(counts.counts), 7);
+  assert.equal(counts.counts.tasks, undefined);
+});
+
+test("Dashboard API omits CSRF on GET, handles zeros, and honors abort", async () => {
+  const calls = [];
+  await withMockFetch(async (url, init = {}) => {
+    const headers = new Headers(init.headers);
+    calls.push({ url: String(url), method: init.method || "GET", csrf: headers.get("X-CSRF-Token") });
+    if (String(url).includes("nav-counts")) {
+      return jsonResponse({ data: { role: "admin", generated_at: "2026-08-21T08:00:00.000Z", counts: { notifications: 0, final_review: 0, dues: 0 } } });
+    }
+    return jsonResponse({
+      data: {
+        generated_at: "2026-08-21T08:00:00.000Z",
+        summary: { total_clubs: 0, pending_admin_proposals: 0, pending_membership_requests: 0, submitted_dues_payments: 0, missing_reports: 0 },
+        recent_activity: [],
+      },
+    });
+  }, async () => {
+    const home = await integrated.dashboardApi.getAdminOperationsDashboard();
+    const nav = await integrated.dashboardApi.getAdminNavCounts();
+    assert.equal(home.totalClubs, 0);
+    assert.equal(nav.counts.notifications, 0);
+    assert.equal(calls[0].csrf, null);
+    assert.equal(calls[1].csrf, null);
+  });
+  const controller = new AbortController();
+  controller.abort();
+  await withMockFetch(async (_url, init = {}) => {
+    if (init.signal?.aborted) throw new DOMException("The operation was aborted.", "AbortError");
+    return jsonResponse({ data: {} });
+  }, async () => {
+    await assert.rejects(
+      () => integrated.dashboardApi.getAdminOperationsDashboard(controller.signal),
+      (error) => error.name === "AbortError",
+    );
+  });
+});
+
+test("audit adapters redact nested secrets and preserve actor display", () => {
+  const page = integrated.auditAdapters.adaptAuditLogPage({
+    items: [{
+      id: "audit-1",
+      actor_id: "admin-1",
+      actor: { id: "admin-1", full_name: "Zainab Ahmed", role: "admin" },
+      action: "proposal_reviewed",
+      entity_type: "proposal",
+      entity_id: "proposal-1",
+      metadata: { decision: "approve", nested: { access_token: { redacted: true } } },
+      created_at: "2026-08-20T10:00:00.000Z",
+    }],
+    page: 1,
+    page_size: 20,
+    total: 1,
+    has_next: false,
+  });
+  assert.equal(page.items[0].id, "audit-1");
+  assert.equal(integrated.auditAdapters.actorDisplayName(page.items[0].actor), "Zainab Ahmed");
+  assert.equal(integrated.auditAdapters.isRedactedValue(page.items[0].metadata.nested.access_token), true);
+  assert.equal(integrated.auditAdapters.actorDisplayName(null), "Unknown actor");
+  assert.equal(integrated.auditAdapters.actorDisplayName({ id: "x", full_name: null, role: null, student_id: null }), "Deleted or unavailable actor");
+});
+
+test("Audit API lists, paginates, filters, omits CSRF, and honors abort", async () => {
+  const calls = [];
+  await withMockFetch(async (url, init = {}) => {
+    const headers = new Headers(init.headers);
+    calls.push({ url: String(url), method: init.method || "GET", csrf: headers.get("X-CSRF-Token") });
+    return jsonResponse({
+      data: {
+        items: [{
+          id: "audit-1",
+          action: "proposal_reviewed",
+          entity_type: "proposal",
+          created_at: "2026-08-20T10:00:00.000Z",
+          metadata: {},
+        }],
+        page: 2,
+        page_size: 20,
+        total: 21,
+        has_next: true,
+      },
+    });
+  }, async () => {
+    const page = await integrated.auditApi.listAdminAuditLogs({
+      page: 2,
+      q: "proposal",
+      action: "proposal_reviewed",
+      entity_type: "proposal",
+      date_from: "2026-08-01",
+      date_to: "2026-08-21",
+    });
+    assert.equal(page.page, 2);
+    assert.equal(page.has_next, true);
+    assert.equal(calls[0].csrf, null);
+    assert.match(calls[0].url, /page=2/);
+    assert.match(calls[0].url, /action=proposal_reviewed/);
+    assert.match(calls[0].url, /date_from=2026-08-01/);
+  });
+  const controller = new AbortController();
+  controller.abort();
+  await withMockFetch(async (_url, init = {}) => {
+    if (init.signal?.aborted) throw new DOMException("The operation was aborted.", "AbortError");
+    return jsonResponse({ data: { items: [] } });
+  }, async () => {
+    await assert.rejects(
+      () => integrated.auditApi.listAdminAuditLogs({ signal: controller.signal }),
+      (error) => error.name === "AbortError",
+    );
+  });
+});
+
+test("audit and dashboard errors distinguish 400 401 403 429 and 500", () => {
+  const { ApiClientError } = integrated.client;
+  assert.equal(integrated.dashboardErrors.normalizeDashboardError(new ApiClientError(403, "FORBIDDEN", "No")).kind, "forbidden");
+  assert.equal(integrated.auditErrors.normalizeAuditError(new ApiClientError(400, "VALIDATION_ERROR", "Bad")).kind, "validation");
+  assert.equal(integrated.auditErrors.normalizeAuditError(new ApiClientError(401, "AUTH_REQUIRED", "Please sign in")).kind, "unauthorized");
+  const limited = integrated.auditErrors.normalizeAuditError(new ApiClientError(429, "RATE_LIMITED", "Wait", null, 9));
+  assert.equal(limited.kind, "rate_limited");
+  assert.match(limited.message, /9 seconds/);
+  assert.equal(integrated.dashboardErrors.normalizeDashboardError(new ApiClientError(500, "SERVER", "Boom")).kind, "server");
 });
 

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { mockApprovalsApi, mockProfileMe } from "./helpers";
+import { mockAdminHomeApi, mockApprovalsApi, mockProfileMe } from "./helpers";
 
 test("unauthenticated visitors are sent to Campus One login", async ({ page }) => {
   await mockProfileMe(page, {
@@ -24,6 +24,7 @@ test("a student cannot open Admin home", async ({ page }) => {
 
 test("an admin lands on Admin home from effective_role", async ({ page }) => {
   await mockProfileMe(page, { status: 200, profile: { effectiveRole: "admin" } });
+  await mockAdminHomeApi(page);
 
   await page.goto("/");
   await expect(page).toHaveURL(/\/admin\/home/);
@@ -60,6 +61,7 @@ test("Admin More uses /admin destinations and Tasks is not a Home fallback", asy
 
   await page.goto("/admin/more");
   await expect(page.locator("#admin-launcher-events")).toBeVisible();
+  await expect(page.locator("#admin-launcher-activity")).toBeVisible();
   await page.locator("#admin-launcher-events").click();
   await expect(page).toHaveURL(/\/admin\/events/);
 

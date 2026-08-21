@@ -7,6 +7,9 @@ const ALLOWED_ADMIN_PREFIXES = [
   "/admin/feedback",
   "/admin/analytics",
   "/admin/notifications",
+  "/admin/activity",
+  "/admin/home",
+  "/admin/profile",
 ] as const;
 
 export function sanitizeAdminDeepLink(url: string | null | undefined): string | null {

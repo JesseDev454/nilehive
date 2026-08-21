@@ -65,6 +65,7 @@ export type AdminWorkspaceKey =
   | "analytics"
   | "profile"
   | "more"
+  | "activity"
   | "notfound";
 
 export function matchAdminWorkspace(pathname: string): AdminWorkspaceKey {
@@ -80,6 +81,7 @@ export function matchAdminWorkspace(pathname: string): AdminWorkspaceKey {
   if (path.startsWith("/admin/feedback")) return "feedback";
   if (path.startsWith("/admin/analytics")) return "analytics";
   if (path.startsWith("/admin/profile")) return "profile";
+  if (path.startsWith("/admin/activity")) return "activity";
   if (path.startsWith("/admin/more")) return "more";
   return "notfound";
 }

@@ -1,0 +1,72 @@
+import type { PaginatedEnvelope } from "@/lib/people/types";
+import type { AuditLogRecord } from "./types";
+
+export function mockAuditLogs(): PaginatedEnvelope<AuditLogRecord> {
+  const items: AuditLogRecord[] = [
+    {
+      id: "audit-01",
+      actor_id: "usr-admin-1",
+      actor: { id: "usr-admin-1", full_name: "Zainab Ahmed", role: "admin", student_id: "STAFF/1004" },
+      action: "proposal_reviewed",
+      entity_type: "proposal",
+      entity_id: "prop-01",
+      target_profile_id: null,
+      target: null,
+      club_id: "club-8",
+      club: { id: "club-8", name: "Nile Google Developers", code: "NGDC" },
+      proposal_id: "prop-01",
+      due_payment_id: null,
+      leadership_application_id: null,
+      announcement_id: null,
+      remarks: "Approved for campus calendar.",
+      metadata: { stage: "admin", decision: "approve" },
+      created_at: "2026-08-20T10:00:00.000Z",
+    },
+    {
+      id: "audit-02",
+      actor_id: "usr-admin-1",
+      actor: { id: "usr-admin-1", full_name: "Zainab Ahmed", role: "admin", student_id: "STAFF/1004" },
+      action: "dues_payment_reviewed",
+      entity_type: "due_payment",
+      entity_id: "due-01",
+      target_profile_id: "student-1",
+      target: { id: "student-1", full_name: "Amina Yusuf", role: "student", student_id: "NIL/2023/UG/0458" },
+      club_id: "club-8",
+      club: { id: "club-8", name: "Nile Google Developers", code: "NGDC" },
+      proposal_id: null,
+      due_payment_id: "due-01",
+      leadership_application_id: null,
+      announcement_id: null,
+      remarks: "Transfer matched.",
+      metadata: { status: "paid", nested: { access_token: { redacted: true } } },
+      created_at: "2026-08-19T16:15:00.000Z",
+    },
+    {
+      id: "audit-03",
+      actor_id: "usr-admin-1",
+      actor: { id: "usr-admin-1", full_name: "Zainab Ahmed", role: "admin", student_id: "STAFF/1004" },
+      action: "announcement_published",
+      entity_type: "announcement",
+      entity_id: "ann-01",
+      target_profile_id: null,
+      target: null,
+      club_id: null,
+      club: null,
+      proposal_id: null,
+      due_payment_id: null,
+      leadership_application_id: null,
+      announcement_id: "ann-01",
+      remarks: null,
+      metadata: { audience: "all_users", priority: "high" },
+      created_at: "2026-08-18T14:30:00.000Z",
+    },
+  ];
+
+  return {
+    items,
+    page: 1,
+    page_size: 20,
+    total: items.length,
+    has_next: false,
+  };
+}

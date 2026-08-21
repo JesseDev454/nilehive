@@ -13,6 +13,7 @@ import { ApiClientError } from "@/lib/api/client";
 import { adaptAdminProposal, adaptMembershipRequest } from "@/lib/approvals/adapters";
 import { isAbortError, normalizeApprovalsError, type ApprovalsUiError } from "@/lib/approvals/errors";
 import { MOCK_ADMIN_PROPOSALS, MOCK_DUES_PROOFS, MOCK_JOIN_REQUESTS } from "@/lib/approvals/mockApprovals";
+import { notifyAdminOpsChanged } from "@/lib/admin/opsStore";
 import type {
   DuesProofApprovalView,
   JoinRequestApprovalView,
@@ -222,6 +223,7 @@ export function useAdminApprovalsData(reportAuthFailure: (error: unknown) => boo
         ...(remarks ? { remarks } : {}),
       });
       await Promise.all([loadProposals(true), loadJoins(true)]);
+      notifyAdminOpsChanged();
       setLiveMessage(decision === "approve" ? "Proposal approved." : "Proposal returned to the President.");
     } catch (error) {
       const mapped = failQueue(error);
@@ -258,6 +260,7 @@ export function useAdminApprovalsData(reportAuthFailure: (error: unknown) => boo
         ...(remarks ? { remarks } : {}),
       });
       await Promise.all([loadJoins(true), loadDues(true)]);
+      notifyAdminOpsChanged();
       const persisted = adaptMembershipRequest(result.request);
       setLiveMessage(
         decision === "approve"
@@ -295,6 +298,7 @@ export function useAdminApprovalsData(reportAuthFailure: (error: unknown) => boo
       }
       const record = await submitDuesDecision(paymentId, { status });
       await Promise.all([loadDues(true), loadJoins(true)]);
+      notifyAdminOpsChanged();
       setLiveMessage(record.status === "paid" ? "Dues proof verified." : "Dues proof rejected.");
     } catch (error) {
       const mapped = failQueue(error);

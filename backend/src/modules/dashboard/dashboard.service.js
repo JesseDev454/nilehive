@@ -678,12 +678,13 @@ async function getNavigationCounts(options) {
   };
 
   if (actor.role === "admin") {
-    const [proposals, duePayments, reports, approvedEvents, tasks] = await Promise.all([
+    const [proposals, duePayments, reports, approvedEvents, tasks, membershipRequests] = await Promise.all([
       database.listAdminProposals ? database.listAdminProposals() : [],
       database.listDuePayments ? database.listDuePayments() : [],
       database.listEventReports ? database.listEventReports() : [],
       database.listApprovedProposals ? database.listApprovedProposals() : [],
-      database.listTasks ? database.listTasks() : []
+      database.listTasks ? database.listTasks() : [],
+      database.listMembershipRequests ? database.listMembershipRequests() : []
     ]);
 
     return {
@@ -692,6 +693,7 @@ async function getNavigationCounts(options) {
       counts: {
         ...counts,
         final_review: proposals.filter((proposal) => proposal.status === "pending_admin_review").length,
+        membership_requests: membershipRequests.filter((request) => request.status === "pending").length,
         events: approvedEvents.filter((event) => isSupportableEvent(event)).length,
         reports_archive: countMissingEventReports({ approvedEvents, reports }),
         dues: duePayments.filter((payment) => payment.status === "submitted").length,

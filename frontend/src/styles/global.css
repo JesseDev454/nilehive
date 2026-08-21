@@ -143,6 +143,7 @@
   font-size: 0.875rem;
   font-weight: 600;
   text-decoration: none;
+  position: relative;
   transition: background-color 160ms ease, color 160ms ease, transform 160ms ease;
 }
 

@@ -91,6 +91,7 @@ const AdminAnnouncements = lazyNamed(() => import("@/components/admin/announceme
 const AdminNotifications = lazyNamed(() => import("@/components/admin/notifications/AdminNotificationsWorkspace"), "AdminNotificationsWorkspace");
 const AdminFeedback = lazyNamed(() => import("@/components/admin/feedback/AdminFeedbackWorkspace"), "AdminFeedbackWorkspace");
 const AdminAnalytics = lazyNamed(() => import("@/components/admin/analytics/AdminAnalyticsWorkspace"), "AdminAnalyticsWorkspace");
+const AdminActivity = lazyNamed(() => import("@/components/admin/activity/AdminActivityWorkspace"), "AdminActivityWorkspace");
 const AdminMore = lazyNamed(() => import("@/components/admin/more/AdminMoreWorkspace"), "AdminMoreWorkspace");
 const AdminProfile = lazyNamed(() => import("@/components/admin/profile/AdminProfileWorkspace"), "AdminProfileWorkspace");
 const SharedScreens = lazyNamed(() => import("@/components/shared/system/SharedScreensWorkspace"), "SharedScreensWorkspace");
@@ -126,7 +127,7 @@ const NAVIGATION: Record<PreviewRole, NavigationItem[]> = {
   ],
   admin: [
     { label: "Home", path: "/admin/home", icon: Home },
-    { label: "Approvals", path: "/admin/approvals", icon: ClipboardCheck },
+    { label: "Approvals", path: "/admin/approvals", icon: ClipboardCheck, badgeKey: "approvals" },
     { label: "Clubs", path: "/admin/clubs", icon: Building2 },
     { label: "People", path: "/admin/people", icon: Users },
     { label: "More", path: "/admin/more", icon: LayoutGrid },
@@ -251,6 +252,8 @@ function WorkspaceRouter({ role }: { role: PreviewRole }) {
       return <AdminFeedback />;
     case "analytics":
       return <AdminAnalytics />;
+    case "activity":
+      return <AdminActivity />;
     case "profile":
       return <AdminProfile />;
     case "events":
