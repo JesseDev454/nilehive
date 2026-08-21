@@ -1,0 +1,95 @@
+import type { AdminNotificationView } from "./types";
+
+export function mockAdminNotifications(): AdminNotificationView[] {
+  return [
+    {
+      id: "notif-01",
+      category: "proposal",
+      title: "New Proposal Awaiting Admin Approval",
+      message:
+        "Nile Robotics Society submitted 'Autonomous Drone Navigational Showcase' requesting ₦450,000 grant and Innovation Hall reservation.",
+      timestamp: "2026-08-19T08:30:00Z",
+      isRead: false,
+      relatedRecordType: "proposal",
+      relatedRecordId: "prop-01",
+      destinationUrl: "/admin/approvals",
+      destinationLabel: "Review Proposal in Approvals",
+      source: "Proposal submissions",
+      type: "pending_admin_review",
+    },
+    {
+      id: "notif-02",
+      category: "dues_proof",
+      title: "Payment Proof Submitted for Verification",
+      message:
+        "Student Ibrahim Suleiman (210103044) uploaded transfer receipt for ₦10,000 session dues for Nile Google Developers Club.",
+      timestamp: "2026-08-19T07:45:00Z",
+      isRead: false,
+      relatedRecordType: "payment",
+      relatedRecordId: "proof-01",
+      destinationUrl: "/admin/approvals",
+      destinationLabel: "Verify Proof in Approvals",
+      source: "Dues verification",
+      type: "dues_proof_rejected",
+    },
+    {
+      id: "notif-03",
+      category: "join_request",
+      title: "New Club Membership Request",
+      message:
+        "Amina Yusuf submitted membership application with statement of interest to join Cyber Security Club.",
+      timestamp: "2026-08-18T16:20:00Z",
+      isRead: true,
+      relatedRecordType: "membership",
+      relatedRecordId: "req-01",
+      destinationUrl: "/admin/approvals",
+      destinationLabel: "View Request in Approvals",
+      source: "Membership registry",
+      type: "system",
+    },
+    {
+      id: "notif-04",
+      category: "event",
+      title: "Campus Event Happening Today",
+      message:
+        "'Google Cloud Architecture Bootcamp' by Nile Google Developers is scheduled today at 14:00 in Main Auditorium. Organizer QR is active.",
+      timestamp: "2026-08-18T11:00:00Z",
+      isRead: true,
+      relatedRecordType: "event",
+      relatedRecordId: "evt-01",
+      destinationUrl: "/admin/events",
+      destinationLabel: "Open Event in Campus Events",
+      source: "Campus events",
+      type: "event_reminder",
+    },
+    {
+      id: "notif-05",
+      category: "announcement",
+      title: "Broadcast Published to All Official Clubs",
+      message:
+        "Official broadcast 'Annual Club Budget & Activity Grant Guidelines' delivered to executive committees across official clubs.",
+      timestamp: "2026-08-17T14:30:00Z",
+      isRead: true,
+      relatedRecordType: "announcement",
+      relatedRecordId: "ann-01",
+      destinationUrl: "/admin/announcements",
+      destinationLabel: "View Broadcast in Communications",
+      source: "Directorate broadcasts",
+      type: "announcement_published",
+    },
+    {
+      id: "notif-06",
+      category: "system",
+      title: "Semester 1 Club Governance Window Active",
+      message:
+        "System roster audits and presidential appointment confirmations are now open for the 2026/2027 academic session.",
+      timestamp: "2026-08-15T09:00:00Z",
+      isRead: true,
+      relatedRecordType: "general",
+      destinationUrl: "/admin/people",
+      destinationLabel: "Check Directory in People",
+      source: "OneClub",
+      type: "system",
+    },
+  ];
+}

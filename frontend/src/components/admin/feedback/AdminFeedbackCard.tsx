@@ -1,11 +1,8 @@
 import {
   Calendar,
   ChevronRight,
-  Mail,
-  MailQuestion,
   MessageSquare,
   School,
-  Sparkles,
   Star,
   User
 } from "lucide-react";
@@ -34,6 +31,7 @@ export function AdminFeedbackCard({
   return (
     <div
       id={`feedback-${feedback.id}`}
+      aria-label={`${feedback.title}, ${feedback.rating ? `${feedback.rating} of 5 rating` : "no rating"}, status ${feedback.status}`}
       className="group flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-2xs transition-all duration-180 hover:border-primary/40 hover:shadow-xs"
     >
       <div className="space-y-3">
@@ -78,8 +76,8 @@ export function AdminFeedbackCard({
 
             {feedback.rating && (
               <div className="flex items-center gap-0.5 text-amber-500">
-                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                <span className="font-bold text-[10px] text-foreground">{feedback.rating}/5</span>
+                <Star className="h-3 w-3 fill-amber-400 text-amber-400" aria-hidden="true" />
+                <span className="font-bold text-[10px] text-foreground">{feedback.rating} of 5</span>
               </div>
             )}
           </div>
@@ -96,15 +94,9 @@ export function AdminFeedbackCard({
       {/* Card Action Footer */}
       <div className="mt-4 pt-3 border-t border-border/70 flex items-center justify-between">
         <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-          {feedback.canContact ? (
-            <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
-              <Mail className="h-3 w-3" /> Contact permitted
-            </span>
-          ) : (
-            <span className="inline-flex items-center gap-1 text-muted-foreground">
-              <MailQuestion className="h-3 w-3" /> Anonymous
-            </span>
-          )}
+          <span className="inline-flex items-center rounded-md border border-border px-2 py-0.5 font-semibold capitalize text-foreground">
+            {feedback.status}
+          </span>
         </div>
 
         <Button

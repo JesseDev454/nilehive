@@ -1,21 +1,8 @@
-import {
-  Bell,
-  CalendarDays,
-  CreditCard,
-  FileCheck2,
-  Filter,
-  Megaphone,
-  Search,
-  Shield,
-  UserPlus
-} from "lucide-react";
+import { Search, Shield } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import {
-  CATEGORY_CONFIG,
-  type AdminNotificationCategory
-} from "@/data/adminNotificationsData";
+import { type AdminNotificationCategory } from "@/data/adminNotificationsData";
 
-export type NotificationCategoryFilter = "all" | AdminNotificationCategory;
+export type NotificationCategoryFilter = "all" | "unread" | AdminNotificationCategory;
 
 interface AdminNotificationsHeaderProps {
   selectedCategory: NotificationCategoryFilter;
@@ -34,6 +21,7 @@ export function AdminNotificationsHeader({
 }: AdminNotificationsHeaderProps) {
   const categoryFilters: Array<{ id: NotificationCategoryFilter; label: string }> = [
     { id: "all", label: "All Notifications" },
+    { id: "unread", label: "Unread" },
     { id: "proposal", label: "Proposals" },
     { id: "join_request", label: "Join Requests" },
     { id: "dues_proof", label: "Dues Proofs" },
@@ -44,7 +32,6 @@ export function AdminNotificationsHeader({
 
   return (
     <div className="space-y-4 border-b border-border/80 pb-5">
-      {/* Title & Info */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -67,14 +54,15 @@ export function AdminNotificationsHeader({
         </div>
       </div>
 
-      {/* Category Filter Pills */}
-      <div className="flex flex-wrap items-center gap-2 pt-1">
+      <div className="flex flex-wrap items-center gap-2 pt-1" role="tablist" aria-label="Notification category">
         {categoryFilters.map((tab) => {
           const isActive = selectedCategory === tab.id;
           return (
             <button
               key={tab.id}
               type="button"
+              role="tab"
+              aria-selected={isActive}
               onClick={() => onCategoryChange(tab.id)}
               className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all duration-180 ${
                 isActive
@@ -88,11 +76,11 @@ export function AdminNotificationsHeader({
         })}
       </div>
 
-      {/* Search Input */}
       <div className="pt-1">
         <div className="relative w-full sm:max-w-xs">
-          <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+          <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
           <Input
+            aria-label="Search notifications"
             placeholder="Search notifications..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}

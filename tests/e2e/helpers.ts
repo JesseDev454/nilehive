@@ -1130,3 +1130,209 @@ export async function mockAnnouncementsApi(
   };
 }
 
+export const E2E_NOTIFICATION = {
+  id: "notif-e2e-1",
+  user_id: "e2e-admin-profile",
+  proposal_id: "proposal-e2e-1",
+  announcement_id: null,
+  type: "pending_admin_review",
+  message: "Nile Google Developers submitted Google Cloud Buildathon for Admin review.",
+  delivery_status: "stored",
+  read_at: null,
+  created_at: "2026-08-20T10:00:00.000Z",
+};
+
+export const E2E_FEEDBACK = {
+  id: "fb-e2e-1",
+  club_id: "club-8",
+  proposal_id: null,
+  submitted_by: "student-e2e-1",
+  category: "dues_payment",
+  rating: 4,
+  comment: "Bank-transfer proof review time for session dues",
+  status: "open",
+  club: { id: "club-8", name: "Nile Google Developers", code: "NGDC" },
+  submitter: {
+    id: "student-e2e-1",
+    full_name: "Tariq Ibrahim",
+    role: "student",
+    student_id: "210103044",
+  },
+  created_at: "2026-08-18T11:20:00.000Z",
+  updated_at: "2026-08-18T11:20:00.000Z",
+};
+
+export function e2eAnalyticsSummary(days: 7 | 30 | 90, zeros = false) {
+  return {
+    range_days: days,
+    active_users: zeros ? 0 : days === 7 ? 12 : days === 90 ? 48 : 24,
+    daily_active_users: zeros
+      ? Array.from({ length: days }, (_, index) => ({ date: `2026-08-${String(index + 1).padStart(2, "0")}`, active_users: 0 }))
+      : [{ date: "2026-08-20", active_users: 4 }],
+    usage_by_role: zeros ? {} : { student: 8, admin: 1 },
+    features: zeros ? {} : { dashboard_view: 5 },
+    operations: {
+      join_requests_started: zeros ? 0 : 6,
+      join_requests_completed: zeros ? 0 : 2,
+      dues_proofs_submitted: zeros ? 0 : 5,
+      dues_proofs_verified: zeros ? 0 : 3,
+      event_rsvps: zeros ? 0 : 9,
+      event_check_ins: zeros ? 0 : 7,
+      feedback_submissions: zeros ? 0 : 4,
+    },
+  };
+}
+
+export async function mockNotificationsApi(
+  page: Page,
+  options: {
+    notifications?: Array<Record<string, unknown>>;
+    listStatus?: number;
+    readStatus?: number;
+  } = {},
+) {
+  const notifications = [...(options.notifications ?? [E2E_NOTIFICATION])];
+  const reads: Array<{ id: string; csrf: string | null }> = [];
+  const listErrorStatus = options.listStatus && options.listStatus !== 200 ? options.listStatus : null;
+  let failList = Boolean(listErrorStatus);
+
+  await page.route("**/api/v1/notifications**", async (route) => {
+    const request = route.request();
+    const url = request.url();
+    if (request.method() === "PATCH" && url.includes("/read")) {
+      const id = url.split("/notifications/")[1]?.split("/read")[0] ?? "";
+      reads.push({ id, csrf: await request.headerValue("x-csrf-token") });
+      if (options.readStatus && options.readStatus !== 200) {
+        await route.fulfill({
+          status: options.readStatus,
+          contentType: "application/json",
+          body: JSON.stringify({ error: { code: options.readStatus === 404 ? "NOTIFICATION_NOT_FOUND" : "SERVER_ERROR", message: "Unavailable" } }),
+        });
+        return;
+      }
+      const current = notifications.find((item) => item.id === id);
+      if (!current) {
+        await route.fulfill({
+          status: 404,
+          contentType: "application/json",
+          body: JSON.stringify({ error: { code: "NOTIFICATION_NOT_FOUND", message: "Notification not found" } }),
+        });
+        return;
+      }
+      current.read_at = "2026-08-21T10:00:00.000Z";
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ data: current }),
+      });
+      return;
+    }
+
+    if (request.method() !== "GET") {
+      await route.continue();
+      return;
+    }
+
+    if (failList) {
+      await route.fulfill({
+        status: listErrorStatus || 500,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { code: "SERVER_ERROR", message: "Notifications unavailable" } }),
+      });
+      return;
+    }
+
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        data: { items: notifications, page: 1, page_size: 100, total: notifications.length, has_next: false },
+      }),
+    });
+  });
+
+  return {
+    reads,
+    allowList() {
+      failList = false;
+    },
+  };
+}
+
+export async function mockFeedbackApi(
+  page: Page,
+  options: {
+    feedback?: Array<Record<string, unknown>>;
+    listStatus?: number;
+  } = {},
+) {
+  const feedback = [...(options.feedback ?? [E2E_FEEDBACK])];
+  const listErrorStatus = options.listStatus && options.listStatus !== 200 ? options.listStatus : null;
+  let failList = Boolean(listErrorStatus);
+
+  await page.route("**/api/v1/communications/feedback**", async (route) => {
+    if (route.request().method() !== "GET") {
+      await route.continue();
+      return;
+    }
+    if (failList) {
+      await route.fulfill({
+        status: listErrorStatus || 500,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { code: "SERVER_ERROR", message: "Feedback unavailable" } }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ data: feedback }),
+    });
+  });
+
+  return {
+    allowList() {
+      failList = false;
+    },
+  };
+}
+
+export async function mockAnalyticsApi(
+  page: Page,
+  options: {
+    zeros?: boolean;
+    listStatus?: number;
+  } = {},
+) {
+  const requests: string[] = [];
+  const listErrorStatus = options.listStatus && options.listStatus !== 200 ? options.listStatus : null;
+  let failList = Boolean(listErrorStatus);
+
+  await page.route("**/api/v1/analytics/admin**", async (route) => {
+    const url = route.request().url();
+    requests.push(url);
+    if (failList) {
+      await route.fulfill({
+        status: listErrorStatus || 500,
+        contentType: "application/json",
+        body: JSON.stringify({ error: { code: "SERVER_ERROR", message: "Analytics unavailable" } }),
+      });
+      return;
+    }
+    const days = url.includes("days=7") ? 7 : url.includes("days=90") ? 90 : 30;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ data: e2eAnalyticsSummary(days, options.zeros) }),
+    });
+  });
+
+  return {
+    requests,
+    allowList() {
+      failList = false;
+    },
+  };
+}
+
+

@@ -86,13 +86,15 @@ export function AdminFeedbackHeader({
       </div>
 
       {/* Category Filter Pills */}
-      <div className="flex flex-wrap items-center gap-2 pt-1">
+      <div className="flex flex-wrap items-center gap-2 pt-1" role="tablist" aria-label="Feedback category">
         {categoryFilters.map((tab) => {
           const isActive = selectedCategory === tab.id;
           return (
             <button
               key={tab.id}
               type="button"
+              role="tab"
+              aria-selected={isActive}
               onClick={() => onCategoryChange(tab.id)}
               className={`rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-all duration-180 ${
                 isActive
@@ -111,6 +113,7 @@ export function AdminFeedbackHeader({
         <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
           <Input
+            aria-label="Search feedback by message, name, or student ID"
             placeholder="Search feedback, student name, or matric..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -121,7 +124,7 @@ export function AdminFeedbackHeader({
         <div className="flex items-center gap-2">
           <Filter className="h-3.5 w-3.5 text-muted-foreground" />
           <Select value={selectedRole} onValueChange={(v) => onRoleChange(v as "all" | FeedbackAuthorRole)}>
-            <SelectTrigger className="w-[180px] text-xs h-9 bg-background">
+            <SelectTrigger className="w-[180px] text-xs h-9 bg-background" aria-label="Filter by submitter role">
               <SelectValue placeholder="All Submitter Roles" />
             </SelectTrigger>
             <SelectContent>
@@ -129,6 +132,7 @@ export function AdminFeedbackHeader({
               <SelectItem value="student">Students Only</SelectItem>
               <SelectItem value="executive">Club Executives</SelectItem>
               <SelectItem value="president">Club Presidents</SelectItem>
+              <SelectItem value="advisor">Faculty Advisors</SelectItem>
             </SelectContent>
           </Select>
         </div>

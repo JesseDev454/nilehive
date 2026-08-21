@@ -1,7 +1,11 @@
 import { Bell, ChevronDown, ShieldCheck } from "lucide-react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useEffect, useSyncExternalStore } from "react";
 import { ThemeToggle } from "@/shared/components/ThemeToggle";
 import { useAuth, type PreviewRole } from "@/contexts/AuthContext";
+import { listAllNotifications } from "@/lib/api/notifications";
+import { mockAdminNotifications } from "@/lib/notifications/mockNotifications";
+import { getAdminUnreadCount, setAdminUnreadCount, subscribeAdminUnreadCount } from "@/lib/notifications/unreadStore";
 import { isMockPreviewMode } from "@/lib/oneclubMode";
 
 export interface NavigationItem {
@@ -34,6 +38,23 @@ export function WorkspaceShell({ children, role, roleLabel, navigation, onRoleCh
   const displayName = mockMode ? PROFILE_NAMES[role] : (profile.full_name || PROFILE_NAMES[role]);
   const initials = displayName.split(" ").filter(Boolean).map((part) => part[0]).join("").slice(0, 2);
   const isSelected = (path: string) => location.pathname === path || location.pathname.startsWith(`${path}/`);
+  const unreadCount = useSyncExternalStore(subscribeAdminUnreadCount, getAdminUnreadCount, getAdminUnreadCount);
+
+  useEffect(() => {
+    if (role !== "admin") {
+      setAdminUnreadCount(0);
+      return;
+    }
+    if (mockMode) {
+      setAdminUnreadCount(mockAdminNotifications().filter((item) => !item.isRead).length);
+      return;
+    }
+    const controller = new AbortController();
+    void listAllNotifications(controller.signal)
+      .then((items) => setAdminUnreadCount(items.filter((item) => !item.read_at).length))
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [mockMode, role]);
 
   return (
     <div className="oneclub-layout">
@@ -99,7 +120,16 @@ export function WorkspaceShell({ children, role, roleLabel, navigation, onRoleCh
             </label>
           ) : null}
           <div className="topbar-actions">
-            <Link className="topbar-icon" to={`/${role}/notifications`} aria-label="Open notifications"><Bell className="h-5 w-5" /></Link>
+            <Link
+              className="topbar-icon"
+              to={`/${role}/notifications`}
+              aria-label={role === "admin" && unreadCount > 0 ? `Open notifications, ${unreadCount} unread` : "Open notifications"}
+            >
+              <Bell className="h-5 w-5" />
+              {role === "admin" && unreadCount > 0 ? (
+                <span className="topbar-unread" aria-hidden="true">{unreadCount > 99 ? "99+" : unreadCount}</span>
+              ) : null}
+            </Link>
             <ThemeToggle />
             <Link className="profile-avatar" to={`/${role}/profile`} aria-label={`Open profile for ${displayName}`}>{initials}</Link>
           </div>

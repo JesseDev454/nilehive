@@ -13,9 +13,19 @@ function isRejectedStatus(status) {
 }
 
 function isUnreadNavigationNotification(notification) {
-  const status = String(notification.delivery_status || "").toLowerCase();
+  return !notification?.read_at;
+}
 
-  return !(status.includes("read") || status.includes("seen") || status.includes("archived"));
+function unwrapNotificationList(value) {
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (value && Array.isArray(value.items)) {
+    return value.items;
+  }
+
+  return [];
 }
 
 function countMissingEventReports({ approvedEvents, reports }) {
@@ -658,9 +668,11 @@ async function getNavigationCounts(options) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
   }
 
-  const notifications = typeof database.listNotificationsByUserId === "function"
-    ? await database.listNotificationsByUserId(actor.id)
-    : [];
+  const notifications = unwrapNotificationList(
+    typeof database.listNotificationsByUserId === "function"
+      ? await database.listNotificationsByUserId(actor.id)
+      : []
+  );
   const counts = {
     notifications: notifications.filter(isUnreadNavigationNotification).length
   };

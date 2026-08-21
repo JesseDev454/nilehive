@@ -43,13 +43,15 @@ export function AdminAnalyticsHeader({
         </div>
 
         {/* Period Selector Tabs */}
-        <div className="inline-flex rounded-xl bg-muted/80 p-1 border border-border/60 shrink-0">
+        <div className="inline-flex rounded-xl bg-muted/80 p-1 border border-border/60 shrink-0" role="tablist" aria-label="Analytics date range">
           {ranges.map((r) => {
             const isActive = timeRange === r.value;
             return (
               <button
                 key={r.value}
                 type="button"
+                role="tab"
+                aria-selected={isActive}
                 onClick={() => onTimeRangeChange(r.value)}
                 className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-180 ${
                   isActive
@@ -70,7 +72,7 @@ export function AdminAnalyticsHeader({
         <div className="leading-relaxed">
           <strong className="font-semibold text-foreground">Institutional Privacy Policy: </strong>
           <span className="text-muted-foreground">
-            All analytics represent aggregate operational totals across Nile University's 14 official clubs. Individual browsing trails, search terms, and student personal logs are strictly excluded.
+            All analytics represent aggregate operational totals across official Nile University clubs. Individual browsing trails, search terms, and student personal logs are strictly excluded.
           </span>
         </div>
       </div>

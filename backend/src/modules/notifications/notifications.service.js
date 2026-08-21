@@ -9,12 +9,23 @@ const {
 } = require("./push.service");
 const { getCampusOneConnectionStatus } = require("./campusOne.service");
 
-async function listOwnNotifications(options) {
-  const { actor, pagination, database = db } = options;
-
+function requireActor(actor) {
   if (!actor) {
     throw new ApiError(401, "Authentication is required", "AUTH_REQUIRED");
   }
+}
+
+function withDeliveryChannels(notification, deliveriesByNotification = {}) {
+  return {
+    ...notification,
+    delivery_channels: deliveriesByNotification[notification.id] || {}
+  };
+}
+
+async function listOwnNotifications(options) {
+  const { actor, pagination, database = db } = options;
+
+  requireActor(actor);
 
   const result = ensurePaginatedResult(await database.listNotificationsByUserId(actor.id, {
     pagination,
@@ -28,7 +39,31 @@ async function listOwnNotifications(options) {
     (map[delivery.notification_id] ||= {})[delivery.channel] = delivery;
     return map;
   }, {});
-  return { ...result, items: result.items.map((notification) => ({ ...notification, delivery_channels: byNotification[notification.id] || {} })) };
+  return {
+    ...result,
+    items: result.items.map((notification) => withDeliveryChannels(notification, byNotification))
+  };
+}
+
+async function markOwnNotificationRead(options) {
+  const { actor, notificationId, database = db } = options;
+  requireActor(actor);
+
+  if (!notificationId || typeof notificationId !== "string") {
+    throw new ApiError(404, "Notification not found", "NOTIFICATION_NOT_FOUND");
+  }
+
+  if (typeof database.markNotificationRead !== "function") {
+    throw new ApiError(404, "Notification not found", "NOTIFICATION_NOT_FOUND");
+  }
+
+  const notification = await database.markNotificationRead(notificationId, actor.id);
+
+  if (!notification) {
+    throw new ApiError(404, "Notification not found", "NOTIFICATION_NOT_FOUND");
+  }
+
+  return withDeliveryChannels(notification);
 }
 
 function getPushRegistrationConfig(options = {}) {
@@ -44,6 +79,7 @@ function getPushRegistrationConfig(options = {}) {
 module.exports = {
   getPushRegistrationConfig,
   listOwnNotifications,
+  markOwnNotificationRead,
   registerPushSubscription,
   removePushSubscription
 };

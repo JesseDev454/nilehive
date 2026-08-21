@@ -1,14 +1,10 @@
 import {
   Calendar,
-  CheckCircle2,
-  Mail,
-  MailQuestion,
   MessageSquare,
   School,
   ShieldCheck,
   Star,
-  User,
-  X
+  User
 } from "lucide-react";
 import {
   Dialog,
@@ -55,6 +51,9 @@ export function AdminFeedbackDetailModal({
               <span className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-[10px] font-semibold text-secondary-foreground capitalize">
                 {feedback.authorRole} Submitter
               </span>
+              <span className="inline-flex items-center rounded-md border border-border px-2 py-0.5 text-[10px] font-semibold capitalize text-foreground">
+                {feedback.status}
+              </span>
             </div>
 
             <span className="text-[11px] text-muted-foreground font-mono">
@@ -80,7 +79,7 @@ export function AdminFeedbackDetailModal({
               {feedback.rating && (
                 <div className="flex items-center gap-1 text-amber-500">
                   <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                  <span className="font-bold text-foreground">{feedback.rating} / 5 Experience Rating</span>
+                  <span className="font-bold text-foreground">{feedback.rating} of 5 experience rating</span>
                 </div>
               )}
             </div>
@@ -105,17 +104,11 @@ export function AdminFeedbackDetailModal({
             </div>
 
             {/* Follow-up Permission */}
-            <div className="pt-2 border-t border-border/60">
-              {feedback.canContact && feedback.contactEmail ? (
-                <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
-                  <Mail className="h-3.5 w-3.5" />
-                  <span>Student authorized follow-up at: <strong className="font-mono">{feedback.contactEmail}</strong></span>
-                </div>
+            <div className="pt-2 border-t border-border/60 text-muted-foreground">
+              {feedback.identityAvailable ? (
+                <span>Submitter identity is on record for Directorate review. OneClub does not store a follow-up email flag on this record.</span>
               ) : (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <MailQuestion className="h-3.5 w-3.5" />
-                  <span>Student requested no direct email follow-up.</span>
-                </div>
+                <span>Submitter identity was not included with this record.</span>
               )}
             </div>
           </div>

@@ -7,7 +7,7 @@ const PUBLIC_CLUB_CACHE_TTL_MS = 5 * 60 * 1000;
 const proposalSelect =
   "id, club_id, submitted_by, title, description, event_date, location, aim_objectives, proposed_activity, event_time, number_of_participants, budget_estimate, budget_line_items, responsible_members, status, submitted_at, resubmitted_at, revision_count, last_edited_at, last_edited_by, advisor_remarks, advisor_decided_at, advisor_decided_by, admin_remarks, admin_decided_at, admin_decided_by, created_at, updated_at, club:clubs!proposals_club_id_fkey(id, name, code)";
 const notificationSelect =
-  "id, user_id, proposal_id, announcement_id, type, message, delivery_status, created_at";
+  "id, user_id, proposal_id, announcement_id, type, message, delivery_status, read_at, created_at";
 const pushSubscriptionSelect =
   "id, user_id, endpoint, p256dh, auth, user_agent, created_at, updated_at, last_used_at";
 const eventReminderSelect =
@@ -34,7 +34,7 @@ const eventReportSelect =
 const announcementSelect =
   "id, club_id, created_by, title, message, audience, priority, target_role, created_at, updated_at";
 const feedbackSelect =
-  "id, club_id, proposal_id, submitted_by, category, rating, comment, status, created_at, updated_at, proposal:proposals!event_feedback_proposal_id_fkey(id, title, proposed_activity, event_date)";
+  "id, club_id, proposal_id, submitted_by, category, rating, comment, status, created_at, updated_at, proposal:proposals!event_feedback_proposal_id_fkey(id, title, proposed_activity, event_date), club:clubs!event_feedback_club_id_fkey(id, name, code), submitter:profiles!event_feedback_submitted_by_fkey(id, full_name, role, student_id)";
 const eventRsvpSelect =
   "id, proposal_id, club_id, user_id, status, created_at, updated_at, profile:profiles!event_rsvps_user_id_fkey(id, full_name, student_id, role)";
 const eventAttendanceSelect =
@@ -1592,6 +1592,43 @@ function createDatabase(options = {}) {
       }
 
       return formatQueryResult({ data, count, pagination: filters.pagination });
+    },
+
+    async markNotificationRead(notificationId, userId) {
+      const { data: existing, error: lookupError } = await getClient()
+        .from("notifications")
+        .select(notificationSelect)
+        .eq("id", notificationId)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (lookupError) {
+        throw lookupError;
+      }
+
+      if (!existing) {
+        return null;
+      }
+
+      if (existing.read_at) {
+        return existing;
+      }
+
+      const readAt = new Date().toISOString();
+      const { data, error } = await getClient()
+        .from("notifications")
+        .update({ read_at: readAt })
+        .eq("id", notificationId)
+        .eq("user_id", userId)
+        .is("read_at", null)
+        .select(notificationSelect)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data ?? { ...existing, read_at: readAt };
     },
 
     async getAuthEmailsByProfileIds(profileIds) {

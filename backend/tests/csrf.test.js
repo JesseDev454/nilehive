@@ -828,6 +828,39 @@ test("Admin event attendance and announcement publish require CSRF", async (t) =
   assert.equal(published.payload.data.title, "Campus briefing");
   assert.equal(announcements.length, 1);
   assert.equal(JSON.stringify(published.payload).includes(csrf), false);
+
+  database.markNotificationRead = async (notificationId, userId) => ({
+    id: notificationId,
+    user_id: userId,
+    type: "pending_admin_review",
+    message: "A proposal is waiting for Admin review.",
+    delivery_status: "stored",
+    read_at: "2026-08-21T10:00:00.000Z",
+    created_at: "2026-08-20T10:00:00.000Z"
+  });
+
+  const missingRead = await fetchJson(`${server.baseUrl}/api/v1/notifications/notification-csrf/read`, {
+    method: "PATCH",
+    headers: {
+      Cookie: sessionCookie(token),
+      Origin: FRONTEND_ORIGIN
+    }
+  });
+  assert.equal(missingRead.response.status, 403);
+  assert.equal(missingRead.payload.error.code, "CSRF_TOKEN_REQUIRED");
+
+  const marked = await fetchJson(`${server.baseUrl}/api/v1/notifications/notification-csrf/read`, {
+    method: "PATCH",
+    headers: {
+      Cookie: sessionCookie(token),
+      Origin: FRONTEND_ORIGIN,
+      "X-CSRF-Token": csrf
+    }
+  });
+  assert.equal(marked.response.status, 200);
+  assert.equal(marked.payload.data.id, "notification-csrf");
+  assert.equal(marked.payload.data.read_at, "2026-08-21T10:00:00.000Z");
+  assert.equal(JSON.stringify(marked.payload).includes(csrf), false);
 });
 
 test("cookie club update requires CSRF and does not leak secrets", async (t) => {

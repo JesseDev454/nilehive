@@ -58,6 +58,7 @@ export function AdminNotificationCard({
   return (
     <div
       id={`notification-${notification.id}`}
+      aria-label={`${notification.title}, ${notification.isRead ? "read" : "unread"}`}
       className={`group flex flex-col justify-between rounded-2xl border p-4 shadow-2xs transition-all duration-180 ${
         !notification.isRead
           ? "border-primary/40 bg-card/90 ring-1 ring-primary/20"
@@ -77,7 +78,10 @@ export function AdminNotificationCard({
               {categoryConf.label}
             </span>
             {!notification.isRead && (
-              <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary">
+                <span className="h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
+                Unread
+              </span>
             )}
           </div>
 
@@ -115,14 +119,18 @@ export function AdminNotificationCard({
           <span>Details</span>
         </Button>
 
-        <Link
-          to={notification.destinationUrl}
-          onClick={() => onSelect(notification)}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
-        >
-          <span>{notification.destinationLabel}</span>
-          <ChevronRight className="h-3.5 w-3.5" />
-        </Link>
+        {notification.destinationUrl ? (
+          <Link
+            to={notification.destinationUrl}
+            onClick={() => onSelect(notification)}
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
+          >
+            <span>{notification.destinationLabel}</span>
+            <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
+        ) : (
+          <span className="text-[11px] text-muted-foreground">Destination unavailable</span>
+        )}
       </div>
     </div>
   );

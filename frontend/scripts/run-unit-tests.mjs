@@ -48,6 +48,16 @@ async function loadModules(env) {
       announcementsAdapters: await server.ssrLoadModule("/src/lib/announcements/adapters.ts"),
       announcementsErrors: await server.ssrLoadModule("/src/lib/announcements/errors.ts"),
       announcementsApi: await server.ssrLoadModule("/src/lib/api/announcements.ts"),
+      notificationsAdapters: await server.ssrLoadModule("/src/lib/notifications/adapters.ts"),
+      notificationsErrors: await server.ssrLoadModule("/src/lib/notifications/errors.ts"),
+      notificationsApi: await server.ssrLoadModule("/src/lib/api/notifications.ts"),
+      notificationsDeepLinks: await server.ssrLoadModule("/src/lib/notifications/deepLinks.ts"),
+      feedbackAdapters: await server.ssrLoadModule("/src/lib/feedback/adapters.ts"),
+      feedbackErrors: await server.ssrLoadModule("/src/lib/feedback/errors.ts"),
+      feedbackApi: await server.ssrLoadModule("/src/lib/api/feedback.ts"),
+      analyticsAdapters: await server.ssrLoadModule("/src/lib/analytics/adapters.ts"),
+      analyticsErrors: await server.ssrLoadModule("/src/lib/analytics/errors.ts"),
+      analyticsApi: await server.ssrLoadModule("/src/lib/api/analytics.ts"),
     };
   } finally {
     await server.close();
@@ -1067,4 +1077,216 @@ test("Announcements API functions use CSRF on publish and honor abort", async ()
   });
 });
 
+test("notification adapters map types, read state, and reject unsafe deep links", () => {
+  const record = integrated.notificationsAdapters.adaptNotificationRecord({
+    id: "n-1",
+    user_id: "admin-1",
+    proposal_id: "proposal-1",
+    type: "pending_admin_review",
+    message: "A proposal is waiting for Admin review.",
+    read_at: null,
+    created_at: "2026-08-20T10:00:00.000Z",
+  });
+  const view = integrated.notificationsAdapters.toAdminNotificationView(record);
+  assert.equal(view.category, "proposal");
+  assert.equal(view.isRead, false);
+  assert.equal(view.destinationUrl, "/admin/approvals");
+  assert.equal(integrated.notificationsDeepLinks.sanitizeAdminDeepLink("https://evil.test"), null);
+  assert.equal(integrated.notificationsDeepLinks.sanitizeAdminDeepLink("javascript:alert(1)"), null);
+  assert.equal(integrated.notificationsDeepLinks.sanitizeAdminDeepLink("//evil.test"), null);
+  assert.equal(integrated.notificationsDeepLinks.sanitizeAdminDeepLink("/admin/home"), null);
+  assert.equal(integrated.notificationsDeepLinks.sanitizeAdminDeepLink("/admin/approvals"), "/admin/approvals");
+});
+
+test("notification errors distinguish 404 and rate limits", () => {
+  const { ApiClientError } = integrated.client;
+  const { normalizeNotificationsError } = integrated.notificationsErrors;
+  assert.equal(normalizeNotificationsError(new ApiClientError(404, "NOTIFICATION_NOT_FOUND", "Missing")).kind, "not_found");
+  const limited = normalizeNotificationsError(new ApiClientError(429, "RATE_LIMITED", "Wait", null, 8));
+  assert.equal(limited.kind, "rate_limited");
+  assert.match(limited.message, /8 seconds/);
+});
+
+test("Notifications API uses CSRF on mark-read and honors abort", async () => {
+  const calls = [];
+  await withMockFetch(async (url, init = {}) => {
+    const headers = new Headers(init.headers);
+    calls.push({
+      url: String(url),
+      method: init.method || "GET",
+      csrf: headers.get("X-CSRF-Token"),
+    });
+    if (String(url).endsWith("/auth/csrf")) {
+      return jsonResponse({ data: { csrf_token: "csrf-notifications" } });
+    }
+    if ((init.method || "GET") === "PATCH") {
+      return jsonResponse({
+        data: {
+          id: "n-1",
+          user_id: "admin-1",
+          type: "pending_admin_review",
+          message: "A proposal is waiting for Admin review.",
+          read_at: "2026-08-21T10:00:00.000Z",
+          created_at: "2026-08-20T10:00:00.000Z",
+        },
+      });
+    }
+    return jsonResponse({
+      data: {
+        items: [{
+          id: "n-1",
+          user_id: "admin-1",
+          type: "pending_admin_review",
+          message: "A proposal is waiting for Admin review.",
+          read_at: null,
+          created_at: "2026-08-20T10:00:00.000Z",
+        }],
+        page: 1,
+        page_size: 100,
+        total: 1,
+        has_next: false,
+      },
+    });
+  }, async () => {
+    await integrated.notificationsApi.listNotifications({ page: 1, page_size: 100 });
+    await integrated.notificationsApi.markNotificationRead("n-1");
+    const listCall = calls.find((call) => call.method === "GET" && call.url.includes("/notifications"));
+    assert.equal(listCall.csrf, null);
+    const readCall = calls.find((call) => call.method === "PATCH");
+    assert.equal(readCall.csrf, "csrf-notifications");
+    assert.match(readCall.url, /\/notifications\/n-1\/read$/);
+  });
+
+  const controller = new AbortController();
+  controller.abort();
+  await withMockFetch(async (_url, init = {}) => {
+    if (init.signal?.aborted) {
+      throw new DOMException("The operation was aborted.", "AbortError");
+    }
+    return jsonResponse({ data: { items: [], page: 1, page_size: 100, total: 0, has_next: false } });
+  }, async () => {
+    await assert.rejects(
+      () => integrated.notificationsApi.listNotifications({ signal: controller.signal }),
+      (error) => error.name === "AbortError",
+    );
+  });
+});
+
+test("feedback adapters map categories and keep anonymous-looking records honest", () => {
+  const record = integrated.feedbackAdapters.adaptFeedbackRecord({
+    id: "fb-1",
+    club_id: "club-1",
+    submitted_by: "student-1",
+    category: "club_joining",
+    rating: 4,
+    comment: "Clearer membership notices would help.",
+    status: "open",
+    club: { id: "club-1", name: "Cyber Security Club", code: "CSC" },
+    submitter: { id: "student-1", full_name: "Emeka Okafor", role: "student", student_id: "220105088" },
+    created_at: "2026-08-16T16:10:00Z",
+  });
+  const view = integrated.feedbackAdapters.toAdminFeedbackView(record);
+  assert.equal(view.category, "joining");
+  assert.equal(view.clubName, "Cyber Security Club");
+  assert.equal(view.identityAvailable, true);
+  const unnamed = integrated.feedbackAdapters.toAdminFeedbackView(
+    integrated.feedbackAdapters.adaptFeedbackRecord({
+      id: "fb-2",
+      submitted_by: "student-2",
+      category: "general",
+      comment: "The dark theme is readable.",
+      status: "open",
+      created_at: "2026-08-12T19:00:00Z",
+    }),
+  );
+  assert.equal(unnamed.identityAvailable, false);
+  assert.equal(unnamed.authorName, "Submitter on record");
+});
+
+test("feedback errors and API honor abort and omit invented query params", async () => {
+  const { ApiClientError } = integrated.client;
+  assert.equal(integrated.feedbackErrors.normalizeFeedbackError(new ApiClientError(403, "FORBIDDEN", "No")).kind, "forbidden");
+  const calls = [];
+  await withMockFetch(async (url, init = {}) => {
+    calls.push({ url: String(url), method: init.method || "GET" });
+    return jsonResponse({
+      data: [{
+        id: "fb-1",
+        category: "onboarding",
+        comment: "Need a handbook.",
+        status: "open",
+        created_at: "2026-08-15T09:30:00Z",
+      }],
+    });
+  }, async () => {
+    const items = await integrated.feedbackApi.listAdminFeedback({ category: "onboarding" });
+    assert.equal(items.length, 1);
+    assert.match(calls[0].url, /category=onboarding/);
+    assert.equal(calls[0].url.includes("sentiment"), false);
+  });
+  const controller = new AbortController();
+  controller.abort();
+  await withMockFetch(async (_url, init = {}) => {
+    if (init.signal?.aborted) throw new DOMException("The operation was aborted.", "AbortError");
+    return jsonResponse({ data: [] });
+  }, async () => {
+    await assert.rejects(
+      () => integrated.feedbackApi.listAdminFeedback({ signal: controller.signal }),
+      (error) => error.name === "AbortError",
+    );
+  });
+});
+
+test("analytics adapters map 7/30/90, zeros, and missing series", () => {
+  const summary = integrated.analyticsAdapters.adaptAnalyticsSummary({
+    range_days: 7,
+    active_users: 0,
+    daily_active_users: [{ date: "2026-08-15", active_users: 0 }],
+    usage_by_role: {},
+    features: {},
+    operations: {},
+  });
+  const view = integrated.analyticsAdapters.toAnalyticsPeriodView(summary);
+  assert.equal(view.rangeDays, 7);
+  assert.equal(view.activeUsers, 0);
+  assert.equal(view.joinRequests, 0);
+  assert.equal(view.eventAttendance, 0);
+  const invalid = integrated.analyticsAdapters.adaptAnalyticsSummary({ range_days: 14, operations: { join_requests_started: 3 } });
+  assert.equal(invalid.range_days, 30);
+  assert.equal(invalid.operations.join_requests_started, 3);
+});
+
+test("Analytics API requests the selected range, omits CSRF on GET, and honors abort", async () => {
+  const calls = [];
+  await withMockFetch(async (url, init = {}) => {
+    const headers = new Headers(init.headers);
+    calls.push({ url: String(url), method: init.method || "GET", csrf: headers.get("X-CSRF-Token") });
+    return jsonResponse({
+      data: {
+        range_days: 90,
+        active_users: 12,
+        daily_active_users: [],
+        usage_by_role: { student: 10 },
+        features: {},
+        operations: { join_requests_started: 4, dues_proofs_submitted: 2, event_check_ins: 6 },
+      },
+    });
+  }, async () => {
+    const summary = await integrated.analyticsApi.getAdminAnalytics(90);
+    assert.equal(summary.range_days, 90);
+    assert.equal(calls[0].csrf, null);
+    assert.match(calls[0].url, /days=90/);
+  });
+  const controller = new AbortController();
+  controller.abort();
+  await withMockFetch(async (_url, init = {}) => {
+    if (init.signal?.aborted) throw new DOMException("The operation was aborted.", "AbortError");
+    return jsonResponse({ data: {} });
+  }, async () => {
+    await assert.rejects(
+      () => integrated.analyticsApi.getAdminAnalytics(30, controller.signal),
+      (error) => error.name === "AbortError",
+    );
+  });
+});
 

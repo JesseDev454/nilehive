@@ -2,6 +2,7 @@ const asyncHandler = require("../../shared/asyncHandler");
 const {
   getPushRegistrationConfig,
   listOwnNotifications,
+  markOwnNotificationRead,
   registerPushSubscription,
   removePushSubscription
 } = require("./notifications.service");
@@ -23,6 +24,16 @@ function createNotificationsController(options = {}) {
       });
 
       res.status(200).json({ data: notifications });
+    }),
+
+    markOwnNotificationRead: asyncHandler(async (req, res) => {
+      const notification = await markOwnNotificationRead({
+        actor: req.user,
+        notificationId: req.params.notificationId,
+        database
+      });
+
+      res.status(200).json({ data: notification });
     }),
 
     getPushConfig: asyncHandler(async (req, res) => {

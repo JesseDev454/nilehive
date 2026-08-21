@@ -83,7 +83,12 @@ export function AdminNotificationDetailModal({
             </div>
           )}
 
-          {/* Navigation Action */}
+          {!notification.destinationUrl ? (
+            <p className="text-xs text-muted-foreground">
+              This notification does not have a safe destination in OneClub.
+            </p>
+          ) : null}
+
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 pt-2 border-t border-border">
             <Button
               type="button"
@@ -94,17 +99,19 @@ export function AdminNotificationDetailModal({
             >
               Dismiss
             </Button>
+            {notification.destinationUrl ? (
             <Link
               to={notification.destinationUrl}
               onClick={() => {
                 onNavigate(notification);
                 onOpenChange(false);
               }}
-              className="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors h-9"
+              className="inline-flex items-center justify-center gap-1.5 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-colors h-11"
             >
               <span>{notification.destinationLabel}</span>
-              <ExternalLink className="h-3.5 w-3.5" />
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
             </Link>
+            ) : null}
           </div>
         </div>
       </DialogContent>

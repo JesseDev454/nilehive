@@ -15,7 +15,6 @@ const {
   uniqueIds
 } = require("./communications.helpers");
 const {
-  APP_FEEDBACK_CATEGORIES,
   validateCreateAnnouncementPayload,
   validateCreateFeedbackPayload
 } = require("./communications.validation");
@@ -206,6 +205,8 @@ async function getVisibleAnnouncements(actor, filters, database) {
 
 function formatFeedback(feedback) {
   const proposal = feedback.proposal ?? feedback.proposals ?? null;
+  const submitter = feedback.submitter ?? feedback.profiles ?? null;
+  const club = feedback.club ?? feedback.clubs ?? null;
 
   return {
     id: feedback.id,
@@ -222,6 +223,21 @@ function formatFeedback(feedback) {
           title: proposal.title,
           proposed_activity: proposal.proposed_activity ?? null,
           event_date: proposal.event_date ?? null
+        }
+      : null,
+    club: club
+      ? {
+          id: club.id,
+          name: club.name,
+          code: club.code ?? null
+        }
+      : null,
+    submitter: submitter
+      ? {
+          id: submitter.id,
+          full_name: submitter.full_name ?? null,
+          role: submitter.role ?? null,
+          student_id: submitter.student_id ?? null
         }
       : null,
     created_at: feedback.created_at,
@@ -489,21 +505,8 @@ async function listFeedback(options) {
   const { actor, filters = {}, database = db } = options;
   requireActor(actor);
 
-  if (!["admin", "advisor", "president", "executive", "feedback_manager"].includes(actor.role)) {
-    throw new ApiError(403, "This role cannot view feedback", "FORBIDDEN");
-  }
-
-  if (actor.role === "feedback_manager") {
-    const requestedCategory = APP_FEEDBACK_CATEGORIES.includes(filters.category)
-      ? filters.category
-      : null;
-    const feedback = await database.listFeedback({
-      categories: requestedCategory ? [requestedCategory] : APP_FEEDBACK_CATEGORIES,
-      proposalId: null,
-      status: filters.status
-    });
-
-    return feedback.map(formatFeedback);
+  if (actor.role !== "admin") {
+    throw new ApiError(403, "Only Club Services Admin can view the global feedback inbox", "FORBIDDEN");
   }
 
   const clubFilters = await getVisibleClubFilters(actor, filters.club_id, database);

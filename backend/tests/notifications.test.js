@@ -69,6 +69,18 @@ function createFakeDatabase() {
     async listNotificationsByUserId(userId) {
       return notifications.filter((notification) => notification.user_id === userId);
     },
+    async markNotificationRead(notificationId, userId) {
+      const notification = notifications.find(
+        (item) => item.id === notificationId && item.user_id === userId
+      );
+      if (!notification) {
+        return null;
+      }
+      if (!notification.read_at) {
+        notification.read_at = "2026-08-21T10:00:00.000Z";
+      }
+      return { ...notification };
+    },
     async upsertPushSubscription(subscription) {
       return {
         id: "push-subscription-1",
@@ -162,6 +174,72 @@ test("missing-token access is blocked for notifications retrieval", async (t) =>
 
   assert.equal(response.status, 401);
   assert.equal(payload.error.code, "AUTH_REQUIRED");
+});
+
+test("users can mark their own notification read and already-read stays idempotent", async (t) => {
+  const database = createFakeDatabase();
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const first = await fetch(`${server.baseUrl}/api/v1/notifications/notification-1/read`, {
+    method: "PATCH",
+    headers: { Authorization: "Bearer executive-token" }
+  });
+  const firstPayload = await first.json();
+  assert.equal(first.status, 200);
+  assert.equal(firstPayload.data.id, "notification-1");
+  assert.equal(firstPayload.data.user_id, "executive-1");
+  assert.equal(firstPayload.data.read_at, "2026-08-21T10:00:00.000Z");
+
+  const second = await fetch(`${server.baseUrl}/api/v1/notifications/notification-1/read`, {
+    method: "PATCH",
+    headers: { Authorization: "Bearer executive-token" }
+  });
+  const secondPayload = await second.json();
+  assert.equal(second.status, 200);
+  assert.equal(secondPayload.data.read_at, "2026-08-21T10:00:00.000Z");
+});
+
+test("mark-read for another user's notification returns a safe 404", async (t) => {
+  const database = createFakeDatabase();
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/notifications/notification-3/read`, {
+    method: "PATCH",
+    headers: { Authorization: "Bearer executive-token" }
+  });
+  const payload = await response.json();
+  assert.equal(response.status, 404);
+  assert.equal(payload.error.code, "NOTIFICATION_NOT_FOUND");
+  assert.equal(JSON.stringify(payload).includes("advisor-1"), false);
+});
+
+test("unauthenticated mark-read is blocked", async (t) => {
+  const database = createFakeDatabase();
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/notifications/notification-1/read`, {
+    method: "PATCH"
+  });
+  const payload = await response.json();
+  assert.equal(response.status, 401);
+  assert.equal(payload.error.code, "AUTH_REQUIRED");
+});
+
+test("invalid notification id returns a safe 404", async (t) => {
+  const database = createFakeDatabase();
+  const server = await createTestServer(database);
+  t.after(() => server.close());
+
+  const response = await fetch(`${server.baseUrl}/api/v1/notifications/missing-id/read`, {
+    method: "PATCH",
+    headers: { Authorization: "Bearer executive-token" }
+  });
+  const payload = await response.json();
+  assert.equal(response.status, 404);
+  assert.equal(payload.error.code, "NOTIFICATION_NOT_FOUND");
 });
 
 test("authenticated users can register and remove push subscriptions", async (t) => {

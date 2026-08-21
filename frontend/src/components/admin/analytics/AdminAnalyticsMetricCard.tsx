@@ -80,7 +80,7 @@ export function AdminAnalyticsMetricCard({
 
         {/* Count Value & Period Context */}
         <div className="pt-2">
-          <div className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl font-mono">
+          <div className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl font-mono" aria-label={`${value.toLocaleString()} ${definition.shortLabel}`}>
             {value.toLocaleString()}
           </div>
           <p className="mt-1 text-xs font-medium text-primary">
@@ -97,7 +97,7 @@ export function AdminAnalyticsMetricCard({
       {/* Footer Info Trigger */}
       <div className="mt-4 pt-3 border-t border-border/70 flex items-center justify-between">
         <span className="text-[11px] text-muted-foreground">
-          Scope: All 14 Official Clubs
+          Scope: All official clubs
         </span>
         <Button
           type="button"

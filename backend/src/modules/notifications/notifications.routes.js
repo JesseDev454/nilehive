@@ -12,6 +12,7 @@ function createNotificationsRouter(options = {}) {
   router.get("/push-config", auth, controller.getPushConfig);
   router.post("/push-subscriptions", auth, controller.registerPushSubscription);
   router.post("/push-subscriptions/remove", auth, controller.removePushSubscription);
+  router.patch("/:notificationId/read", auth, controller.markOwnNotificationRead);
   router.get("/", auth, controller.listOwnNotifications);
 
   return router;

@@ -670,65 +670,58 @@ test("club feedback still requires a club context", async () => {
   );
 });
 
-test("feedback manager can list app feedback from all users only", async () => {
+test("global feedback inbox is admin-only", async () => {
+  const fakeDatabase = {
+    async listFeedback() {
+      throw new Error("non-admin must not list the global inbox");
+    }
+  };
+
+  for (const role of ["student", "president", "executive", "advisor", "feedback_manager"]) {
+    await assert.rejects(
+      () =>
+        listFeedback({
+          actor: { id: `${role}-1`, role, clubId: role === "advisor" ? null : "club-1" },
+          database: fakeDatabase
+        }),
+      (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+    );
+  }
+});
+
+test("admin can list the global feedback inbox including submitter identity", async () => {
   const fakeDatabase = {
     async listFeedback(filters) {
       assert.deepEqual(filters, {
-        categories: ["general", "onboarding", "club_joining", "dues_payment", "login_access"],
-        proposalId: null,
+        proposalId: undefined,
         status: undefined
       });
       return [
         createFeedbackRecord({
-          id: "feedback-app-1",
+          category: "onboarding",
           club_id: null,
           proposal_id: null,
           proposal: null,
-          category: "onboarding",
-          submitted_by: "student-1"
+          submitter: {
+            id: "student-1",
+            full_name: "Amina Bello",
+            role: "student",
+            student_id: "020232255"
+          }
         })
       ];
     }
   };
 
   const feedback = await listFeedback({
-    actor: {
-      id: "feedback-manager-1",
-      role: "feedback_manager",
-      clubId: null
-    },
+    actor: { id: "admin-1", role: "admin", clubId: null },
     database: fakeDatabase
   });
 
   assert.equal(feedback.length, 1);
-  assert.equal(feedback[0].category, "onboarding");
-  assert.equal(feedback[0].proposal, null);
-});
-
-test("feedback manager category filter remains limited to app feedback", async () => {
-  const fakeDatabase = {
-    async listFeedback(filters) {
-      assert.deepEqual(filters, {
-        categories: ["general", "onboarding", "club_joining", "dues_payment", "login_access"],
-        proposalId: null,
-        status: "open"
-      });
-      return [];
-    }
-  };
-
-  await listFeedback({
-    actor: {
-      id: "feedback-manager-1",
-      role: "feedback_manager",
-      clubId: null
-    },
-    filters: {
-      category: "event",
-      status: "open"
-    },
-    database: fakeDatabase
-  });
+  assert.equal(feedback[0].submitter.full_name, "Amina Bello");
+  assert.equal(feedback[0].submitter.student_id, "020232255");
+  assert.equal(Object.prototype.hasOwnProperty.call(feedback[0].submitter, "email"), false);
 });
 
 test("feedback save database failures return a friendly app message", async () => {
@@ -789,7 +782,7 @@ test("feedback rejects proposals from another club", async () => {
   );
 });
 
-test("advisor can list announcements and feedback for assigned clubs", async () => {
+test("advisor can list announcements for assigned clubs but cannot list the global feedback inbox", async () => {
   const fakeDatabase = {
     async getAdvisorClubIds(advisorId) {
       assert.equal(advisorId, "advisor-1");
@@ -835,14 +828,15 @@ test("advisor can list announcements and feedback for assigned clubs", async () 
   };
 
   const announcements = await listAnnouncements({ actor, database: fakeDatabase });
-  const feedback = await listFeedback({ actor, database: fakeDatabase });
-
   assert.equal(announcements.length, 2);
-  assert.equal(feedback.length, 1);
-  assert.equal(feedback[0].proposal?.proposed_activity, "Leadership Summit 2026");
+
+  await assert.rejects(
+    () => listFeedback({ actor, database: fakeDatabase }),
+    (error) => error.statusCode === 403 && error.code === "FORBIDDEN"
+  );
 });
 
-test("listFeedback keeps general feedback readable without a linked proposal", async () => {
+test("admin can list general feedback without a linked proposal", async () => {
   const fakeDatabase = {
     async listFeedback(filters) {
       assert.deepEqual(filters, {
@@ -862,10 +856,11 @@ test("listFeedback keeps general feedback readable without a linked proposal", a
 
   const feedback = await listFeedback({
     actor: {
-      id: "president-1",
-      role: "president",
-      clubId: "club-1"
+      id: "admin-1",
+      role: "admin",
+      clubId: null
     },
+    filters: { club_id: "club-1" },
     database: fakeDatabase
   });
 
