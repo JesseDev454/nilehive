@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { DataPagination } from "@/components/DataPagination";
 import { AccessDenied } from "@/components/AccessDenied";
 import { NhStudentId } from "@/components/NhStudentId";
-import { ClublyLoadingState, ClublyMetaChip, ClublyPageHeader, ClublySectionHeader, ClublyStateCard } from "@/components/Clubly";
+import { ClublyLoadingState, ClublyMetaChip, ClublyPageHeader, ClublySectionHeader, ClublyStateCard } from "@/components/OneClub";
 import { ClublySkeleton } from "@/components/ClublySkeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -446,22 +446,22 @@ function getMembershipNextStep(status: ResolvedMembershipStatus, duesRequired: b
   }
 
   if (status === "payment_under_review") {
-    return "Wait for Clubly to verify your dues proof.";
+    return "Wait for OneClub to verify your dues proof.";
   }
 
   if (status === "pending_payment" || status === "needs_new_payment_details") {
-    return duesRequired ? "Upload or update your dues proof so verification can continue." : "Wait for Clubly to finish activation.";
+    return duesRequired ? "Upload or update your dues proof so verification can continue." : "Wait for OneClub to finish activation.";
   }
 
   if (status === "rejected") {
-    return "Review the decision note, then choose another club or contact Clubly.";
+    return "Review the decision note, then choose another club or contact OneClub.";
   }
 
   if (status === "cancelled") {
     return "This request is closed. You can return to Discover Clubs.";
   }
 
-  return "Wait for Clubly to review your join request.";
+  return "Wait for OneClub to review your join request.";
 }
 
 function getJoinFlowSteps(status: ResolvedMembershipStatus | "not_started", duesRequired: boolean) {
@@ -589,7 +589,7 @@ function DuesConfirmationCard({
       }),
     onSuccess: async () => {
       toast.success("Payment details sent again", {
-        description: "Your updated payment details are back in the Clubly review queue."
+        description: "Your updated payment details are back in the OneClub review queue."
       });
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["my-dues"] }),
@@ -680,7 +680,7 @@ function DuesConfirmationCard({
         <p className="font-semibold text-warning">{duesRequired ? "Dues proof not uploaded yet" : "Dues are not required"}</p>
         <p className="mt-1 text-muted-foreground">
           {duesRequired
-            ? "Clubly will show the upload step once this request is ready for payment confirmation."
+            ? "OneClub will show the upload step once this request is ready for payment confirmation."
             : "Your request can move through verification without dues proof."}
         </p>
       </div>
@@ -708,7 +708,7 @@ function DuesConfirmationCard({
       <div className="mt-4 rounded-xl border border-success/20 bg-success/5 p-4 text-sm">
         <p className="font-semibold text-success">Dues verified. You are now an active member.</p>
         <p className="mt-1 text-muted-foreground">
-          Clubly has confirmed your payment. Any extra community access instructions will be shared separately.
+          OneClub has confirmed your payment. Any extra community access instructions will be shared separately.
         </p>
       </div>
     );
@@ -719,7 +719,7 @@ function DuesConfirmationCard({
       <div className="mt-4 rounded-xl border border-warning/20 bg-warning/10 p-4 text-sm">
         <p className="font-semibold text-warning">Your join request is under review.</p>
         <p className="mt-1 text-muted-foreground">
-          Clubly is checking your request. You will see the next step here once review is complete.
+          OneClub is checking your request. You will see the next step here once review is complete.
         </p>
       </div>
     );
@@ -757,7 +757,7 @@ function DuesConfirmationCard({
         </p>
         {resolvedStatus === "needs_new_payment_details" ? (
           <p className="mt-2 rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-destructive">
-            {request.decision_remarks || "Clubly rejected the previous proof. No detailed rejection note was provided."}
+            {request.decision_remarks || "OneClub rejected the previous proof. No detailed rejection note was provided."}
           </p>
         ) : null}
       </div>
@@ -787,7 +787,7 @@ function DuesConfirmationCard({
           </div>
         ) : (
           <p className="text-muted-foreground">
-            Shared payment details have not been published yet. Please contact Clubly.
+            Shared payment details have not been published yet. Please contact OneClub.
           </p>
         )}
       </div>
@@ -865,7 +865,7 @@ function JoinFlowStepper({
       <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <CardTitle className="text-lg">Membership Progress</CardTitle>
-          <p className="text-sm text-muted-foreground">Follow the next required step from club choice through Clubly approval.</p>
+          <p className="text-sm text-muted-foreground">Follow the next required step from club choice through OneClub approval.</p>
         </div>
         {primaryAction.to ? (
           <Button asChild className="w-full sm:w-auto">
@@ -1010,7 +1010,7 @@ function ClubDetailOverview({
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="clb-card-soft p-4">
                   <p className="font-semibold">Club President</p>
-                  <p className="mt-1 text-sm text-muted-foreground">Assigned in Clubly records</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Assigned in OneClub records</p>
                 </div>
                 <div className="clb-card-soft p-4">
                   <p className="font-semibold">Executive Team</p>
@@ -1505,14 +1505,14 @@ function JoinClubPanel({
             <p className="mt-1 text-sm text-muted-foreground">
               {duesRequired
                 ? "Pay first, then upload your dues proof with your join request."
-                : "Submit your join request first. Clubly will review and activate it if approved."}
+                : "Submit your join request first. OneClub will review and activate it if approved."}
             </p>
           </div>
         </div>
 
         {duesRequired && settings ? (
           <div className="clb-card-soft space-y-2 p-4 text-sm">
-            <p className="font-semibold">Clubly Account</p>
+            <p className="font-semibold">OneClub Account</p>
             <p><span className="text-muted-foreground">Bank:</span> {settings.bank_name}</p>
             <p><span className="text-muted-foreground">Account:</span> {settings.account_number}</p>
             <p><span className="text-muted-foreground">Name:</span> {settings.account_name}</p>
@@ -1522,7 +1522,7 @@ function JoinClubPanel({
           </div>
         ) : duesRequired ? (
           <div className="rounded-xl border border-dashed p-3 text-sm text-muted-foreground">
-            Shared payment account details have not been published yet. Please contact Clubly before paying.
+            Shared payment account details have not been published yet. Please contact OneClub before paying.
           </div>
         ) : null}
 

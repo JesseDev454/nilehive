@@ -56,7 +56,7 @@ export default function SignUp() {
             <p className="clb-eyebrow">Campus One Access</p>
             <h1 className="mt-2 text-3xl font-black uppercase md:text-5xl">No separate signup needed</h1>
             <p className="mt-4 text-sm leading-6 text-muted-foreground">
-              Clubly uses your Nile University CampusOne account. Sign in with CampusOne, then Clubly will open or create your local club profile.
+              OneClub uses your Nile University CampusOne account. Sign in with CampusOne, then OneClub will open or create your local club profile.
             </p>
             <Button
               className="mt-6 h-14 w-full"
@@ -119,7 +119,7 @@ export default function SignUp() {
       }
 
       toast.success("Account created", {
-        description: "Your Clubly account is ready. Explore and join a club from Discover Clubs."
+        description: "Your OneClub account is ready. Explore and join a club from Discover Clubs."
       });
       navigate("/", { replace: true });
     } catch (error) {
@@ -236,7 +236,7 @@ export default function SignUp() {
               />
               <p className="text-xs text-muted-foreground">
                 {requestedRole === "advisor"
-                  ? "Advisor accounts are assigned to a club by Clubly after account creation."
+                  ? "Advisor accounts are assigned to a club by OneClub after account creation."
                   : "After signup, go to Discover Clubs to browse clubs and submit your membership payment."}
               </p>
             </div>
@@ -267,7 +267,7 @@ export default function SignUp() {
               <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-secondary" />
               <p>
                 {requestedRole === "advisor"
-                  ? "Advisor accounts use your Nile email. Clubly assigns you to the right club after your account is active."
+                  ? "Advisor accounts use your Nile email. OneClub assigns you to the right club after your account is active."
                   : "Students sign up with their Nile email, then pick a club and attach payment details from the Discover Clubs page."}
               </p>
             </div>

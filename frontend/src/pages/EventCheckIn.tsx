@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Loader2, QrCode, XCircle } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
-import { ClublyLoadingState, ClublyStateCard } from "@/components/Clubly";
+import { ClublyLoadingState, ClublyStateCard } from "@/components/OneClub";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { ApiClientError, getEventEngagement, submitEventSelfCheckIn } from "@/lib/api";
@@ -231,7 +231,7 @@ export default function EventCheckIn() {
         <ClublyStateCard
           icon={QrCode}
           title="Check-in unavailable right now"
-          message={`Attendance for ${event.title} can only be recorded while Clubly check-in is active for the event date.`}
+          message={`Attendance for ${event.title} can only be recorded while OneClub check-in is active for the event date.`}
         >
           <div className="space-y-3 text-sm text-muted-foreground">
             <p>{getEventLifecycleLabel(event)}</p>

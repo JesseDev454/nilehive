@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { FileText, Plus } from "lucide-react";
 import { AccessDenied } from "@/components/AccessDenied";
 import { DataPagination } from "@/components/DataPagination";
-import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
+import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/OneClub";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -75,9 +75,9 @@ export default function Proposals() {
   const pageCopy = useMemo(() => {
     if (isAdmin) {
       return {
-        eyebrow: "Clubly Review",
+        eyebrow: "OneClub Review",
         title: "Final Review",
-        description: "See what each club has submitted and step in when Clubly review is needed."
+        description: "See what each club has submitted and step in when OneClub review is needed."
       };
     }
 
@@ -124,7 +124,7 @@ export default function Proposals() {
               <SelectItem value="all">All statuses</SelectItem>
               <SelectItem value="draft">Draft</SelectItem>
               <SelectItem value="pending_advisor_review">Pending advisor review</SelectItem>
-              <SelectItem value="pending_admin_review">Awaiting Clubly final review</SelectItem>
+              <SelectItem value="pending_admin_review">Awaiting OneClub final review</SelectItem>
               <SelectItem value="advisor_rejected">Advisor rejected</SelectItem>
               <SelectItem value="admin_rejected">Admin rejected</SelectItem>
               <SelectItem value="approved">Approved</SelectItem>
@@ -137,7 +137,7 @@ export default function Proposals() {
         <AccessDenied
           icon={FileText}
           title="Proposal access is restricted"
-          reason="Presidents create proposals here, while advisors and Clubly review them. Executives can follow club work through tasks and events."
+          reason="Presidents create proposals here, while advisors and OneClub review them. Executives can follow club work through tasks and events."
         />
       ) : isLoading ? (
         <ClublyLoadingState title="Loading proposals" message="We are getting the latest proposal updates." />

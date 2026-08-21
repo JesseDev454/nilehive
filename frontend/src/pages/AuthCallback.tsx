@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { AlertTriangle, ArrowRight, Loader2, LogOut, RefreshCw, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ClublyPanel, ClublyStateCard } from "@/components/Clubly";
+import { ClublyPanel, ClublyStateCard } from "@/components/OneClub";
 import { useAuth } from "@/contexts/AuthContext";
 
 const callbackMessages: Record<string, { title: string; message: string }> = {
@@ -16,11 +16,11 @@ const callbackMessages: Record<string, { title: string; message: string }> = {
   },
   access_pending: {
     title: "Access pending",
-    message: "Your account is waiting for Clubly approval. You can safely sign out and check again later."
+    message: "Your account is waiting for OneClub approval. You can safely sign out and check again later."
   },
   unauthorized_role: {
-    title: "This role cannot open Clubly",
-    message: "Your CampusOne identity is active, but it does not map to a Clubly role for this workspace."
+    title: "This role cannot open OneClub",
+    message: "Your CampusOne identity is active, but it does not map to a OneClub role for this workspace."
   },
   session_expired: {
     title: "Your session expired",
@@ -28,11 +28,11 @@ const callbackMessages: Record<string, { title: string; message: string }> = {
   },
   network_error: {
     title: "Network error",
-    message: "Clubly could not verify your session because the network dropped. Try again when your connection is stable."
+    message: "OneClub could not verify your session because the network dropped. Try again when your connection is stable."
   },
   qr_return_failed: {
     title: "Check-in return needs sign-in",
-    message: "Sign in again and Clubly will return you to the QR check-in page when possible."
+    message: "Sign in again and OneClub will return you to the QR check-in page when possible."
   }
 };
 
@@ -75,7 +75,7 @@ export default function AuthCallback() {
         <p className="clb-eyebrow mt-6">CampusOne callback</p>
         <h1 className="clb-title mt-2 text-3xl">Finishing secure sign-in</h1>
         <p className="mt-4 text-sm leading-6 text-muted-foreground">
-          Clubly is verifying your Nile University session. If you came from a QR check-in, we will return you to the check-in page after sign-in.
+          OneClub is verifying your Nile University session. If you came from a QR check-in, we will return you to the check-in page after sign-in.
         </p>
         <div className="mt-6 rounded-2xl border border-border bg-muted/40 p-4 text-left text-sm">
           <div className="flex items-start gap-3">

@@ -19,7 +19,7 @@ import {
   ClublyLoadingState,
   ClublyMetaChip,
   ClublySectionHeader
-} from "@/components/Clubly";
+} from "@/components/OneClub";
 import {
   getAdminOperationsDashboard,
   getAnnouncements,
@@ -725,7 +725,7 @@ function AdminTodayQueueCard({
 function AdminLoadingSkeleton() {
   return (
     <ClublyLoadingState
-      title="Loading Clubly controls"
+      title="Loading OneClub controls"
       message="We are preparing dashboards, queues, dues records, and club health data."
     />
   );
@@ -1075,7 +1075,7 @@ function ExecutiveDashboard() {
             <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between xl:flex-col xl:items-start">
               <div>
                 <p className="text-sm font-black uppercase tracking-[0.14em] text-primary-foreground/70">Feedback</p>
-                <p className="mt-1 text-lg font-black tracking-[-0.03em]">Tell Clubly what would help your club work better.</p>
+                <p className="mt-1 text-lg font-black tracking-[-0.03em]">Tell OneClub what would help your club work better.</p>
               </div>
               <Button asChild variant="secondary" size="sm">
                 <Link to="/feedback">Submit feedback</Link>
@@ -1257,7 +1257,7 @@ function AdminDashboard() {
       <div>
         <h1 className="text-2xl font-bold">Admin Operations</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Clubly control tower for approvals, memberships, dues, reports, and club health
+          OneClub control tower for approvals, memberships, dues, reports, and club health
         </p>
       </div>
 
@@ -1274,7 +1274,7 @@ function AdminDashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard title="Clubs" value={summary?.total_clubs ?? 0} icon={Users} />
             <StatCard title="Members" value={summary?.total_members ?? 0} icon={UserPlus} />
-            <StatCard title="Clubly Reviews" value={pendingAdminCount} icon={Clock} variant="warning" />
+            <StatCard title="OneClub Reviews" value={pendingAdminCount} icon={Clock} variant="warning" />
             <StatCard title="Missing Reports" value={summary?.missing_reports ?? 0} icon={AlertTriangle} variant="destructive" />
           </div>
 
@@ -1295,7 +1295,7 @@ function AdminDashboard() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <ClublyLoadingState title="Loading operations queue" message="We are checking pending Clubly actions." compact />
+                  <ClublyLoadingState title="Loading operations queue" message="We are checking pending OneClub actions." compact />
                 ) : !dashboard?.pending_actions.length ? (
                   <p className="text-sm text-muted-foreground">No pending operational actions right now.</p>
                 ) : (
@@ -1609,7 +1609,7 @@ function getMembershipStatusSummary(request: MembershipRequestRecord, payment?: 
   const status = resolveStudentMembershipStatus(request, payment);
 
   if (status === "active") {
-    return "Your dues have been confirmed by Clubly. This membership is now active.";
+    return "Your dues have been confirmed by OneClub. This membership is now active.";
   }
 
   if (status === "payment_under_review") {
@@ -1976,7 +1976,7 @@ function StudentDashboard() {
   const NextActionIcon = STUDENT_NEXT_ACTION_ICONS[nextAction.kind];
 
   const dashboardInviteUrl = buildAppUrl("/membership");
-  const dashboardInviteText = "Hey, join Campus One Clubly and find a Nile University club that fits you.";
+  const dashboardInviteText = "Hey, join Campus One OneClub and find a Nile University club that fits you.";
   const dashboardWhatsAppShareUrl = `https://wa.me/?text=${encodeURIComponent(`${dashboardInviteText}\n${dashboardInviteUrl}`)}`;
 
   async function handleDashboardShare(successTitle = "Invite ready", fallbackTitle = "Invite copied") {
@@ -2034,7 +2034,7 @@ function StudentDashboard() {
           <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
             {activeMemberships.length
               ? `You are in ${activeMemberships.length} club${activeMemberships.length === 1 ? "" : "s"}. Your next useful step is below.`
-              : "Start with one club that fits your interests, then Clubly will guide the join flow."}
+              : "Start with one club that fits your interests, then OneClub will guide the join flow."}
           </p>
         </div>
         <Button asChild className="shrink-0">
@@ -2128,7 +2128,7 @@ function StudentDashboard() {
           <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
               <CardTitle className="text-lg">Announcements Preview</CardTitle>
-              <p className="mt-1 text-sm text-muted-foreground">Recent updates from your clubs and Clubly.</p>
+              <p className="mt-1 text-sm text-muted-foreground">Recent updates from your clubs and OneClub.</p>
             </div>
             <Button asChild variant="outline" size="sm" className="w-full shrink-0 sm:w-auto">
               <Link to="/communications">View Announcements</Link>
@@ -2138,7 +2138,7 @@ function StudentDashboard() {
             {announcementsLoading ? (
               <ClublyLoadingState title="Loading announcements" message="Checking your latest club updates." compact />
             ) : announcementPreview.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Updates from your active clubs and public Clubly posts will appear here.</p>
+              <p className="text-sm text-muted-foreground">Updates from your active clubs and public OneClub posts will appear here.</p>
             ) : (
               announcementPreview.slice(0, 2).map((announcement) => (
                 <Link key={announcement.id} to="/communications" className="clb-list-card block">
@@ -2160,7 +2160,7 @@ function StudentDashboard() {
           <DialogContent className="max-w-md" data-testid="dashboard-share-sheet">
             <DialogHeader>
               <DialogTitle>Invite a friend</DialogTitle>
-              <DialogDescription>Share the Clubly directory with a classmate so they can find clubs faster.</DialogDescription>
+              <DialogDescription>Share the OneClub directory with a classmate so they can find clubs faster.</DialogDescription>
             </DialogHeader>
             <div className="grid gap-3 sm:grid-cols-2">
               <Button type="button" variant="outline" className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left" onClick={() => void handleDashboardShare()}>
@@ -2361,13 +2361,13 @@ function PresidentDashboard() {
     {
       label: "Complete club profile",
       done: hasClub,
-      detail: hasClub ? "Your president account is linked to a club." : "Clubly needs to link your account to a club.",
+      detail: hasClub ? "Your president account is linked to a club." : "OneClub needs to link your account to a club.",
       to: "/"
     },
     {
       label: "Add club description",
       done: hasClubDescription,
-      detail: hasClubDescription ? "Students can understand what your club offers." : "Add a useful description from Clubly club setup.",
+      detail: hasClubDescription ? "Students can understand what your club offers." : "Add a useful description from OneClub club setup.",
       to: "/"
     },
     {
@@ -2794,7 +2794,7 @@ export default function Dashboard() {
   if (role === "student") return <StudentDashboard />;
   return (
     <div className="flex min-h-[50vh] items-center justify-center">
-      <ClublyLoadingState title="Opening your Clubly workspace" message="We are loading your profile and dashboard access." />
+      <ClublyLoadingState title="Opening your OneClub workspace" message="We are loading your profile and dashboard access." />
     </div>
   );
 }

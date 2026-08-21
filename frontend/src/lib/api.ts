@@ -75,9 +75,9 @@ export interface ClubMediaRecord {
   updated_at: string;
 }
 
-export type LocalAppRole = "executive" | "advisor" | "admin" | "president" | "student" | "feedback_manager";
+export type LocalAppRole = "executive" | "advisor" | "admin" | "president" | "student";
 export type PortalRole = "student" | "staff" | "admin";
-export type EffectiveRole = "executive" | "advisor" | "admin" | "president" | "student" | "feedback_manager";
+export type EffectiveRole = "executive" | "advisor" | "admin" | "president" | "student";
 
 export interface ProfileRecord {
   id: string;
@@ -159,7 +159,7 @@ export interface AdminAdvisorAssignmentResult extends AdminRoleChangeResult {
 }
 
 export interface UpdateAdminUserRolePayload {
-  role: Exclude<ProfileRecord["role"], "admin" | "feedback_manager">;
+  role: Exclude<ProfileRecord["role"], "admin">;
   club_id?: string | null;
   remarks?: string | null;
   replace_existing_president?: boolean;
@@ -1582,6 +1582,23 @@ export async function getAdminProposal(proposalId: string, token?: string) {
     {
       method: "GET",
       token
+    }
+  );
+
+  return response.data;
+}
+
+export async function submitAdminDecision(
+  proposalId: string,
+  payload: { decision: "approve" | "reject"; remarks?: string },
+  token?: string
+) {
+  const response = await request<ApiEnvelope<ProposalRecord>>(
+    `/api/v1/proposals/admin/${proposalId}/decision`,
+    {
+      method: "POST",
+      token,
+      body: payload
     }
   );
 

@@ -11,7 +11,7 @@ import {
   ClublyProgressHero,
   ClublySectionHeader,
   ClublyStateCard
-} from "@/components/Clubly";
+} from "@/components/OneClub";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -93,7 +93,7 @@ export default function Dues() {
   const [accountNumber, setAccountNumber] = useState("1305861314");
   const [accountName, setAccountName] = useState("Nile Arts & Creative Hub");
   const [paymentInstructions, setPaymentInstructions] = useState(
-    "All students pay N10,000 per session. Submit a receipt or proof of payment for Clubly review."
+    "All students pay N10,000 per session. Submit a receipt or proof of payment for OneClub review."
   );
   const [duesPage, setDuesPage] = useState(1);
   const [selectedClubId, setSelectedClubId] = useState("all");
@@ -188,7 +188,7 @@ export default function Dues() {
       setIsApplyDialogOpen(false);
       actionSuccess(
         "Shared payment profile updated",
-        `Applied the Clubly account and student fee amount to ${result.clubs_updated} clubs.`
+        `Applied the OneClub account and student fee amount to ${result.clubs_updated} clubs.`
       );
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["shared-club-payment-settings"] }),
@@ -213,12 +213,12 @@ export default function Dues() {
         <ClublyPageHeader
           eyebrow="Finance"
           title="Dues & Payments"
-          description="Dues tracking is available only to Clubly admins."
+          description="Dues tracking is available only to OneClub admins."
         />
         <AccessDenied
           icon={CreditCard}
           title="Dues access is restricted"
-          reason="Dues tracking is available only to Clubly admins."
+          reason="Dues tracking is available only to OneClub admins."
         />
       </div>
     );
@@ -369,7 +369,7 @@ export default function Dues() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Clubly Account</CardTitle>
+          <CardTitle className="text-lg">OneClub Account</CardTitle>
           <p className="text-sm text-muted-foreground">
             Shared payment destination used by all clubs.
           </p>

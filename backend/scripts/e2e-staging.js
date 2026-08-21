@@ -134,7 +134,7 @@ async function seed() {
   const code = `E2E-${config.runId.toUpperCase()}`.slice(0, 40);
   const { data: club, error: clubError } = await client
     .from("clubs")
-    .upsert({ name: `E2E Club ${config.runId}`, code, description: "Isolated Clubly staging test club.", is_public_signup: true }, { onConflict: "code" })
+    .upsert({ name: `E2E Club ${config.runId}`, code, description: "Isolated OneClub staging test club.", is_public_signup: true }, { onConflict: "code" })
     .select("id, code")
     .single();
   if (clubError) throw new Error(`clubs: ${clubError.message}`);

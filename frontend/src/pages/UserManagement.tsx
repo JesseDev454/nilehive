@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Loader2, ShieldCheck, UserCog, Users } from "lucide-react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { DataPagination } from "@/components/DataPagination";
-import { ClublyLoadingState, ClublyMetricCard, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
+import { ClublyLoadingState, ClublyMetricCard, ClublyPageHeader, ClublyStateCard } from "@/components/OneClub";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -34,7 +34,7 @@ import {
 import { actionError, actionSuccess } from "@/lib/notify";
 import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 
-type EditableRole = Exclude<ProfileRecord["role"], "admin" | "feedback_manager">;
+type EditableRole = Exclude<ProfileRecord["role"], "admin">;
 
 const ROLE_OPTIONS: EditableRole[] = ["student", "executive", "president", "advisor"];
 
@@ -80,18 +80,17 @@ function RoleBadge({ role }: { role: ProfileRecord["role"] }) {
     advisor: "bg-primary/15 text-primary hover:bg-primary/15",
     president: "bg-secondary/15 text-secondary hover:bg-secondary/15",
     executive: "bg-warning/15 text-warning hover:bg-warning/15",
-    student: "bg-muted text-muted-foreground hover:bg-muted",
-    feedback_manager: "bg-primary/10 text-primary hover:bg-primary/10"
+    student: "bg-muted text-muted-foreground hover:bg-muted"
   }[role];
 
-  return <Badge className={`${className} capitalize`}>{role}</Badge>;
+  return <Badge className={`${className || "bg-muted text-muted-foreground"} capitalize`}>{role}</Badge>;
 }
 
 function UserActionPanel({ user, onClose }: { user: AdminUserProfileRecord; onClose: () => void }) {
   const queryClient = useQueryClient();
   const roleTriggerRef = useRef<HTMLButtonElement | null>(null);
   const [role, setRole] = useState<EditableRole>(
-    user.role === "admin" || user.role === "feedback_manager" ? "student" : user.role
+    user.role === "admin" ? "student" : user.role
   );
   const [clubId, setClubId] = useState(user.club_id || "none");
   const [remarks, setRemarks] = useState("");
@@ -458,7 +457,7 @@ export default function UserManagement() {
             <div className="clb-card p-4">
               <p className="font-semibold">3. They log in with the new role</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Presidents can then choose executives from active club members. Local role changes appear after the user signs in again or reloads Clubly.
+                Presidents can then choose executives from active club members. Local role changes appear after the user signs in again or reloads OneClub.
               </p>
             </div>
         </CardContent>

@@ -7,7 +7,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   draft: { label: "Draft", className: "border-muted-foreground/25 bg-muted text-muted-foreground" },
   pending: { label: "Pending", className: "border-warning/25 bg-warning/15 text-warning" },
   pending_advisor_review: { label: "Awaiting Advisor Review", className: "border-warning/25 bg-warning/15 text-warning" },
-  pending_admin_review: { label: "Awaiting Clubly Final Review", className: "border-primary/20 bg-primary/10 text-primary" },
+  pending_admin_review: { label: "Awaiting OneClub Final Review", className: "border-primary/20 bg-primary/10 text-primary" },
   approved: { label: "Proposal Approved", className: "border-success/25 bg-success/15 text-success" },
   advisor_approved: { label: "Advisor Approved", className: "border-success/25 bg-success/15 text-success" },
   active: { label: "Active", className: "border-success/25 bg-success/15 text-success" },
@@ -18,7 +18,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   blocked: { label: "Blocked", className: "border-destructive/25 bg-destructive/10 text-destructive" },
   rejected: { label: "Rejected", className: "border-destructive/25 bg-destructive/10 text-destructive" },
   advisor_rejected: { label: "Rejected by Advisor", className: "border-destructive/25 bg-destructive/10 text-destructive" },
-  admin_rejected: { label: "Rejected by Clubly", className: "border-destructive/25 bg-destructive/10 text-destructive" },
+  admin_rejected: { label: "Rejected by OneClub", className: "border-destructive/25 bg-destructive/10 text-destructive" },
 };
 
 export function StatusBadge({ status, eventDate }: { status: Status; eventDate?: string | null }) {

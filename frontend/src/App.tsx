@@ -10,7 +10,7 @@ import { AccessDenied } from "@/components/AccessDenied";
 import { AuthProvider, resolveEffectiveRole, useAuth } from "@/contexts/AuthContext";
 import { RoleProvider, useRole } from "@/contexts/RoleContext";
 import { AppLayout } from "@/components/AppLayout";
-import { ClublyLoadingState, ClublyStateCard, ClublyWorkspaceLoadingScreen } from "@/components/Clubly";
+import { ClublyLoadingState, ClublyStateCard, ClublyWorkspaceLoadingScreen } from "@/components/OneClub";
 import Dashboard from "@/pages/Dashboard";
 import ForgotPassword from "@/pages/ForgotPassword";
 import Login from "@/pages/Login";
@@ -22,7 +22,7 @@ import NewProposal from "@/pages/NewProposal";
 import Proposals from "@/pages/Proposals";
 import ProposalDetail from "@/pages/ProposalDetail";
 import Approvals from "@/pages/Approvals";
-import Analytics from "@/pages/Analytics";
+import AdminProposalReview from "@/pages/AdminProposalReview";
 import AdminClubDashboard from "@/pages/AdminClubDashboard";
 import Communications from "@/pages/Communications";
 import Clubs from "@/pages/Clubs";
@@ -45,7 +45,7 @@ function ProtectedRoutes() {
   const location = useLocation();
 
   if (isLoading) {
-    return <ClublyWorkspaceLoadingScreen title="Opening your Clubly workspace" message="Preparing your campus workspace." />;
+    return <ClublyWorkspaceLoadingScreen title="Opening your OneClub workspace" message="Preparing your campus workspace." />;
   }
 
   if (!session) {
@@ -80,10 +80,6 @@ function ProtectedRoutes() {
 
   const effectiveRole = resolveEffectiveRole(profile);
 
-  if (effectiveRole === "feedback_manager" && !["/feedback", "/notifications"].includes(location.pathname)) {
-    return <Navigate to="/feedback" replace />;
-  }
-
   return <Outlet />;
 }
 
@@ -96,8 +92,7 @@ const allowedRoutes: Record<string, string[]> = {
   president: ["/", "/clubs", "/proposals", "/events", "/communications", "/notifications", "/profile", "/members", "/dues", "/tasks", "/archive", "/feedback"],
   executive: ["/", "/clubs", "/tasks", "/events", "/communications", "/notifications", "/profile", "/feedback"],
   advisor: ["/", "/approvals", "/proposals", "/events", "/communications", "/notifications", "/profile", "/archive", "/feedback"],
-  admin: ["/", "/proposals", "/approvals", "/notifications", "/profile", "/events", "/membership", "/members", "/dues", "/communications", "/clubs", "/feedback", "/tasks", "/user-management", "/analytics", "/archive"],
-  feedback_manager: ["/feedback", "/notifications", "/profile"],
+  admin: ["/", "/proposals", "/admin/proposals/review", "/notifications", "/profile", "/events", "/membership", "/members", "/dues", "/communications", "/clubs", "/feedback", "/tasks", "/user-management", "/archive"],
 };
 
 function RoleRouteGuard() {
@@ -107,7 +102,7 @@ function RoleRouteGuard() {
   const matches = allowed.some((path) => path === "/" ? location.pathname === "/" : location.pathname === path || location.pathname.startsWith(`${path}/`));
 
   if (!matches) {
-    return <AccessDenied reason="This workspace is not available for your current Clubly role." />;
+    return <AccessDenied reason="This workspace is not available for your current OneClub role." />;
   }
 
   return <Outlet />;
@@ -163,7 +158,7 @@ const App = () => (
                   <Route path="/clubs/:clubId/dashboard" element={<AdminClubDashboard />} />
                   <Route path="/user-management" element={<UserManagement />} />
                   <Route path="/user-management/:userId" element={<UserManagement />} />
-                  <Route path="/analytics" element={<Analytics />} />
+                  <Route path="/admin/proposals/review" element={<AdminProposalReview />} />
                   <Route path="/archive" element={<MediaArchive />} />
                 </Route>
                 </Route>

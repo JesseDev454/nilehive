@@ -31,7 +31,8 @@ export const roleLabels: Record<NonNullable<Role>, string> = {
   admin: "Campus One Admin",
   president: "Club President",
   student: "Student",
-  feedback_manager: "Feedback Manager",
+  president: "Club President",
+  student: "Student",
 };
 
 const profileItem: AppNavItem = { title: "Profile", shortTitle: "Profile", url: "/profile", icon: UserCircle, onboardingTarget: "nav-profile" };
@@ -54,11 +55,13 @@ const advisorItems: AppNavItem[] = [
 ];
 
 const adminItems: AppNavItem[] = [
-  { title: "Operations Queue", shortTitle: "Queue", url: "/", icon: ClipboardList, onboardingTarget: "nav-dashboard" },
-  { title: "Clubs & People", shortTitle: "Clubs", url: "/clubs", icon: Users, onboardingTarget: "nav-clubs" },
+  { title: "Home", url: "/", icon: Home, onboardingTarget: "nav-dashboard" },
+  { title: "Final Proposal Review", shortTitle: "Review", url: "/admin/proposals/review", icon: ClipboardList, onboardingTarget: "nav-approvals", badgeKey: "pending_approvals" },
+  { title: "User Management", shortTitle: "Users", url: "/user-management", icon: UserPlus, onboardingTarget: "nav-users" },
+  { title: "Clubs", url: "/clubs", icon: Users, onboardingTarget: "nav-clubs" },
   { title: "Events", url: "/events", icon: CalendarDays, onboardingTarget: "nav-events", badgeKey: "events" },
-  { title: "Analytics", url: "/analytics", icon: BarChart3, onboardingTarget: "nav-analytics" },
-  { title: "Updates", url: "/communications", icon: MessageSquare, onboardingTarget: "nav-communications" },
+  { title: "Feedback", url: "/feedback", icon: MessageSquare, onboardingTarget: "nav-feedback" },
+  { title: "Notifications", shortTitle: "Alerts", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications", badgeKey: "notifications" },
   profileItem,
 ];
 
@@ -79,11 +82,7 @@ const studentItems: AppNavItem[] = [
   profileItem,
 ];
 
-const feedbackManagerItems: AppNavItem[] = [
-  { title: "App Feedback", shortTitle: "Feedback", url: "/feedback", icon: MessageSquare, onboardingTarget: "nav-feedback" },
-  { title: "Notifications", shortTitle: "Alerts", url: "/notifications", icon: Bell, onboardingTarget: "nav-notifications", badgeKey: "notifications" },
-  profileItem,
-];
+
 
 export function getRoleNavItems(role: Role | null): AppNavItem[] {
   if (!role) {
@@ -94,9 +93,9 @@ export function getRoleNavItems(role: Role | null): AppNavItem[] {
     executive: executiveItems,
     advisor: advisorItems,
     admin: adminItems,
+    admin: adminItems,
     president: presidentItems,
     student: studentItems,
-    feedback_manager: feedbackManagerItems,
   };
 
   return itemsMap[role] ?? [];

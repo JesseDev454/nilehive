@@ -96,7 +96,7 @@ test("announcement deep link shows a friendly unavailable state when announcemen
   await loginAs(page, "student");
 
   await page.goto("/notifications");
-  await page.getByText("New club announcement: Welcome to Clubly").click();
+  await page.getByText("New club announcement: Welcome to OneClub").click();
 
   await expect(page).toHaveURL(/\/communications$/);
   await expect(page.getByText("Announcements are temporarily unavailable.")).toBeVisible();

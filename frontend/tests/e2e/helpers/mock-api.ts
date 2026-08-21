@@ -193,7 +193,7 @@ export function createE2EState() {
     id: "announcement-1",
     club_id: "club-tech",
     created_by: "e2e-admin",
-    title: "Welcome to Clubly",
+    title: "Welcome to OneClub",
     message: "This is a test announcement for E2E flows.",
     audience: "all_users",
     priority: "normal",
@@ -210,7 +210,7 @@ export function createE2EState() {
       proposal_id: null,
       announcement_id: announcement.id,
       type: "announcement",
-      message: "New club announcement: Welcome to Clubly",
+      message: "New club announcement: Welcome to OneClub",
       delivery_status: "unread",
       created_at: now
     },
@@ -605,7 +605,7 @@ export async function mockClubServicesApi(page: Page, state = createE2EState()) 
 
     if (method === "POST" && path === "/clubs") {
       if (getTestRole(page) !== "admin") {
-        return apiError(route, 403, "Only Clubly admins can manage clubs", "FORBIDDEN");
+        return apiError(route, 403, "Only OneClub admins can manage clubs", "FORBIDDEN");
       }
       const body = request.postDataJSON() as Partial<typeof state.clubs[number]>;
       const created = {
@@ -626,7 +626,7 @@ export async function mockClubServicesApi(page: Page, state = createE2EState()) 
 
     if (method === "PATCH" && path.match(/^\/clubs\/[^/]+$/)) {
       if (getTestRole(page) !== "admin") {
-        return apiError(route, 403, "Only Clubly admins can manage clubs", "FORBIDDEN");
+        return apiError(route, 403, "Only OneClub admins can manage clubs", "FORBIDDEN");
       }
       const clubId = path.split("/")[2];
       const body = request.postDataJSON() as Partial<typeof state.clubs[number]>;
@@ -646,7 +646,7 @@ export async function mockClubServicesApi(page: Page, state = createE2EState()) 
 
     if (method === "DELETE" && path.match(/^\/clubs\/[^/]+$/)) {
       if (getTestRole(page) !== "admin") {
-        return apiError(route, 403, "Only Clubly admins can manage clubs", "FORBIDDEN");
+        return apiError(route, 403, "Only OneClub admins can manage clubs", "FORBIDDEN");
       }
       const clubId = path.split("/")[2];
       state.clubs = state.clubs.filter((club) => club.id !== clubId);
@@ -738,7 +738,7 @@ export async function mockClubServicesApi(page: Page, state = createE2EState()) 
         club_id: "club-tech",
         bank_name: "Test Bank",
         account_number: "0001112223",
-        account_name: "Nile Clubly",
+        account_name: "Nile OneClub",
         payment_instructions: "Use the E2E reference for test proof uploads.",
         fresher_dues_amount: 10000,
         returning_student_dues_amount: 10000,

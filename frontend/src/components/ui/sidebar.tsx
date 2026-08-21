@@ -196,7 +196,7 @@ const Sidebar = React.forwardRef<
         >
           <SheetHeader className="sr-only">
             <SheetTitle>Navigation menu</SheetTitle>
-            <SheetDescription>Browse Clubly pages and account actions.</SheetDescription>
+            <SheetDescription>Browse OneClub pages and account actions.</SheetDescription>
           </SheetHeader>
           <div className="flex h-full w-full flex-col">{children}</div>
         </SheetContent>

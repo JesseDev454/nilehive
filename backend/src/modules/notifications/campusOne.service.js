@@ -16,7 +16,7 @@ function getNotificationTitle(type) {
     missing_report_prompt: "Event report is due",
     dues_proof_rejected: "Dues proof needs another upload"
   };
-  return titles[type] || "Clubly notification";
+  return titles[type] || "OneClub notification";
 }
 
 function isCampusOneNotificationsConfigured(env = getEnv()) {

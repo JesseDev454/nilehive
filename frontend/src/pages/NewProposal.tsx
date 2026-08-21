@@ -20,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AccessDenied } from "@/components/AccessDenied";
-import { ClublyMetaChip, ClublyPageHeader, ClublyStateCard, ClublyStepIndicator } from "@/components/Clubly";
+import { ClublyMetaChip, ClublyPageHeader, ClublyStateCard, ClublyStepIndicator } from "@/components/OneClub";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/contexts/RoleContext";
 import {
@@ -645,7 +645,7 @@ export default function NewProposal() {
         <ClublyStateCard
           icon={Building2}
           title="Your club assignment is still needed"
-          message="Your president profile is not linked to a club yet. Clubly needs to assign your club before you can create or edit proposals."
+          message="Your president profile is not linked to a club yet. OneClub needs to assign your club before you can create or edit proposals."
           tone="warning"
         />
       </div>
@@ -692,7 +692,7 @@ export default function NewProposal() {
       <ClublyPageHeader
         eyebrow="Event Proposal"
         title={isEditMode ? "Edit Proposal" : "Create Event Proposal"}
-        description="Three focused steps. Clubly sends the proposal to your advisor first, then to final review."
+        description="Three focused steps. OneClub sends the proposal to your advisor first, then to final review."
         actions={lastLocalSaveAt ? (
           <span className="clb-status border-border bg-card text-muted-foreground">
             Saved {formatProposalDraftSavedAt(lastLocalSaveAt)}
@@ -1577,7 +1577,7 @@ export default function NewProposal() {
                 <div>
                   <p className="font-semibold text-[#163B7A]">Pro Tip</p>
                   <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                    Clear budget lines and correct student IDs make advisor and Clubly review much faster.
+                    Clear budget lines and correct student IDs make advisor and OneClub review much faster.
                   </p>
                 </div>
               </div>

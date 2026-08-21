@@ -74,7 +74,7 @@ test("feedback manager notification links stay within feedback tools", async ({ 
       proposal_id: null,
       announcement_id: "announcement-1",
       type: "announcement",
-      message: "New club announcement: Welcome to Clubly.",
+      message: "New club announcement: Welcome to OneClub.",
       delivery_status: "unread",
       created_at: "2026-06-22T10:00:00.000Z"
     }
@@ -93,7 +93,7 @@ test("feedback manager notification links stay within feedback tools", async ({ 
   await expect(page).toHaveURL(/\/feedback$/);
 
   await page.goto("/notifications");
-  await page.getByText("New club announcement: Welcome to Clubly.").click();
+  await page.getByText("New club announcement: Welcome to OneClub.").click();
   await expect(page).toHaveURL(/\/notifications$/);
   await expect(page.getByText("linked workflow is outside app-feedback access")).toBeVisible();
 });

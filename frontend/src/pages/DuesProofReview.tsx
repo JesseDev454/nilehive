@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, CheckCircle2, CreditCard, Receipt, XCircle } from "lucide-react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { AccessDenied } from "@/components/AccessDenied";
-import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
+import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/OneClub";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -180,7 +180,7 @@ export default function DuesProofReview() {
         <ClublyPageHeader
           eyebrow="Finance"
           title="Dues Proof"
-          description="Dues proof review is available only to Clubly admins."
+          description="Dues proof review is available only to OneClub admins."
         />
         <AccessDenied
           icon={CreditCard}

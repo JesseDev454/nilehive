@@ -394,7 +394,7 @@ export function ClublyListItem({ children, className }: { children: ReactNode; c
 }
 
 export function ClublyLoadingState({
-  title = "Loading Clubly",
+  title = "Loading OneClub",
   message = "Preparing the latest workspace data.",
   compact = false,
   delayedMessage,
@@ -495,7 +495,7 @@ export function ClublyLoadingState({
 }
 
 export function ClublyWorkspaceLoadingScreen({
-  title = "Opening your Clubly workspace",
+  title = "Opening your OneClub workspace",
   message = "Preparing your campus workspace."
 }: {
   title?: string;
@@ -507,7 +507,7 @@ export function ClublyWorkspaceLoadingScreen({
         <div className="mx-auto grid h-28 w-28 place-items-center rounded-full border-[3px] border-[#8d7a38] bg-[#f0f4ff] shadow-[0_0_0_2px_rgba(255,255,255,0.1)]">
           <Users className="h-12 w-12 text-[#001529]" aria-hidden="true" />
         </div>
-        <h1 className="mt-14 text-4xl font-semibold tracking-[-0.02em] text-[#fed65b]">Clubly</h1>
+        <h1 className="mt-14 text-4xl font-semibold tracking-[-0.02em] text-[#fed65b]">OneClub</h1>
         <p className="mt-4 text-xl text-[#b7ccff]">{title}</p>
         <p className="mt-2 text-sm text-[#b7ccff]/80">{message}</p>
         <div className="mt-10 h-2 overflow-hidden rounded-full bg-[#315486]" role="progressbar" aria-label={title} aria-valuemin={0} aria-valuemax={100} aria-valuenow={45}>

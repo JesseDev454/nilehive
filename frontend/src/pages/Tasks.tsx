@@ -5,7 +5,7 @@ import { ClipboardList, Loader2, Target, UserCheck } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { AccessDenied } from "@/components/AccessDenied";
 import { DataPagination } from "@/components/DataPagination";
-import { ClublyLoadingState, ClublyMetricCard, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
+import { ClublyLoadingState, ClublyMetricCard, ClublyPageHeader, ClublyStateCard } from "@/components/OneClub";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -232,12 +232,12 @@ export default function Tasks() {
         <ClublyPageHeader
           eyebrow="Operations"
           title="Tasks"
-          description="Task delegation is available to club presidents, executives, and Clubly oversight."
+          description="Task delegation is available to club presidents, executives, and OneClub oversight."
         />
         <AccessDenied
           icon={ClipboardList}
           title="Task access is restricted"
-          reason="Task delegation is available to club presidents, executives, and Clubly oversight."
+          reason="Task delegation is available to club presidents, executives, and OneClub oversight."
         />
       </div>
     );
@@ -357,7 +357,7 @@ export default function Tasks() {
           <CardHeader>
             <CardTitle className="text-lg">Club Filter</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Filter task oversight by club. This board is view-only for Clubly admins.
+              Filter task oversight by club. This board is view-only for OneClub admins.
             </p>
           </CardHeader>
           <CardContent>
@@ -394,7 +394,7 @@ export default function Tasks() {
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">
-            {role === "admin" ? "Clubly Task Oversight" : role === "president" ? "Club Task Board" : "Assigned Tasks"}
+            {role === "admin" ? "OneClub Task Oversight" : role === "president" ? "Club Task Board" : "Assigned Tasks"}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">

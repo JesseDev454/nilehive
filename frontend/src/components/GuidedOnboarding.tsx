@@ -56,36 +56,29 @@ const stepsByRole: Record<AppRole, OnboardingStep[]> = {
       id: "admin-dashboard",
       route: "/",
       target: "nav-dashboard",
-      title: "Monitor Clubly",
-      body: "The admin dashboard gives you the operational overview for clubs, proposals, dues, reports, and activity."
+      title: "Monitor OneClub",
+      body: "The admin Home gives you the operational overview for important items requiring attention."
+    },
+    {
+      id: "admin-approvals",
+      route: "/admin/proposals/review",
+      target: "nav-approvals",
+      title: "Final Proposal Review",
+      body: "Make the final decision on event proposals after they pass advisor review."
     },
     {
       id: "admin-users",
       route: "/user-management",
-      target: "nav-user-management",
-      title: "Manage local app roles",
-      body: "Assign Clubly roles like advisor, president, executive, and student. Campus One still controls admin access."
-    },
-    {
-      id: "admin-membership",
-      route: "/membership",
-      target: "nav-membership",
-      title: "Review membership activity",
-      body: "Use this section to monitor join requests and help clubs keep membership records clean."
-    },
-    {
-      id: "admin-dues",
-      route: "/dues",
-      target: "nav-dues",
-      title: "Verify and filter dues",
-      body: "Review dues records, filter by club, and confirm payment status before students get full club access."
+      target: "nav-users",
+      title: "User Management",
+      body: "View users and manage OneClub roles and club assignments."
     },
     {
       id: "admin-feedback",
       route: "/feedback",
       target: "nav-feedback",
-      title: "Track feedback and export it",
-      body: "Use Feedback to see onboarding issues, app confusion, event feedback, and export records for review."
+      title: "Review Feedback",
+      body: "Use Feedback to review issues or suggestions submitted by students."
     }
   ],
   president: [
@@ -101,7 +94,7 @@ const stepsByRole: Record<AppRole, OnboardingStep[]> = {
       route: "/proposals/new",
       target: "nav-create-proposal",
       title: "Create event proposals",
-      body: "Start event proposals here. They move through advisor review and then Clubly final review."
+      body: "Start event proposals here. They move through advisor review and then OneClub final review."
     },
     {
       id: "president-events",
@@ -168,7 +161,7 @@ const stepsByRole: Record<AppRole, OnboardingStep[]> = {
       route: "/communications",
       target: "nav-communications",
       title: "Read announcements",
-      body: "Announcements keep you updated on club instructions, reminders, and official Clubly messages."
+      body: "Announcements keep you updated on club instructions, reminders, and official OneClub messages."
     },
     {
       id: "executive-events",
@@ -176,15 +169,6 @@ const stepsByRole: Record<AppRole, OnboardingStep[]> = {
       target: "nav-events",
       title: "Follow club events",
       body: "Use Events to see approved club activities and attendance-related updates."
-    }
-  ],
-  feedback_manager: [
-    {
-      id: "feedback-manager-inbox",
-      route: "/feedback",
-      target: "nav-feedback",
-      title: "Review app feedback",
-      body: "This inbox collects onboarding, login/access, club joining, dues payment, and general app feedback from all users."
     }
   ]
 };

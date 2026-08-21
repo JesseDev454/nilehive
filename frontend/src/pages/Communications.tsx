@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Download, Filter, Megaphone, MessageSquare, Send, Users } from "lucide-react";
 import { DataPagination } from "@/components/DataPagination";
-import { ClublyCommandPanel, ClublyLoadingState } from "@/components/Clubly";
+import { ClublyCommandPanel, ClublyLoadingState } from "@/components/OneClub";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,7 +45,7 @@ type FeedbackFormCategory =
   | "payment_dues"
   | "other";
 type FeedbackImpact = "low" | "medium" | "high" | "urgent";
-type FeedbackRoleFilter = "all" | "student" | "executive" | "president" | "advisor" | "admin" | "feedback_manager" | "unknown";
+type FeedbackRoleFilter = "all" | "student" | "executive" | "president" | "advisor" | "admin" | "unknown";
 type FeedbackDateFilter = "all" | "today" | "7d" | "30d";
 type FeedbackStatusFilter = "all" | FeedbackRecord["status"];
 
@@ -86,7 +86,7 @@ const feedbackRoleFilterOptions: Array<{ value: FeedbackRoleFilter; label: strin
   { value: "president", label: "Presidents" },
   { value: "advisor", label: "Advisors" },
   { value: "admin", label: "Admins" },
-  { value: "feedback_manager", label: "Feedback managers" },
+
   { value: "unknown", label: "Unknown role" }
 ];
 const feedbackDateFilterOptions: Array<{ value: FeedbackDateFilter; label: string }> = [
@@ -228,8 +228,7 @@ function getFeedbackSubmitterRole(comment: string): FeedbackRoleFilter {
     "executive",
     "president",
     "advisor",
-    "admin",
-    "feedback_manager"
+    "admin"
   ];
 
   return roles.includes(value as FeedbackRoleFilter) ? (value as FeedbackRoleFilter) : "unknown";
@@ -305,7 +304,7 @@ export default function Communications({ defaultTab = "announcements" }: { defau
   const queryClient = useQueryClient();
   const { role } = useAuth();
   const [searchParams] = useSearchParams();
-  const isFeedbackManager = role === "feedback_manager";
+  const isFeedbackManager = false;
   const canCreateAnnouncement = role === "admin" || role === "president";
   const canSubmitFeedback = Boolean(role) && role !== "admin" && !isFeedbackManager;
   const canViewFeedback = role === "admin" || isFeedbackManager;

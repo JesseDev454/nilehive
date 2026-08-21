@@ -8,7 +8,7 @@ test("app loads from the local dev server", async ({ page }) => {
 
   await page.goto("/");
 
-  await expect(page.locator("body")).toContainText("Clubly");
+  await expect(page.locator("body")).toContainText("OneClub");
 });
 
 test("student can open the dashboard without CampusOne SSO", async ({ page }) => {

@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router-dom";
 import QRCode from "qrcode";
 import { Bell, CalendarDays, CheckCircle2, Clock, Copy, Loader2, MapPin, Printer, QrCode, Share2, Users } from "lucide-react";
-import { ClublyLoadingState, ClublyPageHeader } from "@/components/Clubly";
+import { ClublyLoadingState, ClublyPageHeader } from "@/components/OneClub";
 import { DataPagination } from "@/components/DataPagination";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

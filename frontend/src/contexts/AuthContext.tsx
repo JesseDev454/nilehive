@@ -19,7 +19,7 @@ import {
 import { queryClient, queryPersister } from "@/lib/queryClient";
 import { supabase, SUPABASE_AUTH_STORAGE_KEY } from "@/lib/supabase";
 
-export type AppRole = "executive" | "advisor" | "admin" | "president" | "student" | "feedback_manager";
+export type AppRole = "executive" | "advisor" | "admin" | "president" | "student";
 export type PlatformRole = "student" | "staff" | "admin";
 export type EffectiveRole = AppRole;
 

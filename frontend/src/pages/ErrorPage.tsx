@@ -1,14 +1,14 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { AlertTriangle, Home, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ClublyStateCard } from "@/components/Clubly";
+import { ClublyStateCard } from "@/components/OneClub";
 
 export default function ErrorPage() {
   const [searchParams] = useSearchParams();
   const reason = searchParams.get("reason");
   const message = reason
-    ? `Clubly could not complete the request: ${reason}. Try again, or return to the dashboard.`
-    : "Clubly could not complete the request. Try again, or return to the dashboard.";
+    ? `OneClub could not complete the request: ${reason}. Try again, or return to the dashboard.`
+    : "OneClub could not complete the request. Try again, or return to the dashboard.";
 
   return (
     <main className="clb-screen flex min-h-screen items-center justify-center p-6">

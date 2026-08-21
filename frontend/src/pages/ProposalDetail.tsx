@@ -5,7 +5,7 @@ import { ArrowLeft, Clock, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { AccessDenied } from "@/components/AccessDenied";
 import { ApprovalStepper } from "@/components/ApprovalStepper";
-import { ClublyLoadingState, ClublyMetaChip, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
+import { ClublyLoadingState, ClublyMetaChip, ClublyPageHeader, ClublyStateCard } from "@/components/OneClub";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -118,7 +118,7 @@ function buildApprovalSteps(proposal: ProposalRecord) {
       timestamp: getDateTimeLabel(advisorDecision?.decided_at ?? proposal.advisor_decided_at)
     },
     {
-      label: "Clubly Final Review",
+      label: "OneClub Final Review",
       status: adminStepStatus as "completed" | "current" | "pending" | "rejected",
       remarks: adminDecision?.remarks ?? proposal.admin_remarks ?? undefined,
       timestamp: getDateTimeLabel(adminDecision?.decided_at ?? proposal.admin_decided_at)
@@ -185,7 +185,7 @@ export default function ProposalDetail() {
         <AccessDenied
           icon={FileText}
           title="Proposal access is restricted"
-          reason="This area is for club presidents, advisors, and Clubly reviewers. Executives can keep up with club work through tasks and events."
+          reason="This area is for club presidents, advisors, and OneClub reviewers. Executives can keep up with club work through tasks and events."
         />
       </div>
     );
@@ -205,9 +205,9 @@ export default function ProposalDetail() {
     }
 
     if (isRejectedOverride && !trimmedRemarks) {
-      setAdminRemarksError("Explain why Clubly is approving this rejected proposal.");
+      setAdminRemarksError("Explain why OneClub is approving this rejected proposal.");
       toast.error("Add override remarks", {
-        description: "Explain why Clubly is approving this rejected proposal."
+        description: "Explain why OneClub is approving this rejected proposal."
       });
       return;
     }
@@ -290,7 +290,7 @@ export default function ProposalDetail() {
       ) : (
         <>
           <ClublyPageHeader
-            eyebrow={role === "admin" ? "Clubly Review" : role === "advisor" ? "Advisor Review" : "Club Proposal"}
+            eyebrow={role === "admin" ? "OneClub Review" : role === "advisor" ? "Advisor Review" : "Club Proposal"}
             title={proposal.title}
             description={`${
               role === "admin" || role === "advisor"
@@ -431,7 +431,7 @@ export default function ProposalDetail() {
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-base">
-                      {proposal.status === "pending_admin_review" ? "Clubly Decision" : "Approve Rejected Proposal"}
+                      {proposal.status === "pending_admin_review" ? "OneClub Decision" : "Approve Rejected Proposal"}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -483,7 +483,7 @@ export default function ProposalDetail() {
                     )}
                     {proposal.admin_remarks && (
                       <div className="border-2 border-foreground bg-muted p-3">
-                        <span className="font-medium">Clubly admin remarks</span>
+                        <span className="font-medium">OneClub admin remarks</span>
                         <p className="mt-1">{proposal.admin_remarks}</p>
                         {proposal.admin_decided_at && (
                           <p className="mt-2 text-xs text-muted-foreground">{getDateTimeLabel(proposal.admin_decided_at)}</p>

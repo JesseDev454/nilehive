@@ -69,7 +69,7 @@ export function getStudentNextAction({
     return {
       kind: "update_payment",
       title: "Finish your dues step",
-      description: "Upload or update your payment proof so Clubly can activate your membership.",
+      description: "Upload or update your payment proof so OneClub can activate your membership.",
       label: "Upload Dues Proof",
       to: "/membership"
     };
@@ -79,7 +79,7 @@ export function getStudentNextAction({
     return {
       kind: "payment_review",
       title: "Payment is being checked",
-      description: "Your proof is with Clubly. You can keep an eye on the status from membership.",
+      description: "Your proof is with OneClub. You can keep an eye on the status from membership.",
       label: "View status",
       to: "/membership"
     };
@@ -109,7 +109,7 @@ export function getStudentNextAction({
     return {
       kind: "read_announcement",
       title: "Read the latest announcement",
-      description: "There are new club or Clubly updates waiting for you.",
+      description: "There are new club or OneClub updates waiting for you.",
       label: "Read announcements",
       to: "/communications"
     };

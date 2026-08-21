@@ -1,6 +1,6 @@
 # Campus One staging E2E
 
-This suite is intentionally separate from `tests/e2e`. It tests the deployed Clubly frontend, real backend, and real Supabase staging project. A staging-only bridge creates a short-lived Clubly session for dedicated test profiles, so a Campus One test tenant is not required.
+This suite is intentionally separate from `tests/e2e`. It tests the deployed OneClub frontend, real backend, and real Supabase staging project. A staging-only bridge creates a short-lived OneClub session for dedicated test profiles, so a Campus One test tenant is not required.
 
 ## Safety contract
 

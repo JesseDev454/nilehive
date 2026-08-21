@@ -66,7 +66,7 @@ test.describe("staging connected proposal-to-feedback lifecycle", () => {
         title: label,
         proposed_activity: label,
         description: "Automated Campus One staging lifecycle coverage.",
-        aim_objectives: "Verify the complete Clubly proposal-to-feedback handoff.",
+        aim_objectives: "Verify the complete OneClub proposal-to-feedback handoff.",
         event_date: eventDate,
         event_time: "12:00",
         location: "E2E Test Hall",

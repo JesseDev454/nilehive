@@ -1,4 +1,4 @@
-# Clubly E2E Tests
+# OneClub E2E Tests
 
 These Playwright tests do not use CampusOne production SSO or production API data.
 

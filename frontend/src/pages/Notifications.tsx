@@ -23,7 +23,7 @@ import { DataPagination } from "@/components/DataPagination";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/Clubly";
+import { ClublyLoadingState, ClublyPageHeader, ClublyStateCard } from "@/components/OneClub";
 import { ClublySkeleton } from "@/components/ClublySkeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -69,7 +69,7 @@ const notificationFilters: Array<{ value: NotificationFilter; label: string }> =
 ];
 
 const proposalRoles = new Set(["admin", "president", "advisor"]);
-const feedbackReviewerRoles = new Set(["admin", "advisor", "president", "executive", "feedback_manager"]);
+const feedbackReviewerRoles = new Set(["admin", "advisor", "president", "executive"]);
 
 function getErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -212,7 +212,7 @@ function canOpenFeedback(role: string | null) {
 }
 
 function getNotificationLink(notification: NotificationRecord, role: string | null, meta: NotificationMeta) {
-  if (role === "feedback_manager") {
+  if (false) {
     return meta.category === "feedback" || isActionNeeded(notification) ? "/feedback" : "/notifications";
   }
 
@@ -469,7 +469,7 @@ export default function Notifications() {
         <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center border border-border bg-primary text-primary-foreground"><ShieldCheck className="h-5 w-5" /></div>
-            <div><p className="font-semibold">CampusOne notifications</p><p className="mt-1 text-sm text-muted-foreground">{deliveryConfig?.campus_one?.connected ? "Connected. Eligible Clubly updates can also appear in your CampusOne notification feed." : deliveryConfig?.campus_one?.enabled ? "Reconnect CampusOne to grant notification consent." : "CampusOne delivery is not enabled in this environment. Your Clubly inbox still works."}</p></div>
+            <div><p className="font-semibold">CampusOne notifications</p><p className="mt-1 text-sm text-muted-foreground">{deliveryConfig?.campus_one?.connected ? "Connected. Eligible OneClub updates can also appear in your CampusOne notification feed." : deliveryConfig?.campus_one?.enabled ? "Reconnect CampusOne to grant notification consent." : "CampusOne delivery is not enabled in this environment. Your OneClub inbox still works."}</p></div>
           </div>
           {deliveryConfig?.campus_one?.enabled && !deliveryConfig.campus_one.connected ? <Button type="button" variant="outline" onClick={() => window.location.assign(getCampusOneOidcAuthUrl("login", "/notifications"))}>Reconnect CampusOne</Button> : null}
         </CardContent>
@@ -574,7 +574,7 @@ export default function Notifications() {
                   const deliveryLabel = getDeliveryLabel(notification.delivery_status);
                   const needsAction = isActionNeeded(notification);
                   const feedbackManagerRouteCopy =
-                    role === "feedback_manager" && meta.category !== "feedback"
+                    false
                       ? target === "/feedback"
                         ? "Feedback Managers can only open app-feedback workflows. This action opens the feedback workspace."
                         : "Feedback Managers can view this update here; the linked workflow is outside app-feedback access."
@@ -646,8 +646,8 @@ export default function Notifications() {
                   </p>
                 </div>
                 <Button asChild size="sm" variant="outline">
-                  <Link to={role === "feedback_manager" ? "/feedback" : "/communications"}>
-                    {role === "feedback_manager" ? "Open Feedback" : "Open"}
+                  <Link to="/communications">
+                    Open
                   </Link>
                 </Button>
               </div>

@@ -57,7 +57,7 @@ test("student sees a friendly state for an expired or inactive QR check-in link"
   await page.goto(`/events/${state.todayEvent.proposal_id}/check-in`);
 
   await expect(page.getByRole("heading", { name: "Check-in unavailable right now" })).toBeVisible();
-  await expect(page.getByText("Attendance for Today Check-in Lab can only be recorded while Clubly check-in is active")).toBeVisible();
+  await expect(page.getByText("Attendance for Today Check-in Lab can only be recorded while OneClub check-in is active")).toBeVisible();
 });
 
 test("student sees a friendly state for an invalid QR check-in link", async ({ page }) => {

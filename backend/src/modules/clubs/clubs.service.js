@@ -10,7 +10,7 @@ const {
 
 const DEMO_PUBLIC_CLUB_NAMES = new Set(["nile innovators club"]);
 const DEFAULT_PAYMENT_INSTRUCTIONS =
-  "All students pay N10,000 per session. Submit a receipt or proof of payment for Clubly review.";
+  "All students pay N10,000 per session. Submit a receipt or proof of payment for OneClub review.";
 
 function normalizePaymentInstructions(instructions) {
   if (!instructions) {
@@ -20,7 +20,7 @@ function normalizePaymentInstructions(instructions) {
   return instructions
     .replace(/payment reference and receipt used/gi, "receipt or proof of payment used")
     .replace(/payment reference and proof used/gi, "receipt or proof of payment used")
-    .replace(/Club Services review/g, "Clubly review");
+    .replace(/Club Services review/g, "OneClub review");
 }
 
 function filterPublicSignupClubs(clubs) {
