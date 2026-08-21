@@ -141,7 +141,67 @@ Concurrency group: `clubly-staging-e2e` (serial; does not cancel in-progress)
 
 URL after dispatch is recorded in the GitHub Actions run for this branch. Secrets are referenced by name only.
 
-## Staging run result
+## Step 3J — Staging deploy attempt (2026-08-21)
+
+Repository HEAD remained `ee1fc940e8d895cc21fc9331e8cd47ec8ffd7b50` on `codex/oneclub-functional-integration`, matching origin. No unexpected tracked modifications. Local 3I results were not re-run; they already passed.
+
+### Identified staging frontend (Vercel)
+
+| Field | Value |
+|---|---|
+| Project used by GitHub `E2E_STAGING_BASE_URL` | `nilehive-615d` |
+| Stable non-production URL | `https://nilehive-615d.vercel.app` |
+| Frontend root / install / build / output | repo root; `npm --prefix frontend install`; `npm --prefix frontend run build`; `frontend/dist` (`vercel.json`) |
+| Staging API rewrite | `/api/:path*` → `https://nilehive-test.onrender.com/api/:path*` |
+| API base URL variable (frontend) | `VITE_API_BASE_URL` (browser still uses same-origin `/api` via the rewrite) |
+| Deployment Protection | **Preview deployments: yes** (Vercel SSO login). **Stable `nilehive-615d.vercel.app` alias: no** (public Clubly page) |
+| Resulting type | Vercel **Production** environment of the *staging* project `nilehive-615d`, not `clubs.campusone.com.ng` |
+| Last Production SHA for `nilehive-615d` | `66091d851cc9a92897fd86ffa363b37c77fd5931` (2026-08-13, “Fix Campus One custom role resolution”) — **before** `77ca764` OneClub UI rebuild |
+| Auto preview for this branch | `https://nilehive-615d-q8nt92n1g-jesses-projects-ad8e7086.vercel.app` at `ee1fc94` — **SSO-protected**, not usable by GitHub Actions |
+| Separate project | `nilehive` also received a protected preview; do not promote that project (likely production) |
+
+Stable URL still returns HTTP 200 with `<title>Clubly</title>` and Clubly metadata. It does not show “Continue with Campus One”.
+
+This workspace has **no Vercel CLI login and no `VERCEL_TOKEN`**. `vercel --prod` was not used. Staging GitHub secrets include no `VERCEL_AUTOMATION_BYPASS` name.
+
+**Required dashboard action (staging project only):** in Vercel project `nilehive-615d`, promote the existing preview for `ee1fc94` to that project’s Production alias (`nilehive-615d.vercel.app`), or set that project’s Production Branch to `codex/oneclub-functional-integration` and redeploy. Do not change project `nilehive` or `clubs.campusone.com.ng`. Do not disable Deployment Protection globally; keep the stable staging alias public so CI can run, as it already is.
+
+### Identified staging backend (Render)
+
+| Field | Value |
+|---|---|
+| Public service host | `nilehive-test.onrender.com` |
+| Health payload `service` | `nilehive-backend` |
+| Root / build / start / health | `backend`; `npm install`; `npm start`; `/api/v1/ready` (`render.yaml`) |
+| Deployed commit | **not this branch** (audit-logs missing) |
+
+Read-only probes after wake-up:
+
+- `GET /api/v1/ready` → 200, database reachable
+- `GET /api/v1/profile/me` → **401** (route exists)
+- `GET /api/v1/auth/campus-one/login` → 200 body `CAMPUS_ONE_NOT_CONFIGURED` (route exists; OIDC not configured on this service)
+- `GET /api/v1/admin/audit-logs` → **404** (route still absent)
+- `POST /api/v1/auth/e2e/staging-session` → route exists (not 404)
+- CORS `Origin: https://nilehive-615d.vercel.app` → `access-control-allow-origin` echoes that origin; `access-control-allow-credentials: true`
+
+This workspace has **no Render CLI and no Render API token**. Production Render was not modified.
+
+**Required dashboard action (staging service only):** on the Render web service that serves `nilehive-test.onrender.com`, set the Git branch to `codex/oneclub-functional-integration` (commit `ee1fc94`) and manually deploy. Keep `APP_ENV=staging` and the existing staging bridge flags. Do not change the production API service or `clubs-api.campusone.com.ng`. After deploy, unauthenticated `GET /api/v1/admin/audit-logs` must become **401**, not 404.
+
+### Alignment
+
+- Frontend rewrite already targets staging Render.
+- Staging Render already allows the staging Vercel origin.
+- Staging Supabase seed/reset already succeeds and refuses production hosts.
+- Campus One callback / OIDC on this Render service currently reports `CAMPUS_ONE_NOT_CONFIGURED`. CI uses the staging session bridge, not interactive MFA. Do not change production Campus One apps. If staging OIDC must be configured later, that is a separate non-production dashboard change.
+
+### Workflow not re-run
+
+GitHub Actions was **not** dispatched again: the deployed frontend and backend are still the stale services that failed run `32489829536`. Re-running would repeat that failure. No tag `oneclub-admin-integration-v1` was created.
+
+Production and `main` were not touched.
+
+## Staging run result (Step 3I)
 
 Dispatched after push from `codex/oneclub-functional-integration`.
 
@@ -158,7 +218,7 @@ Exact staging blockers (not hidden by mocked fallbacks):
 
 GitHub `staging` secrets/variables are present (reset + seed succeeded). Production was not used as a substitute.
 
-**Staging Admin gate: BLOCKED** until this branch is deployed to the staging Vercel frontend and staging Render backend. Local Admin gate remains PASS.
+**Staging Admin gate: BLOCKED** until the dashboard actions in Step 3J are completed. Local Admin gate remains PASS.
 
 ## Campus One / session result
 
@@ -235,7 +295,7 @@ Known limitation (not P0/P1 at current staging scale): `GET /dashboard/admin-ope
 
 **Local Admin gate: PASS** (zero open P0/P1; typecheck/lint/unit/build; backend 381/381; Playwright 109/109).
 
-**Staging Admin gate: BLOCKED.** Exact blockers: staging Vercel still serves Clubly; staging Render does not yet expose Step 3H Admin audit-logs. Seed/reset against isolated staging Supabase succeeded. Do not mark “ready for production.”
+**Staging Admin gate: BLOCKED (Step 3J).** Vercel project `nilehive-615d` Production alias still serves Clubly at `66091d8`. Render `nilehive-test.onrender.com` still 404s audit-logs. This agent cannot promote those services (no Vercel/Render credentials). Local Admin gate remains PASS. Do not mark “ready for production.” No `oneclub-admin-integration-v1` tag.
 
 **Not started:** President, Advisor, Student, or Executive frontend functional integration.
 
