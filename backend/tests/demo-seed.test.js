@@ -5,6 +5,7 @@ const {
   verifyDemoSentinel,
   seedDemoDataset,
   resetDemoDataset,
+  buildDemoRecords,
   SCOPED_RESET_DELETION_ORDER,
   DEMO_PERSONAS
 } = require("../scripts/demo-seed");
@@ -58,11 +59,69 @@ test("validateDemoEnvironment accepts valid localhost / demo URL with required c
     APP_ENV: "demo",
     ALLOW_DEMO_SEED: "true",
     DEMO_SUPABASE_URL: "http://127.0.0.1:54321",
-    DEMO_SUPABASE_SERVICE_ROLE_KEY: "mock-service-key"
+    DEMO_SUPABASE_SERVICE_ROLE_KEY: "mock-service-key",
+    DEMO_AUTH_PASSWORD: "runtime-only-secret"
   });
 
   assert.equal(result.valid, true);
   assert.equal(result.errors.length, 0);
+});
+
+test("validateDemoEnvironment refuses to seed without a runtime demo password", () => {
+  const result = validateDemoEnvironment({
+    APP_ENV: "demo",
+    ALLOW_DEMO_SEED: "true",
+    DEMO_SUPABASE_URL: "http://127.0.0.1:54321",
+    DEMO_SUPABASE_SERVICE_ROLE_KEY: "mock-service-key"
+  });
+
+  assert.equal(result.valid, false);
+  assert.ok(result.errors.some((error) => error.includes("DEMO_AUTH_PASSWORD")));
+});
+
+test("buildDemoRecords uses the migrated database column contracts and stable ids", () => {
+  const users = new Map(DEMO_PERSONAS.map((persona, index) => [
+    persona.key,
+    { id: `00000000-0000-0000-0000-00000000000${index + 1}`, email: persona.email }
+  ]));
+  const clubs = new Map([
+    ["NGD", { id: "10000000-0000-0000-0000-000000000001", code: "NGD", name: "Nile Google Developers" }],
+    ["NCIC", { id: "10000000-0000-0000-0000-000000000002", code: "NCIC", name: "Nile Climate Initiatives Club" }]
+  ]);
+
+  const first = buildDemoRecords({ usersByPersona: users, clubsByCode: clubs, now: new Date("2026-08-27T00:00:00Z") });
+  const second = buildDemoRecords({ usersByPersona: users, clubsByCode: clubs, now: new Date("2026-08-27T00:00:00Z") });
+
+  assert.deepEqual(first, second, "record ids and payloads must be deterministic");
+  assert.equal(first.profiles.length, 5);
+  for (const profile of first.profiles) {
+    assert.equal("app_role" in profile, false);
+    assert.equal("effective_role" in profile, false);
+    assert.equal("portal_role" in profile, false);
+    assert.equal("custom_roles" in profile, false);
+  }
+  for (const assignment of first.clubAdvisors) {
+    assert.equal("status" in assignment, false);
+  }
+  for (const member of first.clubMembers) {
+    assert.ok(member.full_name);
+    assert.ok(member.student_id);
+    assert.ok(member.club_role);
+    assert.equal(member.membership_status, "active");
+    assert.equal("role" in member, false);
+    assert.equal("status" in member, false);
+  }
+  for (const proposal of first.proposals) {
+    assert.ok(proposal.id);
+    assert.ok(proposal.title);
+    assert.ok(proposal.location);
+    assert.equal("venue" in proposal, false);
+    assert.equal("expected_attendance" in proposal, false);
+    assert.equal("estimated_budget" in proposal, false);
+    assert.equal("proposal_stage" in proposal, false);
+  }
+  assert.equal(first.tasks.length, 6);
+  assert.equal(first.announcements.length, 2);
 });
 
 test("verifyDemoSentinel fails when sentinel table is missing or query errors", async () => {

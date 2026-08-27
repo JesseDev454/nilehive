@@ -62,7 +62,7 @@
    - Desktop sidebar width set to `16rem` (256px).
    - Heading typography scaled to clean, responsive hierarchy.
    - Authenticated shell footer made minimal and unobtrusive.
-   - Secondary text contrast meets WCAG AA standards.
+   - Secondary text contrast was improved. WCAG AA conformance remains unverified until measured with an accessibility/contrast audit in the integrated demo.
 
 ---
 
@@ -86,6 +86,7 @@
    ```bash
    export APP_ENV=demo
    export ALLOW_DEMO_SEED=true
+   export DEMO_AUTH_PASSWORD=...
    export DEMO_SUPABASE_URL=...
    export DEMO_SUPABASE_SERVICE_ROLE_KEY=...
    node backend/scripts/demo-seed.js
