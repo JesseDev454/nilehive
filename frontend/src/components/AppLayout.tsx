@@ -106,10 +106,10 @@ export function AppLayout() {
               </Button>
             </div>
           </header>
-          <main className="min-w-0 flex-1 p-4 pb-24 md:px-6 md:pb-8 md:pt-8">
+          <main className="min-w-0 flex-1 p-4 pb-24 md:px-6 md:pb-8 md:pt-6">
             <Outlet />
           </main>
-          <SiteFooter />
+          <SiteFooter className="border-0 bg-transparent py-2 text-[11px] opacity-60" />
           <MobileBottomNavigation />
         </div>
       </div>

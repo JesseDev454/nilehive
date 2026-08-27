@@ -80,7 +80,52 @@ const studentItems: AppNavItem[] = [
   profileItem,
 ];
 
+export function isNavItemActive(
+  itemUrl: string,
+  pathname: string,
+  search: string = ""
+): boolean {
+  const rawPath = pathname.split("?")[0] || "/";
+  const cleanPath = rawPath.length > 1 && rawPath.endsWith("/") ? rawPath.slice(0, -1) : rawPath;
+  const rawSearch = search || (pathname.includes("?") ? `?${pathname.split("?")[1]}` : "");
+  const searchParams = new URLSearchParams(rawSearch);
 
+  // Exact root match
+  if (itemUrl === "/") {
+    return cleanPath === "/";
+  }
+
+  // Feedback special handling (tab=feedback query or /feedback path)
+  if (itemUrl === "/feedback") {
+    return cleanPath === "/feedback" || cleanPath.startsWith("/feedback/") || searchParams.get("tab") === "feedback";
+  }
+
+  // Communications / Updates special handling (when not tab=feedback)
+  if (itemUrl === "/communications") {
+    return (cleanPath === "/communications" || cleanPath.startsWith("/communications/")) && searchParams.get("tab") !== "feedback";
+  }
+
+  // Proposals: /proposals, /proposals/new, /proposals/:id
+  if (itemUrl === "/proposals/new") {
+    return cleanPath === "/proposals/new";
+  }
+  if (itemUrl === "/proposals") {
+    return cleanPath === "/proposals" || (cleanPath.startsWith("/proposals/") && cleanPath !== "/proposals/new");
+  }
+
+  // Admin proposals review
+  if (itemUrl === "/admin/proposals/review") {
+    return cleanPath === "/admin/proposals/review" || cleanPath.startsWith("/admin/proposals/review/");
+  }
+
+  // Profile: /profile
+  if (itemUrl === "/profile") {
+    return cleanPath === "/profile" || cleanPath.startsWith("/profile/");
+  }
+
+  // Generic prefix/exact match for other items
+  return cleanPath === itemUrl || cleanPath.startsWith(`${itemUrl}/`);
+}
 
 export function getRoleNavItems(role: Role | null): AppNavItem[] {
   if (!role) {

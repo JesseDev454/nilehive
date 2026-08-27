@@ -15,6 +15,7 @@ const NavLink = forwardRef<HTMLAnchorElement, NavLinkCompatProps>(
       <RouterNavLink
         ref={ref}
         to={to}
+        aria-current={typeof activeOverride === "boolean" ? (activeOverride ? "page" : undefined) : undefined}
         className={({ isActive, isPending }) =>
           cn(
             className,

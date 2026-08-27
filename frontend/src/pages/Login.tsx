@@ -169,8 +169,8 @@ export default function Login() {
 
     try {
       await signIn(email, password);
-      toast.success("Welcome back to Club Services");
-      } catch (error) {
+      toast.success("Welcome back to OneClub");
+    } catch (error) {
         toast.error("We couldn’t sign you in", {
           description: getUserFacingErrorMessage(error, "Please check your details and try again.")
         });

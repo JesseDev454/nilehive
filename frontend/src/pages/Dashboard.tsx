@@ -95,6 +95,7 @@ import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 import { canViewProposalDetails } from "@/lib/roleAccess";
 import { downloadAdminPerformanceMatrixCsv } from "@/lib/exports";
 import { getStudentNextAction, type StudentNextActionKind } from "@/lib/studentActivation";
+import { formatStudentGreeting, getStudentDisplayName } from "@/lib/studentDisplayName";
 import { buildAppUrl, shareOrCopy } from "@/lib/share";
 import { publicClubsQueryOptions } from "@/lib/publicClubsQuery";
 
@@ -1184,7 +1185,7 @@ function AdvisorDashboard() {
   return (
     <div className="mx-auto w-full max-w-[1280px] space-y-7 animate-slide-up">
       <StitchPageHeader
-        eyebrow="Club Services"
+        eyebrow="Advisor Portal"
         title="Advisor Home"
         description="Review the proposals, reports, and events that need your attention."
       />
@@ -1496,7 +1497,7 @@ function PolishedAdminDashboard() {
   return (
     <div className="mx-auto w-full max-w-[1280px] space-y-7 animate-slide-up">
       <StitchPageHeader
-        eyebrow="Club Services"
+        eyebrow="OneClub Administration"
         title="Operations Queue"
         description="A calm overview of the work that needs attention across campus clubs."
         actions={<Button type="button" variant="outline" onClick={handleDownloadMatrix} disabled={!dashboard}>
@@ -1527,7 +1528,7 @@ function PolishedAdminDashboard() {
               </span>
               <span className="min-w-0">
                 <span className="block font-display text-base font-extrabold">Open operations queue</span>
-                <span className="block text-sm text-primary-foreground/80">{formatNumber(todayQueueTotal)} items need Club Services</span>
+                <span className="block text-sm text-primary-foreground/80">{formatNumber(todayQueueTotal)} items need administrative review</span>
               </span>
             </Link>
             <Link
@@ -1854,7 +1855,8 @@ const STUDENT_NEXT_ACTION_ICONS: Record<StudentNextActionKind, ElementType> = {
 };
 
 function StudentDashboard() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
+  const studentDisplayName = getStudentDisplayName(profile, user);
   const [dashboardShareOpen, setDashboardShareOpen] = useState(false);
   const {
     data: membershipRequests = [],
@@ -1951,7 +1953,6 @@ function StudentDashboard() {
       return Boolean(announcement.club_id && joinedClubIds.has(announcement.club_id));
     })
     .slice(0, 5);
-  const firstName = profile?.full_name?.trim().split(/\s+/).filter(Boolean)[0] || "student";
   const paidDuesCount = duePayments.filter((payment) => payment.status === "paid").length;
   const duesProgress = duePayments.length > 0 ? Math.round((paidDuesCount / duePayments.length) * 100) : 0;
   const featuredMembership = activeMemberships[0] || membershipRequests[0];
@@ -2004,216 +2005,46 @@ function StudentDashboard() {
     }
   }
 
-  const nextEvent = upcomingEvents[0];
-  const clubPreview = activeMemberships.slice(0, 2);
-  const discoveryPreview = publicClubs
-    .filter((club) => !joinedClubIds.has(club.id))
-    .slice(0, 4);
-
   return (
     <StudentStitchHome
-      firstName={firstName}
+      displayName={studentDisplayName}
       nextAction={nextAction}
       nextActionIcon={NextActionIcon}
       membershipStatus={featuredMembership ? resolveStudentMembershipStatus(featuredMembership, featuredPayment) : "under_review"}
       events={upcomingEvents.slice(0, 3)}
       announcements={announcementPreview.slice(0, 3)}
-      isLoading={membershipsLoading || duesLoading || eventsLoading || announcementsLoading}
-      error={membershipsFailed || duesFailed || eventsFailed || announcementsFailed ? getErrorMessage(membershipsError || duesError || eventsError || announcementsError) : null}
+      eventsLoading={eventsLoading}
+      eventsError={eventsFailed ? eventsError : null}
+      announcementsLoading={announcementsLoading}
+      announcementsError={announcementsFailed ? announcementsError : null}
+      error={membershipsFailed || duesFailed ? getErrorMessage(membershipsError || duesError) : null}
     />
   );
-
-  return (
-    <div className="mx-auto w-full max-w-[940px] space-y-7 animate-slide-up">
-      <section className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-4xl font-bold leading-tight tracking-tight md:text-5xl">Hello, {firstName}</h1>
-            {paidDuesCount > 0 ? <QuestSticker tone="green">Dues cleared</QuestSticker> : null}
-          </div>
-          <p className="mt-3 max-w-2xl text-base leading-7 text-muted-foreground">
-            {activeMemberships.length
-              ? `You are in ${activeMemberships.length} club${activeMemberships.length === 1 ? "" : "s"}. Your next useful step is below.`
-              : "Start with one club that fits your interests, then OneClub will guide the join flow."}
-          </p>
-        </div>
-        <Button asChild className="shrink-0">
-          <Link to="/membership">Discover Clubs</Link>
-        </Button>
-      </section>
-
-      <Card className="overflow-hidden">
-        <CardContent className="grid gap-5 p-5 md:grid-cols-[1fr_auto] md:items-center">
-          <div className="flex min-w-0 items-start gap-4">
-            <QuestIconBadge icon={nextEvent ? CalendarDays : NextActionIcon} tone={nextEvent ? "blue" : "navy"} />
-            <div className="min-w-0">
-              <p className="clb-eyebrow">{nextEvent ? "Your next event" : "Next best action"}</p>
-              <h2 className="mt-2 text-2xl font-bold leading-tight tracking-tight">
-                {nextEvent ? nextEvent.title : nextAction.title}
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                {nextEvent
-                  ? `${getDateLabel(nextEvent.event_date)} - ${nextEvent.location || "Venue TBC"}`
-                  : nextAction.description}
-              </p>
-            </div>
-          </div>
-          <Button asChild variant={nextEvent ? "outline" : "default"} className="w-full md:w-auto">
-            <Link to={nextEvent ? "/events" : nextAction.to}>{nextEvent ? "View event" : nextAction.label}</Link>
-          </Button>
-        </CardContent>
-      </Card>
-
-      {(membershipsFailed || duesFailed || eventsFailed || announcementsFailed) ? (
-        <OneClubErrorState title="Some student data could not load" message={getErrorMessage(membershipsError || duesError || eventsError || announcementsError)} />
-      ) : null}
-
-      <section className="space-y-4">
-        <OneClubSectionHeader
-          title="My clubs"
-          description="A compact view of your current club memberships."
-          action={<Button asChild variant="outline" size="sm"><Link to="/membership">Manage</Link></Button>}
-        />
-        {(membershipsLoading || duesLoading) ? (
-          <AdminLoadingSkeleton />
-        ) : clubPreview.length === 0 ? (
-          <OneClubEmptyState icon={UserPlus} title="No club yet" message="Choose a club to start your membership request." />
-        ) : (
-          <div className="grid gap-3 md:grid-cols-2">
-            {clubPreview.map((request) => {
-              const payment = request.due_payment ?? (request.due_payment_id ? duesById.get(request.due_payment_id) : undefined);
-              return (
-                <Link key={request.id} to={`/membership/clubs/${request.club_id}`} className="clb-list-card flex items-center justify-between gap-4">
-                  <div className="min-w-0">
-                    <p className="truncate font-semibold">{request.club?.name || "Selected club"}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{getMembershipStatusSummary(request, payment)}</p>
-                  </div>
-                  <MembershipStatusPill request={request} payment={payment} />
-                </Link>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      <section className="space-y-4">
-        <OneClubSectionHeader
-          title="Discover clubs"
-          description="A few clubs to explore. Open the full directory when you are ready."
-          action={<Button asChild variant="outline" size="sm"><Link to="/membership">Browse all</Link></Button>}
-        />
-        {publicClubsLoading ? (
-          <OneClubLoadingState title="Loading club discovery" message="We are gathering public clubs." compact />
-        ) : discoveryPreview.length === 0 ? (
-          <OneClubEmptyState icon={School} title="No new clubs to show" message="Your full directory is still available from Discover Clubs." />
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {discoveryPreview.map((club) => (
-              <Link key={club.id} to={`/membership/clubs/${club.id}`} className="clb-list-card flex items-start gap-3">
-                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-[16px] bg-accent text-sm font-bold text-accent-foreground">
-                  {getClubInitials(club.name)}
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate font-semibold">{club.name}</p>
-                  <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{club.description || "Open this club profile to learn more."}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
-        <Card className="rounded-[24px]">
-          <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <CardTitle className="text-lg">Announcements Preview</CardTitle>
-              <p className="mt-1 text-sm text-muted-foreground">Recent updates from your clubs and OneClub.</p>
-            </div>
-            <Button asChild variant="outline" size="sm" className="w-full shrink-0 sm:w-auto">
-              <Link to="/communications">View Announcements</Link>
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {announcementsLoading ? (
-              <OneClubLoadingState title="Loading announcements" message="Checking your latest club updates." compact />
-            ) : announcementPreview.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Updates from your active clubs and public OneClub posts will appear here.</p>
-            ) : (
-              announcementPreview.slice(0, 2).map((announcement) => (
-                <Link key={announcement.id} to="/communications" className="clb-list-card block">
-                  <p className="font-semibold leading-5">{announcement.title}</p>
-                  <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">{announcement.message}</p>
-                </Link>
-              ))
-            )}
-          </CardContent>
-        </Card>
-
-        <Dialog open={dashboardShareOpen} onOpenChange={setDashboardShareOpen}>
-          <DialogTrigger asChild>
-            <Button type="button" variant="outline" className="h-auto justify-start rounded-[24px] p-5 text-left lg:w-[260px]">
-              <Users className="mr-3 h-5 w-5" />
-              Invite a friend to discover clubs
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md" data-testid="dashboard-share-sheet">
-            <DialogHeader>
-              <DialogTitle>Invite a friend</DialogTitle>
-              <DialogDescription>Share the OneClub directory with a classmate so they can find clubs faster.</DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Button type="button" variant="outline" className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left" onClick={() => void handleDashboardShare()}>
-                <Smartphone className="h-5 w-5 shrink-0" />
-                <span><span className="block font-semibold">Share to apps</span><span className="block text-xs text-muted-foreground">Use your device menu</span></span>
-              </Button>
-              <Button asChild type="button" variant="outline" className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left">
-                <a href={dashboardWhatsAppShareUrl} target="_blank" rel="noreferrer" onClick={() => {
-                  toast.success("WhatsApp invite ready", { description: "Choose the friend or group you want to send it to." });
-                  setDashboardShareOpen(false);
-                }}>
-                  <MessageCircle className="h-5 w-5 shrink-0" />
-                  <span><span className="block font-semibold">WhatsApp</span><span className="block text-xs text-muted-foreground">Send as a chat invite</span></span>
-                </a>
-              </Button>
-              <Button type="button" variant="outline" className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left" onClick={() => void handleDashboardShare("Snapchat invite ready", "Snapchat invite copied")}>
-                <Camera className="h-5 w-5 shrink-0" />
-                <span><span className="block font-semibold">Snapchat</span><span className="block text-xs text-muted-foreground">Share or copy for Snap</span></span>
-              </Button>
-              <Button type="button" variant="outline" className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left" onClick={() => void handleDashboardShare("Instagram invite ready", "Instagram invite copied")}>
-                <Instagram className="h-5 w-5 shrink-0" />
-                <span><span className="block font-semibold">Instagram</span><span className="block text-xs text-muted-foreground">Use share sheet or copy</span></span>
-              </Button>
-              <Button type="button" variant="outline" className="h-auto justify-start gap-3 rounded-[18px] p-4 text-left sm:col-span-2" onClick={() => void handleCopyInviteLink()}>
-                <Copy className="h-5 w-5 shrink-0" />
-                <span><span className="block font-semibold">Copy Link</span><span className="block text-xs text-muted-foreground">Paste anywhere</span></span>
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </section>
-    </div>
-  );
-
 }
 
 function StudentStitchHome({
-  firstName,
+  displayName,
   nextAction,
   nextActionIcon: NextActionIcon,
   membershipStatus,
   events,
   announcements,
-  isLoading,
+  eventsLoading,
+  eventsError,
+  announcementsLoading,
+  announcementsError,
   error
 }: {
-  firstName: string;
+  displayName: string | null;
   nextAction: ReturnType<typeof getStudentNextAction>;
   nextActionIcon: ElementType;
   membershipStatus: StudentMembershipStatus;
   events: ApprovedEventRecord[];
   announcements: AnnouncementRecord[];
-  isLoading: boolean;
+  eventsLoading: boolean;
+  eventsError: unknown;
+  announcementsLoading: boolean;
+  announcementsError: unknown;
   error: string | null;
 }) {
   const stepIndex = membershipStatus === "active" ? 5 : membershipStatus === "payment_under_review" ? 4 : membershipStatus === "pending_payment" || membershipStatus === "needs_new_payment_details" ? 3 : membershipStatus === "under_review" ? 2 : 1;
@@ -2227,9 +2058,9 @@ function StudentStitchHome({
 
   return (
     <div className="mx-auto w-full max-w-[1280px] animate-slide-up">
-      <header className="mb-8 md:mb-12">
-        <h1 className="text-[32px] font-bold leading-[1.2] tracking-[-0.02em] text-primary md:text-[48px]">Welcome back, {firstName}</h1>
-        <p className="mt-2 text-lg leading-relaxed text-muted-foreground">Let's continue your campus journey.</p>
+      <header className="mb-6 md:mb-8">
+        <h1 className="text-2xl font-bold leading-tight tracking-tight text-primary md:text-3xl lg:text-[34px]">{formatStudentGreeting(displayName)}</h1>
+        <p className="mt-2 text-base leading-relaxed text-muted-foreground">Let's continue your campus journey.</p>
       </header>
 
       {error ? <OneClubErrorState title="We couldn't load your full workspace" message={error} /> : null}
@@ -2279,25 +2110,56 @@ function StudentStitchHome({
               <Link to="/events" className="text-xs font-semibold text-primary hover:underline">View All</Link>
             </div>
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft-sm">
-              {isLoading ? <OneClubLoadingState title="Loading events" message="Checking approved events." compact /> : events.length ? events.map((event) => {
-                const date = new Date(`${event.event_date}T00:00:00`);
-                return <Link key={event.proposal_id} to="/events" className="flex gap-4 border-b border-border p-4 last:border-0 hover:bg-muted/40">
-                  <span className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-accent text-primary"><span className="text-[10px] font-semibold uppercase">{date.toLocaleString("en-NG", { month: "short" })}</span><span className="text-xl font-bold leading-none">{date.getDate()}</span></span>
-                  <span className="min-w-0"><span className="block truncate text-sm font-semibold text-primary">{event.title}</span><span className="mt-1 flex items-center gap-1 text-sm text-muted-foreground"><MapPin className="h-3.5 w-3.5" />{event.location || "Venue to be confirmed"}</span></span>
-                </Link>;
-              }) : <div className="p-5 text-sm text-muted-foreground">No approved events are available yet.</div>}
+              {eventsLoading ? (
+                <OneClubLoadingState title="Loading events" message="Checking approved campus events." compact />
+              ) : eventsError ? (
+                <div className="p-4 text-center">
+                  <p className="text-xs text-destructive">{getErrorMessage(eventsError)}</p>
+                </div>
+              ) : events.length ? (
+                events.map((event) => {
+                  const date = new Date(`${event.event_date}T00:00:00`);
+                  return (
+                    <Link key={event.proposal_id} to="/events" className="flex gap-4 border-b border-border p-4 last:border-0 hover:bg-muted/40">
+                      <span className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-accent text-primary">
+                        <span className="text-[10px] font-semibold uppercase">{date.toLocaleString("en-NG", { month: "short" })}</span>
+                        <span className="text-xl font-bold leading-none">{date.getDate()}</span>
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold text-primary">{event.title}</span>
+                        <span className="mt-1 flex items-center gap-1 text-sm text-muted-foreground"><MapPin className="h-3.5 w-3.5" />{event.location || "Venue to be confirmed"}</span>
+                      </span>
+                    </Link>
+                  );
+                })
+              ) : (
+                <div className="p-5 text-sm text-muted-foreground">No approved events are available yet.</div>
+              )}
             </div>
           </section>
 
           <section>
-            <h2 className="mb-4 text-xl font-semibold tracking-[-0.02em] text-primary">Recent Updates</h2>
+            <div className="mb-4 flex items-end justify-between gap-4">
+              <h2 className="text-xl font-semibold tracking-[-0.02em] text-primary">Recent Updates</h2>
+              <Link to="/communications" className="text-xs font-semibold text-primary hover:underline">View All</Link>
+            </div>
             <div className="space-y-4">
-              {isLoading ? <OneClubLoadingState title="Loading updates" message="Checking Club Services updates." compact /> : announcements.length ? announcements.map((announcement, index) => (
-                <Link key={announcement.id} to="/communications" className="flex gap-4 rounded-xl border border-border bg-card p-4 shadow-soft-sm hover:bg-muted/40">
-                  <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${index === 0 ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}`}><MessageSquare className="h-4 w-4" /></span>
-                  <span className="min-w-0"><span className="block text-sm leading-6 text-foreground">{announcement.title || announcement.message}</span><span className="mt-2 block text-xs text-muted-foreground">{getDateLabel(announcement.created_at)}</span></span>
-                </Link>
-              )) : <div className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">Club Services updates will appear here.</div>}
+              {announcementsLoading ? (
+                <OneClubLoadingState title="Loading updates" message="Checking OneClub updates." compact />
+              ) : announcementsError ? (
+                <div className="rounded-xl border border-border bg-card p-4 text-center">
+                  <p className="text-xs text-destructive">{getErrorMessage(announcementsError)}</p>
+                </div>
+              ) : announcements.length ? (
+                announcements.map((announcement, index) => (
+                  <Link key={announcement.id} to="/communications" className="flex gap-4 rounded-xl border border-border bg-card p-4 shadow-soft-sm hover:bg-muted/40">
+                    <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${index === 0 ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}`}><MessageSquare className="h-4 w-4" /></span>
+                    <span className="min-w-0"><span className="block text-sm leading-6 text-foreground">{announcement.title || announcement.message}</span><span className="mt-2 block text-xs text-muted-foreground">{getDateLabel(announcement.created_at)}</span></span>
+                  </Link>
+                ))
+              ) : (
+                <div className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">OneClub updates will appear here.</div>
+              )}
             </div>
           </section>
         </aside>
@@ -2541,16 +2403,16 @@ function PresidentDashboard() {
   );
 
   return (
-    <div className="space-y-8 animate-slide-up">
-      <section className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <div className="space-y-6 animate-slide-up">
+      <section className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <div className="flex flex-wrap items-center gap-4">
-            <h1 className="text-5xl font-black leading-none tracking-[-0.07em] md:text-6xl">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-3xl font-black leading-tight tracking-tight text-foreground md:text-4xl">
               {dashboard?.club?.name || "President Dashboard"}
             </h1>
             <QuestSticker tone="green">President</QuestSticker>
           </div>
-          <p className="mt-4 text-xl font-medium text-muted-foreground">
+          <p className="mt-2 text-base font-medium text-muted-foreground">
             Welcome back. Here is what needs attention, what is set up, and where to move next.
           </p>
         </div>
