@@ -95,6 +95,7 @@ import { DEFAULT_PAGE_SIZE, emptyPaginatedResponse } from "@/lib/pagination";
 import { canViewProposalDetails } from "@/lib/roleAccess";
 import { downloadAdminPerformanceMatrixCsv } from "@/lib/exports";
 import { getStudentNextAction, type StudentNextActionKind } from "@/lib/studentActivation";
+import { formatStudentGreeting, getStudentDisplayName } from "@/lib/studentDisplayName";
 import { buildAppUrl, shareOrCopy } from "@/lib/share";
 import { publicClubsQueryOptions } from "@/lib/publicClubsQuery";
 
@@ -1854,7 +1855,8 @@ const STUDENT_NEXT_ACTION_ICONS: Record<StudentNextActionKind, ElementType> = {
 };
 
 function StudentDashboard() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
+  const studentDisplayName = getStudentDisplayName(profile, user);
   const [dashboardShareOpen, setDashboardShareOpen] = useState(false);
   const {
     data: membershipRequests = [],
@@ -1951,7 +1953,6 @@ function StudentDashboard() {
       return Boolean(announcement.club_id && joinedClubIds.has(announcement.club_id));
     })
     .slice(0, 5);
-  const firstName = profile?.full_name?.trim().split(/\s+/).filter(Boolean)[0] || "student";
   const paidDuesCount = duePayments.filter((payment) => payment.status === "paid").length;
   const duesProgress = duePayments.length > 0 ? Math.round((paidDuesCount / duePayments.length) * 100) : 0;
   const featuredMembership = activeMemberships[0] || membershipRequests[0];
@@ -2012,14 +2013,17 @@ function StudentDashboard() {
 
   return (
     <StudentStitchHome
-      firstName={firstName}
+      displayName={studentDisplayName}
       nextAction={nextAction}
       nextActionIcon={NextActionIcon}
       membershipStatus={featuredMembership ? resolveStudentMembershipStatus(featuredMembership, featuredPayment) : "under_review"}
       events={upcomingEvents.slice(0, 3)}
       announcements={announcementPreview.slice(0, 3)}
-      isLoading={membershipsLoading || duesLoading || eventsLoading || announcementsLoading}
-      error={membershipsFailed || duesFailed || eventsFailed || announcementsFailed ? getErrorMessage(membershipsError || duesError || eventsError || announcementsError) : null}
+      eventsLoading={eventsLoading}
+      eventsError={eventsFailed ? eventsError : null}
+      announcementsLoading={announcementsLoading}
+      announcementsError={announcementsFailed ? announcementsError : null}
+      error={membershipsFailed || duesFailed ? getErrorMessage(membershipsError || duesError) : null}
     />
   );
 
@@ -2198,22 +2202,28 @@ function StudentDashboard() {
 }
 
 function StudentStitchHome({
-  firstName,
+  displayName,
   nextAction,
   nextActionIcon: NextActionIcon,
   membershipStatus,
   events,
   announcements,
-  isLoading,
+  eventsLoading,
+  eventsError,
+  announcementsLoading,
+  announcementsError,
   error
 }: {
-  firstName: string;
+  displayName: string | null;
   nextAction: ReturnType<typeof getStudentNextAction>;
   nextActionIcon: ElementType;
   membershipStatus: StudentMembershipStatus;
   events: ApprovedEventRecord[];
   announcements: AnnouncementRecord[];
-  isLoading: boolean;
+  eventsLoading: boolean;
+  eventsError: unknown;
+  announcementsLoading: boolean;
+  announcementsError: unknown;
   error: string | null;
 }) {
   const stepIndex = membershipStatus === "active" ? 5 : membershipStatus === "payment_under_review" ? 4 : membershipStatus === "pending_payment" || membershipStatus === "needs_new_payment_details" ? 3 : membershipStatus === "under_review" ? 2 : 1;
@@ -2227,9 +2237,9 @@ function StudentStitchHome({
 
   return (
     <div className="mx-auto w-full max-w-[1280px] animate-slide-up">
-      <header className="mb-8 md:mb-12">
-        <h1 className="text-[32px] font-bold leading-[1.2] tracking-[-0.02em] text-primary md:text-[48px]">Welcome back, {firstName}</h1>
-        <p className="mt-2 text-lg leading-relaxed text-muted-foreground">Let's continue your campus journey.</p>
+      <header className="mb-6 md:mb-8">
+        <h1 className="text-2xl font-bold leading-tight tracking-tight text-primary md:text-3xl lg:text-[34px]">{formatStudentGreeting(displayName)}</h1>
+        <p className="mt-2 text-base leading-relaxed text-muted-foreground">Let's continue your campus journey.</p>
       </header>
 
       {error ? <OneClubErrorState title="We couldn't load your full workspace" message={error} /> : null}
@@ -2279,7 +2289,9 @@ function StudentStitchHome({
               <Link to="/events" className="text-xs font-semibold text-primary hover:underline">View All</Link>
             </div>
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft-sm">
-              {isLoading ? <OneClubLoadingState title="Loading events" message="Checking approved events." compact /> : events.length ? events.map((event) => {
+              {eventsLoading ? <OneClubLoadingState title="Loading events" message="Checking approved campus events." compact /> : eventsError ? (
+                <div className="p-4 text-center"><p className="text-xs text-destructive">{getErrorMessage(eventsError)}</p></div>
+              ) : events.length ? events.map((event) => {
                 const date = new Date(`${event.event_date}T00:00:00`);
                 return <Link key={event.proposal_id} to="/events" className="flex gap-4 border-b border-border p-4 last:border-0 hover:bg-muted/40">
                   <span className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-accent text-primary"><span className="text-[10px] font-semibold uppercase">{date.toLocaleString("en-NG", { month: "short" })}</span><span className="text-xl font-bold leading-none">{date.getDate()}</span></span>
@@ -2290,14 +2302,19 @@ function StudentStitchHome({
           </section>
 
           <section>
-            <h2 className="mb-4 text-xl font-semibold tracking-[-0.02em] text-primary">Recent Updates</h2>
+            <div className="mb-4 flex items-end justify-between gap-4">
+              <h2 className="text-xl font-semibold tracking-[-0.02em] text-primary">Recent Updates</h2>
+              <Link to="/communications" className="text-xs font-semibold text-primary hover:underline">View All</Link>
+            </div>
             <div className="space-y-4">
-              {isLoading ? <OneClubLoadingState title="Loading updates" message="Checking Club Services updates." compact /> : announcements.length ? announcements.map((announcement, index) => (
+              {announcementsLoading ? <OneClubLoadingState title="Loading updates" message="Checking OneClub updates." compact /> : announcementsError ? (
+                <div className="rounded-xl border border-border bg-card p-4 text-center"><p className="text-xs text-destructive">{getErrorMessage(announcementsError)}</p></div>
+              ) : announcements.length ? announcements.map((announcement, index) => (
                 <Link key={announcement.id} to="/communications" className="flex gap-4 rounded-xl border border-border bg-card p-4 shadow-soft-sm hover:bg-muted/40">
                   <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${index === 0 ? "bg-primary text-primary-foreground" : "bg-accent text-accent-foreground"}`}><MessageSquare className="h-4 w-4" /></span>
                   <span className="min-w-0"><span className="block text-sm leading-6 text-foreground">{announcement.title || announcement.message}</span><span className="mt-2 block text-xs text-muted-foreground">{getDateLabel(announcement.created_at)}</span></span>
                 </Link>
-              )) : <div className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">Club Services updates will appear here.</div>}
+              )) : <div className="rounded-xl border border-border bg-card p-5 text-sm text-muted-foreground">OneClub updates will appear here.</div>}
             </div>
           </section>
         </aside>
