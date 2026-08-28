@@ -5,7 +5,7 @@ import { NavLink } from "@/components/NavLink";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/contexts/RoleContext";
-import { getRoleNavItems, roleLabels } from "@/lib/appNavigation";
+import { getRoleNavItems, isNavItemActive, roleLabels } from "@/lib/appNavigation";
 import { getNavigationCounts } from "@/lib/api";
 
 function useIdentity() {
@@ -45,7 +45,6 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const items = getRoleNavItems(role);
   const { displayName, identityLabel, initials } = useIdentity();
-  const searchParams = new URLSearchParams(search);
   const { data: navigationCounts } = useQuery({
     queryKey: ["navigation-counts", role],
     queryFn: () => getNavigationCounts(),
@@ -54,26 +53,6 @@ export function AppSidebar() {
     refetchIntervalInBackground: false,
     retry: false
   });
-
-  function getActiveOverride(url: string) {
-    if (url === "/feedback") {
-      return pathname.startsWith("/feedback") || searchParams.get("tab") === "feedback";
-    }
-
-    if (url === "/communications") {
-      return pathname === "/communications" && searchParams.get("tab") !== "feedback";
-    }
-
-    if (url === "/proposals/new") {
-      return pathname === "/proposals/new";
-    }
-
-    if (url === "/proposals") {
-      return pathname.startsWith("/proposals") && pathname !== "/proposals/new";
-    }
-
-    return undefined;
-  }
 
   function getBadgeCount(badgeKey: typeof items[number]["badgeKey"]) {
     if (!badgeKey) {
@@ -99,7 +78,7 @@ export function AppSidebar() {
               <button
                 type="button"
                 aria-label="Collapse sidebar"
-                className="rounded-md p-1 text-sidebar-foreground/45 transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                className="rounded-md p-1 text-sidebar-foreground/45 transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 onClick={() => setOpen(false)}
               >
                 <PanelLeftClose className="h-4 w-4" />
@@ -111,7 +90,7 @@ export function AppSidebar() {
           <button
             type="button"
             aria-label="Expand sidebar"
-            className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-[14px] bg-primary text-primary-foreground shadow-soft-sm transition hover:-translate-y-0.5"
+            className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-[14px] bg-primary text-primary-foreground shadow-soft-sm transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             onClick={() => setOpen(true)}
           >
             <PanelLeftOpen className="h-5 w-5" />
@@ -120,38 +99,41 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="px-2">
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu className="gap-1">
-              {items.map((item) => {
-                const badgeCount = getBadgeCount(item.badgeKey);
+        <nav aria-label="Primary">
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-1">
+                {items.map((item) => {
+                  const badgeCount = getBadgeCount(item.badgeKey);
+                  const isActive = isNavItemActive(item.url, pathname, search);
 
-                return (
-                  <SidebarMenuItem key={`${item.title}-${item.url}`}>
-                    <SidebarMenuButton asChild tooltip={item.title}>
-                      <NavLink
-                        to={item.url}
-                        end={item.url === "/"}
-                        activeOverride={getActiveOverride(item.url)}
-                        data-onboarding-target={item.onboardingTarget}
-                        className="relative flex min-w-0 items-center rounded-lg px-4 py-2.5 text-sm font-semibold text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                        activeClassName="border-l-4 border-secondary bg-sidebar-accent text-sidebar-accent-foreground"
-                      >
-                        <item.icon className="mr-3 h-5 w-5 shrink-0" />
-                        {!collapsed && <span className="min-w-0 flex-1 truncate">{item.title}</span>}
-                        {!collapsed && badgeCount ? (
-                          <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">
-                            {badgeCount}
-                          </span>
-                        ) : null}
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                  return (
+                    <SidebarMenuItem key={`${item.title}-${item.url}`}>
+                      <SidebarMenuButton asChild tooltip={item.title} isActive={isActive}>
+                        <NavLink
+                          to={item.url}
+                          end={item.url === "/"}
+                          activeOverride={isActive}
+                          data-onboarding-target={item.onboardingTarget}
+                          className="relative flex min-w-0 items-center rounded-lg px-4 py-2.5 text-sm font-semibold text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                          activeClassName="border-l-4 border-secondary bg-sidebar-accent text-sidebar-accent-foreground"
+                        >
+                          <item.icon className="mr-3 h-5 w-5 shrink-0" />
+                          {!collapsed && <span className="min-w-0 flex-1 truncate">{item.title}</span>}
+                          {!collapsed && badgeCount ? (
+                            <span className="ml-2 rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-primary-foreground">
+                              {badgeCount}
+                            </span>
+                          ) : null}
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </nav>
       </SidebarContent>
 
       <SidebarFooter className={collapsed ? "border-t border-sidebar-border/10 px-1 py-4" : "border-t border-sidebar-border/10 p-4"}>
@@ -171,7 +153,7 @@ export function AppSidebar() {
               </div>
             </div>
             <div className="grid gap-1">
-              <button type="button" onClick={() => void signOut()} className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-left text-sm font-semibold text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+              <button type="button" onClick={() => void signOut()} className="flex items-center gap-3 rounded-lg px-4 py-2.5 text-left text-sm font-semibold text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
                 <LogOut className="h-5 w-5" aria-hidden="true" /> Logout
               </button>
             </div>
