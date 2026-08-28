@@ -1184,7 +1184,7 @@ function AdvisorDashboard() {
   return (
     <div className="mx-auto w-full max-w-[1280px] space-y-7 animate-slide-up">
       <StitchPageHeader
-        eyebrow="Club Services"
+        eyebrow="Advisor Portal"
         title="Advisor Home"
         description="Review the proposals, reports, and events that need your attention."
       />
@@ -1496,7 +1496,7 @@ function PolishedAdminDashboard() {
   return (
     <div className="mx-auto w-full max-w-[1280px] space-y-7 animate-slide-up">
       <StitchPageHeader
-        eyebrow="Club Services"
+        eyebrow="OneClub Administration"
         title="Operations Queue"
         description="A calm overview of the work that needs attention across campus clubs."
         actions={<Button type="button" variant="outline" onClick={handleDownloadMatrix} disabled={!dashboard}>
@@ -1527,7 +1527,7 @@ function PolishedAdminDashboard() {
               </span>
               <span className="min-w-0">
                 <span className="block font-display text-base font-extrabold">Open operations queue</span>
-                <span className="block text-sm text-primary-foreground/80">{formatNumber(todayQueueTotal)} items need Club Services</span>
+                <span className="block text-sm text-primary-foreground/80">{formatNumber(todayQueueTotal)} items need administrative review</span>
               </span>
             </Link>
             <Link
@@ -2541,16 +2541,16 @@ function PresidentDashboard() {
   );
 
   return (
-    <div className="space-y-8 animate-slide-up">
-      <section className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+    <div className="space-y-6 animate-slide-up">
+      <section className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <div className="flex flex-wrap items-center gap-4">
-            <h1 className="text-5xl font-black leading-none tracking-[-0.07em] md:text-6xl">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-3xl font-black leading-tight tracking-tight text-foreground md:text-4xl">
               {dashboard?.club?.name || "President Dashboard"}
             </h1>
             <QuestSticker tone="green">President</QuestSticker>
           </div>
-          <p className="mt-4 text-xl font-medium text-muted-foreground">
+          <p className="mt-2 text-base font-medium text-muted-foreground">
             Welcome back. Here is what needs attention, what is set up, and where to move next.
           </p>
         </div>
