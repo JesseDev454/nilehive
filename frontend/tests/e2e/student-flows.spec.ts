@@ -118,7 +118,8 @@ test("student home follows the Stitch hierarchy for discovery, events, and updat
   await expect(page.getByRole("heading", { name: "Membership Journey" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Upcoming Events" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Recent Updates" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "View All" })).toHaveAttribute("href", "/events");
+  await expect(page.getByRole("link", { name: "View all events" })).toHaveAttribute("href", "/events");
+  await expect(page.getByRole("link", { name: "View all updates" })).toHaveAttribute("href", "/communications");
 });
 
 test("student can open the club invite share sheet and copy a link", async ({ page }) => {

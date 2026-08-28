@@ -2286,7 +2286,7 @@ function StudentStitchHome({
           <section>
             <div className="mb-4 flex items-end justify-between gap-4">
               <h2 className="text-xl font-semibold tracking-[-0.02em] text-primary">Upcoming Events</h2>
-              <Link to="/events" className="text-xs font-semibold text-primary hover:underline">View All</Link>
+              <Link to="/events" aria-label="View all events" className="text-xs font-semibold text-primary hover:underline">View All</Link>
             </div>
             <div className="overflow-hidden rounded-xl border border-border bg-card shadow-soft-sm">
               {eventsLoading ? <OneClubLoadingState title="Loading events" message="Checking approved campus events." compact /> : eventsError ? (
@@ -2304,7 +2304,7 @@ function StudentStitchHome({
           <section>
             <div className="mb-4 flex items-end justify-between gap-4">
               <h2 className="text-xl font-semibold tracking-[-0.02em] text-primary">Recent Updates</h2>
-              <Link to="/communications" className="text-xs font-semibold text-primary hover:underline">View All</Link>
+              <Link to="/communications" aria-label="View all updates" className="text-xs font-semibold text-primary hover:underline">View All</Link>
             </div>
             <div className="space-y-4">
               {announcementsLoading ? <OneClubLoadingState title="Loading updates" message="Checking OneClub updates." compact /> : announcementsError ? (
