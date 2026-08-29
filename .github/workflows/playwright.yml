@@ -31,6 +31,12 @@ jobs:
     - name: Run backend tests
       run: npm test
       working-directory: backend
+      env:
+        SUPABASE_URL: https://example.supabase.co
+        SUPABASE_ANON_KEY: ci-test-anon-key
+        SUPABASE_SERVICE_ROLE_KEY: ci-test-service-role-key
+        AUTH_PROVIDER: supabase
+        FRONTEND_APP_URL: http://127.0.0.1:5173
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps chromium
       working-directory: frontend

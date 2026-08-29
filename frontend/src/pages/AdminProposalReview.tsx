@@ -9,7 +9,6 @@ import { ApiClientError, submitAdminDecision, getAdminProposals } from "@/lib/ap
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { actionError, actionSuccess } from "@/lib/notify";
-import { useAuth } from "@/contexts/AuthContext";
 
 function getDecisionErrorMessage(error: unknown) {
   if (error instanceof ApiClientError || error instanceof Error) {
@@ -20,13 +19,15 @@ function getDecisionErrorMessage(error: unknown) {
 }
 
 export default function AdminProposalReview() {
-  const { token } = useAuth();
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["admin-pending-proposals"],
-    queryFn: () => getAdminProposals({ current_stage: "admin_review" }, token ?? undefined),
-    enabled: !!token
+    queryFn: () => getAdminProposals({
+      current_stage: "admin_review",
+      page: 1,
+      page_size: 100,
+    }),
   });
-  const pending = data?.data || [];
+  const pending = data?.items || [];
   const queryClient = useQueryClient();
   const [remarksByProposalId, setRemarksByProposalId] = useState<Record<string, string>>({});
   const [remarksErrorsByProposalId, setRemarksErrorsByProposalId] = useState<Record<string, string>>({});
@@ -94,9 +95,9 @@ export default function AdminProposalReview() {
                   <div className="min-w-0">
                     <p className="truncate text-lg font-bold">{proposal.title}</p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <OneClubMetaChip label="Event" value={proposal.eventDate} />
+                      <OneClubMetaChip label="Event" value={proposal.event_date} />
                       <OneClubMetaChip label="Venue" value={proposal.location || "TBC"} />
-                      <OneClubMetaChip label="Submitted" value={proposal.submittedAt} />
+                      <OneClubMetaChip label="Submitted" value={proposal.submitted_at} />
                     </div>
                   </div>
                   <StatusBadge status={proposal.status} />

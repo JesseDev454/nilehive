@@ -1,4 +1,4 @@
-import { NavLink as RouterNavLink, NavLinkProps } from "react-router-dom";
+import { Link, NavLink as RouterNavLink, NavLinkProps } from "react-router-dom";
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
@@ -11,6 +11,18 @@ interface NavLinkCompatProps extends Omit<NavLinkProps, "className"> {
 
 const NavLink = forwardRef<HTMLAnchorElement, NavLinkCompatProps>(
   ({ className, activeClassName, pendingClassName, activeOverride, to, ...props }, ref) => {
+    if (typeof activeOverride === "boolean") {
+      return (
+        <Link
+          ref={ref}
+          to={to}
+          aria-current={activeOverride ? "page" : undefined}
+          className={cn(className, activeOverride && activeClassName)}
+          {...props}
+        />
+      );
+    }
+
     return (
       <RouterNavLink
         ref={ref}
@@ -18,7 +30,7 @@ const NavLink = forwardRef<HTMLAnchorElement, NavLinkCompatProps>(
         className={({ isActive, isPending }) =>
           cn(
             className,
-            (typeof activeOverride === "boolean" ? activeOverride : isActive) && activeClassName,
+            isActive && activeClassName,
             isPending && pendingClassName
           )
         }

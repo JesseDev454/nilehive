@@ -80,6 +80,36 @@ const studentItems: AppNavItem[] = [
   profileItem,
 ];
 
+export function isNavItemActive(itemUrl: string, pathname: string, search = ""): boolean {
+  const [pathOnly, inlineSearch = ""] = pathname.split("?", 2);
+  const cleanPath = pathOnly.length > 1 && pathOnly.endsWith("/") ? pathOnly.slice(0, -1) : pathOnly || "/";
+  const searchParams = new URLSearchParams(search || (inlineSearch ? `?${inlineSearch}` : ""));
+
+  if (itemUrl === "/") {
+    return cleanPath === "/";
+  }
+
+  if (itemUrl === "/feedback") {
+    return cleanPath === "/feedback" || cleanPath.startsWith("/feedback/") || searchParams.get("tab") === "feedback";
+  }
+
+  if (itemUrl === "/communications") {
+    return (cleanPath === "/communications" || cleanPath.startsWith("/communications/"))
+      && searchParams.get("tab") !== "feedback";
+  }
+
+  if (itemUrl === "/proposals/new") {
+    return cleanPath === "/proposals/new";
+  }
+
+  if (itemUrl === "/proposals") {
+    return cleanPath === "/proposals"
+      || (cleanPath.startsWith("/proposals/") && cleanPath !== "/proposals/new");
+  }
+
+  return cleanPath === itemUrl || cleanPath.startsWith(`${itemUrl}/`);
+}
+
 
 
 export function getRoleNavItems(role: Role | null): AppNavItem[] {
