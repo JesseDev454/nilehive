@@ -23,6 +23,12 @@ export function getStudentDisplayName(
     || (typeof metadata?.name === "string" && metadata.name.trim())
     || "";
 
+  const normalizedFullName = fullName.toLowerCase().replace(/\s+/g, " ").trim();
+
+  if (normalizedFullName === "new" || normalizedFullName === "new student") {
+    return null;
+  }
+
   return fullName.split(/\s+/).filter(Boolean)[0] || null;
 }
 

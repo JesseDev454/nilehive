@@ -7,12 +7,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useRole } from "@/contexts/RoleContext";
 import { getRoleNavItems, isNavItemActive, roleLabels } from "@/lib/appNavigation";
 import { getNavigationCounts } from "@/lib/api";
+import { getStudentDisplayName } from "@/lib/studentDisplayName";
 
 function useIdentity() {
   const { profile } = useAuth();
   const { role } = useRole();
   const rawDisplayName = profile?.full_name?.trim() || "";
   const displayName = (() => {
+    if (role === "student" && !getStudentDisplayName(profile)) {
+      return "OneClub Student";
+    }
+
     const parts = rawDisplayName.split(/\s+/).filter(Boolean);
 
     if (parts.length === 0) {

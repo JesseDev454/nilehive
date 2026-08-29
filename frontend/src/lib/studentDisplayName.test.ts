@@ -22,6 +22,8 @@ describe("student display name", () => {
 
   it("uses a neutral greeting when no trustworthy name exists", () => {
     expect(getStudentDisplayName(profile("   "), null)).toBeNull();
+    expect(getStudentDisplayName(profile("New Student"), null)).toBeNull();
+    expect(getStudentDisplayName(profile("New"), null)).toBeNull();
     expect(formatStudentGreeting(null)).toBe("Welcome back");
   });
 
