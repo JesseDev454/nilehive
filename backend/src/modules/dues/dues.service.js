@@ -245,7 +245,7 @@ async function createDuePayment(options) {
 }
 
 async function updateDuePayment(options) {
-  const { actor, paymentId, payload, database = db } = options;
+  const { actor, paymentId, payload, database = db, logger = console } = options;
   requireActor(actor);
   requireManagerRole(actor);
 
@@ -302,10 +302,17 @@ async function updateDuePayment(options) {
   }
 
   if (updatedPayment.status === "rejected" && payment.status !== "rejected") {
-    await notifyRejectedDuePayment({
-      payment: updatedPayment,
-      database
-    });
+    try {
+      await notifyRejectedDuePayment({
+        payment: updatedPayment,
+        database
+      });
+    } catch (error) {
+      logger.warn?.("dues.rejection_notification_failed", {
+        payment_id: updatedPayment.id,
+        cause: error instanceof Error ? error.message : "unknown_error"
+      });
+    }
   }
 
   return formatDuePayment(updatedPayment);

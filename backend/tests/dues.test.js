@@ -479,6 +479,50 @@ test("rejected dues proof notifies the student", async () => {
   });
 });
 
+test("rejected dues review still succeeds when notification storage fails", async () => {
+  const fakeDatabase = {
+    async getDuePaymentById() {
+      return createPayment({
+        status: "submitted",
+        academic_session: "2025/2026"
+      });
+    },
+    async updateDuePayment(paymentId, update) {
+      return createPayment({
+        id: paymentId,
+        academic_session: "2025/2026",
+        ...update
+      });
+    },
+    async getClubMemberById() {
+      return createMember({
+        id: "member-1",
+        membership_status: "inactive",
+        profile_id: "student-1"
+      });
+    },
+    async createNotifications() {
+      throw new Error('invalid input value for enum notification_type: "dues_proof_rejected"');
+    }
+  };
+
+  const result = await updateDuePayment({
+    actor: {
+      id: "admin-1",
+      role: "admin",
+      clubId: null
+    },
+    paymentId: "payment-1",
+    payload: {
+      status: "rejected"
+    },
+    database: fakeDatabase,
+    logger: { warn() {} }
+  });
+
+  assert.equal(result.status, "rejected");
+});
+
 test("student can list own dues payments", async () => {
   const fakeDatabase = {
     async listDuePaymentsForProfile(profileId) {

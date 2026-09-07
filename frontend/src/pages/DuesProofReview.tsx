@@ -225,6 +225,8 @@ export default function DuesProofReview() {
   const proofKind = getProofKind(payment.proof_url);
   const canVerify = Boolean(proofUrl) && proofLoaded && !proofLoadError && payment.status !== "paid";
   const canReject = Boolean(proofUrl) && proofLoaded && !proofLoadError && payment.status !== "rejected";
+  const isVerifying = updateMutation.isPending && updateMutation.variables === "paid";
+  const isRejecting = updateMutation.isPending && updateMutation.variables === "rejected";
 
   return (
     <div className="clb-screen">
@@ -328,7 +330,7 @@ export default function DuesProofReview() {
                   onClick={() => updateMutation.mutate("paid")}
                 >
                   <CheckCircle2 className="mr-2 h-4 w-4" />
-                  {updateMutation.isPending ? "Saving..." : "Verify Payment"}
+                  {isVerifying ? "Saving..." : "Verify Payment"}
                 </Button>
                 <Button
                   type="button"
@@ -337,7 +339,7 @@ export default function DuesProofReview() {
                   onClick={() => updateMutation.mutate("rejected")}
                 >
                   <XCircle className="mr-2 h-4 w-4" />
-                  {updateMutation.isPending ? "Saving..." : "Reject Proof"}
+                  {isRejecting ? "Saving..." : "Reject Proof"}
                 </Button>
               </div>
 
