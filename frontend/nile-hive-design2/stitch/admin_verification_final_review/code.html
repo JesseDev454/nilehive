@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nile Ops | Admin Verification</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed-variant": "#00522a",
+                        "surface-container-high": "#e5e8eb",
+                        "secondary-container": "#629afe",
+                        "surface": "#f7fafd",
+                        "surface-container-low": "#f1f4f7",
+                        "on-secondary-fixed": "#001a41",
+                        "on-error-container": "#93000a",
+                        "surface-container-highest": "#e0e3e6",
+                        "on-tertiary-fixed": "#00210e",
+                        "tertiary-fixed-dim": "#6edc94",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed": "#d7e2ff",
+                        "on-secondary-fixed-variant": "#004493",
+                        "inverse-primary": "#b2c7f4",
+                        "surface-variant": "#e0e3e6",
+                        "on-secondary": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "on-surface-variant": "#44474e",
+                        "on-tertiary-container": "#299e5c",
+                        "on-primary-fixed-variant": "#32476c",
+                        "inverse-on-surface": "#eef1f4",
+                        "on-primary-container": "#778bb5",
+                        "on-error": "#ffffff",
+                        "surface-container": "#ebeef1",
+                        "inverse-surface": "#2d3133",
+                        "secondary": "#0d5bbc",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-container": "#00316d",
+                        "tertiary": "#001105",
+                        "surface-dim": "#d7dadd",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#f7fafd",
+                        "tertiary-fixed": "#8af9ae",
+                        "on-surface": "#181c1e",
+                        "primary-container": "#0b2347",
+                        "outline": "#75777f",
+                        "background": "#f7fafd",
+                        "error-container": "#ffdad6",
+                        "tertiary-container": "#002a13",
+                        "primary-fixed-dim": "#b2c7f4",
+                        "surface-tint": "#4a5e86",
+                        "on-background": "#181c1e",
+                        "secondary-fixed-dim": "#adc7ff",
+                        "on-primary-fixed": "#011b3f",
+                        "secondary-fixed": "#d8e2ff",
+                        "primary": "#000d27",
+                        "outline-variant": "#c4c6cf"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4, h5, .font-headline { font-family: 'Manrope', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-background text-on-surface antialiased">
+<!-- TopNavBar -->
+<header class="bg-slate-50/80 dark:bg-slate-950/80 backdrop-blur-md fixed top-0 w-full z-50 border-b border-slate-200/50 dark:border-slate-800/50 shadow-sm">
+<div class="flex justify-between items-center px-6 h-16 w-full max-w-full">
+<div class="flex items-center gap-8">
+<span class="text-xl font-bold text-blue-950">Nile Ops</span>
+<nav class="hidden md:flex gap-6 font-['Manrope'] text-sm tracking-tight">
+<a class="text-slate-600 hover:text-blue-800" href="#">Dashboard</a>
+<a class="text-blue-700 font-semibold border-b-2 border-yellow-500 pb-1" href="#">Proposals</a>
+<a class="text-slate-600 hover:text-blue-800" href="#">Resources</a>
+<a class="text-slate-600 hover:text-blue-800" href="#">Clubs</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex items-center bg-surface-container-low px-3 py-1.5 rounded-full border border-outline-variant/20">
+<span class="material-symbols-outlined text-on-surface-variant text-lg">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm ml-2 w-48" placeholder="Search proposals..." type="text"/>
+</div>
+<button class="material-symbols-outlined text-slate-600">notifications</button>
+<div class="h-8 w-8 rounded-full bg-primary-container overflow-hidden border border-primary/10">
+<img alt="User" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_0tm5m9V3aVxx9JhyQRw6-P3Tk4Erc13UneaqquRjRv5pKYovXAyJKLDq_x-ToY03q_BVg8CzHGAXQnVSxBemhUKUXCXL4OSGEt1W_72YfvYcWcZPbNYgJcJXbKyHiZKiSWztg0DSk5l6SNY2fGaxBeL_e__TVsbLX4nJYRMVC4Yfa77xtDZZag9cM1lZ8qUkx1U65VW-igkih8NPIpsUdpc_kEYcyn0weGUpfxI33y7Td8AYunx-r3tYF28gzG47ovFN_7dQBhr2"/>
+</div>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<aside class="hidden lg:flex flex-col h-screen fixed left-0 top-0 py-6 px-4 bg-slate-50 w-64 border-r border-slate-100 z-40">
+<div class="flex items-center gap-3 px-3 mb-10">
+<div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white font-bold">N</div>
+<div>
+<h2 class="text-lg font-extrabold text-blue-900 leading-tight">Nile University</h2>
+<p class="text-xs text-slate-500 font-medium">Club Operations</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1 font-['Manrope'] text-sm font-medium">
+<a class="flex items-center gap-3 text-slate-500 px-3 py-2 hover:bg-slate-100 rounded-lg" href="#"><span class="material-symbols-outlined">dashboard</span> Home</a>
+<a class="flex items-center gap-3 text-slate-500 px-3 py-2 hover:bg-slate-100 rounded-lg" href="#"><span class="material-symbols-outlined">groups</span> Club Registry</a>
+<a class="flex items-center gap-3 text-blue-700 bg-blue-50 rounded-lg px-3 py-2" href="#"><span class="material-symbols-outlined">description</span> Proposal Center</a>
+<a class="flex items-center gap-3 text-slate-500 px-3 py-2 hover:bg-slate-100 rounded-lg" href="#"><span class="material-symbols-outlined">inventory_2</span> Resource Hub</a>
+<a class="flex items-center gap-3 text-slate-500 px-3 py-2 hover:bg-slate-100 rounded-lg" href="#"><span class="material-symbols-outlined">settings</span> Settings</a>
+</nav>
+<div class="mt-auto pt-6 border-t border-slate-100">
+<button class="w-full flex items-center justify-center gap-2 bg-secondary text-white py-2.5 rounded-xl font-bold shadow-md hover:bg-blue-700 transition-all mb-4">
+<span class="material-symbols-outlined text-sm">add</span> New Proposal
+            </button>
+<a class="flex items-center gap-3 text-slate-500 px-3 py-2" href="#"><span class="material-symbols-outlined">logout</span> Log Out</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="lg:ml-64 pt-24 pb-20 lg:pb-10 px-4 md:px-8 max-w-[1600px] mx-auto min-h-screen">
+<!-- Breadcrumbs & Header -->
+<div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<nav class="flex items-center gap-2 text-xs text-on-surface-variant font-medium mb-3">
+<span>Proposals</span>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-secondary">Verification Details</span>
+</nav>
+<div class="flex items-center gap-3">
+<h1 class="text-3xl font-extrabold tracking-tight text-primary">Annual Robotics Symposium 2024</h1>
+<span class="bg-amber-50 text-amber-700 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border border-amber-100">Pending Admin Review</span>
+</div>
+<p class="text-on-surface-variant mt-1">Submitted by <span class="font-semibold text-on-surface">Robotics &amp; AI Club</span> • Oct 12, 2023</p>
+</div>
+<div class="flex gap-2">
+<button class="bg-white border border-outline-variant/30 text-on-surface-variant px-4 py-2 rounded-xl font-bold text-sm hover:bg-surface-container transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">print</span> Print
+                </button>
+<button class="bg-white border border-outline-variant/30 text-on-surface-variant px-4 py-2 rounded-xl font-bold text-sm hover:bg-surface-container transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-lg">share</span> Share
+                </button>
+</div>
+</div>
+<!-- Approval Progress Stepper -->
+<div class="mb-10 bg-surface-container-lowest p-6 rounded-3xl border border-outline-variant/10 shadow-sm">
+<div class="flex items-center justify-between relative">
+<div class="absolute top-1/2 left-0 w-full h-0.5 bg-surface-container -translate-y-1/2 -z-10"></div>
+<div class="flex flex-col items-center gap-2 bg-surface-container-lowest px-4">
+<div class="w-8 h-8 rounded-full bg-secondary text-white flex items-center justify-center"><span class="material-symbols-outlined text-sm">check</span></div>
+<span class="text-xs font-bold text-on-surface">Submitted</span>
+</div>
+<div class="flex flex-col items-center gap-2 bg-surface-container-lowest px-4">
+<div class="w-8 h-8 rounded-full bg-secondary text-white flex items-center justify-center"><span class="material-symbols-outlined text-sm">check</span></div>
+<span class="text-xs font-bold text-on-surface">Advisor Approved</span>
+</div>
+<div class="flex flex-col items-center gap-2 bg-surface-container-lowest px-4">
+<div class="w-10 h-10 rounded-full border-2 border-secondary bg-white text-secondary flex items-center justify-center ring-4 ring-blue-50">
+<span class="material-symbols-outlined">hourglass_top</span>
+</div>
+<span class="text-xs font-extrabold text-secondary">Pending Admin Review</span>
+</div>
+<div class="flex flex-col items-center gap-2 bg-surface-container-lowest px-4">
+<div class="w-8 h-8 rounded-full bg-surface-container text-on-surface-variant flex items-center justify-center"><span class="material-symbols-outlined text-sm">lock</span></div>
+<span class="text-xs font-bold text-on-surface-variant">Final Approval</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+<!-- Left: Proposal Sections -->
+<div class="xl:col-span-8 space-y-8">
+<!-- Section A: Proposal Details -->
+<section class="bg-surface-container-lowest rounded-[2rem] p-8 shadow-sm border border-outline-variant/10">
+<div class="flex items-center justify-between mb-6">
+<h4 class="text-xl font-extrabold text-primary flex items-center gap-3">
+<span class="w-1.5 h-6 bg-secondary rounded-full"></span>
+                            Section A: Proposal Details
+                        </h4>
+<span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-tighter">Ref ID: PROP-2024-042</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+<div class="relative h-48 rounded-2xl overflow-hidden">
+<img alt="Event visual" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGg-_7RIGst1tCQjqvpm59oR-ZdMcnFJOlbwDEmpaBhsXodWhoQK1qBjxa3RJp2MdJwY1ZnbC9MuWWqyZUI5ejFQdcfPsp6KnmCrfwZaSjs2tRGJlb-5abRHwu6tX3h_Wc33TL4lhaaC_NER0nluvZqcfWPUvkauQ1mXEBQ7UF_1uzvFeeiMG_olxAMfElOa7yVqLmpM0Xdojy64akc0a3dMkdaAdallQr79rN5B6gztlZFp25w6jfwmAS70DW09NlUAJ69XVvoFhz"/>
+</div>
+<div class="space-y-4">
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase">Event Vision</p>
+<p class="text-sm text-on-surface leading-relaxed">Annual flagship symposium bridging academic theory with industrial robotics applications through workshops and competitions.</p>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase">Venue</p>
+<p class="text-sm font-semibold text-on-surface">Grand Auditorium (South)</p>
+</div>
+<div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase">Expected Date</p>
+<p class="text-sm font-semibold text-on-surface">Nov 14 - 16, 2024</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section B: Budget Breakdown -->
+<section class="bg-surface-container-lowest rounded-[2rem] p-8 shadow-sm border border-outline-variant/10">
+<h4 class="text-xl font-extrabold text-primary mb-6 flex items-center gap-3">
+<span class="w-1.5 h-6 bg-tertiary-container text-on-tertiary-container rounded-full" style="background-color: #299e5c;"></span>
+                        Section B: Budget Breakdown
+                    </h4>
+<div class="overflow-x-auto">
+<table class="w-full text-left text-sm">
+<thead class="bg-surface-container-low text-on-surface-variant text-[10px] uppercase font-bold tracking-widest">
+<tr>
+<th class="px-4 py-3 first:rounded-l-xl">Description</th>
+<th class="px-4 py-3">Category</th>
+<th class="px-4 py-3 text-right last:rounded-r-xl">Amount</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<tr>
+<td class="px-4 py-4 font-medium">International Speaker Travel</td>
+<td class="px-4 py-4">Logistics</td>
+<td class="px-4 py-4 text-right font-bold">$2,200.00</td>
+</tr>
+<tr>
+<td class="px-4 py-4 font-medium">Competition Arena Build</td>
+<td class="px-4 py-4">Equipment</td>
+<td class="px-4 py-4 text-right font-bold">$1,500.00</td>
+</tr>
+<tr>
+<td class="px-4 py-4 font-medium">Marketing &amp; Collateral</td>
+<td class="px-4 py-4">Promotion</td>
+<td class="px-4 py-4 text-right font-bold">$800.00</td>
+</tr>
+</tbody>
+<tfoot>
+<tr class="bg-blue-50/50">
+<td class="px-4 py-4 font-extrabold" colspan="2">Total Requested Funding</td>
+<td class="px-4 py-4 text-right font-extrabold text-blue-700 text-lg">$4,500.00</td>
+</tr>
+</tfoot>
+</table>
+</div>
+</section>
+<!-- Section C: Responsible Members -->
+<section class="bg-surface-container-lowest rounded-[2rem] p-8 shadow-sm border border-outline-variant/10">
+<h4 class="text-xl font-extrabold text-primary mb-6 flex items-center gap-3">
+<span class="w-1.5 h-6 bg-amber-500 rounded-full"></span>
+                        Section C: Responsible Members
+                    </h4>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/10 flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold">SJ</div>
+<div class="flex-1">
+<p class="text-sm font-bold text-on-surface">Sarah Jenkins</p>
+<p class="text-[10px] font-medium text-secondary uppercase tracking-tight">Club President • ID: NU-8821</p>
+<p class="text-[11px] text-on-surface-variant mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">call</span> +234 812 345 6789
+                                </p>
+</div>
+</div>
+<div class="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/10 flex items-center gap-4">
+<div class="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold">MA</div>
+<div class="flex-1">
+<p class="text-sm font-bold text-on-surface">Marcus Adebayo</p>
+<p class="text-[10px] font-medium text-secondary uppercase tracking-tight">Technical Lead • ID: NU-9012</p>
+<p class="text-[11px] text-on-surface-variant mt-1 flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">call</span> +234 703 112 2334
+                                </p>
+</div>
+</div>
+</div>
+</section>
+<!-- Timeline & Audit Log -->
+<section class="space-y-4">
+<h4 class="text-lg font-extrabold text-primary px-2">Timeline &amp; Audit Log</h4>
+<div class="space-y-3">
+<div class="bg-surface-container-lowest p-5 rounded-2xl flex items-center justify-between border-l-4 border-secondary shadow-sm">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined">send</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Proposal Submitted by Executive</p>
+<p class="text-xs text-on-surface-variant">by Sarah Jenkins (President)</p>
+</div>
+</div>
+<p class="text-xs font-medium text-on-surface-variant">Oct 12, 11:45 AM</p>
+</div>
+<div class="bg-surface-container-lowest p-5 rounded-2xl flex items-center justify-between border-l-4 border-on-tertiary-container shadow-sm" style="border-color: #299e5c;">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-[#299e5c]">
+<span class="material-symbols-outlined">verified</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Advisor Approved with Remarks</p>
+<p class="text-xs text-on-surface-variant">"Excellent scope; budget is aligned with Q4 goals." - Dr. Amara</p>
+</div>
+</div>
+<p class="text-xs font-medium text-on-surface-variant">Oct 14, 02:30 PM</p>
+</div>
+<div class="bg-surface-container-lowest p-5 rounded-2xl flex items-center justify-between border-l-4 border-amber-400 opacity-60">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
+<span class="material-symbols-outlined">pending</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Admin Review Initiated</p>
+<p class="text-xs text-on-surface-variant">Automatic workflow trigger</p>
+</div>
+</div>
+<p class="text-xs font-medium text-on-surface-variant">Oct 15, 09:00 AM</p>
+</div>
+</div>
+</section>
+</div>
+<!-- Right: Review Action Sidebar -->
+<aside class="xl:col-span-4 sticky top-24 space-y-6">
+<div class="bg-primary-container text-white rounded-[2.5rem] p-8 shadow-xl shadow-primary/20 relative overflow-hidden">
+<div class="absolute -top-10 -right-10 w-40 h-40 bg-secondary opacity-20 rounded-full blur-3xl"></div>
+<h4 class="text-xl font-bold mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+                        Review Action
+                    </h4>
+<div class="space-y-6">
+<div class="space-y-4">
+<label class="flex items-center gap-4 group cursor-pointer">
+<div class="relative">
+<input class="peer h-6 w-6 rounded-lg bg-white/10 border-white/20 text-secondary focus:ring-0 transition-all" type="checkbox"/>
+<span class="absolute inset-0 flex items-center justify-center text-primary peer-checked:opacity-100 opacity-0 pointer-events-none material-symbols-outlined text-[16px]">check</span>
+</div>
+<span class="text-sm font-medium text-white/80 group-hover:text-white transition-colors">Compliance with Club Policy</span>
+</label>
+<label class="flex items-center gap-4 group cursor-pointer">
+<div class="relative">
+<input class="peer h-6 w-6 rounded-lg bg-white/10 border-white/20 text-secondary focus:ring-0 transition-all" type="checkbox"/>
+<span class="absolute inset-0 flex items-center justify-center text-primary peer-checked:opacity-100 opacity-0 pointer-events-none material-symbols-outlined text-[16px]">check</span>
+</div>
+<span class="text-sm font-medium text-white/80 group-hover:text-white transition-colors">Financial Requisition Matched</span>
+</label>
+</div>
+<div class="space-y-2">
+<label class="text-[10px] font-bold uppercase tracking-widest text-white/50">Administrative Notes</label>
+<textarea class="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-secondary focus:border-transparent placeholder:text-white/20" placeholder="Optional comments for approval/rejection..." rows="3"></textarea>
+</div>
+<div class="space-y-3 pt-4">
+<button class="w-full bg-secondary hover:bg-blue-500 text-white font-extrabold py-4 rounded-2xl transition-all transform active:scale-95 flex items-center justify-center gap-2 shadow-lg shadow-blue-900/40">
+<span class="material-symbols-outlined">check_circle</span>
+                                Approve Proposal
+                            </button>
+<div class="grid grid-cols-2 gap-3">
+<button class="bg-white/10 hover:bg-white/20 text-white font-bold py-3 rounded-2xl text-[11px] transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">question_answer</span>
+                                    Request Clarification
+                                </button>
+<button class="bg-error/20 hover:bg-error/40 text-error-container font-bold py-3 rounded-2xl text-[11px] transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">cancel</span>
+                                    Reject
+                                </button>
+</div>
+</div>
+</div>
+</div>
+<!-- Auxiliary Context -->
+<div class="bg-surface-container-low rounded-[2rem] p-6 space-y-4">
+<h5 class="text-xs font-bold text-on-surface uppercase tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-sm text-secondary">info</span> Quick Context
+                    </h5>
+<div class="space-y-3">
+<div class="flex justify-between items-center text-sm">
+<span class="text-on-surface-variant">Remaining Budget</span>
+<span class="font-bold text-on-surface">$12,405</span>
+</div>
+<div class="flex justify-between items-center text-sm">
+<span class="text-on-surface-variant">Conflicting Events</span>
+<span class="font-bold text-error">None Detected</span>
+</div>
+<div class="flex justify-between items-center text-sm">
+<span class="text-on-surface-variant">Club Rank</span>
+<span class="flex items-center gap-1 text-[#F5B942]">
+<span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">star</span> Elite
+                            </span>
+</div>
+</div>
+</div>
+</aside>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pt-3 pb-8 lg:hidden bg-white/95 backdrop-blur-xl border-t border-slate-100 z-50 rounded-t-3xl shadow-[0_-4px_20px_rgba(11,35,71,0.06)]">
+<a class="flex flex-col items-center justify-center text-slate-400" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] font-semibold uppercase mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-blue-700 bg-blue-50 rounded-2xl px-5 py-2" href="#">
+<span class="material-symbols-outlined">pending_actions</span>
+<span class="text-[10px] font-semibold uppercase mt-1">Verify</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="text-[10px] font-semibold uppercase mt-1">Profile</span>
+</a>
+</nav>
+</body></html>

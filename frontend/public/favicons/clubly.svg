@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Clubly">
+  <rect width="64" height="64" rx="16" fill="#003C3C"/>
+  <circle cx="20" cy="22" r="8" fill="#D7F4E4"/>
+  <circle cx="44" cy="22" r="8" fill="#FFD166"/>
+  <path d="M15 44c3.5-7 9-10.5 17-10.5S45.5 37 49 44" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+  <path d="M23 44c2-3.8 5-5.7 9-5.7S39 40.2 41 44" fill="none" stroke="#D7F4E4" stroke-width="4" stroke-linecap="round"/>
+</svg>

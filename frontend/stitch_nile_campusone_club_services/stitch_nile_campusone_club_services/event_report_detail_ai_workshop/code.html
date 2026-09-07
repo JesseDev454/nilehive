@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Event Report: Intro to AI Workshop - Nile Club Services</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#a1cde3",
+                        "on-secondary-fixed-variant": "#0b5300",
+                        "surface-tint": "#465f88",
+                        "on-tertiary-fixed": "#001f2a",
+                        "background": "#f7f9fb",
+                        "secondary-container": "#a1f487",
+                        "on-primary-container": "#708ab5",
+                        "on-secondary-fixed": "#022100",
+                        "primary-fixed-dim": "#aec7f6",
+                        "tertiary": "#000d13",
+                        "on-primary-fixed": "#001b3d",
+                        "on-surface": "#191c1e",
+                        "surface-container-low": "#f2f4f6",
+                        "on-primary-fixed-variant": "#2d476f",
+                        "on-error": "#ffffff",
+                        "surface-dim": "#d8dadc",
+                        "primary": "#000a1e",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#e0e3e5",
+                        "surface-bright": "#f7f9fb",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-container": "#002532",
+                        "primary-container": "#002147",
+                        "primary-fixed": "#d6e3ff",
+                        "on-tertiary-container": "#648fa3",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-background": "#191c1e",
+                        "inverse-primary": "#aec7f6",
+                        "inverse-surface": "#2d3133",
+                        "on-secondary-container": "#247114",
+                        "error-container": "#ffdad6",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed-dim": "#89da71",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#1e4c5f",
+                        "on-surface-variant": "#44474e",
+                        "surface": "#f7f9fb",
+                        "secondary-fixed": "#a4f78a",
+                        "outline": "#74777f",
+                        "surface-container-highest": "#e0e3e5",
+                        "outline-variant": "#c4c6cf",
+                        "secondary": "#1f6d0f",
+                        "tertiary-fixed": "#bee9ff",
+                        "inverse-on-surface": "#eff1f3",
+                        "surface-container": "#eceef0",
+                        "surface-container-high": "#e6e8ea"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "8px",
+                        "gutter": "20px",
+                        "border-width": "3px",
+                        "shadow-offset": "6px",
+                        "container-padding": "24px"
+                    },
+                    "fontFamily": {
+                        "display": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "label-bold": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "display": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "label-bold": ["14px", { "lineHeight": "1.4", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "500" }],
+                        "label-sm": ["12px", { "lineHeight": "1.4", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .fill-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        /* Neobrutalist specific utilities */
+        .neo-border {
+            border: 3px solid #000a1e;
+        }
+        .neo-shadow {
+            box-shadow: 6px 6px 0px 0px #000a1e;
+        }
+        .neo-shadow-hover:hover {
+            box-shadow: 2px 2px 0px 0px #000a1e;
+            transform: translate(4px, 4px);
+        }
+        .transition-neo {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex selection:bg-secondary-fixed selection:text-on-secondary-fixed">
+<!-- SideNavBar (Shared Component) -->
+<nav class="hidden md:flex flex-col h-screen w-64 border-r-[3px] border-primary shadow-[6px_0px_0px_0px_rgba(0,10,30,1)] bg-surface pt-20 pb-8 overflow-y-auto fixed left-0 top-0 z-40">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-primary-fixed flex items-center justify-center neo-border shadow-[2px_2px_0px_0px_rgba(0,10,30,1)]">
+<span class="material-symbols-outlined text-primary font-bold">school</span>
+</div>
+<div>
+<h1 class="font-display text-headline-md text-primary tracking-tight leading-none">Club Services</h1>
+<p class="font-label-sm text-on-surface-variant">Academic Quest</p>
+</div>
+</div>
+<button class="mx-6 mb-8 bg-secondary-fixed text-on-secondary-fixed neo-border neo-shadow neo-shadow-hover transition-neo rounded-xl py-3 px-4 font-label-bold flex justify-center items-center gap-2">
+<span class="material-symbols-outlined">add</span>
+            New Request
+        </button>
+<ul class="flex-1 px-4 space-y-2">
+<li>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold" href="#">
+<span class="material-symbols-outlined">person</span>
+                    Student Hub
+                </a>
+</li>
+<li>
+<a class="bg-secondary-container text-on-secondary-container border-[3px] border-primary shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] rounded-xl m-2 px-4 py-3 flex items-center gap-3 font-label-bold" href="#">
+<span class="material-symbols-outlined fill-icon">stars</span>
+                    President Portal
+                </a>
+</li>
+<li>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold" href="#">
+<span class="material-symbols-outlined">groups</span>
+                    Exec Dashboard
+                </a>
+</li>
+<li>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold" href="#">
+<span class="material-symbols-outlined">school</span>
+                    Advisor View
+                </a>
+</li>
+<li>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold" href="#">
+<span class="material-symbols-outlined">admin_panel_settings</span>
+                    Admin Panel
+                </a>
+</li>
+<li>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold" href="#">
+<span class="material-symbols-outlined">chat_bubble</span>
+                    Feedback
+                </a>
+</li>
+</ul>
+<div class="px-4 mt-auto">
+<ul class="space-y-2 border-t-[3px] border-primary pt-4 mx-2">
+<li>
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold" href="#">
+<span class="material-symbols-outlined">settings</span>
+                        Settings
+                    </a>
+</li>
+<li>
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+                        Support
+                    </a>
+</li>
+</ul>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 w-full bg-background min-h-screen">
+<!-- TopNavBar (Shared Component - Mobile Only View typically, but showing structure here) -->
+<header class="sticky top-0 z-30 flex justify-between items-center px-gutter py-4 bg-background w-full border-b-[3px] border-primary shadow-[6px_6px_0px_0px_rgba(0,10,30,1)] md:hidden">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[28px]">menu</span>
+<span class="font-headline-md font-black text-primary tracking-tighter">Nile Club Services</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">notifications</span>
+<div class="w-8 h-8 rounded-full bg-primary-fixed border-2 border-primary flex items-center justify-center font-label-bold text-primary overflow-hidden">
+<img alt="User Initials Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5ffmt5SEzFoMw0Lv4yhCFUdXke7BJcr0itGlHIr9DNOU-P8ffWOm6k5p6vqelIgjClePLuFYJnq4yMoVSZLOOLqIoFAMhKwpopHNKwlJ6l-fd-nvl-138D9FMUgNQN0wSbz5ztIVm20qPJlUz1DfCobrHMjBpnlhqtDTUbQuWtyHk3lZtuibD4KGFJ8qxFjAU4qg5lhYtqDMbQDWoVpZxE-fqfSzh94M2utYgeJiiSSwELXrPmnKVs8S4xcJ6RtfUAnQtA2OUMhTa"/>
+</div>
+</div>
+</header>
+<!-- Page Header -->
+<div class="px-gutter py-10 md:py-14 max-w-7xl mx-auto">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-10">
+<div>
+<div class="flex items-center gap-3 mb-3">
+<span class="bg-secondary-fixed text-on-secondary-fixed px-3 py-1 rounded-full neo-border font-label-bold text-sm shadow-[2px_2px_0px_0px_rgba(0,10,30,1)] flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">check_circle</span> Finalized
+                        </span>
+<span class="text-on-surface-variant font-label-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span> Oct 12, 2023
+                        </span>
+</div>
+<h1 class="font-display text-display text-primary mb-2">Report: Intro to AI Workshop</h1>
+<p class="font-body-lg text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">diversity_3</span>
+                        Tech Innovators Society
+                    </p>
+</div>
+<div class="flex gap-4 w-full md:w-auto">
+<button class="flex-1 md:flex-none bg-surface text-primary neo-border neo-shadow neo-shadow-hover transition-neo rounded-xl py-3 px-5 font-label-bold flex justify-center items-center gap-2">
+<span class="material-symbols-outlined">download</span>
+<span class="hidden md:inline">Download</span> PDF
+                    </button>
+<button class="flex-1 md:flex-none bg-surface text-primary neo-border neo-shadow neo-shadow-hover transition-neo rounded-xl py-3 px-5 font-label-bold flex justify-center items-center gap-2 group">
+<span class="material-symbols-outlined">folder_zip</span>
+                        Media <span class="text-on-surface-variant group-hover:text-primary transition-colors text-xs ml-1">(142MB)</span>
+</button>
+</div>
+</div>
+<!-- Dashboard Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<!-- Main Content Column -->
+<div class="lg:col-span-8 flex flex-col gap-8">
+<!-- Event Summary Card -->
+<section class="bg-surface rounded-[28px] p-container-padding neo-border neo-shadow relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary-fixed rounded-bl-full -mr-16 -mt-16 opacity-50 transition-transform group-hover:scale-110 duration-500"></div>
+<div class="inline-block bg-primary text-on-primary font-label-bold px-4 py-1 rounded-b-lg absolute top-0 left-8 neo-border border-t-0 shadow-[2px_2px_0px_0px_rgba(0,10,30,1)]">
+                            Summary
+                        </div>
+<h2 class="font-headline-md text-primary mt-6 mb-4">Goals vs. Outcomes</h2>
+<div class="grid sm:grid-cols-2 gap-6 mt-6">
+<div class="bg-surface-container-low p-5 rounded-xl neo-border shadow-[2px_2px_0px_0px_rgba(0,10,30,1)]">
+<h3 class="font-label-bold text-on-surface-variant flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-outline">flag</span> Intended Goals
+                                </h3>
+<ul class="list-disc list-inside space-y-2 text-on-surface font-body-md">
+<li>Introduce basic Machine Learning concepts</li>
+<li>Complete hands-on Python model training</li>
+<li>Engage 40+ non-CS major students</li>
+</ul>
+</div>
+<div class="bg-secondary-fixed/20 p-5 rounded-xl border-[3px] border-secondary shadow-[2px_2px_0px_0px_rgba(31,109,15,1)]">
+<h3 class="font-label-bold text-secondary flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-secondary">verified</span> Actual Outcomes
+                                </h3>
+<ul class="list-disc list-inside space-y-2 text-on-surface font-body-md">
+<li>Successfully covered ML basics &amp; Ethics</li>
+<li>90% completed the hands-on Titanic dataset project</li>
+<li>Reached 50 students across 4 faculties</li>
+</ul>
+</div>
+</div>
+</section>
+<!-- Media Gallery Bento -->
+<section class="bg-surface rounded-[28px] p-container-padding neo-border shadow-[6px_6px_0px_0px_rgba(0,10,30,1)]">
+<div class="flex justify-between items-center mb-6">
+<h2 class="font-headline-md text-primary flex items-center gap-2">
+<span class="material-symbols-outlined">photo_library</span> Event Media
+                            </h2>
+<span class="bg-surface-variant text-on-surface-variant px-3 py-1 rounded-full font-label-sm border-[2px] border-outline-variant">12 Photos</span>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+<div class="col-span-2 row-span-2 rounded-2xl neo-border overflow-hidden h-64 md:h-80 shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] group cursor-pointer">
+<img alt="Large auditorium filled with students focusing on laptops during an AI workshop. Bright, natural lighting illuminates the modern lecture hall. A speaker stands at the front pointing to a presentation screen showing Python code. The atmosphere is highly engaged and academic, capturing the soft neobrutalist energy of a university tech event." class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Large auditorium filled with students focusing on laptops during an AI workshop. Bright, natural lighting illuminates the modern lecture hall. A speaker stands at the front pointing to a presentation screen showing Python code. The atmosphere is highly engaged and academic, capturing the soft neobrutalist energy of a university tech event." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCYhnUzgq3RQlfQfu5XPtIhjItr_5xUVOSHEgfThBrQC4V5KkzdA2y1Xs1Sa5DitYeJ5m8Yvz2xQpNyWRSqQbQXDyeGqpTwmTPsIC-8ahGSoW1VDWcop-NX_9gffQ7ac_z4aTp25Ng0yaWe5zisaGOvGg30vIYTENnyaBkn0Uj0jTRQVAvePLEruBBNhguPLEiu1SetAcr5a-nwcqthpLqhrrW-mgkhQ8pXQHwjP2QTkdBbPHZ3AnVPiVp7DDWbaUYHux9duCURi5AO"/>
+</div>
+<div class="rounded-2xl neo-border overflow-hidden h-32 md:h-[152px] shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] group cursor-pointer">
+<img alt="Close up shot of diverse students collaborating around a laptop computer. The bright screen reflects off their faces in a well-lit, modern campus study room. They are actively discussing code, embodying a collaborative and high-energy learning environment suited for a soft neobrutalist design context." class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Close up shot of diverse students collaborating around a laptop computer. The bright screen reflects off their faces in a well-lit, modern campus study room. They are actively discussing code, embodying a collaborative and high-energy learning environment suited for a soft neobrutalist design context." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCgey2JBk20Gt_n2oC_gGfQupSly8XNSxDlLWuNh1WC6A5pcYKrlhyMvCwLaNu72A6CyMjHidR0wkeAofMUiomIPZN2BntX3cSLY2h_NUaMi1cxXjjhEcPTG1ZYMMcCR0_9jdW-_dpayHcTjL2sAQ4BVbg-LrWK0eRmckj-7WlC2_Wrvs4VNCMrlvS78zNFNDEqhGCK2geq5s83G2okvfBjKabPf4dIG3Z3wmtFrcfqLWNN5BZPQv6zgidOYEwLBe2BqOAm0kxnJa8Y"/>
+</div>
+<div class="rounded-2xl neo-border overflow-hidden h-32 md:h-[152px] shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] group cursor-pointer relative">
+<img alt="Overhead shot of a laptop keyboard alongside scattered sticky notes and empty coffee cups on a light wooden desk. The scene suggests an intense, productive workshop session. Soft, warm lighting creates an inviting yet industrious mood, fitting the playful academic aesthetic." class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" data-alt="Overhead shot of a laptop keyboard alongside scattered sticky notes and empty coffee cups on a light wooden desk. The scene suggests an intense, productive workshop session. Soft, warm lighting creates an inviting yet industrious mood, fitting the playful academic aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAH7aHEdkXchKYfMIRcbKggIAnsmjo_4IKHyIqQ3EXJo9ikZTEBqQpsR8VM0yKfCCkbC9Uv4b54GkD6yM1XUnbWtsQmShI4usD7ljYlskZUw3i7mAh_QVOA-suZVtIn4L-QJZmi9hxCAOucnHjl1StGlMNAhan-yXXJtfDgt9ooeXmGrq7E5wcf_ebu1Vm4klnYBC_wqENxCwsFXkiSbVmjG7993svYkEGzChmHQZyAeKijM2s3BORElBr-EwIyTXoNtEDGvwh2UCdU"/>
+<div class="absolute inset-0 bg-primary/60 flex items-center justify-center backdrop-blur-sm transition-opacity hover:opacity-80">
+<span class="text-on-primary font-headline-md tracking-tight">+9 more</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Detailed Narrative -->
+<section class="bg-surface rounded-[28px] p-container-padding neo-border shadow-[6px_6px_0px_0px_rgba(0,10,30,1)]">
+<h2 class="font-headline-md text-primary mb-6">Execution Narrative</h2>
+<div class="prose max-w-none text-on-surface font-body-md space-y-4">
+<p>The 'Intro to AI Workshop' was executed smoothly in Hall B4. Setup began an hour prior, ensuring all power strips and campus Wi-Fi extensions were operational, which proved critical given the heavy laptop usage.</p>
+<h3 class="font-label-bold text-primary text-lg mt-6 mb-2">Successes</h3>
+<p>Engagement was notably high. The transition from theoretical ethics to hands-on Python notebooks via Google Colab kept the momentum strong. The pizza break at the 60-minute mark successfully prevented drop-off before the final coding sprint.</p>
+<h3 class="font-label-bold text-primary text-lg mt-6 mb-2">Challenges &amp; Learnings</h3>
+<p>We experienced minor delays getting everyone authenticated onto the campus guest network. Future technical workshops should include a pre-event email with environment setup instructions to save the first 15 minutes. Additionally, 10 more chairs were needed than anticipated.</p>
+</div>
+</section>
+</div>
+<!-- Sidebar / Sticky Column -->
+<div class="lg:col-span-4 flex flex-col gap-8">
+<!-- Metrics Bento -->
+<section class="grid grid-cols-2 gap-4">
+<!-- Metric 1 -->
+<div class="col-span-2 bg-tertiary-fixed rounded-[24px] p-6 neo-border shadow-[6px_6px_0px_0px_rgba(0,10,30,1)] relative overflow-hidden">
+<div class="absolute -right-4 -top-4 opacity-20">
+<span class="material-symbols-outlined text-[100px] text-tertiary">group</span>
+</div>
+<p class="font-label-bold text-on-tertiary-fixed mb-2 uppercase tracking-wide">Attendance</p>
+<div class="flex items-baseline gap-2">
+<span class="font-display text-[48px] text-tertiary">50</span>
+<span class="font-headline-md text-tertiary-container">/ 60</span>
+</div>
+<!-- Quest Progress Bar -->
+<div class="mt-4 bg-surface rounded-md h-4 neo-border overflow-hidden">
+<div class="bg-secondary-fixed h-full border-r-[3px] border-primary w-[83%] relative">
+<!-- Glare effect -->
+<div class="absolute top-0 left-0 w-full h-1 bg-white/40"></div>
+</div>
+</div>
+<p class="font-label-sm text-on-tertiary-fixed-variant mt-2 text-right">83% Capacity Reached</p>
+</div>
+<!-- Metric 2 -->
+<div class="bg-primary-fixed rounded-[20px] p-5 neo-border shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] flex flex-col justify-between">
+<span class="material-symbols-outlined text-primary mb-2">qr_code_scanner</span>
+<div>
+<p class="font-label-sm text-on-primary-fixed-variant mb-1">Scan Rate</p>
+<p class="font-headline-lg text-primary">83%</p>
+</div>
+</div>
+<!-- Metric 3 -->
+<div class="bg-secondary-container rounded-[20px] p-5 neo-border shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] flex flex-col justify-between">
+<span class="material-symbols-outlined text-on-secondary-container mb-2">star_rate</span>
+<div>
+<p class="font-label-sm text-on-secondary-container mb-1">Feedback</p>
+<p class="font-headline-lg text-on-secondary-fixed">4.8<span class="text-base font-body-md text-on-secondary-container">/5</span></p>
+</div>
+</div>
+</section>
+<!-- Decision Panel -->
+<section class="bg-surface rounded-[28px] p-container-padding neo-border shadow-[6px_6px_0px_0px_rgba(0,10,30,1)]">
+<div class="flex items-center gap-3 mb-6 border-b-[3px] border-outline-variant pb-4">
+<div class="w-10 h-10 rounded-full bg-tertiary-fixed border-2 border-primary flex items-center justify-center overflow-hidden">
+<span class="material-symbols-outlined text-tertiary">local_police</span>
+</div>
+<div>
+<h3 class="font-label-bold text-primary text-lg">Advisor Review</h3>
+<p class="font-label-sm text-on-surface-variant">Prof. Alan Turing</p>
+</div>
+</div>
+<div class="bg-surface-container p-4 rounded-xl border-l-[4px] border-l-secondary-fixed mb-6 relative">
+<span class="material-symbols-outlined absolute top-2 right-2 text-outline-variant opacity-50">format_quote</span>
+<p class="font-body-md text-on-surface italic relative z-10">
+                                "Excellent turnout and solid curriculum. The pizza expense was justified given the length of the workshop. Approved for future funding requests of similar scale."
+                            </p>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface-container-low rounded-xl border-[2px] border-outline-variant border-dashed">
+<span class="font-label-bold text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">verified_user</span> Status
+                            </span>
+<span class="bg-secondary-fixed text-on-secondary-fixed px-3 py-1 rounded-md neo-border font-label-bold text-sm shadow-[2px_2px_0px_0px_rgba(0,10,30,1)]">
+                                Approved
+                            </span>
+</div>
+</section>
+</div>
+</div>
+</div>
+</main>
+</body></html>

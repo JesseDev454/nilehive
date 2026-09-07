@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Exec Dashboard - My Tasks</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-container": "#247114",
+                        "surface-dim": "#d8dadc",
+                        "secondary-fixed": "#a4f78a",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#a1cde3",
+                        "surface-variant": "#e0e3e5",
+                        "primary-container": "#002147",
+                        "tertiary": "#000d13",
+                        "inverse-primary": "#aec7f6",
+                        "surface-bright": "#f7f9fb",
+                        "on-secondary-fixed": "#022100",
+                        "surface-container": "#eceef0",
+                        "surface": "#f7f9fb",
+                        "secondary": "#1f6d0f",
+                        "primary-fixed-dim": "#aec7f6",
+                        "outline-variant": "#c4c6cf",
+                        "surface-container-lowest": "#ffffff",
+                        "inverse-on-surface": "#eff1f3",
+                        "tertiary-fixed": "#bee9ff",
+                        "on-tertiary-fixed": "#001f2a",
+                        "on-primary-fixed-variant": "#2d476f",
+                        "on-error": "#ffffff",
+                        "error": "#ba1a1a",
+                        "tertiary-container": "#002532",
+                        "surface-container-low": "#f2f4f6",
+                        "inverse-surface": "#2d3133",
+                        "outline": "#74777f",
+                        "error-container": "#ffdad6",
+                        "background": "#f7f9fb",
+                        "on-surface-variant": "#44474e",
+                        "primary-fixed": "#d6e3ff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-high": "#e6e8ea",
+                        "on-surface": "#191c1e",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed-dim": "#89da71",
+                        "secondary-container": "#a1f487",
+                        "on-tertiary-container": "#648fa3",
+                        "on-tertiary-fixed-variant": "#1e4c5f",
+                        "on-primary-fixed": "#001b3d",
+                        "primary": "#000a1e",
+                        "on-secondary-fixed-variant": "#0b5300",
+                        "on-primary-container": "#708ab5",
+                        "on-primary": "#ffffff",
+                        "on-background": "#191c1e",
+                        "surface-tint": "#465f88",
+                        "surface-container-highest": "#e0e3e5"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "container-padding": "24px",
+                        "shadow-offset": "6px",
+                        "border-width": "3px",
+                        "base": "8px",
+                        "gutter": "20px"
+                    },
+                    "fontFamily": {
+                        "display": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"],
+                        "label-bold": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "display": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "500" }],
+                        "label-sm": ["12px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                        "label-bold": ["14px", { "lineHeight": "1.4", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700" }]
+                    },
+                    "borderWidth": {
+                        "3": "3px"
+                    },
+                    "boxShadow": {
+                        "neo-solid": "6px 6px 0px 0px rgba(0,10,30,1)",
+                        "neo-solid-sm": "4px 4px 0px 0px rgba(0,10,30,1)",
+                        "neo-solid-hover": "2px 2px 0px 0px rgba(0,10,30,1)"
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .material-symbols-outlined.fill { font-variation-settings: 'FILL' 1; }
+        
+        /* Neobrutalist custom utilities */
+        .neo-card {
+            @apply bg-surface-container-lowest border-3 border-primary rounded-2xl shadow-neo-solid transition-all duration-200;
+        }
+        .neo-button {
+            @apply bg-surface-container-lowest border-3 border-primary rounded-xl shadow-neo-solid hover:shadow-neo-solid-hover hover:translate-x-[4px] hover:translate-y-[4px] active:scale-95 transition-all duration-200 font-label-bold text-label-bold text-primary flex items-center justify-center gap-2;
+        }
+        .neo-button-primary {
+            @apply bg-surface-container-lowest border-3 border-primary rounded-xl shadow-neo-solid hover:shadow-neo-solid-hover hover:translate-x-[4px] hover:translate-y-[4px] active:scale-95 transition-all duration-200 font-label-bold text-label-bold text-primary flex items-center justify-center gap-2;
+        }
+        .neo-button-success {
+            @apply bg-secondary-container border-3 border-primary rounded-xl shadow-neo-solid hover:shadow-neo-solid-hover hover:translate-x-[4px] hover:translate-y-[4px] active:scale-95 transition-all duration-200 font-label-bold text-label-bold text-primary flex items-center justify-center gap-2;
+        }
+        .neo-input {
+            @apply bg-surface-container-lowest border-3 border-primary rounded-xl px-4 py-3 focus:outline-none focus:border-secondary focus:shadow-neo-solid transition-all w-full font-body-md;
+        }
+        .neo-chip {
+            @apply border-3 border-primary rounded-full px-3 py-1 font-label-sm text-label-sm flex items-center gap-1 shadow-[2px_2px_0px_0px_rgba(0,10,30,1)];
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface min-h-screen flex flex-col md:flex-row">
+<!-- TopNavBar (Mobile Only) -->
+<header class="sticky top-0 z-50 flex md:hidden justify-between items-center px-gutter py-4 bg-background w-full border-b-3 border-primary shadow-[6px_6px_0px_0px_rgba(0,10,30,1)]">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-3xl text-primary">menu</span>
+<h1 class="text-headline-md font-headline-lg font-black text-primary tracking-tighter">Nile Club Services</h1>
+</div>
+<div class="flex gap-4">
+<button><span class="material-symbols-outlined">help</span></button>
+<button><span class="material-symbols-outlined">notifications</span></button>
+<div class="w-8 h-8 rounded-full border-3 border-primary bg-secondary-container flex items-center justify-center font-label-bold">U</div>
+</div>
+</header>
+<!-- SideNavBar (Desktop Only) -->
+<nav class="hidden md:flex flex-col fixed left-0 top-0 h-screen w-64 border-r-3 border-primary shadow-[6px_0px_0px_0px_rgba(0,10,30,1)] bg-surface pt-8 pb-8 overflow-y-auto z-40">
+<div class="px-6 mb-10">
+<div class="flex items-center gap-3 mb-6">
+<div class="w-12 h-12 bg-secondary-container border-3 border-primary rounded-xl flex items-center justify-center shadow-neo-solid-sm">
+<span class="material-symbols-outlined text-primary fill">school</span>
+</div>
+<div>
+<h1 class="font-display text-headline-md text-primary font-black tracking-tighter leading-tight">Club Services</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Academic Quest</p>
+</div>
+</div>
+<button class="neo-button-primary w-full py-3">
+<span class="material-symbols-outlined">add</span>
+                New Request
+            </button>
+</div>
+<div class="flex-1 px-4 space-y-2">
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high hover:border-3 hover:border-primary hover:shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] rounded-xl transition-all font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined">person</span>
+                Student Hub
+            </a>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high hover:border-3 hover:border-primary hover:shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] rounded-xl transition-all font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined">stars</span>
+                President Portal
+            </a>
+<a class="bg-secondary-container text-on-secondary-container border-3 border-primary shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] rounded-xl m-2 px-4 py-3 flex items-center gap-3 font-label-bold text-label-bold active:translate-y-1 transition-all" href="#">
+<span class="material-symbols-outlined fill">groups</span>
+                Exec Dashboard
+            </a>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high hover:border-3 hover:border-primary hover:shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] rounded-xl transition-all font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined">school</span>
+                Advisor View
+            </a>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high hover:border-3 hover:border-primary hover:shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] rounded-xl transition-all font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined">admin_panel_settings</span>
+                Admin Panel
+            </a>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high hover:border-3 hover:border-primary hover:shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] rounded-xl transition-all font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined">chat_bubble</span>
+                Feedback
+            </a>
+</div>
+<div class="px-4 mt-auto space-y-2 pt-6 border-t-3 border-primary mx-4">
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Settings
+            </a>
+<a class="text-on-surface-variant px-4 py-3 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+                Support
+            </a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 p-gutter md:p-8 flex flex-col md:flex-row gap-8">
+<!-- Tasks List Column (Left) -->
+<section class="flex-1 flex flex-col gap-6">
+<!-- Page Header -->
+<div class="flex justify-between items-end mb-4">
+<div>
+<h2 class="font-display text-display text-primary mb-2">My Quests</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Executive action items from the President.</p>
+</div>
+<div class="flex gap-2">
+<button aria-label="Filter Tasks" class="neo-button p-2">
+<span class="material-symbols-outlined">filter_list</span>
+</button>
+<button aria-label="Sort Tasks" class="neo-button p-2">
+<span class="material-symbols-outlined">sort</span>
+</button>
+</div>
+</div>
+<!-- Task List -->
+<div class="space-y-4">
+<!-- Highlighted Task (Active) -->
+<div class="neo-card p-6 bg-tertiary-fixed border-secondary shadow-[8px_8px_0px_0px_rgba(31,109,15,1)] relative overflow-hidden cursor-pointer transform transition-transform hover:-translate-y-1">
+<div class="absolute top-0 right-0 bg-secondary text-on-secondary px-4 py-1 rounded-bl-xl font-label-bold text-label-bold border-l-3 border-b-3 border-primary shadow-[-2px_2px_0px_0px_rgba(0,10,30,1)]">
+                        ACTIVE QUEST
+                    </div>
+<div class="flex items-start justify-between mb-4 mt-2">
+<div class="flex gap-3 items-center">
+<div class="w-6 h-6 rounded border-3 border-primary bg-surface-container-lowest flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px] text-surface-dim">check</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-primary">Finalize Equipment List</h3>
+</div>
+<span class="neo-chip bg-error-container text-on-error-container border-error">
+<span class="material-symbols-outlined text-[14px]">priority_high</span> High Priority
+                        </span>
+</div>
+<p class="font-body-md text-body-md text-primary-container mb-4">For: AI Workshop</p>
+<div class="flex flex-wrap items-center gap-4 text-on-surface-variant">
+<div class="flex items-center gap-1 font-label-bold text-label-bold text-error">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+                            Due Tomorrow
+                        </div>
+<div class="flex items-center gap-1 font-label-bold text-label-bold">
+<span class="material-symbols-outlined text-[18px]">checklist</span>
+                            3/5 Tasks
+                        </div>
+<div class="flex items-center gap-1 font-label-bold text-label-bold bg-surface-bright px-2 py-1 rounded border-2 border-primary">
+<img alt="Avatar" class="w-5 h-5 rounded-full border-2 border-primary" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8XLYLxU9bgQ2S5y4qILKFiWZF88KYv31QH9CiO5exhNe2CIXq_o9s5PrVoaYR75jukXZERdoAorkxB8Nu6mWupLINGe6sL9i2sfNM2y9yaTNVydSRGEmRGdSTagv6S9vmp0tDC_Miux0Gi6A0RUR5li6pNLGrYRL6vnDyCOmcYnkhQmkFaOKmg8KptPZJLxmYzfOrmw4jtBniaVi5Du9D22weMe-T4IShpXtU9cYtIq9U0qsyeIF2dqsl_k74Ky2yVqD8ycAwkAgy"/>
+                            From: Sarah J.
+                        </div>
+</div>
+</div>
+<!-- Normal Task 1 -->
+<div class="neo-card p-6 hover:bg-surface-bright cursor-pointer group">
+<div class="flex items-start justify-between mb-4">
+<div class="flex gap-3 items-center">
+<div class="w-6 h-6 rounded border-3 border-primary bg-surface-container-lowest flex items-center justify-center group-hover:border-secondary transition-colors">
+<!-- empty checkbox -->
+</div>
+<h3 class="font-headline-md text-headline-md text-primary text-[20px]">Book Guest Speaker Travel</h3>
+</div>
+<span class="neo-chip bg-surface text-on-surface">
+                            Medium
+                        </span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4">For: Tech Symposium 2024</p>
+<div class="flex items-center gap-4 text-on-surface-variant">
+<div class="flex items-center gap-1 font-label-bold text-label-bold">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+                            Oct 24
+                        </div>
+<span class="neo-chip bg-error-container text-on-error-container border-error text-[10px] py-0">
+                            Overdue
+                        </span>
+</div>
+</div>
+<!-- Normal Task 2 -->
+<div class="neo-card p-6 hover:bg-surface-bright cursor-pointer group opacity-80">
+<div class="flex items-start justify-between mb-4">
+<div class="flex gap-3 items-center">
+<div class="w-6 h-6 rounded border-3 border-primary bg-surface-container-lowest flex items-center justify-center group-hover:border-secondary transition-colors">
+<!-- empty checkbox -->
+</div>
+<h3 class="font-headline-md text-headline-md text-primary text-[20px]">Review Budget Proposal</h3>
+</div>
+<span class="neo-chip bg-surface text-on-surface">
+                            Low
+                        </span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mb-4">For: Annual Finance Meeting</p>
+<div class="flex items-center gap-4 text-on-surface-variant">
+<div class="flex items-center gap-1 font-label-bold text-label-bold">
+<span class="material-symbols-outlined text-[18px]">calendar_today</span>
+                            Nov 02
+                        </div>
+<span class="neo-chip bg-surface-dim text-on-surface border-outline-variant text-[10px] py-0">
+                            Blocked
+                        </span>
+</div>
+</div>
+</div>
+</section>
+<!-- Task Detail Panel (Right) -->
+<aside class="w-full md:w-[400px] lg:w-[450px] neo-card bg-surface flex flex-col h-[calc(100vh-64px)] sticky top-8">
+<!-- Panel Header -->
+<div class="p-6 border-b-3 border-primary bg-primary-fixed-dim rounded-t-xl">
+<div class="flex justify-between items-start mb-4">
+<div class="neo-chip bg-secondary-container text-on-secondary-container border-primary">
+<span class="material-symbols-outlined text-[16px]">bolt</span>
+                        AI Workshop
+                    </div>
+<button aria-label="Close Panel" class="neo-button p-1 !rounded-full shadow-neo-solid-sm">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<h2 class="font-display text-headline-lg text-primary mb-2">Finalize Equipment List</h2>
+<div class="flex flex-wrap gap-2 mt-4">
+<span class="neo-chip bg-error-container text-on-error-container border-error">Due Tomorrow</span>
+<span class="neo-chip bg-tertiary-fixed text-on-tertiary-fixed border-primary">High Priority</span>
+</div>
+</div>
+<!-- Panel Content (Scrollable) -->
+<div class="flex-1 overflow-y-auto p-6 space-y-8">
+<!-- Description -->
+<div>
+<h4 class="font-label-bold text-label-bold text-primary mb-2 flex items-center gap-2 uppercase tracking-widest">
+<span class="material-symbols-outlined text-[18px]">description</span> Objective
+                    </h4>
+<p class="font-body-md text-body-md text-on-surface-variant p-4 bg-surface-container border-3 border-primary rounded-xl shadow-neo-solid-sm">
+                        Compile and confirm all hardware requirements for the AI Workshop guest speakers. Ensure GPUs are reserved with IT.
+                    </p>
+</div>
+<!-- Assignment Info -->
+<div class="flex items-center gap-4 p-4 bg-surface-bright border-3 border-primary rounded-xl">
+<img alt="Sarah Jenkins" class="w-12 h-12 rounded-full border-3 border-primary shadow-neo-solid-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBpzx9-i7SE1j2dmoTZ5qMC6-qqxmq7J0j_FwV1N4d1YpCdG3tC7Fm_llx74ZRXEWHpKLy_cu9RPMuqJSm59x0kXGIpuk2TxreVthz3xY66FWau2dGa43TcK8SP6avs85stZhbP4nB2FFGjv8Grrv0H5VgMJe3TatGoeoJ8XxdBZpVL-DC8o-EmiRyvn-0GpIQo781IrPDcCJ2kfbqM9i0MquLPL9YIicLk_la5F_ijBFGIb_o8PqdI2dhdfXxWjiLEs2TWg86HEdBc"/>
+<div>
+<p class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wide">Assigned By</p>
+<p class="font-headline-md text-body-lg text-primary">Sarah Jenkins</p>
+<p class="font-body-md text-label-sm text-primary-container">President</p>
+</div>
+</div>
+<!-- Checklist -->
+<div>
+<div class="flex justify-between items-center mb-4">
+<h4 class="font-label-bold text-label-bold text-primary flex items-center gap-2 uppercase tracking-widest">
+<span class="material-symbols-outlined text-[18px]">format_list_bulleted</span> Sub-Quests
+                        </h4>
+<span class="font-label-bold text-label-bold text-secondary bg-secondary-container px-2 py-1 rounded border-2 border-secondary">3/5 Done</span>
+</div>
+<!-- Progress Bar -->
+<div class="h-4 bg-surface-container-highest border-3 border-primary rounded-full mb-6 overflow-hidden">
+<div class="h-full bg-secondary border-r-3 border-primary w-[60%]"></div>
+</div>
+<div class="space-y-3">
+<!-- Checked Item -->
+<label class="flex items-start gap-3 p-3 bg-surface-container rounded-xl border-3 border-primary opacity-70 cursor-pointer">
+<input checked="" class="mt-1 w-5 h-5 rounded border-2 border-primary text-secondary focus:ring-secondary bg-secondary-container accent-secondary" type="checkbox"/>
+<span class="font-body-md text-body-md text-on-surface line-through decoration-2">Draft initial requirements doc</span>
+</label>
+<!-- Checked Item -->
+<label class="flex items-start gap-3 p-3 bg-surface-container rounded-xl border-3 border-primary opacity-70 cursor-pointer">
+<input checked="" class="mt-1 w-5 h-5 rounded border-2 border-primary text-secondary focus:ring-secondary bg-secondary-container accent-secondary" type="checkbox"/>
+<span class="font-body-md text-body-md text-on-surface line-through decoration-2">Review with Tech Lead</span>
+</label>
+<!-- Checked Item -->
+<label class="flex items-start gap-3 p-3 bg-surface-container rounded-xl border-3 border-primary opacity-70 cursor-pointer">
+<input checked="" class="mt-1 w-5 h-5 rounded border-2 border-primary text-secondary focus:ring-secondary bg-secondary-container accent-secondary" type="checkbox"/>
+<span class="font-body-md text-body-md text-on-surface line-through decoration-2">Get preliminary quotes</span>
+</label>
+<!-- Unchecked Item -->
+<label class="flex items-start gap-3 p-3 bg-surface-container-lowest rounded-xl border-3 border-primary shadow-[2px_2px_0px_0px_rgba(0,10,30,1)] cursor-pointer hover:bg-surface-bright transition-colors">
+<input class="mt-1 w-5 h-5 rounded border-2 border-primary text-secondary focus:ring-secondary" type="checkbox"/>
+<span class="font-body-md text-body-md text-on-surface font-medium">Submit IT Ticket for GPU instances</span>
+</label>
+<!-- Unchecked Item -->
+<label class="flex items-start gap-3 p-3 bg-surface-container-lowest rounded-xl border-3 border-primary shadow-[2px_2px_0px_0px_rgba(0,10,30,1)] cursor-pointer hover:bg-surface-bright transition-colors">
+<input class="mt-1 w-5 h-5 rounded border-2 border-primary text-secondary focus:ring-secondary" type="checkbox"/>
+<span class="font-body-md text-body-md text-on-surface font-medium">Final approval from Sarah</span>
+</label>
+</div>
+</div>
+<!-- Add Comment -->
+<div>
+<h4 class="font-label-bold text-label-bold text-primary mb-2 flex items-center gap-2 uppercase tracking-widest mt-6">
+<span class="material-symbols-outlined text-[18px]">chat</span> Activity
+                    </h4>
+<div class="relative mt-2">
+<textarea class="neo-input min-h-[80px] resize-none" placeholder="Add an update..."></textarea>
+<button class="absolute bottom-3 right-3 p-2 bg-primary text-on-primary rounded border-2 border-primary hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined text-[16px]">send</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Panel Footer / Actions -->
+<div class="p-6 border-t-3 border-primary bg-surface-container-lowest rounded-b-xl flex gap-4">
+<button aria-label="More Options" class="neo-button p-4 !rounded-xl">
+<span class="material-symbols-outlined">more_vert</span>
+</button>
+<button class="neo-button-success flex-1 py-4 text-headline-md font-headline-md text-[20px]">
+<span class="material-symbols-outlined text-[24px]">task_alt</span>
+                    Mark Complete
+                </button>
+</div>
+</aside>
+</main>
+</body></html>

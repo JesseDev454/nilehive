@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nile Club Services - Design System</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary-fixed-dim": "#a1cde3",
+                      "on-secondary-fixed-variant": "#0b5300",
+                      "surface-tint": "#465f88",
+                      "on-tertiary-fixed": "#001f2a",
+                      "background": "#f7f9fb",
+                      "secondary-container": "#a1f487",
+                      "on-primary-container": "#708ab5",
+                      "on-secondary-fixed": "#022100",
+                      "primary-fixed-dim": "#aec7f6",
+                      "tertiary": "#000d13",
+                      "on-primary-fixed": "#001b3d",
+                      "on-surface": "#191c1e",
+                      "surface-container-low": "#f2f4f6",
+                      "on-primary-fixed-variant": "#2d476f",
+                      "on-error": "#ffffff",
+                      "surface-dim": "#d8dadc",
+                      "primary": "#000a1e",
+                      "error": "#ba1a1a",
+                      "surface-variant": "#e0e3e5",
+                      "surface-bright": "#f7f9fb",
+                      "on-tertiary": "#ffffff",
+                      "tertiary-container": "#002532",
+                      "primary-container": "#002147",
+                      "primary-fixed": "#d6e3ff",
+                      "on-tertiary-container": "#648fa3",
+                      "on-secondary": "#ffffff",
+                      "on-error-container": "#93000a",
+                      "on-background": "#191c1e",
+                      "inverse-primary": "#aec7f6",
+                      "inverse-surface": "#2d3133",
+                      "on-secondary-container": "#247114",
+                      "error-container": "#ffdad6",
+                      "surface-container-lowest": "#ffffff",
+                      "secondary-fixed-dim": "#89da71",
+                      "on-primary": "#ffffff",
+                      "on-tertiary-fixed-variant": "#1e4c5f",
+                      "on-surface-variant": "#44474e",
+                      "surface": "#f7f9fb",
+                      "secondary-fixed": "#a4f78a",
+                      "outline": "#74777f",
+                      "surface-container-highest": "#e0e3e5",
+                      "outline-variant": "#c4c6cf",
+                      "secondary": "#1f6d0f",
+                      "tertiary-fixed": "#bee9ff",
+                      "inverse-on-surface": "#eff1f3",
+                      "surface-container": "#eceef0",
+                      "surface-container-high": "#e6e8ea"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "base": "8px",
+                      "gutter": "20px",
+                      "border-width": "3px",
+                      "shadow-offset": "6px",
+                      "container-padding": "24px"
+              },
+              "fontFamily": {
+                      "display": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "headline-md": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "body-md": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "headline-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "label-bold": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "body-lg": [
+                              "Plus Jakarta Sans"
+                      ],
+                      "label-sm": [
+                              "Plus Jakarta Sans"
+                      ]
+              },
+              "fontSize": {
+                      "display": [
+                              "48px",
+                              {
+                                      "lineHeight": "1.1",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "800"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "1.3",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "1.2",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-bold": [
+                              "14px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "1.6",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "label-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "1.4",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        body {
+            background-color: #f7f9fb;
+            background-image: radial-gradient(#d8dadc 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .neobrutal-shadow {
+            box-shadow: 6px 6px 0px 0px rgba(0,10,30,1);
+        }
+        .neobrutal-shadow-sm {
+            box-shadow: 4px 4px 0px 0px rgba(0,10,30,1);
+        }
+        .neobrutal-hover:hover {
+            transform: translate(2px, 2px);
+            box-shadow: 4px 4px 0px 0px rgba(0,10,30,1);
+        }
+        .neobrutal-active:active {
+            transform: translate(6px, 6px);
+            box-shadow: 0px 0px 0px 0px rgba(0,10,30,1);
+        }
+    </style>
+</head>
+<body class="text-on-background min-h-screen pb-20">
+<!-- Header -->
+<header class="sticky top-0 z-50 flex justify-between items-center px-gutter py-4 bg-background w-full border-b-border-width border-primary neobrutal-shadow mb-12">
+<div class="flex items-center gap-4">
+<h1 class="font-headline-md text-headline-md font-black text-primary tracking-tighter">Nile Club Services</h1>
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full font-label-sm text-label-sm border-2 border-primary hidden md:inline-block">Design System</span>
+</div>
+<div class="flex gap-4 items-center">
+<span class="font-label-bold text-label-bold text-on-surface-variant hidden md:inline-block">v1.0.0</span>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-gutter grid grid-cols-1 md:grid-cols-12 gap-8">
+<!-- Navigation Placeholder (Simulated) -->
+<nav class="md:col-span-3 lg:col-span-2 hidden md:flex flex-col gap-2">
+<a class="px-4 py-3 bg-secondary-container text-on-secondary-container border-border-width border-primary rounded-xl neobrutal-shadow-sm flex items-center gap-3 font-label-bold text-label-bold" href="#colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">palette</span>
+                Colors
+            </a>
+<a class="px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-colors flex items-center gap-3 font-label-bold text-label-bold" href="#typography">
+<span class="material-symbols-outlined">text_fields</span>
+                Typography
+            </a>
+<a class="px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-colors flex items-center gap-3 font-label-bold text-label-bold" href="#components">
+<span class="material-symbols-outlined">widgets</span>
+                Components
+            </a>
+<a class="px-4 py-3 text-on-surface-variant hover:bg-surface-container-high rounded-xl transition-colors flex items-center gap-3 font-label-bold text-label-bold" href="#gamification">
+<span class="material-symbols-outlined">sports_esports</span>
+                Gamification
+            </a>
+</nav>
+<!-- Content Area -->
+<div class="md:col-span-9 lg:col-span-10 space-y-16">
+<!-- Colors Section -->
+<section class="space-y-6" id="colors">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-headline-lg text-primary" style="font-variation-settings: 'FILL' 1;">palette</span>
+<h2 class="font-headline-lg text-headline-lg text-primary">Colors &amp; Foundation</h2>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+<!-- Primary -->
+<div class="bg-surface border-border-width border-primary rounded-[24px] overflow-hidden neobrutal-shadow group transition-transform hover:-translate-y-1">
+<div class="h-24 bg-primary flex items-end p-4">
+</div>
+<div class="p-4 bg-surface">
+<p class="font-label-bold text-label-bold text-on-surface">Primary (Nile Blue)</p>
+<p class="font-body-md text-label-sm text-on-surface-variant mt-1">#000a1e</p>
+</div>
+</div>
+<!-- Secondary/Success -->
+<div class="bg-surface border-border-width border-primary rounded-[24px] overflow-hidden neobrutal-shadow group transition-transform hover:-translate-y-1">
+<div class="h-24 bg-secondary-fixed flex items-end p-4">
+</div>
+<div class="p-4 bg-surface">
+<p class="font-label-bold text-label-bold text-on-surface">Success Green</p>
+<p class="font-body-md text-label-sm text-on-surface-variant mt-1">#a4f78a</p>
+</div>
+</div>
+<!-- Surface -->
+<div class="bg-surface border-border-width border-primary rounded-[24px] overflow-hidden neobrutal-shadow group transition-transform hover:-translate-y-1">
+<div class="h-24 bg-surface border-b-border-width border-outline-variant flex items-end p-4">
+</div>
+<div class="p-4 bg-surface">
+<p class="font-label-bold text-label-bold text-on-surface">Surface White</p>
+<p class="font-body-md text-label-sm text-on-surface-variant mt-1">#f7f9fb</p>
+</div>
+</div>
+<!-- Soft Sky -->
+<div class="bg-surface border-border-width border-primary rounded-[24px] overflow-hidden neobrutal-shadow group transition-transform hover:-translate-y-1">
+<div class="h-24 bg-primary-fixed flex items-end p-4">
+</div>
+<div class="p-4 bg-surface">
+<p class="font-label-bold text-label-bold text-on-surface">Soft Sky Blue</p>
+<p class="font-body-md text-label-sm text-on-surface-variant mt-1">#d6e3ff</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Typography Section -->
+<section class="space-y-6" id="typography">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-headline-lg text-primary" style="font-variation-settings: 'FILL' 1;">text_fields</span>
+<h2 class="font-headline-lg text-headline-lg text-primary">Typography</h2>
+</div>
+<div class="bg-surface border-border-width border-primary rounded-[24px] p-container-padding neobrutal-shadow space-y-8">
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b-2 border-outline-variant pb-4">
+<div class="font-label-sm text-label-sm text-on-surface-variant col-span-1">Display</div>
+<div class="col-span-3">
+<p class="font-display text-display text-primary">The Quick Brown Fox</p>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b-2 border-outline-variant pb-4">
+<div class="font-label-sm text-label-sm text-on-surface-variant col-span-1">Headline LG</div>
+<div class="col-span-3">
+<p class="font-headline-lg text-headline-lg text-primary">The Quick Brown Fox Jumps Over</p>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b-2 border-outline-variant pb-4">
+<div class="font-label-sm text-label-sm text-on-surface-variant col-span-1">Headline MD</div>
+<div class="col-span-3">
+<p class="font-headline-md text-headline-md text-primary">The Quick Brown Fox Jumps Over The Lazy Dog</p>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-center border-b-2 border-outline-variant pb-4">
+<div class="font-label-sm text-label-sm text-on-surface-variant col-span-1">Body LG</div>
+<div class="col-span-3">
+<p class="font-body-lg text-body-lg text-on-surface">The quick brown fox jumps over the lazy dog. Pack my box with five dozen liquor jugs. How vexingly quick daft zebras jump.</p>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+<div class="font-label-sm text-label-sm text-on-surface-variant col-span-1">Label Bold</div>
+<div class="col-span-3">
+<p class="font-label-bold text-label-bold text-primary">ACTION ITEM BUTTON</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Components Section -->
+<section class="space-y-6" id="components">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-headline-lg text-primary" style="font-variation-settings: 'FILL' 1;">widgets</span>
+<h2 class="font-headline-lg text-headline-lg text-primary">UI Components</h2>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+<!-- Buttons & Inputs -->
+<div class="bg-surface border-border-width border-primary rounded-[24px] p-container-padding neobrutal-shadow space-y-6">
+<h3 class="font-headline-md text-headline-md border-b-2 border-outline-variant pb-2 mb-4 relative inline-block">
+<span class="bg-secondary-fixed w-full h-3 absolute bottom-2 left-0 -z-10"></span>
+                            Interactive
+                        </h3>
+<div class="space-y-4">
+<div class="flex flex-wrap gap-4">
+<button class="px-6 py-3 bg-on-error text-primary border-border-width border-primary rounded-xl font-label-bold text-label-bold neobrutal-shadow neobrutal-hover neobrutal-active transition-all">
+                                    Primary Action
+                                </button>
+<button class="px-6 py-3 bg-secondary-fixed text-primary border-border-width border-primary rounded-xl font-label-bold text-label-bold neobrutal-shadow neobrutal-hover neobrutal-active transition-all">
+                                    Submit Form
+                                </button>
+</div>
+<div class="space-y-2 mt-6">
+<label class="font-label-bold text-label-bold text-on-surface">Text Input</label>
+<input class="w-full px-4 py-3 bg-surface border-border-width border-primary rounded-xl font-body-md text-body-md focus:outline-none focus:border-secondary-fixed focus:ring-0 neobrutal-shadow transition-colors" placeholder="Enter club name..." type="text"/>
+</div>
+<div class="space-y-2">
+<label class="font-label-bold text-label-bold text-on-surface">Search Field</label>
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">search</span>
+<input class="w-full pl-12 pr-4 py-3 bg-surface border-border-width border-primary rounded-xl font-body-md text-body-md focus:outline-none focus:border-secondary-fixed focus:ring-0 shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] transition-colors" placeholder="Search events..." type="text"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Cards & Metrics -->
+<div class="bg-surface border-border-width border-primary rounded-[24px] p-container-padding neobrutal-shadow space-y-6 flex flex-col justify-between">
+<h3 class="font-headline-md text-headline-md border-b-2 border-outline-variant pb-2 mb-4 relative inline-block self-start">
+<span class="bg-primary-fixed w-full h-3 absolute bottom-2 left-0 -z-10"></span>
+                            Metric Cards
+                        </h3>
+<div class="grid grid-cols-2 gap-4 h-full">
+<div class="bg-surface border-border-width border-primary rounded-xl p-4 shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] flex flex-col justify-between">
+<div class="flex justify-between items-start mb-2">
+<span class="font-label-bold text-label-bold text-on-surface-variant">Active Members</span>
+<span class="material-symbols-outlined text-primary">groups</span>
+</div>
+<span class="font-headline-lg text-headline-lg text-primary">124</span>
+<div class="flex items-center gap-1 mt-2 text-secondary-container text-on-secondary-container bg-secondary-fixed rounded px-2 py-0.5 w-max">
+<span class="material-symbols-outlined text-[14px]">trending_up</span>
+<span class="font-label-sm text-label-sm">+12%</span>
+</div>
+</div>
+<div class="bg-primary-fixed border-border-width border-primary rounded-xl p-4 shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] flex flex-col justify-between">
+<div class="flex justify-between items-start mb-2">
+<span class="font-label-bold text-label-bold text-primary">Budget Used</span>
+<span class="material-symbols-outlined text-primary">account_balance_wallet</span>
+</div>
+<span class="font-headline-lg text-headline-lg text-primary">75%</span>
+<div class="w-full bg-surface border-2 border-primary rounded-full h-3 mt-2 overflow-hidden">
+<div class="bg-primary h-full border-r-2 border-primary" style="width: 75%"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Gamification Section -->
+<section class="space-y-6" id="gamification">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-headline-lg text-primary" style="font-variation-settings: 'FILL' 1;">sports_esports</span>
+<h2 class="font-headline-lg text-headline-lg text-primary">Gamification &amp; Badges</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Badges -->
+<div class="bg-surface border-border-width border-primary rounded-[24px] p-container-padding neobrutal-shadow space-y-4">
+<p class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-wider mb-2">Status Badges</p>
+<div class="flex flex-wrap gap-2">
+<span class="inline-flex items-center gap-1 px-3 py-1 bg-secondary-fixed border-2 border-primary rounded-full font-label-sm text-label-sm text-primary shadow-[2px_2px_0px_0px_rgba(0,10,30,1)]">
+                                Approved
+                            </span>
+<span class="inline-flex items-center gap-1 px-3 py-1 bg-primary-fixed border-2 border-primary rounded-full font-label-sm text-label-sm text-primary shadow-[2px_2px_0px_0px_rgba(0,10,30,1)]">
+                                Pending
+                            </span>
+<span class="inline-flex items-center gap-1 px-3 py-1 bg-error-container border-2 border-primary rounded-full font-label-sm text-label-sm text-primary shadow-[2px_2px_0px_0px_rgba(0,10,30,1)]">
+                                Rejected
+                            </span>
+</div>
+</div>
+<!-- Achievements -->
+<div class="bg-surface border-border-width border-primary rounded-[24px] p-container-padding neobrutal-shadow col-span-2 space-y-4">
+<p class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-wider mb-2">Achievement Chips</p>
+<div class="flex flex-wrap gap-4">
+<div class="flex items-center gap-3 bg-surface border-border-width border-primary rounded-xl px-4 py-2 shadow-[4px_4px_0px_0px_rgba(0,10,30,1)]">
+<div class="w-10 h-10 rounded-full bg-secondary-fixed border-2 border-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-primary">local_fire_department</span>
+</div>
+<div>
+<p class="font-label-bold text-label-bold text-primary leading-tight">Event Master</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Hosted 5 events</p>
+</div>
+</div>
+<div class="flex items-center gap-3 bg-surface border-border-width border-primary rounded-xl px-4 py-2 shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] opacity-70 grayscale">
+<div class="w-10 h-10 rounded-full bg-surface-variant border-2 border-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant">workspace_premium</span>
+</div>
+<div>
+<p class="font-label-bold text-label-bold text-primary leading-tight">Club Legend</p>
+<p class="font-label-sm text-label-sm text-on-surface-variant">Locked</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+</body></html>

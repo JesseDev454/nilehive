@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
@@ -72,6 +73,17 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      borderWidth: {
+        3: "3px",
+      },
+      boxShadow: {
+        neo: "0 4px 20px hsl(var(--neo-shadow) / 0.04), 0 1px 3px hsl(var(--neo-shadow) / 0.03)",
+        "neo-sm": "0 3px 14px hsl(var(--neo-shadow) / 0.035), 0 1px 2px hsl(var(--neo-shadow) / 0.025)",
+        "neo-lg": "0 14px 36px hsl(var(--neo-shadow) / 0.08), 0 4px 10px hsl(var(--neo-shadow) / 0.04)",
+        soft: "0 4px 20px hsl(var(--neo-shadow) / 0.04), 0 1px 3px hsl(var(--neo-shadow) / 0.03)",
+        "soft-sm": "0 3px 14px hsl(var(--neo-shadow) / 0.035), 0 1px 2px hsl(var(--neo-shadow) / 0.025)",
+        "soft-lg": "0 14px 36px hsl(var(--neo-shadow) / 0.08), 0 4px 10px hsl(var(--neo-shadow) / 0.04)",
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
@@ -88,5 +100,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindcssAnimate],
 } satisfies Config;

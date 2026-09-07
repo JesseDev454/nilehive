@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NileHive | Discover Clubs</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-primary": "#b2c7f4",
+                        "tertiary-fixed-dim": "#6edc94",
+                        "primary-container": "#0b2347",
+                        "on-error": "#ffffff",
+                        "on-background": "#181c1e",
+                        "tertiary": "#001105",
+                        "surface-tint": "#4a5e86",
+                        "on-primary-fixed": "#011b3f",
+                        "surface-dim": "#d7dadd",
+                        "on-tertiary-fixed-variant": "#00522a",
+                        "on-primary-container": "#778bb5",
+                        "tertiary-fixed": "#8af9ae",
+                        "primary-fixed": "#d7e2ff",
+                        "on-secondary-fixed": "#001a41",
+                        "surface-container-high": "#e5e8eb",
+                        "on-error-container": "#93000a",
+                        "secondary-fixed": "#d8e2ff",
+                        "on-secondary": "#ffffff",
+                        "on-surface": "#181c1e",
+                        "error": "#ba1a1a",
+                        "background": "#f7fafd",
+                        "surface-container-highest": "#e0e3e6",
+                        "surface": "#f7fafd",
+                        "inverse-on-surface": "#eef1f4",
+                        "secondary-fixed-dim": "#adc7ff",
+                        "surface-container": "#ebeef1",
+                        "outline-variant": "#c4c6cf",
+                        "on-secondary-fixed-variant": "#004493",
+                        "primary-fixed-dim": "#b2c7f4",
+                        "surface-bright": "#f7fafd",
+                        "primary": "#000d27",
+                        "on-tertiary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-surface-variant": "#44474e",
+                        "surface-container-low": "#f1f4f7",
+                        "inverse-surface": "#2d3133",
+                        "on-primary": "#ffffff",
+                        "secondary": "#0d5bbc",
+                        "on-tertiary-container": "#299e5c",
+                        "outline": "#75777f",
+                        "on-secondary-container": "#00316d",
+                        "on-tertiary-fixed": "#00210e",
+                        "secondary-container": "#629afe",
+                        "tertiary-container": "#002a13",
+                        "surface-variant": "#e0e3e6",
+                        "on-primary-fixed-variant": "#32476c",
+                        "surface-container-lowest": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .skeleton {
+            background: linear-gradient(90deg, #ebeef1 25%, #f7fafd 50%, #ebeef1 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body class="bg-background font-body text-on-surface selection:bg-secondary-fixed">
+<div class="flex min-h-screen">
+<!-- SideNavBar Component -->
+<aside class="hidden md:flex flex-col h-screen w-64 bg-[#f1f4f7] dark:bg-[#0b2347] font-['Inter'] text-sm py-6 fixed left-0 top-0 z-40">
+<div class="px-8 mb-8">
+<div class="font-['Manrope'] font-extrabold text-[#000d27] text-2xl tracking-tight">NileHive</div>
+<div class="text-[10px] uppercase tracking-[0.2em] text-on-surface-variant mt-1">Student Portal</div>
+</div>
+<nav class="flex-1 space-y-1">
+<!-- Discover Tab (Active) -->
+<a class="bg-[#ffffff] dark:bg-[#000d27] text-[#0d5bbc] font-semibold rounded-l-full ml-4 pl-4 py-3 flex items-center gap-3 transition-all relative" href="#">
+<span class="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-[#F5B942] rounded-full"></span>
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">explore</span>
+                    Discover
+                </a>
+<!-- Membership Tab -->
+<a class="text-[#44474e] dark:text-[#ebeef1] hover:bg-[#ebeef1] dark:hover:bg-[#001105] mx-4 px-4 py-3 rounded-lg flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined">badge</span>
+                    Membership
+                </a>
+<!-- Requests Tab -->
+<a class="text-[#44474e] dark:text-[#ebeef1] hover:bg-[#ebeef1] dark:hover:bg-[#001105] mx-4 px-4 py-3 rounded-lg flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined">pending_actions</span>
+                    Requests
+                </a>
+<!-- Oversight Tab -->
+<a class="text-[#44474e] dark:text-[#ebeef1] hover:bg-[#ebeef1] dark:hover:bg-[#001105] mx-4 px-4 py-3 rounded-lg flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined">admin_panel_settings</span>
+                    Oversight
+                </a>
+<!-- Verification Tab -->
+<a class="text-[#44474e] dark:text-[#ebeef1] hover:bg-[#ebeef1] dark:hover:bg-[#001105] mx-4 px-4 py-3 rounded-lg flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined">fact_check</span>
+                    Verification
+                </a>
+</nav>
+<div class="mt-auto px-4 space-y-4">
+<button class="w-full bg-secondary text-on-secondary py-3 rounded-full font-semibold shadow-lg hover:brightness-110 transition-all">
+                    Pay Annual Dues
+                </button>
+<div class="pt-4 border-t border-outline-variant/20">
+<a class="text-[#44474e] dark:text-[#ebeef1] hover:bg-[#ebeef1] mx-4 px-4 py-2 rounded-lg flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+                        Settings
+                    </a>
+<a class="text-[#44474e] dark:text-[#ebeef1] hover:bg-[#ebeef1] mx-4 px-4 py-2 rounded-lg flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined">help</span>
+                        Support
+                    </a>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 pb-24 md:pb-8">
+<!-- TopNavBar Component -->
+<header class="fixed top-0 right-0 left-0 md:left-64 bg-[#f7fafd]/80 dark:bg-[#000d27]/80 backdrop-blur-md z-50 shadow-[0px_4px_20px_rgba(11,35,71,0.06)] font-['Manrope'] antialiased">
+<div class="flex justify-between items-center px-8 py-4 w-full">
+<h1 class="text-xl font-bold tracking-tight text-primary">Discover Clubs</h1>
+<div class="flex items-center gap-6">
+<div class="hidden lg:flex gap-6">
+<a class="text-[#0d5bbc] font-bold border-b-2 border-[#F5B942] pb-1" href="#">Clubs</a>
+<a class="text-[#44474e] dark:text-[#ebeef1] font-medium hover:text-[#0d5bbc] transition-colors duration-200" href="#">Dues</a>
+<a class="text-[#44474e] dark:text-[#ebeef1] font-medium hover:text-[#0d5bbc] transition-colors duration-200" href="#">Admin</a>
+</div>
+<div class="flex items-center gap-4 border-l border-outline-variant/30 pl-6">
+<button class="text-on-surface-variant hover:text-primary transition-colors scale-95 active:scale-90">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors scale-95 active:scale-90">
+<span class="material-symbols-outlined">account_balance_wallet</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-container">
+<img alt="Student Profile Avatar" class="w-full h-full object-cover" data-alt="close up headshot of a smiling college student in a professional navy blazer with a bright library background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDKgn2aZsx315Cc3b_zCLAB-q0zN22fo0yWYzSwhp4oFKDyG6rjEhtnMtiCXHRAz0V5wZJFwAXl7YweG2JuXDTCCAPaNuj98DQtE-GbsuE2ZBtUoffVtA7CQF3cvXF-2QjIiINuZnjEc4EqA0b755u-mulICwZTFoRCB7MLfmHzFCemiCKM6afDYu8evr2a8jWeDA2lOOitFJsOmTUiQBH57Ca0eXjp_D_HWme6x_vteaW5Wq3ZLrygW7ZIPZwF9QqEJ225NwgusDxD"/>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Search & Filters (Contextual Controls) -->
+<section class="mt-24 px-8 mb-12">
+<div class="max-w-6xl mx-auto space-y-8">
+<!-- Search Bar -->
+<div class="relative group max-w-2xl">
+<span class="material-symbols-outlined absolute left-5 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-secondary transition-colors">search</span>
+<input class="w-full bg-surface-container-low border-0 rounded-full py-5 pl-14 pr-6 focus:ring-2 focus:ring-secondary/20 font-medium placeholder:text-on-surface-variant/50 transition-all shadow-sm" data-testid="club-search-input" placeholder="Search for academic, sports, or creative clubs..." type="text"/>
+</div>
+<!-- Categories -->
+<div class="flex flex-wrap gap-3" data-testid="filter-chips">
+<button class="px-6 py-2 rounded-full bg-secondary text-on-secondary font-semibold transition-all">All Clubs</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-low text-on-surface-variant font-medium hover:bg-surface-container transition-all">Academic</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-low text-on-surface-variant font-medium hover:bg-surface-container transition-all">Arts &amp; Culture</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-low text-on-surface-variant font-medium hover:bg-surface-container transition-all">Sports</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-low text-on-surface-variant font-medium hover:bg-surface-container transition-all">Tech &amp; AI</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-low text-on-surface-variant font-medium hover:bg-surface-container transition-all">Volunteering</button>
+</div>
+</div>
+</section>
+<!-- Loading State: Skeleton Grid -->
+<section class="px-8 mb-20" data-state="loading">
+<div class="max-w-6xl mx-auto">
+<div class="flex items-center justify-between mb-8">
+<div class="h-8 w-48 skeleton rounded-lg"></div>
+<div class="h-4 w-24 skeleton rounded-lg"></div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<!-- Skeleton Card 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 space-y-4 shadow-sm">
+<div class="w-full aspect-video skeleton rounded-lg"></div>
+<div class="h-6 w-3/4 skeleton rounded"></div>
+<div class="space-y-2">
+<div class="h-4 w-full skeleton rounded"></div>
+<div class="h-4 w-5/6 skeleton rounded"></div>
+</div>
+<div class="flex gap-2 pt-4">
+<div class="h-8 w-20 skeleton rounded-full"></div>
+<div class="h-8 w-20 skeleton rounded-full"></div>
+</div>
+</div>
+<!-- Skeleton Card 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 space-y-4 shadow-sm">
+<div class="w-full aspect-video skeleton rounded-lg"></div>
+<div class="h-6 w-1/2 skeleton rounded"></div>
+<div class="space-y-2">
+<div class="h-4 w-full skeleton rounded"></div>
+<div class="h-4 w-2/3 skeleton rounded"></div>
+</div>
+<div class="flex gap-2 pt-4">
+<div class="h-8 w-20 skeleton rounded-full"></div>
+<div class="h-8 w-20 skeleton rounded-full"></div>
+</div>
+</div>
+<!-- Skeleton Card 3 -->
+<div class="bg-surface-container-lowest rounded-xl p-6 space-y-4 shadow-sm">
+<div class="w-full aspect-video skeleton rounded-lg"></div>
+<div class="h-6 w-2/3 skeleton rounded"></div>
+<div class="space-y-2">
+<div class="h-4 w-full skeleton rounded"></div>
+<div class="h-4 w-1/2 skeleton rounded"></div>
+</div>
+<div class="flex gap-2 pt-4">
+<div class="h-8 w-20 skeleton rounded-full"></div>
+<div class="h-8 w-20 skeleton rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Empty State: No Clubs Found -->
+<section class="px-8 mb-20" data-state="empty">
+<div class="max-w-6xl mx-auto py-24 flex flex-col items-center text-center">
+<div class="relative mb-8">
+<div class="absolute inset-0 bg-secondary/5 rounded-full scale-150 blur-3xl"></div>
+<div class="w-32 h-32 bg-surface-container-low rounded-full flex items-center justify-center relative z-10">
+<span class="material-symbols-outlined text-6xl text-on-surface-variant/20">search_off</span>
+</div>
+<div class="absolute -bottom-2 -right-2 w-12 h-12 bg-primary-container rounded-full flex items-center justify-center text-sunrise-gold shadow-lg">
+<span class="material-symbols-outlined">help</span>
+</div>
+</div>
+<h2 class="text-3xl font-headline font-extrabold text-primary mb-4">No clubs found</h2>
+<p class="text-on-surface-variant max-w-md mb-10 leading-relaxed">
+                        We couldn't find any student organizations matching "<span class="text-secondary font-semibold italic">Quantum Underwater Knitting</span>". Try adjusting your keywords or browsing by category.
+                    </p>
+<div class="flex flex-col sm:flex-row gap-4">
+<button class="px-8 py-3 bg-secondary text-on-secondary rounded-full font-bold shadow-md hover:scale-105 active:scale-95 transition-all">
+                            Clear all filters
+                        </button>
+<button class="px-8 py-3 bg-surface-container text-primary rounded-full font-bold border border-outline-variant/30 hover:bg-surface-container-high transition-all">
+                            Browse Suggested
+                        </button>
+</div>
+<!-- Empty State "Help" Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-16 w-full max-w-4xl">
+<div class="p-8 bg-surface-container-low rounded-2xl text-left border-l-4 border-[#F5B942]">
+<h3 class="font-bold text-lg mb-2">Can't find what you're looking for?</h3>
+<p class="text-sm text-on-surface-variant mb-4 leading-snug">Every great student legacy starts with a single idea. Create your own organization today.</p>
+<a class="text-secondary font-bold text-sm inline-flex items-center gap-1 group" href="#">
+                                Start a New Club <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+</a>
+</div>
+<div class="p-8 bg-surface-container-low rounded-2xl text-left border-l-4 border-tertiary">
+<h3 class="font-bold text-lg mb-2">Club Pulse Guide</h3>
+<p class="text-sm text-on-surface-variant mb-4 leading-snug">Learn how to navigate campus life and discover the most active communities at Nile University.</p>
+<a class="text-tertiary-container font-bold text-sm inline-flex items-center gap-1 group" href="#">
+                                View Handbook <span class="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">menu_book</span>
+</a>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar Component (Mobile Only) -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-[#ffffff]/90 dark:bg-[#000d27]/90 backdrop-blur-xl z-50 shadow-[0_-4px_20px_rgba(11,35,71,0.08)] rounded-t-[2rem]">
+<a class="flex flex-col items-center justify-center bg-[#0d5bbc]/10 text-[#0d5bbc] rounded-2xl px-6 py-2" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">groups</span>
+<span class="text-[10px] font-['Inter'] uppercase tracking-widest mt-1">Clubs</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#44474e] dark:text-[#ebeef1] opacity-60" href="#">
+<span class="material-symbols-outlined">payments</span>
+<span class="text-[10px] font-['Inter'] uppercase tracking-widest mt-1">Dues</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#44474e] dark:text-[#ebeef1] opacity-60" href="#">
+<span class="material-symbols-outlined">list_alt</span>
+<span class="text-[10px] font-['Inter'] uppercase tracking-widest mt-1">Queue</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#44474e] dark:text-[#ebeef1] opacity-60" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-['Inter'] uppercase tracking-widest mt-1">Profile</span>
+</a>
+</nav>
+</div>
+<!-- Data Annotations Overlay (Instructional/Frontend Reference) -->
+<div class="fixed bottom-4 left-4 z-[100] group">
+<div class="w-10 h-10 bg-primary-container text-on-primary-fixed rounded-full flex items-center justify-center cursor-help shadow-2xl">
+<span class="material-symbols-outlined text-xl">code</span>
+</div>
+<div class="absolute bottom-12 left-0 w-80 bg-white p-6 rounded-2xl shadow-2xl border border-outline-variant opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity">
+<h4 class="font-bold text-primary mb-3">Dev Mapping Guide</h4>
+<ul class="text-xs space-y-3 text-on-surface-variant">
+<li><span class="font-mono text-secondary">data-state="loading"</span>: Use to toggle the skeleton grid visibility during API fetch.</li>
+<li><span class="font-mono text-secondary">data-state="empty"</span>: Show this when the result set length is 0.</li>
+<li><span class="font-mono text-secondary">data-testid="club-search-input"</span>: Hook for debounce search logic (min 3 chars).</li>
+<li><span class="font-mono text-secondary">data-alt</span>: Descriptive text for screen readers and AI-generated image generation.</li>
+</ul>
+</div>
+</div>
+</body></html>

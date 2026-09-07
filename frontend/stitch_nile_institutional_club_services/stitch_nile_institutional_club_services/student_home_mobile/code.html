@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nile Clubs - Student Home Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;700;900&amp;family=Inter:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-dim": "#dfdacc",
+                        "on-secondary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#5f4100",
+                        "outline": "#74777e",
+                        "on-secondary-container": "#187255",
+                        "secondary-fixed-dim": "#85d7b4",
+                        "on-surface": "#1d1c13",
+                        "tertiary-fixed": "#ffdeaa",
+                        "primary-fixed-dim": "#b4c7ec",
+                        "on-primary": "#ffffff",
+                        "on-primary-fixed": "#051b38",
+                        "surface-bright": "#fff9eb",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#f9f3e5",
+                        "outline-variant": "#c4c6ce",
+                        "on-error-container": "#93000a",
+                        "secondary": "#0c6b4f",
+                        "error": "#ba1a1a",
+                        "on-primary-fixed-variant": "#354766",
+                        "inverse-on-surface": "#f6f0e2",
+                        "background": "#fff9eb",
+                        "surface-container-highest": "#e8e2d4",
+                        "on-secondary-fixed-variant": "#00513b",
+                        "surface-variant": "#e8e2d4",
+                        "on-primary-container": "#7386a8",
+                        "surface-container-high": "#eee8da",
+                        "on-background": "#1d1c13",
+                        "tertiary-fixed-dim": "#f5bd58",
+                        "tertiary-container": "#291a00",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#44474d",
+                        "inverse-primary": "#b4c7ec",
+                        "secondary-fixed": "#a0f3cf",
+                        "primary-fixed": "#d6e3ff",
+                        "tertiary": "#040200",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-container": "#a0f3cf",
+                        "on-secondary-fixed": "#002116",
+                        "surface-container": "#f3eddf",
+                        "inverse-surface": "#333027",
+                        "primary-container": "#071d3a",
+                        "surface-tint": "#4c5f7f",
+                        "primary": "#00030c",
+                        "surface": "#fff9eb",
+                        "on-tertiary-container": "#ac7c1a",
+                        "on-error": "#ffffff",
+                        "on-tertiary-fixed": "#271900"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0px",
+                        "lg": "0px",
+                        "xl": "0px",
+                        "full": "0px"
+                    },
+                    fontFamily: {
+                        "headline": ["Work Sans", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    },
+                    boxShadow: {
+                        'brutal': '4px 4px 0px 0px rgba(0,3,12,1)',
+                        'brutal-sm': '2px 2px 0px 0px rgba(0,3,12,1)',
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: #fff9eb; }
+        h1, h2, h3, h4, h5, h6 { font-family: 'Work Sans', sans-serif; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface antialiased pt-16 pb-20 md:pb-0 md:pl-80 flex flex-col min-h-screen">
+<!-- TopAppBar (Mobile Only) -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-4 h-16 bg-[#fff9eb] dark:bg-[#00030c] text-[#00030c] dark:text-[#fff9eb] font-['Work_Sans'] font-black uppercase tracking-tighter rounded-none border-b-2 border-[#00030c] dark:border-[#fff9eb] shadow-[4px_4px_0px_0px_rgba(0,3,12,1)] md:hidden">
+<div class="flex items-center gap-3">
+<img alt="University Member Profile" class="w-8 h-8 object-cover border-2 border-primary" data-alt="headshot of a student against a solid yellow background wearing glasses and a dark blue sweater" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBR_hWBByZMbUYviRGv0qvOK8Gc_JKx6vR_SnNf2VR6iSu_w4e6f7YnUtCt7u1-ZIgghFDO96U-8sCR0U3kSqim2AsBnYiw3-HkWytjEgpALWt94yZQR5_JoeJG9nsEtF-gvpARQX0AW4WBUh3nkFgbUhafZLCODOn1-E8RAjKSOLkqCePnLIeSWLUYXLxvUJBCCB7hybKONcJO_No68GlQfA2dYECLAgGaXPbpp4rJP7kcGjJ0xS5lpjVd1Qa8qBR5UB8xjq8T_GvG"/>
+<span class="text-xl font-black text-[#00030c] dark:text-[#fff9eb] tracking-tight">NILE CLUBS</span>
+</div>
+<button class="flex items-center justify-center p-2 text-[#00030c] hover:bg-[#0c6b4f] hover:text-white transition-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+</header>
+<!-- NavigationDrawer (Web Only) -->
+<nav class="hidden md:flex fixed inset-y-0 left-0 w-80 z-[60] flex-col bg-[#fff9eb] dark:bg-[#00030c] text-[#00030c] dark:text-[#fff9eb] font-['Work_Sans'] font-bold uppercase rounded-none border-r-4 border-[#00030c] shadow-[8px_0px_0px_0px_rgba(0,3,12,1)]">
+<!-- Drawer Header -->
+<div class="p-6 border-b-4 border-primary bg-surface-container-highest">
+<div class="flex items-center gap-4 mb-6">
+<img alt="Student Avatar" class="w-16 h-16 border-2 border-primary object-cover" data-alt="headshot of a student against a solid yellow background wearing glasses and a dark blue sweater" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCgVu45G0MyCxI5JU_jEIAIsBQT-l_oQ4S-M0usGNOud5G5KYk9It9XW2JR7TmiV4Zl9nUrU5YJAdMkOa4bke1aB8sAPwtZp6GFHA4lasnm8z72Y5hrzKVDwHuxSP2NYPpORmyATA5keJaKcTTk_U_POKSA_ur0XgEa7oOkLgaOnOxHCkQQ1NyLKCeO1AIbN4JTa2ZYYbChgta029klefAl22jOKOHRj-da_Ez7M387VIXa8XpoFpf45-Og5IRQKb2ceqN7WLeBox8z"/>
+<div>
+<h2 class="text-lg font-black text-[#00030c]">Academic Lead</h2>
+<p class="text-sm font-body text-on-surface-variant normal-case">Club Services Division</p>
+</div>
+</div>
+</div>
+<!-- Drawer Links -->
+<div class="flex-1 overflow-y-auto bg-[#e8e2d4] dark:bg-[#071d3a]">
+<!-- Intent mapping: Home -> My Leadership (Closest Match for dashboard) -->
+<a class="flex items-center gap-4 p-4 bg-[#040200] text-[#fff9eb] font-black border-b-2 border-[#00030c] hover:skew-x-1 transition-transform duration-75" href="#">
+<span class="material-symbols-outlined">workspace_premium</span>
+<span>My Leadership</span>
+</a>
+<a class="flex items-center gap-4 p-4 text-[#00030c] dark:text-[#fff9eb] border-b-2 border-[#00030c] hover:skew-x-1 transition-transform duration-75" href="#">
+<span class="material-symbols-outlined">event</span>
+<span>Calendar</span>
+</a>
+<a class="flex items-center gap-4 p-4 text-[#00030c] dark:text-[#fff9eb] border-b-2 border-[#00030c] hover:skew-x-1 transition-transform duration-75" href="#">
+<span class="material-symbols-outlined">description</span>
+<span>Resources</span>
+</a>
+<a class="flex items-center gap-4 p-4 text-[#00030c] dark:text-[#fff9eb] border-b-2 border-[#00030c] hover:skew-x-1 transition-transform duration-75" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 p-4 md:p-8 overflow-y-auto space-y-8 bg-surface">
+<!-- Welcome Hero Section -->
+<section class="bg-surface-container-highest border-2 border-primary shadow-brutal p-6 relative overflow-hidden">
+<div class="absolute inset-0 bg-gradient-to-br from-transparent to-primary/5 pointer-events-none"></div>
+<h1 class="font-headline text-display-lg md:text-[3.5rem] font-black uppercase tracking-tight text-primary leading-none mb-2">Student<br/>Portal</h1>
+<p class="font-body text-body-lg text-on-surface-variant font-bold mb-6">Welcome back, Academic Lead.</p>
+<div class="flex gap-4">
+<button class="bg-primary text-on-primary font-headline font-bold uppercase px-6 py-3 border-2 border-primary shadow-brutal hover:shadow-none hover:translate-x-[2px] hover:translate-y-[2px] transition-all flex items-center gap-2">
+                    Discover Clubs
+                    <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">arrow_forward</span>
+</button>
+</div>
+</section>
+<!-- Status & Stats Bento Grid -->
+<section class="grid grid-cols-2 gap-4">
+<!-- Membership Status Card -->
+<div class="col-span-2 md:col-span-1 bg-surface border-2 border-primary shadow-brutal p-0 flex flex-col">
+<div class="bg-primary-container p-3 border-b-2 border-primary flex justify-between items-center">
+<h2 class="font-headline font-bold text-on-primary uppercase text-sm tracking-widest">Active Status</h2>
+<span class="material-symbols-outlined text-on-primary text-sm">verified_user</span>
+</div>
+<div class="p-5 flex-1 flex flex-col justify-center">
+<div class="inline-flex items-center gap-2 bg-secondary text-on-primary font-label font-bold text-xs uppercase tracking-widest px-3 py-1 border border-primary w-fit mb-3">
+<div class="w-2 h-2 bg-on-primary"></div>
+                        Good Standing
+                    </div>
+<p class="font-body text-sm text-on-surface-variant">Your membership fees are paid through Fall 2024. You are eligible to vote in upcoming elections.</p>
+</div>
+</div>
+<!-- Task Alert Card -->
+<div class="col-span-2 md:col-span-1 bg-surface-container-low border-2 border-primary shadow-brutal p-0 flex flex-col relative overflow-hidden">
+<div class="absolute top-0 right-0 w-16 h-16 bg-error/10 border-l-2 border-b-2 border-primary flex items-center justify-center pointer-events-none">
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">warning</span>
+</div>
+<div class="bg-surface-variant p-3 border-b-2 border-primary flex justify-between items-center">
+<h2 class="font-headline font-bold text-primary uppercase text-sm tracking-widest">Pending Action</h2>
+</div>
+<div class="p-5 flex-1 flex flex-col justify-between">
+<div>
+<h3 class="font-headline font-bold text-lg mb-1">Upload Fall Schedule</h3>
+<p class="font-body text-xs text-on-surface-variant">Required for club meeting assignments.</p>
+</div>
+<button class="mt-4 bg-surface text-primary border-2 border-primary px-4 py-2 font-headline font-bold uppercase text-sm hover:bg-primary hover:text-surface transition-colors w-full text-center">
+                        Upload Document
+                    </button>
+</div>
+</div>
+</section>
+<!-- Upcoming Events Stack -->
+<section class="space-y-4">
+<h2 class="font-headline text-headline-lg font-black uppercase text-primary border-b-4 border-primary pb-2 inline-block">Next Up</h2>
+<!-- Event Item 1 -->
+<div class="bg-surface border-2 border-primary shadow-brutal flex flex-col md:flex-row group hover:-translate-y-1 transition-transform">
+<div class="bg-primary text-on-primary p-4 flex flex-row md:flex-col items-center justify-center gap-2 md:w-32 border-b-2 md:border-b-0 md:border-r-2 border-primary shrink-0">
+<div class="font-headline font-black text-2xl">24</div>
+<div class="font-label uppercase text-xs tracking-widest">OCT</div>
+</div>
+<div class="p-4 flex-1 flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="bg-tertiary text-on-tertiary px-2 py-0.5 text-[10px] font-label font-bold uppercase border border-primary">Featured</span>
+<span class="text-xs font-body font-bold text-on-surface-variant">14:00 - 16:00</span>
+</div>
+<h3 class="font-headline font-bold text-xl text-primary leading-tight mb-2">Annual Engineering Symposium Prep</h3>
+<p class="font-body text-sm text-on-surface-variant mb-4 line-clamp-2">Final review of presentation materials and logistical coordination for the upcoming engineering symposium.</p>
+</div>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-1 text-xs font-body font-bold">
+<span class="material-symbols-outlined text-sm">location_on</span>
+                            Room 402, Main Building
+                        </div>
+<button class="bg-primary text-surface px-4 py-1.5 font-headline font-bold uppercase text-sm border-2 border-primary shadow-[2px_2px_0px_0px_#fff9eb,2px_2px_0px_0px_rgba(0,3,12,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all">
+                            RSVP
+                        </button>
+</div>
+</div>
+</div>
+<!-- Event Item 2 -->
+<div class="bg-surface-container-low border-2 border-primary shadow-brutal flex flex-col md:flex-row opacity-80 hover:opacity-100 transition-opacity">
+<div class="bg-surface-variant text-primary p-4 flex flex-row md:flex-col items-center justify-center gap-2 md:w-32 border-b-2 md:border-b-0 md:border-r-2 border-primary shrink-0">
+<div class="font-headline font-black text-2xl">28</div>
+<div class="font-label uppercase text-xs tracking-widest">OCT</div>
+</div>
+<div class="p-4 flex-1 flex flex-col justify-between">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="text-xs font-body font-bold text-on-surface-variant">18:00 - 19:30</span>
+</div>
+<h3 class="font-headline font-bold text-xl text-primary leading-tight mb-2">Robotics Club Weekly Meeting</h3>
+<p class="font-body text-sm text-on-surface-variant mb-4">Discussing the new chassis design for the regional competition.</p>
+</div>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-1 text-xs font-body font-bold">
+<span class="material-symbols-outlined text-sm">location_on</span>
+                            Innovation Lab
+                        </div>
+<button class="bg-surface text-primary px-4 py-1.5 font-headline font-bold uppercase text-sm border-2 border-primary shadow-[2px_2px_0px_0px_rgba(0,3,12,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all">
+                            RSVP
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Announcements Board -->
+<section class="bg-surface border-2 border-primary shadow-brutal p-0">
+<div class="bg-primary text-on-primary p-4 border-b-2 border-primary flex items-center justify-between">
+<h2 class="font-headline font-bold uppercase text-lg flex items-center gap-2">
+<span class="material-symbols-outlined">campaign</span>
+                    Notice Board
+                </h2>
+</div>
+<div class="divide-y-2 divide-primary">
+<!-- Notice 1 -->
+<div class="p-4 hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-1">
+<span class="bg-secondary text-surface text-[10px] font-label font-bold uppercase px-2 py-0.5 border border-primary">Important</span>
+<span class="text-xs font-body text-on-surface-variant">2 hrs ago</span>
+</div>
+<h3 class="font-headline font-bold text-base text-primary mb-1">Library Hours Extension</h3>
+<p class="font-body text-sm text-on-surface-variant">The central library will now remain open until midnight during the midterm preparation weeks.</p>
+</div>
+<!-- Notice 2 -->
+<div class="p-4 hover:bg-surface-container-low transition-colors cursor-pointer">
+<div class="flex justify-between items-start mb-1">
+<span class="text-xs font-body text-on-surface-variant">1 day ago</span>
+</div>
+<h3 class="font-headline font-bold text-base text-primary mb-1">New Club Proposals Open</h3>
+<p class="font-body text-sm text-on-surface-variant">Submissions for new student clubs for the Spring semester are now being accepted.</p>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<!-- Home is active based on the dashboard context -->
+<nav class="md:hidden fixed bottom-0 w-full z-50 flex justify-around items-center h-20 bg-[#fff9eb] font-['Inter'] font-bold text-[10px] uppercase tracking-widest rounded-none border-t-4 border-[#00030c]">
+<!-- Active Tab: Home -->
+<a class="flex flex-col items-center justify-center bg-[#0c6b4f] text-white border-x-2 border-[#00030c] h-full w-full hover:bg-[#f9f3e5] dark:hover:bg-[#071d3a] transition-none" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">home</span>
+<span>Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#00030c] dark:text-[#fff9eb] h-full w-full hover:bg-[#f9f3e5] dark:hover:bg-[#071d3a] transition-none" href="#">
+<span class="material-symbols-outlined mb-1">groups</span>
+<span>Clubs</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#00030c] dark:text-[#fff9eb] h-full w-full hover:bg-[#f9f3e5] dark:hover:bg-[#071d3a] transition-none" href="#">
+<span class="material-symbols-outlined mb-1">assignment</span>
+<span>Tasks</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#00030c] dark:text-[#fff9eb] h-full w-full hover:bg-[#f9f3e5] dark:hover:bg-[#071d3a] transition-none border-l-2 border-transparent" href="#">
+<span class="material-symbols-outlined mb-1">campaign</span>
+<span>Updates</span>
+</a>
+</nav>
+</body></html>

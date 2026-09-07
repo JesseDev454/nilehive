@@ -1,0 +1,51 @@
+name: Playwright Tests
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+        cache: npm
+        cache-dependency-path: |
+          package-lock.json
+          frontend/package-lock.json
+    - name: Install root dependencies
+      run: npm ci
+    - name: Install frontend dependencies
+      run: npm ci
+      working-directory: frontend
+    - name: Install backend dependencies
+      run: npm ci
+      working-directory: backend
+    - name: Build frontend
+      run: npm run build
+      working-directory: frontend
+    - name: Run backend tests
+      run: npm test
+      working-directory: backend
+      env:
+        SUPABASE_URL: https://example.supabase.co
+        SUPABASE_ANON_KEY: ci-test-anon-key
+        SUPABASE_SERVICE_ROLE_KEY: ci-test-service-role-key
+        AUTH_PROVIDER: supabase
+        FRONTEND_APP_URL: http://127.0.0.1:5173
+    - name: Install Playwright Browsers
+      run: npx playwright install --with-deps chromium
+      working-directory: frontend
+    - name: Run mocked Playwright role suite
+      run: npm run test:e2e:mock
+      working-directory: frontend
+    - uses: actions/upload-artifact@v4
+      if: ${{ !cancelled() }}
+      with:
+        name: playwright-report
+        path: frontend/playwright-report/
+        retention-days: 30

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Discover Clubs - Nile Club Services</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-secondary-container": "#247114",
+                    "inverse-primary": "#aec7f6",
+                    "inverse-on-surface": "#eff1f3",
+                    "error": "#ba1a1a",
+                    "on-tertiary": "#ffffff",
+                    "surface-tint": "#465f88",
+                    "background": "#f7f9fb",
+                    "primary-fixed-dim": "#aec7f6",
+                    "on-tertiary-fixed-variant": "#1e4c5f",
+                    "on-primary": "#ffffff",
+                    "on-tertiary-fixed": "#001f2a",
+                    "on-background": "#191c1e",
+                    "surface-container-highest": "#e0e3e5",
+                    "on-secondary-fixed-variant": "#0b5300",
+                    "on-secondary": "#ffffff",
+                    "surface-container-high": "#e6e8ea",
+                    "secondary": "#1f6d0f",
+                    "error-container": "#ffdad6",
+                    "on-primary-fixed-variant": "#2d476f",
+                    "on-surface-variant": "#44474e",
+                    "secondary-container": "#a1f487",
+                    "tertiary-fixed-dim": "#a1cde3",
+                    "surface": "#f7f9fb",
+                    "surface-container-low": "#f2f4f6",
+                    "tertiary-fixed": "#bee9ff",
+                    "inverse-surface": "#2d3133",
+                    "secondary-fixed": "#a4f78a",
+                    "on-surface": "#191c1e",
+                    "tertiary-container": "#002532",
+                    "primary-container": "#002147",
+                    "primary-fixed": "#d6e3ff",
+                    "on-secondary-fixed": "#022100",
+                    "tertiary": "#000d13",
+                    "on-primary-container": "#708ab5",
+                    "secondary-fixed-dim": "#89da71",
+                    "outline-variant": "#c4c6cf",
+                    "surface-variant": "#e0e3e5",
+                    "primary": "#000a1e",
+                    "surface-bright": "#f7f9fb",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container": "#eceef0",
+                    "on-error": "#ffffff",
+                    "on-primary-fixed": "#001b3d",
+                    "on-error-container": "#93000a",
+                    "outline": "#74777f",
+                    "surface-dim": "#d8dadc",
+                    "on-tertiary-container": "#648fa3"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "20px": "20px",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "border-width": "3px",
+                    "gutter": "20px",
+                    "shadow-offset": "6px",
+                    "base": "8px",
+                    "container-padding": "24px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "headline-md": ["Plus Jakarta Sans"],
+                    "body-md": ["Plus Jakarta Sans"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "display": ["Plus Jakarta Sans"],
+                    "label-bold": ["Plus Jakarta Sans"],
+                    "label-sm": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "headline-md": ["24px", {"lineHeight": "1.3", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "1.6", "fontWeight": "500"}],
+                    "display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                    "label-bold": ["14px", {"lineHeight": "1.4", "fontWeight": "700"}],
+                    "label-sm": ["12px", {"lineHeight": "1.4", "fontWeight": "600"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        .neo-shadow {
+            box-shadow: 6px 6px 0px 0px rgba(0, 10, 30, 1);
+        }
+        .neo-shadow-sm {
+            box-shadow: 4px 4px 0px 0px rgba(0, 10, 30, 1);
+        }
+        .neo-shadow-hover:hover {
+            box-shadow: 2px 2px 0px 0px rgba(0, 10, 30, 1);
+            transform: translate(4px, 4px);
+        }
+        .neo-border {
+            border: 3px solid #000a1e;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex">
+<!-- SideNavBar (Desktop) -->
+<nav class="hidden md:flex flex-col h-screen w-64 border-r-3 border-primary shadow-[6px_0px_0px_0px_rgba(0,10,30,1)] bg-surface pt-20 pb-8 overflow-y-auto fixed left-0 top-0 z-40">
+<div class="px-6 mb-8">
+<h1 class="font-display text-headline-md text-primary">Club Services</h1>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Academic Quest</p>
+</div>
+<div class="px-4 mb-6">
+<button class="w-full bg-secondary-container text-on-secondary-container neo-border rounded-xl px-4 py-3 font-label-bold text-label-bold flex items-center justify-center gap-2 neo-shadow-sm neo-shadow-hover transition-all">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">add</span>
+                New Request
+            </button>
+</div>
+<div class="flex-1 px-2 space-y-2">
+<!-- Active State: Student Hub -->
+<a class="bg-secondary-container text-on-secondary-container border-3 border-primary shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] rounded-xl m-2 px-4 py-3 flex items-center gap-3 font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined">person</span>
+                Student Hub
+            </a>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined">stars</span>
+                President Portal
+            </a>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined">groups</span>
+                Exec Dashboard
+            </a>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined">school</span>
+                Advisor View
+            </a>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined">admin_panel_settings</span>
+                Admin Panel
+            </a>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined">chat_bubble</span>
+                Feedback
+            </a>
+</div>
+<div class="px-2 mt-auto space-y-2">
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Settings
+            </a>
+<a class="text-on-surface-variant px-4 py-3 m-2 flex items-center gap-3 hover:bg-surface-container-high rounded-xl transition-colors font-label-bold text-label-bold" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+                Support
+            </a>
+</div>
+</nav>
+<!-- TopNavBar (Mobile) -->
+<header class="md:hidden sticky top-0 z-50 flex justify-between items-center px-gutter py-4 bg-background w-full border-b-3 border-primary shadow-[6px_6px_0px_0px_rgba(0,10,30,1)]">
+<div class="font-headline-md text-headline-md font-black text-primary tracking-tighter">
+            Nile Club Services
+        </div>
+<div class="flex items-center gap-4">
+<button class="text-primary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,10,30,1)] transition-all active:scale-95">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="text-primary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,10,30,1)] transition-all active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="font-label-bold text-label-bold text-primary hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,10,30,1)] transition-all active:scale-95 border-2 border-primary px-3 py-1 rounded-full">
+                Logout
+            </button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-1 md:ml-64 p-6 md:p-12 w-full max-w-7xl mx-auto">
+<div class="mb-12">
+<h2 class="font-display text-display text-primary mb-4">Discover Clubs</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Find your people. Quest together. Explore the active clubs at Nile University.</p>
+</div>
+<!-- Search and Filter Bar -->
+<div class="flex flex-col md:flex-row gap-6 mb-12 items-start md:items-center">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant z-10">search</span>
+<input class="w-full pl-12 pr-4 py-4 rounded-xl neo-border bg-surface-container-lowest font-body-md text-body-md text-on-background focus:outline-none focus:border-[#6CBB56] transition-colors neo-shadow focus:shadow-[8px_8px_0px_0px_rgba(0,10,30,1)] z-0 relative" placeholder="Search for clubs..." type="text"/>
+</div>
+<div class="flex flex-wrap gap-3">
+<button class="px-5 py-2 rounded-full neo-border bg-primary-container text-on-primary-container font-label-bold text-label-bold neo-shadow-sm hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,10,30,1)] transition-all active:translate-y-1 active:shadow-none">All</button>
+<button class="px-5 py-2 rounded-full neo-border bg-surface-container-lowest text-on-surface font-label-bold text-label-bold neo-shadow-sm hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,10,30,1)] transition-all active:translate-y-1 active:shadow-none">Tech</button>
+<button class="px-5 py-2 rounded-full neo-border bg-surface-container-lowest text-on-surface font-label-bold text-label-bold neo-shadow-sm hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,10,30,1)] transition-all active:translate-y-1 active:shadow-none">Arts</button>
+<button class="px-5 py-2 rounded-full neo-border bg-surface-container-lowest text-on-surface font-label-bold text-label-bold neo-shadow-sm hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,10,30,1)] transition-all active:translate-y-1 active:shadow-none">Sports</button>
+<button class="px-5 py-2 rounded-full neo-border bg-surface-container-lowest text-on-surface font-label-bold text-label-bold neo-shadow-sm hover:-translate-y-1 hover:shadow-[6px_6px_0px_0px_rgba(0,10,30,1)] transition-all active:translate-y-1 active:shadow-none">Academic</button>
+</div>
+</div>
+<!-- Clubs Grid (Bento-ish) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<!-- Card 1 -->
+<div class="bg-surface-container-lowest rounded-[20px] p-6 neo-border neo-shadow flex flex-col h-full relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary-fixed rounded-bl-full -z-10 opacity-50 group-hover:scale-110 transition-transform"></div>
+<div class="flex justify-between items-start mb-6">
+<div class="w-16 h-16 rounded-xl neo-border bg-secondary-container flex items-center justify-center neo-shadow-sm">
+<span class="material-symbols-outlined text-4xl text-on-secondary-container" style="font-variation-settings: 'FILL' 1;">terminal</span>
+</div>
+<span class="bg-[#6CBB56] text-white px-3 py-1 rounded-full font-label-sm text-label-sm neo-border shadow-[2px_2px_0px_0px_rgba(0,10,30,1)]">Tech</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-primary mb-2">Nile Tech Society</h3>
+<p class="font-body-md text-body-md text-on-surface-variant flex-1 mb-6">Building the future, one line of code at a time. Join our hackathons and workshops.</p>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[18px]">group</span>
+                        124 Members
+                    </div>
+<button class="bg-[#6CBB56] text-white px-6 py-2 rounded-xl neo-border font-label-bold text-label-bold neo-shadow-sm neo-shadow-hover transition-all">Join</button>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="bg-surface-container-lowest rounded-[20px] p-6 neo-border neo-shadow flex flex-col h-full relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-32 h-32 bg-tertiary-fixed rounded-bl-full -z-10 opacity-50 group-hover:scale-110 transition-transform"></div>
+<div class="flex justify-between items-start mb-6">
+<div class="w-16 h-16 rounded-xl neo-border bg-tertiary-container flex items-center justify-center neo-shadow-sm">
+<span class="material-symbols-outlined text-4xl text-on-tertiary" style="font-variation-settings: 'FILL' 1;">chess</span>
+</div>
+<span class="bg-surface-tint text-white px-3 py-1 rounded-full font-label-sm text-label-sm neo-border shadow-[2px_2px_0px_0px_rgba(0,10,30,1)]">Academic</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-primary mb-2">Chess Club</h3>
+<p class="font-body-md text-body-md text-on-surface-variant flex-1 mb-6">Master strategies, compete in local tournaments, and sharpen your mind.</p>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[18px]">group</span>
+                        42 Members
+                    </div>
+<button class="bg-[#6CBB56] text-white px-6 py-2 rounded-xl neo-border font-label-bold text-label-bold neo-shadow-sm neo-shadow-hover transition-all">Join</button>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="bg-surface-container-lowest rounded-[20px] p-6 neo-border neo-shadow flex flex-col h-full relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-32 h-32 bg-error-container rounded-bl-full -z-10 opacity-50 group-hover:scale-110 transition-transform"></div>
+<div class="flex justify-between items-start mb-6">
+<div class="w-16 h-16 rounded-xl neo-border bg-error-container flex items-center justify-center neo-shadow-sm">
+<span class="material-symbols-outlined text-4xl text-on-error-container" style="font-variation-settings: 'FILL' 1;">theater_comedy</span>
+</div>
+<span class="bg-[#ba1a1a] text-white px-3 py-1 rounded-full font-label-sm text-label-sm neo-border shadow-[2px_2px_0px_0px_rgba(0,10,30,1)]">Arts</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-primary mb-2">Drama Guild</h3>
+<p class="font-body-md text-body-md text-on-surface-variant flex-1 mb-6">Express yourself on stage. We produce three major plays every academic year.</p>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[18px]">group</span>
+                        87 Members
+                    </div>
+<button class="bg-[#6CBB56] text-white px-6 py-2 rounded-xl neo-border font-label-bold text-label-bold neo-shadow-sm neo-shadow-hover transition-all">Join</button>
+</div>
+</div>
+<!-- Card 4 -->
+<div class="bg-surface-container-lowest rounded-[20px] p-6 neo-border neo-shadow flex flex-col h-full relative overflow-hidden group lg:col-span-2">
+<div class="absolute top-0 right-0 w-48 h-48 bg-secondary-fixed rounded-bl-full -z-10 opacity-30 group-hover:scale-110 transition-transform"></div>
+<div class="flex flex-col md:flex-row gap-6 h-full">
+<div class="flex-1 flex flex-col">
+<div class="flex justify-between items-start mb-4">
+<span class="bg-[#6CBB56] text-white px-3 py-1 rounded-full font-label-sm text-label-sm neo-border shadow-[2px_2px_0px_0px_rgba(0,10,30,1)]">Sports</span>
+<div class="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm bg-surface-container px-3 py-1 rounded-full border-2 border-outline-variant">
+<span class="material-symbols-outlined text-[16px]">local_fire_department</span>
+                                Trending
+                            </div>
+</div>
+<h3 class="font-headline-lg text-headline-lg text-primary mb-2">Nile Rowing Club</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-6 max-w-md">Early mornings on the river. Build endurance, teamwork, and represent Nile University in national regattas.</p>
+<div class="flex items-center justify-between mt-auto pt-4 border-t-2 border-surface-variant">
+<div class="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[18px]">group</span>
+                                210 Members
+                            </div>
+<button class="bg-[#6CBB56] text-white px-8 py-3 rounded-xl neo-border font-label-bold text-label-bold neo-shadow-sm neo-shadow-hover transition-all text-lg">Request to Join</button>
+</div>
+</div>
+<div class="w-full md:w-48 h-48 rounded-[20px] neo-border overflow-hidden relative hidden md:block">
+<div class="absolute inset-0 bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-7xl text-on-primary-container" style="font-variation-settings: 'FILL' 1;">rowing</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 5 -->
+<div class="bg-surface-container-lowest rounded-[20px] p-6 neo-border neo-shadow flex flex-col h-full relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary-fixed-dim rounded-bl-full -z-10 opacity-50 group-hover:scale-110 transition-transform"></div>
+<div class="flex justify-between items-start mb-6">
+<div class="w-16 h-16 rounded-xl neo-border bg-surface-tint flex items-center justify-center neo-shadow-sm">
+<span class="material-symbols-outlined text-4xl text-white" style="font-variation-settings: 'FILL' 1;">palette</span>
+</div>
+<span class="bg-surface-tint text-white px-3 py-1 rounded-full font-label-sm text-label-sm neo-border shadow-[2px_2px_0px_0px_rgba(0,10,30,1)]">Arts</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-primary mb-2">Fine Arts Collective</h3>
+<p class="font-body-md text-body-md text-on-surface-variant flex-1 mb-6">Painting, sculpture, and digital media. Weekly studio sessions.</p>
+<div class="flex items-center justify-between mt-auto">
+<div class="flex items-center gap-2 text-on-surface-variant font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[18px]">group</span>
+                        56 Members
+                    </div>
+<button class="bg-[#6CBB56] text-white px-6 py-2 rounded-xl neo-border font-label-bold text-label-bold neo-shadow-sm neo-shadow-hover transition-all">Join</button>
+</div>
+</div>
+</div>
+</main>
+</body></html>

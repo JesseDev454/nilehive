@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Admin Final Review - Institutional Portal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;700;900&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-high": "#eee8da",
+                        "on-surface-variant": "#44474d",
+                        "error-container": "#ffdad6",
+                        "outline-variant": "#c4c6ce",
+                        "surface-dim": "#dfdacc",
+                        "on-secondary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-bright": "#fff9eb",
+                        "surface-container-low": "#f9f3e5",
+                        "primary": "#00030c",
+                        "outline": "#74777e",
+                        "tertiary-fixed": "#ffdeaa",
+                        "on-tertiary-fixed": "#271900",
+                        "inverse-primary": "#b4c7ec",
+                        "on-surface": "#1d1c13",
+                        "on-tertiary-fixed-variant": "#5f4100",
+                        "secondary-fixed-dim": "#85d7b4",
+                        "on-primary-fixed": "#051b38",
+                        "secondary-container": "#a0f3cf",
+                        "tertiary-fixed-dim": "#f5bd58",
+                        "inverse-surface": "#333027",
+                        "surface-container": "#f3eddf",
+                        "on-primary-container": "#7386a8",
+                        "surface-variant": "#e8e2d4",
+                        "surface-tint": "#4c5f7f",
+                        "secondary": "#0c6b4f",
+                        "on-secondary-container": "#187255",
+                        "inverse-on-surface": "#f6f0e2",
+                        "on-error-container": "#93000a",
+                        "tertiary-container": "#291a00",
+                        "on-primary-fixed-variant": "#354766",
+                        "tertiary": "#040200",
+                        "on-background": "#1d1c13",
+                        "secondary-fixed": "#a0f3cf",
+                        "primary-fixed": "#d6e3ff",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-container": "#ac7c1a",
+                        "on-error": "#ffffff",
+                        "surface-container-highest": "#e8e2d4",
+                        "on-primary": "#ffffff",
+                        "surface": "#fff9eb",
+                        "on-secondary-fixed-variant": "#00513b",
+                        "primary-fixed-dim": "#b4c7ec",
+                        "primary-container": "#071d3a",
+                        "on-secondary-fixed": "#002116",
+                        "background": "#fff9eb",
+                        "error": "#ba1a1a"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0px",
+                        "lg": "0px",
+                        "xl": "0px",
+                        "full": "0px"
+                    },
+                    fontFamily: {
+                        "headline": ["Work Sans", "sans-serif"],
+                        "body": ["Inter", "sans-serif"],
+                        "label": ["Inter", "sans-serif"]
+                    },
+                    boxShadow: {
+                        'brutal': '4px 4px 0px 0px #00030c',
+                        'brutal-sm': '2px 2px 0px 0px #00030c',
+                        'brutal-hover': '0px 0px 0px 0px #00030c',
+                    },
+                    borderWidth: {
+                        '2': '2px',
+                        '3': '3px',
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4, h5, h6, .font-headline { font-family: 'Work Sans', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 1; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex selection:bg-secondary selection:text-white">
+<!-- SideNavBar Component -->
+<nav class="flex flex-col fixed left-0 top-0 h-full z-40 w-64 border-r-3 border-primary shadow-[4px_0px_0px_0px_#00030c] bg-[#071D3A] dark:bg-[#00030c] font-body text-white">
+<!-- Header -->
+<div class="p-6 border-b-2 border-primary bg-primary-container">
+<div class="flex items-center gap-3 mb-4">
+<img alt="User Profile Avatar" class="w-12 h-12 border-2 border-primary object-cover" data-alt="professional headshot of an executive administrator in business casual attire with a neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbWB4k0JON7RQHgyN5PQnEBmZ2bB9sW71OaF5aVUEgDv8R8GSaxHhR8hNbkCfR244uj5985VrTuhiSPhRDRycIZiXn_2j3bhgQsRO6Cm1oWCbnDmPv0tcmJYsnmuh9kcHdcRkXy4J4ISOuKlNSrw4RpOtfRodZaVxKzFamKfzqbvX_172FuwRzTfA6_UtLUm1F_hAa2L328qpfvkWh372dcXix4Y8CV0aRgtPt_lKLgW0k2k2j2u1CK48-0KDHsh7gF9jWwx39vZ-g"/>
+<div>
+<h2 class="font-headline font-bold text-white text-lg tracking-tight">Institutional Portal</h2>
+<p class="text-slate-300 text-xs font-medium tracking-wide">Role: Executive Administrator</p>
+</div>
+</div>
+<button class="w-full bg-primary text-white font-bold py-3 px-4 border-2 border-white flex items-center justify-center gap-2 hover:bg-white hover:text-primary transition-colors shadow-brutal-sm">
+<span class="material-symbols-outlined text-sm">add</span>
+                New Proposal
+            </button>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 overflow-y-auto py-4">
+<ul class="space-y-1">
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:text-white hover:bg-[#00030c] font-medium text-sm tracking-wide transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                        Dashboard
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:text-white hover:bg-[#00030c] font-medium text-sm tracking-wide transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+                        Club Directory
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 bg-secondary text-white border-2 border-primary shadow-[2px_2px_0px_0px_#00030c] mx-2 font-medium text-sm tracking-wide transition-transform Active: scale-95" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+                        Proposal Inbox
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:text-white hover:bg-[#00030c] font-medium text-sm tracking-wide transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="person_search">person_search</span>
+                        Member Registry
+                    </a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-300 hover:text-white hover:bg-[#00030c] font-medium text-sm tracking-wide transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="admin_panel_settings">admin_panel_settings</span>
+                        Admin Panel
+                    </a>
+</li>
+</ul>
+</div>
+<!-- Footer area of nav if needed -->
+<div class="p-4 border-t-2 border-primary bg-primary-container">
+<a class="flex items-center gap-3 text-slate-300 hover:text-white font-medium text-sm" href="#">
+<span class="material-symbols-outlined">logout</span>
+                Logout
+            </a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="ml-64 flex-1 flex flex-col min-h-screen">
+<!-- TopAppBar Component (Web/Tablet view) -->
+<header class="hidden md:flex justify-between items-center w-full px-6 h-16 bg-[#fff9eb] border-b-2 border-primary sticky top-0 z-30">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-2xl" data-icon="school">school</span>
+<span class="font-headline font-black uppercase tracking-tighter text-xl text-primary">NILE UNIVERSITY</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-primary hover:bg-[#e8e2d4] p-2 transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-primary hover:bg-[#e8e2d4] p-2 transition-colors">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Page Content -->
+<div class="p-8 lg:p-12 max-w-7xl mx-auto w-full">
+<!-- Hero Header -->
+<div class="mb-10 flex flex-col md:flex-row md:justify-between md:items-end gap-6">
+<div>
+<div class="flex items-center gap-2 mb-2">
+<span class="bg-surface-variant text-on-surface-variant text-xs font-bold px-2 py-1 uppercase tracking-widest border border-primary">Step 3 of 3</span>
+<span class="text-outline text-sm font-medium">Final Review</span>
+</div>
+<h1 class="font-headline font-black text-5xl tracking-tighter text-primary">Admin Final Review</h1>
+<p class="text-on-surface-variant mt-3 text-lg max-w-2xl">Review the advisor's recommendation and make the final determination for the proposed 'Robotics &amp; AI Symposium'.</p>
+</div>
+<div class="bg-surface-container-highest border-2 border-primary p-4 shrink-0">
+<p class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-1">Proposal ID</p>
+<p class="font-headline font-bold text-xl text-primary">#PRP-2024-089</p>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Left Column: Summary & Advisor Notes -->
+<div class="lg:col-span-2 space-y-8">
+<!-- Proposal Summary Panel -->
+<section class="bg-surface-container-low border-2 border-primary">
+<div class="bg-primary-container border-b-2 border-primary p-4 flex justify-between items-center">
+<h2 class="font-headline font-bold text-white text-lg tracking-tight">Proposal Summary</h2>
+<span class="bg-tertiary-fixed text-on-tertiary-fixed text-xs font-bold px-2 py-1 uppercase tracking-widest border border-primary shadow-brutal-sm">Pending Final</span>
+</div>
+<div class="p-6">
+<h3 class="font-headline font-bold text-2xl text-primary mb-2">Robotics &amp; AI Symposium</h3>
+<p class="text-on-surface-variant mb-6 border-l-4 border-primary pl-4 py-1">An interdisciplinary event showcasing student robotics projects alongside guest lectures from industry leaders in artificial intelligence.</p>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+<div>
+<p class="text-xs font-bold uppercase tracking-widest text-outline mb-1">Date</p>
+<p class="font-medium text-primary">Nov 15, 2024</p>
+</div>
+<div>
+<p class="text-xs font-bold uppercase tracking-widest text-outline mb-1">Location</p>
+<p class="font-medium text-primary">Main Auditorium</p>
+</div>
+<div>
+<p class="text-xs font-bold uppercase tracking-widest text-outline mb-1">Est. Attendance</p>
+<p class="font-medium text-primary">250+</p>
+</div>
+<div>
+<p class="text-xs font-bold uppercase tracking-widest text-outline mb-1">Budget Req.</p>
+<p class="font-medium text-primary">$1,200.00</p>
+</div>
+</div>
+<a class="inline-flex items-center gap-2 text-primary font-bold hover:text-secondary transition-colors group" href="#">
+<span class="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">visibility</span>
+                                View Full Original Proposal Document
+                            </a>
+</div>
+</section>
+<!-- Advisor Recommendation Panel -->
+<section class="bg-surface border-2 border-primary relative shadow-brutal">
+<div class="absolute -top-3 -left-3 bg-tertiary text-on-tertiary px-3 py-1 font-bold text-sm tracking-widest uppercase border border-primary z-10">Critical Insight</div>
+<div class="p-6 pt-8 bg-surface-container-highest border-b-2 border-primary">
+<div class="flex items-start justify-between">
+<div>
+<h2 class="font-headline font-bold text-primary text-xl tracking-tight mb-1">Advisor's Recommendation</h2>
+<div class="flex items-center gap-2 text-on-surface-variant text-sm">
+<span class="material-symbols-outlined text-sm">person</span>
+<span>Dr. Emily Chen (Faculty Advisor, Engineering)</span>
+</div>
+</div>
+<div class="bg-secondary text-white px-4 py-2 border-2 border-primary font-bold uppercase tracking-wide flex items-center gap-2 shadow-brutal-sm">
+<span class="material-symbols-outlined text-sm">thumb_up</span>
+                                    Strongly Recommend
+                                </div>
+</div>
+</div>
+<div class="p-6">
+<h3 class="text-xs font-bold uppercase tracking-widest text-outline mb-2">Advisor Remarks</h3>
+<div class="bg-surface-container-low border border-outline-variant p-4 text-on-surface">
+<p class="italic">"The student organizing committee has demonstrated exceptional planning. The proposed budget is reasonable, and the guest speakers lined up are highly reputable. This event will significantly elevate the profile of our Engineering department. I fully endorse this initiative without reservation."</p>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Decision Panel -->
+<div class="lg:col-span-1">
+<div class="sticky top-24 bg-surface-container-highest border-2 border-primary p-6 shadow-brutal">
+<h2 class="font-headline font-bold text-primary text-2xl tracking-tight mb-6 pb-4 border-b-2 border-primary">Final Decision</h2>
+<form action="#" class="space-y-6" method="POST">
+<!-- Admin Remarks -->
+<div>
+<label class="block text-sm font-bold text-primary uppercase tracking-wide mb-2" for="admin_remarks">Admin Remarks (Optional)</label>
+<textarea class="w-full border-2 border-primary bg-surface p-3 font-body focus:outline-none focus:ring-0 focus:border-secondary transition-colors" id="admin_remarks" name="admin_remarks" placeholder="Enter any final notes or conditions..." rows="4"></textarea>
+</div>
+<!-- Confirmation Checklist -->
+<div class="bg-surface border border-outline p-4">
+<label class="flex items-start gap-3 cursor-pointer group">
+<div class="relative flex items-center justify-center mt-1">
+<input class="peer sr-only" type="checkbox"/>
+<div class="w-5 h-5 border-2 border-primary bg-white peer-checked:bg-secondary peer-checked:border-secondary transition-colors"></div>
+<span class="material-symbols-outlined absolute text-white text-sm opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none">check</span>
+</div>
+<span class="text-sm text-on-surface-variant group-hover:text-primary transition-colors">I confirm that all university guidelines have been met. <strong class="text-primary block mt-1">Approved proposals are automatically added to the University Events Calendar.</strong></span>
+</label>
+</div>
+<!-- Actions -->
+<div class="space-y-4 pt-4 border-t-2 border-primary">
+<button class="w-full bg-primary hover:bg-primary-container text-white font-headline font-bold text-lg py-4 px-6 border-2 border-primary shadow-brutal hover:shadow-brutal-hover hover:translate-y-1 hover:translate-x-1 transition-all flex justify-center items-center gap-2" type="button">
+<span class="material-symbols-outlined">check_circle</span>
+                                    Final Approval - Make Official
+                                </button>
+<button class="w-full bg-tertiary-fixed hover:bg-tertiary-fixed-dim text-on-tertiary-fixed font-headline font-bold py-3 px-6 border-2 border-primary shadow-brutal-sm hover:shadow-brutal-hover hover:translate-y-0.5 hover:translate-x-0.5 transition-all flex justify-center items-center gap-2" type="button">
+<span class="material-symbols-outlined">edit_note</span>
+                                    Return for Changes
+                                </button>
+</div>
+</form>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

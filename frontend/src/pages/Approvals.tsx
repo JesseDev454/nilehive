@@ -1,47 +1,152 @@
-import { mockProposals } from "@/data/mockData";
 import { StatusBadge } from "@/components/StatusBadge";
+import { OneClubLoadingState, OneClubMetaChip, OneClubPageHeader, OneClubStateCard } from "@/components/OneClub";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Clock } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Clock, ArrowRight } from "lucide-react";
+import {
+  getAdvisorPendingProposalsErrorMessage,
+  useAdvisorPendingProposals
+} from "@/hooks/use-advisor-pending-proposals";
+import { ApiClientError, submitAdvisorDecision } from "@/lib/api";
+import { useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { actionError, actionSuccess } from "@/lib/notify";
+
+function getDecisionErrorMessage(error: unknown) {
+  if (error instanceof ApiClientError || error instanceof Error) {
+    return error.message;
+  }
+
+  return "Unable to submit advisor decision right now.";
+}
 
 export default function Approvals() {
-  const pending = mockProposals.filter((p) => p.status === "pending");
+  const { data: pending = [], isLoading, isError, error } = useAdvisorPendingProposals();
+  const queryClient = useQueryClient();
+  const [remarksByProposalId, setRemarksByProposalId] = useState<Record<string, string>>({});
+  const [remarksErrorsByProposalId, setRemarksErrorsByProposalId] = useState<Record<string, string>>({});
+  const [decidingProposalId, setDecidingProposalId] = useState<string | null>(null);
+
+  async function handleDecision(proposalId: string, decision: "approve" | "reject") {
+    const remarks = remarksByProposalId[proposalId]?.trim() || "";
+
+    if (decision === "reject" && !remarks) {
+      setRemarksErrorsByProposalId((current) => ({
+        ...current,
+        [proposalId]: "Add rejection remarks before rejecting this proposal."
+      }));
+      return;
+    }
+
+    setDecidingProposalId(proposalId);
+
+    try {
+      await submitAdvisorDecision(proposalId, {
+        decision,
+        remarks: remarks || undefined
+      });
+
+      actionSuccess(decision === "approve" ? "Proposal approved" : "Proposal rejected", "The proposal queue has been updated.");
+      setRemarksErrorsByProposalId((current) => {
+        const next = { ...current };
+        delete next[proposalId];
+        return next;
+      });
+      await queryClient.invalidateQueries({ queryKey: ["advisor-pending-proposals"] });
+      await queryClient.invalidateQueries({ queryKey: ["navigation-counts"] });
+    } catch (decisionError) {
+      actionError("Decision failed", decisionError, getDecisionErrorMessage(decisionError));
+    } finally {
+      setDecidingProposalId(null);
+    }
+  }
 
   return (
-    <div className="space-y-6 animate-slide-up">
-      <div>
-        <h1 className="text-2xl font-bold">Pending Approvals</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          {pending.length} proposal{pending.length !== 1 ? "s" : ""} awaiting your review
-        </p>
-      </div>
+    <div className="clb-screen">
+      <OneClubPageHeader
+        eyebrow="Advisor Review"
+        title="Pending Approvals"
+        description={`${pending.length} proposal${pending.length !== 1 ? "s" : ""} awaiting your review.`}
+      />
 
-      {pending.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">No pending approvals</p>
-          </CardContent>
-        </Card>
+      {isLoading ? (
+        <OneClubLoadingState title="Loading approvals" message="We are getting proposals assigned to your club." />
+      ) : isError ? (
+        <OneClubStateCard
+          icon={Clock}
+          title="Unable to load pending approvals"
+          message={getAdvisorPendingProposalsErrorMessage(error)}
+          tone="danger"
+        />
+      ) : pending.length === 0 ? (
+        <OneClubStateCard icon={Clock} title="No pending approvals" message="New president-submitted proposals will appear here." />
       ) : (
-        <div className="space-y-3">
-          {pending.map((p) => (
-            <Link key={p.id} to={`/proposals/${p.id}`}>
-              <Card className="hover:border-primary/30 transition-colors cursor-pointer">
-                <CardContent className="p-4 flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{p.title}</p>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      {p.submittedBy} · {p.club} · Submitted {p.submittedAt}
-                    </p>
+        <div className="grid gap-4 xl:grid-cols-2">
+          {pending.map((proposal) => (
+            <Card key={proposal.id} className="overflow-hidden">
+              <CardContent className="space-y-4 p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="truncate text-lg font-bold">{proposal.title}</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <OneClubMetaChip label="Event" value={proposal.eventDate} />
+                      <OneClubMetaChip label="Venue" value={proposal.location || "TBC"} />
+                      <OneClubMetaChip label="Submitted" value={proposal.submittedAt} />
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <StatusBadge status={p.status} />
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  <StatusBadge status={proposal.status} />
+                </div>
+                <div className="space-y-2">
+                  <Textarea
+                    placeholder="Add advisor remarks before approving or rejecting..."
+                    rows={2}
+                    value={remarksByProposalId[proposal.id] ?? ""}
+                    onChange={(event) => {
+                      setRemarksErrorsByProposalId((current) => {
+                        if (!current[proposal.id]) {
+                          return current;
+                        }
+
+                        const next = { ...current };
+                        delete next[proposal.id];
+                        return next;
+                      });
+                      setRemarksByProposalId((current) => ({
+                        ...current,
+                        [proposal.id]: event.target.value
+                      }));
+                    }}
+                  />
+                  {remarksErrorsByProposalId[proposal.id] ? (
+                    <p className="text-sm font-medium text-destructive">{remarksErrorsByProposalId[proposal.id]}</p>
+                  ) : null}
+                  <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+                    <Button asChild variant="outline">
+                      <Link to={`/proposals/${proposal.id}`} state={{ returnTo: "/approvals", returnLabel: "Back to Approvals" }}>
+                        View details
+                      </Link>
+                    </Button>
+                    <Button
+                      className="bg-success hover:bg-success/90 text-success-foreground"
+                      disabled={decidingProposalId === proposal.id}
+                      onClick={() => handleDecision(proposal.id, "approve")}
+                    >
+                      {decidingProposalId === proposal.id ? "Submitting..." : "Approve"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                      disabled={decidingProposalId === proposal.id}
+                      onClick={() => handleDecision(proposal.id, "reject")}
+                    >
+                      {decidingProposalId === proposal.id ? "Submitting..." : "Reject"}
+                    </Button>
                   </div>
-                </CardContent>
-              </Card>
-            </Link>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}

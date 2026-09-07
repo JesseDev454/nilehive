@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nile Club Services - Access Boundary</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed-dim": "#a1cde3",
+                        "on-secondary-fixed-variant": "#0b5300",
+                        "surface-tint": "#465f88",
+                        "on-tertiary-fixed": "#001f2a",
+                        "background": "#f7f9fb",
+                        "secondary-container": "#a1f487",
+                        "on-primary-container": "#708ab5",
+                        "on-secondary-fixed": "#022100",
+                        "primary-fixed-dim": "#aec7f6",
+                        "tertiary": "#000d13",
+                        "on-primary-fixed": "#001b3d",
+                        "on-surface": "#191c1e",
+                        "surface-container-low": "#f2f4f6",
+                        "on-primary-fixed-variant": "#2d476f",
+                        "on-error": "#ffffff",
+                        "surface-dim": "#d8dadc",
+                        "primary": "#000a1e",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#e0e3e5",
+                        "surface-bright": "#f7f9fb",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-container": "#002532",
+                        "primary-container": "#002147",
+                        "primary-fixed": "#d6e3ff",
+                        "on-tertiary-container": "#648fa3",
+                        "on-secondary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-background": "#191c1e",
+                        "inverse-primary": "#aec7f6",
+                        "inverse-surface": "#2d3133",
+                        "on-secondary-container": "#247114",
+                        "error-container": "#ffdad6",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed-dim": "#89da71",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#1e4c5f",
+                        "on-surface-variant": "#44474e",
+                        "surface": "#f7f9fb",
+                        "secondary-fixed": "#a4f78a",
+                        "outline": "#74777f",
+                        "surface-container-highest": "#e0e3e5",
+                        "outline-variant": "#c4c6cf",
+                        "secondary": "#1f6d0f",
+                        "tertiary-fixed": "#bee9ff",
+                        "inverse-on-surface": "#eff1f3",
+                        "surface-container": "#eceef0",
+                        "surface-container-high": "#e6e8ea"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "8px",
+                        "gutter": "20px",
+                        "border-width": "3px",
+                        "shadow-offset": "6px",
+                        "container-padding": "24px"
+                    },
+                    "fontFamily": {
+                        "display": ["Plus Jakarta Sans"],
+                        "headline-md": ["Plus Jakarta Sans"],
+                        "body-md": ["Plus Jakarta Sans"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "label-bold": ["Plus Jakarta Sans"],
+                        "body-lg": ["Plus Jakarta Sans"],
+                        "label-sm": ["Plus Jakarta Sans"]
+                    },
+                    "fontSize": {
+                        "display": ["48px", { "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "label-bold": ["14px", { "lineHeight": "1.4", "fontWeight": "700" }],
+                        "body-lg": ["18px", { "lineHeight": "1.6", "fontWeight": "500" }],
+                        "label-sm": ["12px", { "lineHeight": "1.4", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined[data-weight="fill"] {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        /* Neobrutalist custom utilities */
+        .neo-card {
+            background-color: var(--color-surface, #f7f9fb);
+            border: 3px solid var(--color-primary, #000a1e);
+            border-radius: 28px;
+            box-shadow: 6px 6px 0px 0px rgba(0, 10, 30, 1);
+        }
+        
+        .neo-button {
+            border: 3px solid var(--color-primary, #000a1e);
+            box-shadow: 6px 6px 0px 0px rgba(0, 10, 30, 1);
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .neo-button:hover {
+            transform: translate(2px, 2px);
+            box-shadow: 4px 4px 0px 0px rgba(0, 10, 30, 1);
+        }
+        
+        .neo-button:active {
+            transform: translate(6px, 6px);
+            box-shadow: 0px 0px 0px 0px rgba(0, 10, 30, 1);
+        }
+    </style>
+</head>
+<body class="bg-primary-fixed min-h-screen font-body-md text-on-surface antialiased flex flex-col">
+<!-- Main Content Canvas - TopNavBar and SideNavBar intentionally suppressed for boundary/error screens as per instructions -->
+<main class="flex-grow flex items-center justify-center p-gutter">
+<div class="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+<!-- View Toggle & Navigation (For Demo Purposes) -->
+<div class="col-span-full mb-4 flex justify-center gap-4">
+<button class="px-6 py-2 rounded-full border-3 border-primary bg-surface font-label-bold text-label-bold text-primary hover:bg-secondary-container transition-colors shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] hover:translate-y-1 hover:shadow-[0px_0px_0px_0px_rgba(0,10,30,1)] active-btn" id="btn-access" onclick="showScreen('access')">Access Denied</button>
+<button class="px-6 py-2 rounded-full border-3 border-primary bg-surface font-label-bold text-label-bold text-primary hover:bg-secondary-container transition-colors shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] hover:translate-y-1 hover:shadow-[0px_0px_0px_0px_rgba(0,10,30,1)]" id="btn-advisor" onclick="showScreen('advisor')">Advisor Boundary</button>
+<button class="px-6 py-2 rounded-full border-3 border-primary bg-surface font-label-bold text-label-bold text-primary hover:bg-secondary-container transition-colors shadow-[4px_4px_0px_0px_rgba(0,10,30,1)] hover:translate-y-1 hover:shadow-[0px_0px_0px_0px_rgba(0,10,30,1)]" id="btn-setup" onclick="showScreen('setup')">Account Setup</button>
+</div>
+<!-- Screen 1: Access Denied -->
+<div class="col-span-full w-full max-w-2xl mx-auto neo-card bg-surface overflow-hidden flex flex-col md:flex-row relative" id="screen-access">
+<!-- Label Tab -->
+<div class="absolute top-0 left-0 bg-error text-on-error px-4 py-2 border-b-3 border-r-3 border-primary rounded-br-xl font-label-bold text-label-bold z-10 flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="lock" data-weight="fill">lock</span>
+                    Restricted Area
+                </div>
+<!-- Illustration Area -->
+<div class="w-full md:w-1/2 min-h-[300px] border-b-3 md:border-b-0 md:border-r-3 border-primary bg-surface-container-low relative flex items-center justify-center p-8">
+<!-- Placeholder for illustration -->
+<img alt="Locked Gate Illustration" class="w-full h-full object-cover absolute inset-0 opacity-80 mix-blend-multiply" data-alt="A stylized, soft neobrutalist illustration of a large, friendly-looking lock on a closed wooden gate. The scene is rendered in bright, playful colors with thick outlines, avoiding harsh realism. The background is a flat, calming sky blue. The lock is slightly comically oversized to emphasize the gamified theme of a 'quest boundary'." src="https://lh3.googleusercontent.com/aida-public/AB6AXuANUdeSvNDd95Sc8A9N0eBK6YiQeS_dbcePYXReDOoJXXpfDySonhP4NJ1CisNmVUmGORPsfDPqYx2tXaaUY8Ll1aEIza3_P4QKUbH3CUcoJZjIN4tDxZ0MwQfMqD1jKL7Ej7G1noKp1at9dqX9btoVSQeQiPqnP3Qz3RqZs5LCxxSaY75G2l8eEcmBKOdHMMRrYtdKpADdmTIw_s-1z9IOn07Dx3IsVorLGu-9-nBZgHNRm_IZ8yiaAG50ZWcCFy5ousBPGS1WShPd"/>
+<div class="relative z-10 w-32 h-32 bg-surface rounded-full border-3 border-primary shadow-[6px_6px_0px_0px_rgba(0,10,30,1)] flex items-center justify-center animate-bounce">
+<span class="material-symbols-outlined text-display text-error" style="font-size: 64px;">lock</span>
+</div>
+</div>
+<!-- Content Area -->
+<div class="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
+<h1 class="font-display text-headline-lg text-primary mb-4 tracking-tighter">Hold on, quest seeker!</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-8">This area is restricted. You don't have the necessary permissions to enter this zone.</p>
+<button class="neo-button bg-primary text-on-primary font-label-bold text-label-bold py-4 px-8 rounded-xl flex items-center justify-center gap-3 w-full sm:w-auto self-start">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+                        Back to Dashboard
+                    </button>
+</div>
+</div>
+<!-- Screen 2: Advisor Boundary -->
+<div class="col-span-full w-full max-w-2xl mx-auto neo-card bg-surface overflow-hidden flex flex-col md:flex-row relative hidden" id="screen-advisor">
+<div class="absolute top-0 left-0 bg-tertiary text-on-tertiary px-4 py-2 border-b-3 border-r-3 border-primary rounded-br-xl font-label-bold text-label-bold z-10 flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="school" data-weight="fill">school</span>
+                    Advisor Boundary
+                </div>
+<div class="w-full md:w-1/2 min-h-[300px] border-b-3 md:border-b-0 md:border-r-3 border-primary bg-surface-container-high relative flex items-center justify-center p-8">
+<div class="relative z-10 w-32 h-32 bg-surface rounded-full border-3 border-primary shadow-[6px_6px_0px_0px_rgba(0,10,30,1)] flex items-center justify-center">
+<span class="material-symbols-outlined text-display text-primary" style="font-size: 64px;">visibility_off</span>
+</div>
+</div>
+<div class="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center">
+<h1 class="font-display text-headline-lg text-primary mb-4 tracking-tighter">Out of Bounds</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant mb-8">This club isn't on your roster. You only have access to your assigned clubs.</p>
+<button class="neo-button bg-surface text-primary border-primary font-label-bold text-label-bold py-4 px-8 rounded-xl flex items-center justify-center gap-3 w-full sm:w-auto self-start">
+<span class="material-symbols-outlined" data-icon="groups">groups</span>
+                        View My Roster
+                    </button>
+</div>
+</div>
+<!-- Screen 3: Account Setup -->
+<div class="col-span-full w-full max-w-2xl mx-auto neo-card bg-surface overflow-hidden flex flex-col md:flex-row relative hidden" id="screen-setup">
+<div class="absolute top-0 left-0 bg-secondary-fixed text-on-secondary-fixed px-4 py-2 border-b-3 border-r-3 border-primary rounded-br-xl font-label-bold text-label-bold z-10 flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="sync" data-weight="fill">sync</span>
+                    System Processing
+                </div>
+<div class="w-full p-8 md:p-16 flex flex-col justify-center items-center text-center">
+<div class="mb-8 relative">
+<div class="w-24 h-24 rounded-xl border-3 border-primary bg-secondary-container shadow-[6px_6px_0px_0px_rgba(0,10,30,1)] flex items-center justify-center rotate-3 animate-pulse">
+<span class="material-symbols-outlined text-display text-primary" style="font-size: 48px;">person_add</span>
+</div>
+<div class="absolute -bottom-4 -right-4 w-12 h-12 rounded-full border-3 border-primary bg-surface flex items-center justify-center animate-spin" style="animation-duration: 3s;">
+<span class="material-symbols-outlined text-primary">settings</span>
+</div>
+</div>
+<h1 class="font-display text-headline-lg text-primary mb-4 tracking-tighter">Getting your role ready...</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-md mx-auto">We're assigning your permissions based on your academic quest. Check back in a few minutes while we forge your credentials.</p>
+<div class="mt-8 w-full max-w-xs border-3 border-primary bg-surface-container-low h-6 rounded-full overflow-hidden p-1">
+<div class="h-full bg-secondary border-r-3 border-primary w-2/3 animate-[pulse_2s_ease-in-out_infinite]"></div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<script>
+        function showScreen(screenId) {
+            // Hide all screens
+            document.getElementById('screen-access').classList.add('hidden');
+            document.getElementById('screen-advisor').classList.add('hidden');
+            document.getElementById('screen-setup').classList.add('hidden');
+            
+            // Reset button active states
+            const buttons = document.querySelectorAll('.col-span-full.mb-4 button');
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-secondary-container');
+                btn.classList.add('bg-surface');
+            });
+
+            // Show selected screen
+            document.getElementById('screen-' + screenId).classList.remove('hidden');
+            
+            // Highlight selected button
+            const activeBtn = document.getElementById('btn-' + screenId);
+            activeBtn.classList.remove('bg-surface');
+            activeBtn.classList.add('bg-secondary-container');
+        }
+    </script>
+</body></html>

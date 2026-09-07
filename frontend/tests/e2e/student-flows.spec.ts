@@ -1,0 +1,214 @@
+import { expect, test } from "@playwright/test";
+import { loginAs } from "./helpers/auth";
+import { createE2EState, mockClubServicesApi } from "./helpers/mock-api";
+
+test("student discovers a club, uploads dues proof, and submits a join request", async ({ page }) => {
+  await mockClubServicesApi(page);
+  await loginAs(page, "student");
+
+  await page.goto("/membership");
+
+  await expect(page.getByRole("heading", { name: "Discover Clubs" })).toBeVisible();
+  await page.getByPlaceholder(/Search clubs/i).fill("tech");
+  await expect(page.getByRole("heading", { name: "Nile Tech Club" }).first()).toBeVisible();
+
+  await page.getByRole("link", { name: "View Club" }).first().click();
+  await expect(page.getByRole("heading", { name: /Join Nile Tech Club/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Membership Progress" })).toBeVisible();
+  await expect(page.getByText("Choose Club", { exact: true })).toBeVisible();
+  await expect(page.getByText("Submit Details", { exact: true })).toBeVisible();
+  await expect(page.getByText("Pay Dues", { exact: true })).toBeVisible();
+  await expect(page.getByText("Upload Proof", { exact: true })).toBeVisible();
+  await expect(page.getByText("Await Approval", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Continue Membership Setup", exact: true })).toHaveCount(1);
+  await expect(page.getByText("Tech", { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Events", exact: true })).toBeVisible();
+  await expect(page.getByText("Build Night", { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: "Website" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /instagram/i })).toHaveCount(0);
+  await expect(page.getByText("A club for coding, software projects, robotics, and technology learning.")).toHaveCount(1);
+  await expect(page.getByText("Demo preview: students presenting projects at Build Night")).toBeVisible();
+  await expect(page.getByRole("img", { name: "Demo preview: students presenting projects at Build Night" }))
+    .toHaveAttribute("src", "/demo-club-gallery/nile-google-developers/coding-workshop.png");
+
+  await page.getByLabel("Student ID").fill("123456789");
+  await page.getByLabel("Phone Number").fill("08000000000");
+  await page.getByLabel("Department").fill("Computer Science");
+  await page.getByLabel("Name on account used").fill("E2E Student");
+  await page.getByLabel("Payment date").fill("2026-06-22");
+  await page.getByLabel("Upload dues proof").setInputFiles({
+    name: "dues-proof.png",
+    mimeType: "image/png",
+    buffer: Buffer.from("e2e-dues-proof")
+  });
+
+  await expect(page.getByText("Dues proof ready to submit.")).toBeVisible();
+  await page.getByRole("button", { name: "Join Club" }).click();
+
+  await expect(page.getByText(/Current request:/i)).toBeVisible();
+  await expect(page.getByText("Current request: Payment Under Review.")).toBeVisible();
+});
+
+test("student sidebar includes notifications and opens discover clubs", async ({ page }) => {
+  await mockClubServicesApi(page);
+  await loginAs(page, "student");
+
+  await page.goto("/");
+
+  await expect(page.getByRole("link", { name: /Notifications/i })).toBeVisible();
+  await page.getByRole("link", { name: /Discover Clubs/i }).first().click();
+  await expect(page).toHaveURL(/\/membership$/);
+  await expect(page.getByRole("heading", { name: "Discover Clubs" })).toBeVisible();
+});
+
+test("student can RSVP for an upcoming event", async ({ page }) => {
+  await mockClubServicesApi(page);
+  await loginAs(page, "student");
+
+  await page.goto("/events");
+
+  await expect(page.getByRole("heading", { name: "Events", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Build Night" }).first()).toBeVisible();
+  await page.getByRole("button", { name: "RSVP" }).first().click();
+  await expect(page.getByRole("button", { name: "RSVP Saved" }).first()).toBeVisible();
+});
+
+test("student can submit feedback successfully", async ({ page }) => {
+  await mockClubServicesApi(page);
+  await loginAs(page, "student");
+
+  await page.goto("/feedback");
+
+  await expect(page.getByRole("heading", { name: "Announcements and Feedback" })).toBeVisible();
+  await page.getByLabel("Experience rating").fill("4");
+  await page.getByLabel("What were you trying to do?").fill("Join a club and upload payment proof");
+  await page.getByLabel("What confused you or went wrong?").fill("I wanted to confirm the feedback form submits in E2E.");
+  await page.getByLabel("What should we improve?").fill("Keep the next action visible.");
+  await page.getByRole("button", { name: "Submit Feedback" }).click();
+
+  await expect(page.getByText("Feedback submitted")).toBeVisible();
+});
+
+test("student sees club links only when real links exist", async ({ page }) => {
+  const state = createE2EState();
+  state.clubs[0].website_url = "https://robotics.example.com";
+  state.clubs[0].social_links = {
+    facebook: "https://facebook.com/robotics",
+    instagram: "https://instagram.com/robotics"
+  };
+  await mockClubServicesApi(page, state);
+  await loginAs(page, "student");
+
+  await page.goto("/membership/clubs/club-tech");
+
+  await expect(page.getByRole("heading", { name: "Club links" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Website" })).toHaveAttribute("href", /https:\/\/robotics\.example\.com\/?/);
+  await expect(page.getByRole("link", { name: "Facebook" })).toHaveAttribute("href", /https:\/\/facebook\.com\/robotics\/?/);
+  await expect(page.getByRole("link", { name: "Instagram" })).toHaveAttribute("href", /https:\/\/instagram\.com\/robotics\/?/);
+});
+
+test("student home follows the Stitch hierarchy for discovery, events, and updates", async ({ page }) => {
+  await mockClubServicesApi(page);
+  await loginAs(page, "student");
+
+  await page.goto("/");
+
+  await expect(page.getByRole("heading", { name: /Welcome back, E2E/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Discover Clubs/i }).first()).toHaveAttribute("href", "/membership");
+  await expect(page.getByRole("heading", { name: "Membership Journey" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Upcoming Events" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Recent Updates" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "View all events" })).toHaveAttribute("href", "/events");
+  await expect(page.getByRole("link", { name: "View all updates" })).toHaveAttribute("href", "/communications");
+});
+
+test("student can open the club invite share sheet and copy a link", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (text: string) => {
+          (window as Window & { __copiedClubInvite?: string }).__copiedClubInvite = text;
+        }
+      },
+      configurable: true
+    });
+  });
+  await mockClubServicesApi(page);
+  await loginAs(page, "student");
+
+  await page.goto("/membership/clubs/club-tech");
+  await page.getByRole("button", { name: "Invite Friend" }).click();
+
+  await expect(page.getByTestId("club-share-sheet")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Share to apps/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /WhatsApp/i })).toHaveAttribute("href", /https:\/\/wa\.me\/\?text=/);
+  await expect(page.getByRole("button", { name: /Snapchat/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Instagram/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Copy Link/i })).toBeVisible();
+
+  await page.getByRole("button", { name: /Copy Link/i }).click();
+
+  await expect(page.getByText("Club link copied")).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => (window as Window & { __copiedClubInvite?: string }).__copiedClubInvite))
+    .toContain("/membership/clubs/club-tech");
+});
+
+test("student gets copy fallbacks for Instagram and Snapchat sharing", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "share", { value: undefined, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async (text: string) => {
+          (window as Window & { __copiedClubInvite?: string }).__copiedClubInvite = text;
+        }
+      },
+      configurable: true
+    });
+  });
+  await mockClubServicesApi(page);
+  await loginAs(page, "student");
+
+  await page.goto("/membership/clubs/club-tech");
+  await page.getByRole("button", { name: "Invite Friend" }).click();
+  await page.getByRole("button", { name: /Snapchat/i }).click();
+  await expect(page.getByText("Snapchat invite copied")).toBeVisible();
+
+  await page.getByRole("button", { name: "Invite Friend" }).click();
+  await page.getByRole("button", { name: /Instagram/i }).click();
+  await expect(page.getByText("Instagram invite copied")).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => (window as Window & { __copiedClubInvite?: string }).__copiedClubInvite))
+    .toContain("Hey, join Nile Tech Club on Campus One.");
+});
+
+test("student interest filter narrows discovery cards", async ({ page }) => {
+  await mockClubServicesApi(page);
+  await loginAs(page, "student");
+
+  await page.goto("/membership");
+
+  await expect(page.getByRole("heading", { name: "Nile Tech Club" }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Nile Business Club" }).first()).toBeVisible();
+  await expect(page.getByRole("img", { name: "Nile Business Club logo" }).first()).toHaveAttribute("src", "/club-logos/NBUC.png");
+  await expect(page.getByText("Any dues", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Any signup status", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Sort", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Recommended", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Any event status", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Faith" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Wellness" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Culture" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Other" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Dismiss" }).click();
+
+  await page.getByRole("button", { name: "Tech" }).click();
+
+  await expect(page.getByText(/1 clubs match with 1 active filter/i)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Nile Tech Club" }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Nile Business Club" })).toHaveCount(0);
+
+  await page.getByRole("button", { name: "All interests" }).click();
+  await expect(page.getByRole("heading", { name: "Nile Business Club" }).first()).toBeVisible();
+});

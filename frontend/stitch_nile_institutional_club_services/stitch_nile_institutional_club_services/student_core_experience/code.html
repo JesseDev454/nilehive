@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nile University - Discover Clubs</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800;900&amp;family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-primary-container": "#7386a8",
+                        "surface-container-lowest": "#ffffff",
+                        "outline": "#74777e",
+                        "secondary": "#0c6b4f",
+                        "secondary-container": "#a0f3cf",
+                        "primary": "#00030c",
+                        "on-primary": "#ffffff",
+                        "inverse-primary": "#b4c7ec",
+                        "tertiary-fixed": "#ffdeaa",
+                        "on-primary-fixed-variant": "#354766",
+                        "primary-container": "#071d3a",
+                        "surface-variant": "#e8e2d4",
+                        "inverse-on-surface": "#f6f0e2",
+                        "tertiary-container": "#291a00",
+                        "on-background": "#1d1c13",
+                        "on-secondary-fixed-variant": "#00513b",
+                        "surface-container-low": "#f9f3e5",
+                        "tertiary": "#040200",
+                        "secondary-fixed-dim": "#85d7b4",
+                        "on-primary-fixed": "#051b38",
+                        "secondary-fixed": "#a0f3cf",
+                        "primary-fixed": "#d6e3ff",
+                        "on-secondary-container": "#187255",
+                        "surface-container": "#f3eddf",
+                        "on-error": "#ffffff",
+                        "surface-bright": "#fff9eb",
+                        "surface-dim": "#dfdacc",
+                        "on-surface": "#1d1c13",
+                        "on-tertiary": "#ffffff",
+                        "tertiary-fixed-dim": "#f5bd58",
+                        "primary-fixed-dim": "#b4c7ec",
+                        "inverse-surface": "#333027",
+                        "error": "#ba1a1a",
+                        "surface": "#fff9eb",
+                        "surface-container-high": "#eee8da",
+                        "background": "#fff9eb",
+                        "on-tertiary-container": "#ac7c1a",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed": "#271900",
+                        "on-tertiary-fixed-variant": "#5f4100",
+                        "outline-variant": "#c4c6ce",
+                        "surface-tint": "#4c5f7f",
+                        "surface-container-highest": "#e8e2d4",
+                        "on-surface-variant": "#44474d",
+                        "on-secondary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-secondary-fixed": "#002116"
+                    },
+                    borderRadius: {
+                        DEFAULT: "0px",
+                        lg: "0px",
+                        xl: "0px",
+                        full: "0px"
+                    },
+                    spacing: {},
+                    fontFamily: {
+                        headline: ["Work Sans", "sans-serif"],
+                        body: ["Inter", "sans-serif"],
+                        label: ["Inter", "sans-serif"]
+                    },
+                    boxShadow: {
+                        'hard': '4px 4px 0px 0px #00030c',
+                        'hard-sm': '2px 2px 0px 0px #00030c',
+                        'button': '3px 3px 0px 0px var(--tw-shadow-color, #f5bd58)',
+                        'button-hover': '0px 0px 0px 0px var(--tw-shadow-color, #f5bd58)',
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: theme('colors.surface'); color: theme('colors.primary'); }
+        h1, h2, h3, h4, h5, h6 { font-family: 'Work Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-primary antialiased min-h-screen flex">
+<!-- SideNavBar Component -->
+<nav class="bg-[#071D3A] text-white font-['Inter'] font-medium text-sm tracking-wide h-screen w-64 border-r-[3px] border-[#00030c] shadow-[4px_0px_0px_0px_#00030c] flex flex-col fixed left-0 top-0 z-40 hidden md:flex shrink-0">
+<div class="p-6 border-b-[3px] border-[#00030c] bg-primary">
+<h1 class="font-['Work_Sans'] font-bold text-white text-xl uppercase tracking-tighter">NILE UNIVERSITY</h1>
+<p class="text-xs text-tertiary-fixed mt-1 opacity-80 uppercase tracking-widest">Student Portal</p>
+</div>
+<div class="flex-1 overflow-y-auto py-4">
+<div class="px-4 mb-4">
+<div class="flex items-center gap-3 p-3 bg-surface/10 border-[2px] border-primary">
+<img alt="User Profile Avatar" class="w-10 h-10 border-[2px] border-primary object-cover" data-alt="portrait of a young student with a subtle smile in front of a neutral academic background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdT3dH7D0hja0SqDtw-6RvwmgH-SZK-z6eVofx6pUXkm8qkUVf1t8dJLGZaPIstKtCXyeaqlXt0Z6SypBrPbeLgcfcD0CIrat2ilZB1Iwzw1iQUhk7OXUnxOs8vrg-oUECHqhCOEZKXemmYIfgQCybQOhSkhSlV1sP9GQOTU5CPLQ2BJOZIfYLLkqk2CNVPq8fkwA65zVfZFHqFh9CfCLUcXfN1kP9V_fdJ5R7bQwkVKzJf6aQJKB90Ywi8aNeTW4L2o3hWIHUQTem"/>
+<div>
+<div class="font-bold text-white">Student User</div>
+<div class="text-xs text-secondary-fixed">Computer Science</div>
+</div>
+</div>
+</div>
+<ul class="space-y-1">
+<li>
+<a class="text-slate-300 hover:text-white hover:bg-[#00030c] hover:text-[#fff9eb] px-4 py-3 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined">home</span>
+                        Home
+                    </a>
+</li>
+<li>
+<a class="bg-[#0c6b4f] text-white border-2 border-[#00030c] shadow-[2px_2px_0px_0px_#00030c] mx-2 px-4 py-3 flex items-center gap-3 active:scale-95 transition-transform font-bold" href="#">
+<span class="material-symbols-outlined">explore</span>
+                        Discover Clubs
+                    </a>
+</li>
+<li>
+<a class="text-slate-300 hover:text-white hover:bg-[#00030c] hover:text-[#fff9eb] px-4 py-3 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined">assignment_ind</span>
+                        Membership Status
+                    </a>
+</li>
+<li>
+<a class="text-slate-300 hover:text-white hover:bg-[#00030c] hover:text-[#fff9eb] px-4 py-3 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined">event</span>
+                        Approved Events
+                    </a>
+</li>
+<li>
+<a class="text-slate-300 hover:text-white hover:bg-[#00030c] hover:text-[#fff9eb] px-4 py-3 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined">campaign</span>
+                        Announcements
+                    </a>
+</li>
+</ul>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 w-full flex flex-col min-h-screen">
+<!-- TopAppBar (Mobile Only) -->
+<header class="md:hidden bg-[#fff9eb] text-[#00030c] font-['Work_Sans'] font-black uppercase tracking-tighter border-b-[3px] border-[#00030c] flex justify-between items-center w-full px-6 h-16 sticky top-0 z-30">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-2xl">school</span>
+<span class="text-xl font-black text-[#00030c] uppercase">NILE UNIVERSITY</span>
+</div>
+<div class="flex gap-4">
+<button class="hover:bg-[#e8e2d4] transition-colors p-2 active:translate-y-0.5">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="hover:bg-[#e8e2d4] transition-colors p-2 active:translate-y-0.5">
+<span class="material-symbols-outlined">menu</span>
+</button>
+</div>
+</header>
+<!-- Page Content -->
+<div class="p-6 md:p-12 lg:max-w-7xl mx-auto w-full">
+<!-- Page Header -->
+<div class="mb-12 border-b-[3px] border-primary pb-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<h1 class="font-headline text-5xl md:text-6xl font-black uppercase tracking-tighter leading-none mb-4">
+                        Discover Clubs
+                    </h1>
+<p class="font-body text-lg text-on-surface-variant max-w-2xl">
+                        Explore and join officially recognized student organizations at Nile University. Find your community, build skills, and engage in campus life.
+                    </p>
+</div>
+</div>
+<!-- Filters & Search Bar -->
+<div class="mb-10 flex flex-col lg:flex-row gap-6 items-start lg:items-center bg-surface-container-low p-6 border-[2px] border-primary shadow-hard-sm">
+<div class="flex-1 w-full relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary">search</span>
+<input class="w-full bg-surface border-[2px] border-primary py-3 pl-12 pr-4 font-body text-primary focus:outline-none focus:ring-0 focus:border-primary placeholder-outline placeholder:font-body shadow-[inset_2px_2px_0px_0px_rgba(0,3,12,0.1)]" placeholder="Search clubs by name or keyword..." type="text"/>
+</div>
+<div class="flex flex-wrap gap-3 w-full lg:w-auto">
+<button class="bg-primary text-on-primary border-[2px] border-primary px-4 py-2 font-body font-semibold text-sm uppercase tracking-wide hover:bg-primary-container transition-colors">
+                        All
+                    </button>
+<button class="bg-surface text-primary border-[2px] border-primary px-4 py-2 font-body font-semibold text-sm uppercase tracking-wide hover:bg-surface-variant transition-colors">
+                        Academic
+                    </button>
+<button class="bg-surface text-primary border-[2px] border-primary px-4 py-2 font-body font-semibold text-sm uppercase tracking-wide hover:bg-surface-variant transition-colors">
+                        Cultural
+                    </button>
+<button class="bg-surface text-primary border-[2px] border-primary px-4 py-2 font-body font-semibold text-sm uppercase tracking-wide hover:bg-surface-variant transition-colors">
+                        Sports
+                    </button>
+</div>
+</div>
+<!-- Club Gallery Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+<!-- Club Card 1 -->
+<article class="bg-surface border-[3px] border-primary shadow-hard flex flex-col group hover:-translate-y-1 transition-transform duration-200">
+<div class="h-48 border-b-[3px] border-primary relative overflow-hidden bg-surface-container-highest">
+<img alt="Robotics Club" class="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-300" data-alt="students working on a complex robot prototype in a well-lit engineering lab with tools and blueprints scattered" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDY-8yy0PJPu-_SfJMfumABEepMMUF32PNRjfPfwUMer7zJ4pdcVXFokCHSG-zHO5WEtf4DsSHOcBzr2dMVKzPWHQYs7gFWTOnabcC-uvnMyBahrJ823V5dwdprmSFHALN7osCusJgoUvuHFCE5tU_rz18Nz3AYXBS4ejTCFNx92FHYreQlkQwGzmXUuVsI2Lmn7Yi0uQdwphvNgucbbeFX5k12a3sN-EJ254xEEfFLBfIutO81gx7sCPeQLpIFTt2zoSNo5-wF37e3"/>
+<div class="absolute top-4 left-4 bg-primary text-white font-label text-xs font-bold px-2 py-1 border-[2px] border-primary uppercase tracking-widest">
+                            Academic
+                        </div>
+</div>
+<div class="p-6 flex-1 flex flex-col">
+<h3 class="font-headline text-2xl font-black uppercase tracking-tight mb-2">Robotics Society</h3>
+<p class="font-body text-sm text-on-surface-variant mb-6 line-clamp-3">
+                            Design, build, and program autonomous robots for national competitions. Open to all engineering and computer science students.
+                        </p>
+<div class="mt-auto">
+<button class="w-full bg-primary text-on-primary border-[2px] border-primary py-3 font-body font-bold text-sm uppercase tracking-wider shadow-button hover:shadow-button-hover hover:translate-y-1 hover:translate-x-1 transition-all">
+                                Request to Join
+                            </button>
+</div>
+</div>
+</article>
+<!-- Club Card 2 -->
+<article class="bg-surface border-[3px] border-primary shadow-hard flex flex-col group hover:-translate-y-1 transition-transform duration-200">
+<div class="h-48 border-b-[3px] border-primary relative overflow-hidden bg-surface-container-highest">
+<img alt="Debate Club" class="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-300" data-alt="a heated debate in a traditional academic lecture hall with students standing at podiums gesturing emphatically" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUTU0jcDcbsssXwZiTXGe5EX-Yifs_alYpSVCuUMVqufwMxjwk9FDRgkhlShhTe1M9xFBDcky1YRj5Cbm_jPt-ZcluSiON9JOdi2a8UdLLRvXiAcRvVgjzgFfU2D-mlhteerxQu5gxeww5Dz-izyiVuFEcbjGDWdeE2jRI8nzS2u-5QgUaLmpaoas8HWPdCSvd7nVFJyhBi096bOomkvmgS-_hl8dhdoc_f12E4wzIJlEPVnu_DDA-h2xg9fKtxA45lFbY75QeazsL"/>
+<div class="absolute top-4 left-4 bg-primary text-white font-label text-xs font-bold px-2 py-1 border-[2px] border-primary uppercase tracking-widest">
+                            Academic
+                        </div>
+<div class="absolute top-4 right-4 bg-secondary text-white font-label text-xs font-bold px-2 py-1 border-[2px] border-primary uppercase tracking-widest">
+                            Joined
+                        </div>
+</div>
+<div class="p-6 flex-1 flex flex-col">
+<h3 class="font-headline text-2xl font-black uppercase tracking-tight mb-2">Debate Union</h3>
+<p class="font-body text-sm text-on-surface-variant mb-6 line-clamp-3">
+                            Enhance your public speaking and critical thinking skills. We participate in British Parliamentary style debates regionally.
+                        </p>
+<div class="mt-auto">
+<button class="w-full bg-surface-container-highest text-primary border-[2px] border-primary py-3 font-body font-bold text-sm uppercase tracking-wider cursor-default">
+                                Active Member
+                            </button>
+</div>
+</div>
+</article>
+<!-- Club Card 3 -->
+<article class="bg-surface border-[3px] border-primary shadow-hard flex flex-col group hover:-translate-y-1 transition-transform duration-200">
+<div class="h-48 border-b-[3px] border-primary relative overflow-hidden bg-surface-container-highest">
+<img alt="Music Ensemble" class="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-300" data-alt="a diverse group of students playing classical instruments in an acoustically treated campus music room" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCeW29SJxNe-sxAJ4LykTjb1tc9XAN_fB-t4MwPWv3ebe9sjuw6GV3brUCGztkDvVTyITws9qjyxOMTOZNHVHRYU-lI6t31EsrkrPQ9rryKvRHIxS3G3jbp15SqOn30D01HuaSJa5J-NB2jTqvQgoIFw8EsuCVRj4T9v3N6cFQBsrmuzhoPNDm1i2GqABS0xnkfucuzYD1zznY5k16hwBFoaAOPMp_u2gzRDhXlm5ZOAeApZ4jh6wQnrRXfejjtT2UF4Jkd0nmrzTXt"/>
+<div class="absolute top-4 left-4 bg-primary text-white font-label text-xs font-bold px-2 py-1 border-[2px] border-primary uppercase tracking-widest">
+                            Cultural
+                        </div>
+</div>
+<div class="p-6 flex-1 flex flex-col">
+<h3 class="font-headline text-2xl font-black uppercase tracking-tight mb-2">Symphonic Ensemble</h3>
+<p class="font-body text-sm text-on-surface-variant mb-6 line-clamp-3">
+                            A classical and contemporary music group performing at university galas and local cultural events. Auditions required.
+                        </p>
+<div class="mt-auto">
+<button class="w-full bg-primary text-on-primary border-[2px] border-primary py-3 font-body font-bold text-sm uppercase tracking-wider shadow-button hover:shadow-button-hover hover:translate-y-1 hover:translate-x-1 transition-all">
+                                Request to Join
+                            </button>
+</div>
+</div>
+</article>
+<!-- Club Card 4 -->
+<article class="bg-surface border-[3px] border-primary shadow-hard flex flex-col group hover:-translate-y-1 transition-transform duration-200">
+<div class="h-48 border-b-[3px] border-primary relative overflow-hidden bg-surface-container-highest">
+<img alt="Photography Club" class="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-300" data-alt="close up of a vintage film camera lens reflecting a sunset on a university campus lawn" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDGcWkRz8DF_pSfFMgrb819T2Eci4jgYqS82yW6iBsawVTKoODkq3PB4vduNRRyWPCDiPiykccVTSDjzowfRq8aPkcelcWCcWJDAGXbZ9h1nb5kJvWBm6rJq5QaKps57K60JECpjlbJYu_ceWsm90Xd2kBu64wzFEzifYB2uf77Q5mBhN9ddy6oGqMNFDjsZqmwRVcVhmTXKybqv88XxhHAt6MvIsIqcSUd6zGdLaECNheoGXf9ruUVGPaRa77Norn-bBToSbcXOGtx"/>
+<div class="absolute top-4 left-4 bg-primary text-white font-label text-xs font-bold px-2 py-1 border-[2px] border-primary uppercase tracking-widest">
+                            Arts
+                        </div>
+<div class="absolute top-4 right-4 bg-tertiary-fixed-dim text-primary font-label text-xs font-bold px-2 py-1 border-[2px] border-primary uppercase tracking-widest">
+                            Pending
+                        </div>
+</div>
+<div class="p-6 flex-1 flex flex-col">
+<h3 class="font-headline text-2xl font-black uppercase tracking-tight mb-2">Lens &amp; Light Society</h3>
+<p class="font-body text-sm text-on-surface-variant mb-6 line-clamp-3">
+                            For analog and digital photography enthusiasts. We host weekly photo walks, darkroom workshops, and term exhibitions.
+                        </p>
+<div class="mt-auto">
+<button class="w-full bg-surface-variant text-primary border-[2px] border-primary py-3 font-body font-bold text-sm uppercase tracking-wider cursor-default opacity-70">
+                                Application Under Review
+                            </button>
+</div>
+</div>
+</article>
+<!-- Club Card 5 -->
+<article class="bg-surface border-[3px] border-primary shadow-hard flex flex-col group hover:-translate-y-1 transition-transform duration-200">
+<div class="h-48 border-b-[3px] border-primary relative overflow-hidden bg-surface-container-highest">
+<img alt="Business Society" class="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-300" data-alt="students in business casual attire analyzing charts on a large digital screen in a modern seminar room" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCsSpCkjGP7gfVe6nzrygkp-SV310e7JgtQIR5zNXLm3r9acEnGnS5n_7fka3B7RnAKPSKfrVaMbs6XG20qYKwsMJoV1hQo9muilEd1U8eui4Wd3n-wpVBo0szJk8lJ07o35uuDUlC1MOspD4rmeHgG-bivpYZsKaUw3gZSQ4_XrccXcwRdNX6Dv1nFXLRdz1R63mmXXNTOyzX2r6fLJb8f35JNanGltUoIJoqPdk42D58gbyClPKAl0MEb566MiqLy4_MQGyawZXvH"/>
+<div class="absolute top-4 left-4 bg-primary text-white font-label text-xs font-bold px-2 py-1 border-[2px] border-primary uppercase tracking-widest">
+                            Professional
+                        </div>
+</div>
+<div class="p-6 flex-1 flex flex-col">
+<h3 class="font-headline text-2xl font-black uppercase tracking-tight mb-2">Entrepreneurs Guild</h3>
+<p class="font-body text-sm text-on-surface-variant mb-6 line-clamp-3">
+                            Connect with industry leaders, participate in pitch competitions, and learn the fundamentals of starting your own venture.
+                        </p>
+<div class="mt-auto">
+<button class="w-full bg-primary text-on-primary border-[2px] border-primary py-3 font-body font-bold text-sm uppercase tracking-wider shadow-button hover:shadow-button-hover hover:translate-y-1 hover:translate-x-1 transition-all">
+                                Request to Join
+                            </button>
+</div>
+</div>
+</article>
+<!-- Club Card 6 -->
+<article class="bg-surface border-[3px] border-primary shadow-hard flex flex-col group hover:-translate-y-1 transition-transform duration-200">
+<div class="h-48 border-b-[3px] border-primary relative overflow-hidden bg-surface-container-highest">
+<img alt="Dance Troupe" class="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-300" data-alt="dynamic silhouette of dancers mid-jump in a spacious rehearsal studio with hardwood floors" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQVbpcNFu05WSVthEfR7cZJh49_tkgt1upe9EpPPE-aITRYbXdl82RT3ZPknBgSm12Za5heoOW4Fp5zLjQkLf9nSo9rGuno80wMTNPKJiwTMIPGuc8PP2OC2u5dKlY93xRPhKDFhaj7zB1y4EG1dZndyzKNXmBe5v2Puc8iUFtCfScqhln6cNFCWJ-JOLpTszmD3TcDKJWT_0tgGcdyzfXqF4x6zIXux7JFzxfFOHDJKaa-KahwkvO53B8ljNA1fA0J-8B1LrsiGOM"/>
+<div class="absolute top-4 left-4 bg-primary text-white font-label text-xs font-bold px-2 py-1 border-[2px] border-primary uppercase tracking-widest">
+                            Sports
+                        </div>
+</div>
+<div class="p-6 flex-1 flex flex-col">
+<h3 class="font-headline text-2xl font-black uppercase tracking-tight mb-2">Rhythm Collective</h3>
+<p class="font-body text-sm text-on-surface-variant mb-6 line-clamp-3">
+                            Contemporary and hip-hop dance troupe. We compete nationally and provide beginner workshops for Nile University students.
+                        </p>
+<div class="mt-auto">
+<button class="w-full bg-primary text-on-primary border-[2px] border-primary py-3 font-body font-bold text-sm uppercase tracking-wider shadow-button hover:shadow-button-hover hover:translate-y-1 hover:translate-x-1 transition-all">
+                                Request to Join
+                            </button>
+</div>
+</div>
+</article>
+</div>
+<!-- Load More -->
+<div class="mt-12 flex justify-center">
+<button class="bg-surface text-primary border-[3px] border-primary px-8 py-4 font-headline font-bold text-lg uppercase tracking-wider shadow-hard hover:shadow-[0px_0px_0px_0px_#00030c] hover:translate-y-1 hover:translate-x-1 transition-all">
+                    Load More Clubs
+                </button>
+</div>
+</div>
+</main>
+</body></html>
