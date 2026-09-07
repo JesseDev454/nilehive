@@ -2,6 +2,24 @@ import { expect, test } from "@playwright/test";
 import { loginAs } from "./helpers/auth";
 import { mockClubServicesApi } from "./helpers/mock-api";
 
+test("workspace loading progress visibly animates", async ({ page }) => {
+  await page.route("**/api/v1/profile/me", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 5_000));
+    await route.fulfill({
+      status: 401,
+      contentType: "application/json",
+      body: JSON.stringify({ error: { code: "AUTH_REQUIRED", message: "Authentication is required" } })
+    });
+  });
+
+  await page.goto("/");
+
+  const progressbar = page.getByRole("progressbar", { name: "Opening your OneClub workspace" });
+  await expect(progressbar).toBeVisible();
+  await expect.poll(() => progressbar.locator("div").evaluate((element) => getComputedStyle(element).animationName))
+    .not.toBe("none");
+});
+
 test("app loads from the local dev server", async ({ page }) => {
   await mockClubServicesApi(page);
   await loginAs(page, "student");
