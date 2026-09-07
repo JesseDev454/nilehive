@@ -359,8 +359,8 @@
     animation: slideUp 0.3s ease-out;
   }
 
-  .animate-clubly-progress {
-    animation: clublyProgress 1.45s ease-in-out infinite;
+  .animate-OneClub-progress {
+    animation: oneClubProgress 1.45s ease-in-out infinite;
   }
 
   [data-density="compact"] .clubly-main-pad {
@@ -395,7 +395,7 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes clublyProgress {
+@keyframes oneClubProgress {
   0% { transform: translateX(-120%); }
   50% { transform: translateX(90%); }
   100% { transform: translateX(260%); }
